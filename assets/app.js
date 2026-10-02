@@ -30,7 +30,7 @@
     const card=el('section',undefined,'ederp-card');card.append(el('h3',title));const f=el('form',undefined,'ederp-form');f.dataset.ederpForm=route;
     fields.forEach(([n,l,t])=>f.append(field(n,l,t||'text')));
     Object.entries(preset).forEach(([name,value])=>{const i=el('input');i.type='hidden';i.name=name;i.value=value;f.append(i);});
-    const b=el('button','Confirmar');b.type='submit';f.append(b);const status=el('p',undefined,'ederp-status');status.setAttribute('role','status');f.append(status);card.append(f);return card;
+    const b=el('button','Confirmar');b.type='submit';f.append(b);const status=el('p',undefined,'ederp-status');status.setAttribute('role','status');f.append(status);card.append(f);window.EDERPModal.defer(f);return card;
   }
   document.addEventListener('submit',async e=>{
     const f=e.target;if(!f.matches('[data-ederp-form]'))return;e.preventDefault();
@@ -42,10 +42,11 @@
     if(Object.hasOwn(data,'aceite'))data.aceite=true;
     const fingerprint=route+'|'+JSON.stringify(data);
     if(f.dataset.fingerprint!==fingerprint){f.dataset.key=uuid();f.dataset.fingerprint=fingerprint;}
-    const status=f.querySelector('.ederp-status'),button=f.querySelector('[type=submit]');button.disabled=true;status.textContent='Processando...';
-    try{const result=await api(route,data,f.dataset.key);status.textContent='Operação concluída com sucesso.';f.dataset.completed='1';document.dispatchEvent(new Event('ederp:refresh'));}
-    catch(err){status.textContent=err.message;}finally{button.disabled=false;}
+    const status=f.querySelector('.ederp-status'),button=f.querySelector('[type=submit]');button.disabled=true;f.dataset.saving='1';status.textContent='Processando...';
+    try{const result=await api(route,data,f.dataset.key);status.textContent='Operação concluída com sucesso.';f.dataset.completed='1';window.EDERPModal.success(f,'Operação concluída com sucesso.');document.dispatchEvent(new Event('ederp:refresh'));}
+    catch(err){status.textContent=err.message;}finally{button.disabled=false;f.dataset.saving='0';}
   });
+  document.querySelectorAll('form[data-ederp-form]').forEach(f=>window.EDERPModal.defer(f));
   document.querySelectorAll('[data-ederp-list]').forEach(container=>{
     let page=1,q='';const tools=el('form',undefined,'ederp-tools'),search=field('search','Pesquisar'),button=el('button','Buscar');button.type='submit';tools.append(search,button);
     const result=el('div'),nav=el('div',undefined,'ederp-tools'),prev=el('button','Anterior'),next=el('button','Próxima'),info=el('span');prev.type=next.type='button';nav.append(prev,info,next);container.append(tools,result,nav);

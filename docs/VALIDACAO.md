@@ -32,3 +32,11 @@ JSDOM: edição por abas com salvamento antecipado e preservação dos campos; c
 - JSDOM: 7 cenários de gestão, 4 de pessoas e 4 de portal financeiro aprovados, incluindo período de destino automático.
 - CSS das abas com seletores específicos para prevalecer sobre os botões genéricos Journey.
 - Validação local não substitui a instalação em WordPress/MySQL. Não houve teste visual em navegador real nem execução de dbDelta em MySQL nesta revisão.
+
+## 0.9.2
+
+- JSDOM: 7 cenários de gestão, 4 de pessoas e 4 do portal financeiro passaram.
+- Novos testes: abertura/fechamento/criação/edição das cinco áreas acadêmicas; foco de retorno, validação, manutenção de valores após erro e bloqueio de fechamento durante envio.
+- Perfil e permissões: formulários em diálogos, versão do cadastro mantida, resumo atualizado e menu mobile independente dos diálogos de cadastro.
+- Sintaxe dos quatro scripts de interface e dos PHP alterados validada.
+- Sem mudança no schema ou nas regras de negócio. Não houve teste visual em navegador real nem instalação em WordPress nesta revisão.

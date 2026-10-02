@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.1
+# ERP Educacional — 0.9.2
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -138,3 +138,11 @@ O campo é opcional durante a preparação, mas obrigatório para disponibilizar
 A atualização executa o schema 9 e mantém os dados. Se todas as próximas turmas já configuradas de um período apontarem para um único período futuro, esse vínculo será preenchido automaticamente. Quando houver destinos divergentes, configure o vínculo manualmente; as rematrículas ficam indisponíveis até corrigir a configuração. Matrículas, contratos e parcelas existentes não são recalculados.
 
 As abas de edição de pessoa passam a ter larguras iguais, destaque somente no botão ativo, foco visível e alvos de toque maiores: duas colunas no celular e quatro no desktop. A navegação por clique/teclado e o botão de salvar a qualquer momento foram mantidos.
+
+## Cadastros em modais — 0.9.2
+
+A estrutura acadêmica mantém listagens e filtros na página. Os botões Cadastrar e Editar abrem um diálogo com o formulário. O padrão também é aplicado aos cadastros de aluno, vínculos de responsáveis, matrícula individual/em lote, contrato, transferência, ofertas de rematrícula, estados civis, configurações, perfil pessoal e gestão de perfis. A edição de pessoa mantém as abas existentes.
+
+Os diálogos usam o elemento nativo dialog para restringir o foco ao formulário aberto, oferecem Fechar/Escape e devolvem o foco ao botão de origem quando ele continua presente. Durante um envio ou upload de perfil, o fechamento fica bloqueado. Uma falha do servidor mantém o diálogo e os valores para correção. O salvamento fecha o diálogo e executa a atualização da tela correspondente. Fechar sem salvar não envia alterações ao servidor; formulários reutilizáveis preservam o rascunho enquanto a página permanece aberta.
+
+O componente compartilhado está em assets/modals.js e é carregado como dependência das interfaces do ERP. Não há migração de banco nesta versão (schema 9 mantido). Atualize pelo verificador do WordPress ou pelo ZIP.

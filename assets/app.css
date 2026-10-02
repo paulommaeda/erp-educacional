@@ -33,3 +33,20 @@
 .ederp .erp-person-dialog .erp-person-header h2{margin:0;font-size:24px;line-height:1.2}
 .ederp .erp-person-dialog .erp-person-header button{width:auto;min-height:44px;margin:0;flex-shrink:0}
 @media(min-width:640px){.ederp .erp-person-dialog .erp-person-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* Shared creation and editing dialogs, inside the existing ERP scope. */
+.ederp .erp-form-dialog{box-sizing:border-box;width:calc(100% - 24px);max-width:860px;max-height:calc(100dvh - 24px);padding:0;border:1px solid #dfe8e4;border-radius:18px;background:#fff;color:#003b29;box-shadow:0 24px 80px #003b2940;overflow:auto;overscroll-behavior:contain}
+.ederp .erp-form-dialog::backdrop{background:#00281fd0;backdrop-filter:blur(3px)}
+.ederp .erp-modal-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px;background:#fff;border-bottom:1px solid #dfe8e4}
+.ederp .erp-modal-header h2{margin:0;font-size:22px;line-height:1.3;outline:none}
+.ederp .erp-modal-header button{flex-shrink:0;width:auto;min-height:44px;margin:0}
+.ederp .erp-modal-body{padding:18px}
+.ederp .erp-modal-body .ederp-form{margin:0}
+.ederp .erp-modal-toolbar{margin:20px 0;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.ederp .erp-modal-trigger{min-height:44px}
+.ederp .erp-form-dialog .ederp-tools{flex-wrap:wrap}
+.ederp .erp-form-dialog input,.ederp .erp-form-dialog select,.ederp .erp-form-dialog textarea{box-sizing:border-box;max-width:100%}
+.ederp .erp-form-dialog .erp-feedback:empty,.ederp .erp-modal-toolbar>.erp-feedback:empty{display:none}
+@media(min-width:640px){.ederp .erp-modal-header,.ederp .erp-modal-body{padding:24px}}
+.ederp .ederp-card.erp-modal-transient{margin:0;padding:0;border:0;background:transparent;box-shadow:none}
+.ederp .erp-modal-transient>:not(dialog){display:none}

@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.9.1
+Stable tag: 0.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+= 0.9.2 =
+* Cadastros e edições em modais no admin e no portal.
+* Estrutura acadêmica com listagens, filtros e botão de cadastrar.
+* Matrículas individuais/em lote, responsáveis, estados civis e perfis com o mesmo padrão.
+* Navegação mobile preservada com múltiplos diálogos na página.
+
 = 0.9.1 =
 * Próximo período letivo com validação e integração ao destino da rematrícula.
 * Migração segura das progressões existentes quando o destino é inequívoco.
