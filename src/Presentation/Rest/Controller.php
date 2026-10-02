@@ -210,6 +210,9 @@ final class Controller
         $q=sanitize_text_field((string)$r->get_param('search'));
         $col=in_array($name,['pessoas','cursos','turnos','turmas','planos_pagamento'],true)?'nome':($name==='alunos'?'ra':'descricao');
         if($q!=='') { $where=" WHERE $col LIKE %s"; $args[]='%'.$this->db->wp->esc_like($q).'%'; }
+        if($name==='pessoas' && ($code=trim(sanitize_text_field((string)$r->get_param('codigo'))))!==''){
+            $where.=($where?' AND ':' WHERE ').'(CAST(codpessoa AS CHAR)=%s OR codpessoa_origem=%s)';$args[]=$code;$args[]=\EducacionalERP\Domain\CadastroText::upper($code);
+        }
         if($name==='turmas' && ($period=SchoolSettings::forViewer($r->get_param('codperiodo')))){$where.=($where?' AND ':' WHERE ').'codperiodo=%d';$args[]=$period;}
         $count=$this->db->row("SELECT COUNT(*) AS n FROM $t$where",$args);
         $rows=$this->db->rows("SELECT * FROM $t$where ORDER BY $pk DESC LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20]));

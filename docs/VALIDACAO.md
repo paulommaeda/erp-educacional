@@ -13,3 +13,7 @@ Não executado: integração em WordPress/MySQL real, dbDelta real, concorrênci
 40 verificações de índices passaram: preservação dos índices anteriores, adição sem colisão de nomes, reexecução, instalação recente, detecção de índice ausente e geração para todas as 28 tabelas. Sintaxe validada em 50 arquivos PHP. Não foi executado dbDelta com MySQL real; o teste reproduz metadados SHOW INDEX e valida o planejador. O erro real do servidor ainda não foi disponibilizado, além da mensagem genérica na captura de tela.
 
 Referência consultada: https://developer.wordpress.org/reference/functions/dbdelta/ — comparação de índices por nome e definição.
+
+## 0.8.3
+
+Teste JSDOM people-ui: lista inicial, filtros combinados, obrigatórios, navegação por etapas, envio de cadastro e edição com versão. Sintaxe PHP/JavaScript validada. Ainda não validado visualmente em navegador real nem com WordPress/MySQL instalado.

@@ -1,4 +1,4 @@
-# ERP Educacional — 0.8.2
+# ERP Educacional — 0.8.3
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -107,3 +107,7 @@ Se aparecer “dbDelta falhou em contratos”: faça backup, substitua o plugin 
 ## GitHub e atualizações
 
 Repositório oficial: https://github.com/paulommaeda/erp-educacional. A versão 0.8.2 inclui o atualizador. Instale-a manualmente uma vez; versões posteriores publicadas em main serão consultadas pelo WordPress. Veja docs/GITHUB.md. O schema continua 7.
+
+## Pessoas — 0.8.3
+
+A página abre na listagem paginada, com filtros combinados por nome e código exato (interno ou de origem). Cadastrar novo abre um modal em quatro etapas; Editar reutiliza o modal com os dados preenchidos. Validação mantém o usuário na etapa com erro. Permissões de edição existentes preservadas; nenhuma migração adicional de banco.
