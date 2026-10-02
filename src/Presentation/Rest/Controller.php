@@ -71,6 +71,7 @@ final class Controller
         foreach(CatalogService::TABLES as $table) {
             $permission=$cap(in_array($table,['pessoas','alunos'],true)?'erp_gerenciar_pessoas':'erp_gerenciar_academico');
             $this->route('/cadastros/'.$table,'POST',$permission,fn($r)=>$this->catalog->create($table,$this->payload($r),$this->key($r)));
+            if($table==='periodos_letivos')$this->route('/cadastros/periodos_letivos/'.$id,'GET',$permission,fn($r)=>$this->db->get('periodos_letivos',(int)$r['id']));
             $this->route('/cadastros/'.$table,'GET',$permission,fn($r)=>$this->listCatalog($table,$r));
             $this->route('/cadastros/'.$table.'/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->edit($table,(int)$r['id'],$this->payload($r),$this->key($r)));
         }
@@ -200,7 +201,7 @@ final class Controller
                 if(!(int)$course['ativo'] || !(int)$shift['ativo']) { continue; }
                 $label.=' · '.$course['nome'].' · '.$shift['nome'];
             }
-            $items[]=['id'=>(string)$row[$pk],'label'=>$label];
+            $items[]=['id'=>(string)$row[$pk],'label'=>$label]+($type==='periodos_letivos'?['codperiodo_proximo'=>$row['codperiodo_proximo']??null]:[]);
         }
         return ['items'=>$items,'page'=>$page,'more'=>$page*20<(int)$count['n']];
     }
@@ -217,6 +218,7 @@ final class Controller
         if($name==='turmas' && ($period=SchoolSettings::forViewer($r->get_param('codperiodo')))){$where.=($where?' AND ':' WHERE ').'codperiodo=%d';$args[]=$period;}
         $count=$this->db->row("SELECT COUNT(*) AS n FROM $t$where",$args);
         $rows=$this->db->rows("SELECT * FROM $t$where ORDER BY $pk DESC LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20]));
+        if($name==='periodos_letivos')foreach($rows as &$row){$row['proximo_periodo_nome']=empty($row['codperiodo_proximo'])?'Não definido':$this->db->get('periodos_letivos',(int)$row['codperiodo_proximo'])['descricao'];}unset($row);
         if($name==='planos_pagamento')foreach($rows as &$row){$row['periodo_nome']=empty($row['codperiodo'])?'Não definido — editar':$this->db->get('periodos_letivos',(int)$row['codperiodo'])['descricao'];}unset($row);
         if($name==='turmas')foreach($rows as &$row){if(!empty($row['idturma_proxima'])){$row['proxima_turma']=$this->db->get('turmas',(int)$row['idturma_proxima']);}}unset($row);
         if($name==='pessoas') {

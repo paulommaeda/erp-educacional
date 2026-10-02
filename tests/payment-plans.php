@@ -12,6 +12,11 @@ function deniedP(callable $fn,string $label):void{try{$fn();}catch(RuleViolation
 function addP(string $type,array $data):int{global $cat;return (int)$cat->create($type,$data,keyP())['id'];}
 function parcelsP(int $id):array{global $db;return $db->rows('SELECT * FROM '.$db->table('parcelas').' WHERE idcontrato=%d ORDER BY numero',[$id]);}
 $period=addP('periodos_letivos',['codigo'=>'2026','descricao'=>'Atual','data_inicio'=>'2026-01-01','data_fim'=>'2026-12-31']);$next=addP('periodos_letivos',['codigo'=>'2027','descricao'=>'Próximo','data_inicio'=>'2027-01-01','data_fim'=>'2027-12-31']);update_option('ederp_current_period',$period);
+deniedP(fn()=>$cat->edit('periodos_letivos',$period,['codperiodo_proximo'=>$period],keyP()),'próximo período não pode ser o próprio');
+deniedP(fn()=>$cat->edit('periodos_letivos',$next,['codperiodo_proximo'=>$period],keyP()),'próximo período não pode retroceder');
+$cat->edit('periodos_letivos',$period,['codperiodo_proximo'=>$next],keyP());
+testP((int)$db->get('periodos_letivos',$period)['codperiodo_proximo']===$next,'próximo período salvo');
+deniedP(fn()=>$cat->edit('periodos_letivos',$next,['data_inicio'=>'2025-01-01'],keyP()),'mudança de data não invalida período de origem');
 $plan=addP('planos_pagamento',['codperiodo'=>$period,'codigo'=>'AN','nome'=>'Anuidade regular','valor_anuidade'=>'1000.01']);$course=addP('cursos',['codigo'=>'EF','nome'=>'Fundamental']);$shift=addP('turnos',['codigo'=>'M','nome'=>'Manhã']);
 $base=['idplano'=>$plan,'idcurso'=>$course,'idturno'=>$shift,'capacidade'=>10];$t=addP('turmas',$base+['codperiodo'=>$period,'codigo'=>'A','nome'=>'Turma A']);$futurePlan=addP('planos_pagamento',['codperiodo'=>$next,'codigo'=>'AN27','nome'=>'Anuidade 2027','valor_anuidade'=>'1500.00']);$future=addP('turmas',array_merge($base,['idplano'=>$futurePlan])+['codperiodo'=>$next,'codigo'=>'B','nome'=>'Turma B']);
 deniedP(fn()=>addP('planos_pagamento',['codigo'=>'SEM','nome'=>'Sem período','valor_anuidade'=>'1000.00']),'plano exige período');
@@ -20,6 +25,8 @@ deniedP(fn()=>$cat->edit('planos_pagamento',$plan,['codperiodo'=>$next],keyP()),
 deniedP(fn()=>$cat->edit('turmas',$t,['idturma_proxima'=>$t],keyP()),'destino não pode ser a própria turma');
 deniedP(fn()=>$cat->edit('turmas',$future,['idturma_proxima'=>$t],keyP()),'destino deve ser de período posterior');
 $cat->edit('turmas',$t,['idturma_proxima'=>$future],keyP());
+deniedP(fn()=>$cat->edit('periodos_letivos',$period,['codperiodo_proximo'=>null],keyP()),'vínculo de próxima turma impede remover próximo período');
+
 $cat->edit('planos_pagamento',$futurePlan,['valor_anuidade'=>'1500.00'],keyP());
 $rf=addP('pessoas',['nome'=>'Responsavel Plano','data_nascimento'=>'1980-01-01']);$rf2=addP('pessoas',['nome'=>'Outro Responsavel','data_nascimento'=>'1981-01-01']);$a=$flow->createStudent(['nome'=>'Aluno Plano','data_nascimento'=>'2015-01-01','ra'=>'00077'],keyP());$student=(int)$a['idaluno'];
 $cat->link($student,['codpessoa_responsavel'=>$rf,'parentesco'=>'mae','responsavel_financeiro'=>1,'responsavel_academico'=>1,'pode_rematricular'=>1],keyP());$cat->link($student,['codpessoa_responsavel'=>$rf2,'parentesco'=>'pai','responsavel_academico'=>1],keyP());
@@ -35,7 +42,9 @@ $rfUser=(int)(new Accounts($db))->summary($rf)['wp_user_id'];wp_set_current_user
 testP(SchoolSettings::forViewer('todos')===$period&&SchoolSettings::forViewer($next,'finance')===$period,'responsável não contorna período vigente pela API');
 testP(count((new SchoolSettings($db))->read()['periodos'])===1,'responsável só recebe configuração do período vigente');
 $db->update('turmas',$t,['idturma_proxima'=>null]);testP($renew->offers($student)===[],'sem próxima turma não oferece escolha livre');$db->update('turmas',$t,['idturma_proxima'=>$future]);$offers=$renew->offers($student);testP(count($offers[0]['turmas'])===1&&(int)$offers[0]['turmas'][0]['idturma']===$future,'oferta só retorna o destino definido');testP($offers[0]['turmas'][0]['plano']['valor_anuidade']==='1500.00','rematrícula apresenta anuidade do plano da turma futura');
+$db->update('periodos_letivos',$period,['codperiodo_proximo'=>null]);testP($renew->offers($student)===[],'sem próximo período não exibe oferta');$db->update('periodos_letivos',$period,['codperiodo_proximo'=>$next]);
 $payload=['idoferta'=>$offer['idoferta'],'idmatricula_origem'=>$initial['idmatricula'],'idturma'=>$future,'aceite'=>true,'versao_termo'=>'1','idplano'=>$futurePlan,'plano_versao'=>1,'quantidade_parcelas'=>5];
+$db->update('periodos_letivos',$period,['codperiodo_proximo'=>null]);deniedP(fn()=>$renew->renew($payload,keyP()),'API exige próximo período configurado');$db->update('periodos_letivos',$period,['codperiodo_proximo'=>$next]);
 deniedP(fn()=>$renew->renew(array_merge($payload,['idturma'=>$t]),keyP()),'API rejeita troca do destino pelo responsável');
 deniedP(fn()=>$renew->renew($payload,keyP()),'plano alterado desde a consulta impede aceite desatualizado');$payload['plano_versao']=2;$key=keyP();$result=$renew->renew($payload,$key);$pending=(int)$result['idcontrato'];
 testP($renew->renew($payload,$key)===$result,'reenvio de rematrícula não duplica contrato');

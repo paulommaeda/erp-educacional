@@ -30,7 +30,7 @@ final class CatalogService
                 case 'alunos': $data=['codpessoa'=>Input::id($d['codpessoa']??null),'ra'=>Input::text($d['ra']??null,40),'tipo_aluno'=>\EducacionalERP\Domain\PersonFields::studentType($d['tipo_aluno']??'Regular')]; break;
                 case 'periodos_letivos':
                     $data=['codigo'=>Input::text($d['codigo']??null,30),'descricao'=>Input::text($d['descricao']??null),'data_inicio'=>Input::date($d['data_inicio']??null),'data_fim'=>Input::date($d['data_fim']??null),'status'=>'aberto'];
-                    if ($data['data_fim']<$data['data_inicio']) { throw new RuleViolation('Período com datas invertidas.'); } break;
+                    if ($data['data_fim']<$data['data_inicio']) { throw new RuleViolation('Período com datas invertidas.'); } $data['codperiodo_proximo']=$this->nextPeriod($d,$data['data_inicio']); break;
                 case 'planos_pagamento': $this->db->get('periodos_letivos',Input::id($d['codperiodo']??null));$data=['codperiodo'=>Input::id($d['codperiodo']),'codigo'=>Input::text($d['codigo']??null,30),'nome'=>Input::text($d['nome']??null,100),'valor_anuidade'=>\EducacionalERP\Domain\Money::format(\EducacionalERP\Domain\Money::positive($d['valor_anuidade']??null))];break;
                 case 'cursos': case 'turnos': $data=['codigo'=>Input::text($d['codigo']??null,30),'nome'=>Input::text($d['nome']??null,100)]; break;
                 case 'turmas':
@@ -159,6 +159,7 @@ final class CatalogService
                     if($changes['data_fim']<$changes['data_inicio']) { throw new RuleViolation('Datas do período invertidas.'); }
                     if(!in_array($d['status'],['planejado','aberto','encerrado'],true)) { throw new RuleViolation('Situação do período inválida.'); }
                     $changes['status']=$d['status'];
+                    $changes['codperiodo_proximo']=$this->nextPeriod($d,$changes['data_inicio'],$id);
                 } else { $changes['nome']=Input::text($d['nome'],100); }
             }
             if(in_array($table,['alunos','cursos','turnos','planos_pagamento'],true)) {
@@ -215,11 +216,27 @@ final class CatalogService
         $plan=$this->db->get('planos_pagamento',(int)$d['idplano'],true);
         if(empty($plan['codperiodo'])||(int)$plan['codperiodo']!==(int)$d['codperiodo'])throw new RuleViolation('O plano de pagamento deve pertencer ao mesmo período letivo da turma.');
     }
+    private function nextPeriod(array $d,string $start,int $id=0):?int
+    {
+        $next=empty($d['codperiodo_proximo'])?null:Input::id($d['codperiodo_proximo']);
+        if($next){
+            if($next===$id)throw new RuleViolation('O próximo período deve ser diferente do atual.');
+            $target=$this->db->get('periodos_letivos',$next,true);
+            if($target['data_inicio']<=$start)throw new RuleViolation('O próximo período deve iniciar depois do período atual.');
+        }
+        if($id){
+            $p=$this->db->table('periodos_letivos');$t=$this->db->table('turmas');
+            if($this->db->row("SELECT codperiodo FROM $p WHERE codperiodo_proximo=%d AND data_inicio>=%s LIMIT 1 FOR UPDATE",[$id,$start]))throw new RuleViolation('A data inicial invalidaria um período que aponta para este destino.');
+            if($this->db->row("SELECT a.idturma FROM $t a JOIN $t b ON b.idturma=a.idturma_proxima WHERE a.codperiodo=%d AND b.codperiodo<>%d LIMIT 1 FOR UPDATE",[$id,$next??0]))throw new RuleViolation('Existem próximas turmas de outro período. Remova esses destinos antes de alterar o próximo período.');
+        }
+        return $next;
+    }
     private function nextClass(array $d,int $period,int $id=0):?int
     {
         if(empty($d['idturma_proxima']))return null;
         $next=Input::id($d['idturma_proxima']);if($next===$id)throw new RuleViolation('A próxima turma deve ser diferente da atual.');
         $row=$this->db->get('turmas',$next,true);$from=$this->db->get('periodos_letivos',$period);$to=$this->db->get('periodos_letivos',(int)$row['codperiodo']);
+        if((int)($from['codperiodo_proximo']??0)!==(int)$row['codperiodo'])throw new RuleViolation('A próxima turma deve pertencer ao próximo período configurado no cadastro do período letivo.');
         if($row['status']!=='ativa'||$to['data_inicio']<=$from['data_inicio'])throw new RuleViolation('Selecione uma próxima turma ativa de um período posterior.');
         return $next;
     }

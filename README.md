@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.0
+# ERP Educacional — 0.9.1
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -128,3 +128,13 @@ Após atualizar, abra o wp-admin como administrador e confira ERP → Configura�
 Planos antigos usados em apenas um período recebem esse período automaticamente. Planos sem uso ou utilizados em vários períodos ficam “Não definido — editar”. Crie planos separados para os períodos necessários e ajuste as turmas antes de matricular/rematricular. Contratos e parcelas existentes não são recalculados. O cadastro de turma permite deixar o destino vazio até o planejamento do próximo período.
 
 A rematrícula continua criando contrato pendente de parcelas, geradas posteriormente pelo Financeiro. Alterar o destino afeta novas rematrículas, não rematrículas já concluídas. O backend bloqueia destino adulterado, turma de período anterior e uso de plano de outro período.
+
+## Próximo período e abas de pessoa — 0.9.1
+
+Em Estrutura acadêmica → Períodos letivos, cadastre primeiro o período futuro. Edite o período atual e selecione **Próximo período letivo** (por exemplo, 2026 → 2027). No cadastro da turma, o período de destino é apresentado automaticamente; escolha o próximo curso e a próxima turma desse período. O portal mantém o destino fixo para o responsável.
+
+O campo é opcional durante a preparação, mas obrigatório para disponibilizar a rematrícula. A API rejeita autorreferências e destinos que não iniciem depois da origem. Não é possível remover ou trocar o próximo período enquanto houver próximas turmas incompatíveis: remova esses destinos, altere o período e configure as turmas novamente. As referências impedem a exclusão do período utilizado como próximo.
+
+A atualização executa o schema 9 e mantém os dados. Se todas as próximas turmas já configuradas de um período apontarem para um único período futuro, esse vínculo será preenchido automaticamente. Quando houver destinos divergentes, configure o vínculo manualmente; as rematrículas ficam indisponíveis até corrigir a configuração. Matrículas, contratos e parcelas existentes não são recalculados.
+
+As abas de edição de pessoa passam a ter larguras iguais, destaque somente no botão ativo, foco visível e alvos de toque maiores: duas colunas no celular e quatro no desktop. A navegação por clique/teclado e o botão de salvar a qualquer momento foram mantidos.

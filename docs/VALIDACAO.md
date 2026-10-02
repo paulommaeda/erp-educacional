@@ -25,3 +25,10 @@ JSDOM: edição por abas com salvamento antecipado e preservação dos campos; c
 ## 0.9.0
 
 35 verificações PHP/SQLite de planos/financeiro: período obrigatório, plano incompatível, alteração de período, destino próprio/anterior, oferta somente para turma definida, ausência de destino e adulteração de destino. Contratos, rematrícula sem parcelas, geração posterior e idempotência preservados. JSDOM payment-ui e management-ui passaram com destino somente leitura e seletores novos. Sintaxe PHP/JS conferida. Migração dbDelta/FKs ainda depende de homologação em WordPress/MySQL real.
+
+## 0.9.1
+
+- PHP-WASM com SQLite e stubs WordPress: 42 verificações de planos, períodos, progressão e financeiro aprovadas.
+- JSDOM: 7 cenários de gestão, 4 de pessoas e 4 de portal financeiro aprovados, incluindo período de destino automático.
+- CSS das abas com seletores específicos para prevalecer sobre os botões genéricos Journey.
+- Validação local não substitui a instalação em WordPress/MySQL. Não houve teste visual em navegador real nem execução de dbDelta em MySQL nesta revisão.

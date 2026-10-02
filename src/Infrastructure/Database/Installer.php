@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '8';
+    public const VERSION = '9';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -39,6 +39,14 @@ final class Installer
                 $plans=$this->db->table('planos_pagamento');$classes=$this->db->table('turmas');
                 foreach($this->db->rows("SELECT idplano,MIN(codperiodo) AS codperiodo FROM $classes WHERE idplano IS NOT NULL GROUP BY idplano HAVING COUNT(DISTINCT codperiodo)=1") as $row)
                     $this->db->query("UPDATE $plans SET codperiodo=%d,versao=versao+1 WHERE idplano=%d AND codperiodo IS NULL",[(int)$row['codperiodo'],(int)$row['idplano']]);
+            }
+            if(version_compare((string)get_option('ederp_schema_version','0'),'9','<')){
+                $periods=$this->db->table('periodos_letivos');$classes=$this->db->table('turmas');
+                $links=$this->db->rows("SELECT a.codperiodo,MIN(b.codperiodo) AS destino FROM $classes a JOIN $classes b ON b.idturma=a.idturma_proxima GROUP BY a.codperiodo HAVING COUNT(DISTINCT b.codperiodo)=1");
+                foreach($links as $link){
+                    $from=$this->db->get('periodos_letivos',(int)$link['codperiodo']);$to=$this->db->get('periodos_letivos',(int)$link['destino']);
+                    if(empty($from['codperiodo_proximo'])&&$to['data_inicio']>$from['data_inicio'])$this->db->update('periodos_letivos',(int)$link['codperiodo'],['codperiodo_proximo'=>(int)$link['destino']]);
+                }
             }
             if(version_compare((string)get_option('ederp_schema_version','0'),'6','<'))(new \EducacionalERP\Application\CivilStatus($this->db))->migrate();
             foreach ($this->db->schema() as $name => $meta) {
