@@ -1,4 +1,4 @@
-# ERP Educacional — 0.8.4
+# ERP Educacional — 0.9.0
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -115,3 +115,16 @@ A página abre na listagem paginada, com filtros combinados por nome e código e
 ## Ajustes 0.8.4
 
 Seletores acadêmicos (período, curso, turno, turma e plano) sem busca duplicada. Mais resultados permanece disponível para listas paginadas. Edição de pessoas usa abas clicáveis, navegação por teclado e Salvar em qualquer aba; cadastro novo mantém etapas. Validação abre a aba que contém o campo inválido. Sem migração de banco.
+
+## Planos por período e progressão — 0.9.0
+
+Após atualizar, abra o wp-admin como administrador e confira ERP → Configurações → Verificar/aplicar migrações (schema 8).
+
+1. Cadastre o próximo período e seu plano de pagamento, escolhendo o período no plano.
+2. Cadastre as turmas do próximo período com os respectivos cursos, turnos e planos. O seletor de plano é filtrado pelo período da turma; a API também rejeita incompatibilidades.
+3. Edite cada turma atual e defina Destino da rematrícula: próximo período, próximo curso e próxima turma. O curso efetivo é o curso da turma de destino.
+4. Mantenha a oferta de rematrícula com janela, termo e turma de destino incluída. O portal mostra exclusivamente o destino configurado, sem seletor. Sem destino configurado ou oferta compatível, a renovação não fica disponível.
+
+Planos antigos usados em apenas um período recebem esse período automaticamente. Planos sem uso ou utilizados em vários períodos ficam “Não definido — editar”. Crie planos separados para os períodos necessários e ajuste as turmas antes de matricular/rematricular. Contratos e parcelas existentes não são recalculados. O cadastro de turma permite deixar o destino vazio até o planejamento do próximo período.
+
+A rematrícula continua criando contrato pendente de parcelas, geradas posteriormente pelo Financeiro. Alterar o destino afeta novas rematrículas, não rematrículas já concluídas. O backend bloqueia destino adulterado, turma de período anterior e uso de plano de outro período.

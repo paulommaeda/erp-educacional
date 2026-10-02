@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '7';
+    public const VERSION = '8';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -34,6 +34,11 @@ final class Installer
                 SchemaIndexes::verify($meta,$this->db->rows("SHOW INDEX FROM $table"));
                 $columns = $this->db->rows("SHOW COLUMNS FROM $table");
                 if (count($columns) !== count($meta['columns'])) { throw new \RuntimeException('Estrutura divergente em ' . $name); }
+            }
+            if(version_compare((string)get_option('ederp_schema_version','0'),'8','<')){
+                $plans=$this->db->table('planos_pagamento');$classes=$this->db->table('turmas');
+                foreach($this->db->rows("SELECT idplano,MIN(codperiodo) AS codperiodo FROM $classes WHERE idplano IS NOT NULL GROUP BY idplano HAVING COUNT(DISTINCT codperiodo)=1") as $row)
+                    $this->db->query("UPDATE $plans SET codperiodo=%d,versao=versao+1 WHERE idplano=%d AND codperiodo IS NULL",[(int)$row['codperiodo'],(int)$row['idplano']]);
             }
             if(version_compare((string)get_option('ederp_schema_version','0'),'6','<'))(new \EducacionalERP\Application\CivilStatus($this->db))->migrate();
             foreach ($this->db->schema() as $name => $meta) {

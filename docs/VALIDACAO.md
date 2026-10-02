@@ -21,3 +21,7 @@ Teste JSDOM people-ui: lista inicial, filtros combinados, obrigatórios, navega�
 ## 0.8.4
 
 JSDOM: edição por abas com salvamento antecipado e preservação dos campos; cadastro novo continua por etapas. Gestão acadêmica/matrículas: seletores sem busca extra, mantendo vínculos dependentes, filtros da listagem e envio em lote. Sem teste visual em WordPress real.
+
+## 0.9.0
+
+35 verificações PHP/SQLite de planos/financeiro: período obrigatório, plano incompatível, alteração de período, destino próprio/anterior, oferta somente para turma definida, ausência de destino e adulteração de destino. Contratos, rematrícula sem parcelas, geração posterior e idempotência preservados. JSDOM payment-ui e management-ui passaram com destino somente leitura e seletores novos. Sintaxe PHP/JS conferida. Migração dbDelta/FKs ainda depende de homologação em WordPress/MySQL real.

@@ -73,6 +73,7 @@ final class AcademicService
         $class=$this->db->get('turmas',$classId,$lock);
         if(empty($class['idplano']))throw new RuleViolation('Esta turma não possui plano de pagamento. Peça ao administrador para vinculá-lo.');
         $plan=$this->db->get('planos_pagamento',(int)$class['idplano'],$lock);
+        if(empty($plan['codperiodo'])||(int)$plan['codperiodo']!==(int)$class['codperiodo'])throw new RuleViolation('Plano sem período ou incompatível com o período da turma. Ajuste a estrutura acadêmica.');
         if(!(int)$plan['ativo'])throw new RuleViolation('Plano de pagamento inativo.');
         return $plan;
     }

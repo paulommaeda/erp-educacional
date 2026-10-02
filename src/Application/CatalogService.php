@@ -31,13 +31,13 @@ final class CatalogService
                 case 'periodos_letivos':
                     $data=['codigo'=>Input::text($d['codigo']??null,30),'descricao'=>Input::text($d['descricao']??null),'data_inicio'=>Input::date($d['data_inicio']??null),'data_fim'=>Input::date($d['data_fim']??null),'status'=>'aberto'];
                     if ($data['data_fim']<$data['data_inicio']) { throw new RuleViolation('Período com datas invertidas.'); } break;
-                case 'planos_pagamento': $data=['codigo'=>Input::text($d['codigo']??null,30),'nome'=>Input::text($d['nome']??null,100),'valor_anuidade'=>\EducacionalERP\Domain\Money::format(\EducacionalERP\Domain\Money::positive($d['valor_anuidade']??null))];break;
+                case 'planos_pagamento': $this->db->get('periodos_letivos',Input::id($d['codperiodo']??null));$data=['codperiodo'=>Input::id($d['codperiodo']),'codigo'=>Input::text($d['codigo']??null,30),'nome'=>Input::text($d['nome']??null,100),'valor_anuidade'=>\EducacionalERP\Domain\Money::format(\EducacionalERP\Domain\Money::positive($d['valor_anuidade']??null))];break;
                 case 'cursos': case 'turnos': $data=['codigo'=>Input::text($d['codigo']??null,30),'nome'=>Input::text($d['nome']??null,100)]; break;
                 case 'turmas':
                     $data=['codperiodo'=>Input::id($d['codperiodo']??null),'idcurso'=>Input::id($d['idcurso']??null),'idturno'=>Input::id($d['idturno']??null),
                         'codigo'=>Input::text($d['codigo']??null,30),'nome'=>Input::text($d['nome']??null,100),'capacidade'=>Input::id($d['capacidade']??null)];
                     $data['idplano']=empty($d['idplano'])?null:Input::id($d['idplano']);
-                    if($data['idplano'])$this->db->get('planos_pagamento',$data['idplano']);
+                    $this->validateClassPlan($data);$data['idturma_proxima']=$this->nextClass($d,(int)$data['codperiodo']);
                     if ($data['capacidade']>10000) { throw new RuleViolation('Capacidade acima do limite.'); } break;
             }
             $id=$this->db->insert($table,$data);
@@ -165,6 +165,13 @@ final class CatalogService
                 if(!in_array($d['ativo'],[0,1,'0','1',true,false],true)) { throw new RuleViolation('Situação inválida.'); }
                 $changes['ativo']=(int)$d['ativo'];
             }
+            if($table==='planos_pagamento'){
+                $period=Input::id($d['codperiodo']??null);$this->db->get('periodos_letivos',$period);$t=$this->db->table('turmas');
+                if($this->db->row("SELECT idturma FROM $t WHERE idplano=%d AND codperiodo<>%d LIMIT 1 FOR UPDATE",[$id,$period]))throw new RuleViolation('Plano vinculado a turma de outro período. Cadastre um plano específico para cada período e ajuste as turmas.');
+                $contracts=$this->db->table('contratos');$enrollments=$this->db->table('matriculas');
+                if($this->db->row("SELECT c.idcontrato FROM $contracts c JOIN $enrollments m ON m.idmatricula=c.idmatricula WHERE c.idplano=%d AND m.codperiodo<>%d LIMIT 1 FOR UPDATE",[$id,$period]))throw new RuleViolation('O período do plano não pode divergir dos contratos existentes. Cadastre um novo plano.');
+                $changes['codperiodo']=$period;
+            }
             if($table==='planos_pagamento')$changes['valor_anuidade']=\EducacionalERP\Domain\Money::format(\EducacionalERP\Domain\Money::positive($d['valor_anuidade']));
             if($table==='cursos') { $changes['descricao']=isset($d['descricao'])?strip_tags((string)$d['descricao']):null; }
             if($table==='turnos') {
@@ -176,7 +183,7 @@ final class CatalogService
             }
             if($table==='turmas') {
                 $changes['idplano']=empty($d['idplano'])?null:Input::id($d['idplano']);
-                if($changes['idplano'])$this->db->get('planos_pagamento',$changes['idplano']);
+                
                 $changes['capacidade']=Input::id($d['capacidade']);
                 if($changes['capacidade']>10000) { throw new RuleViolation('Capacidade acima do limite.'); }
                 if(!in_array($d['status'],['ativa','inativa'],true)) { throw new RuleViolation('Situação da turma inválida.'); }
@@ -188,6 +195,10 @@ final class CatalogService
                     $changes[$field]=Input::id($d[$field]);
                     if(($used||$history) && $changes[$field]!== (int)$before[$field]) { throw new RuleViolation('Turma com histórico: mantenha período, curso e turno. Cadastre a nova turma e transfira os alunos.'); }
                 }
+                $this->validateClassPlan($changes);$changes['idturma_proxima']=$this->nextClass($d,$changes['codperiodo'],$id);
+                if($changes['codperiodo']!==(int)$before['codperiodo']||$changes['idcurso']!==(int)$before['idcurso']){
+                    $t=$this->db->table('turmas');if($this->db->row("SELECT idturma FROM $t WHERE idturma_proxima=%d LIMIT 1 FOR UPDATE",[$id]))throw new RuleViolation('Esta turma é destino de rematrícula. Remova o vínculo de origem antes de alterar curso ou período.');
+                }
                 $ot=$this->db->table('oferta_turmas');$o=$this->db->table('ofertas_rematricula');
                 $offers=$this->db->rows("SELECT o.codperiodo_destino,o.idcurso_destino FROM $ot ot JOIN $o o ON o.idoferta=ot.idoferta WHERE ot.idturma=%d",[$id]);
                 foreach($offers as $offer) { if((int)$offer['codperiodo_destino']!==$changes['codperiodo'] || (int)$offer['idcurso_destino']!==$changes['idcurso']) { throw new RuleViolation('A turma está associada a uma oferta incompatível com essa alteração.'); } }
@@ -197,6 +208,20 @@ final class CatalogService
             $this->db->audit($table,$id,'editar',$before,$changes,$key);
             return ['id'=>(string)$id,'versao'=>(string)((int)$before['versao']+1)];
         }));
+    }
+    private function validateClassPlan(array $d):void
+    {
+        if(empty($d['idplano']))return;
+        $plan=$this->db->get('planos_pagamento',(int)$d['idplano'],true);
+        if(empty($plan['codperiodo'])||(int)$plan['codperiodo']!==(int)$d['codperiodo'])throw new RuleViolation('O plano de pagamento deve pertencer ao mesmo período letivo da turma.');
+    }
+    private function nextClass(array $d,int $period,int $id=0):?int
+    {
+        if(empty($d['idturma_proxima']))return null;
+        $next=Input::id($d['idturma_proxima']);if($next===$id)throw new RuleViolation('A próxima turma deve ser diferente da atual.');
+        $row=$this->db->get('turmas',$next,true);$from=$this->db->get('periodos_letivos',$period);$to=$this->db->get('periodos_letivos',(int)$row['codperiodo']);
+        if($row['status']!=='ativa'||$to['data_inicio']<=$from['data_inicio'])throw new RuleViolation('Selecione uma próxima turma ativa de um período posterior.');
+        return $next;
     }
     private function validCpf(string $cpf): bool
     {

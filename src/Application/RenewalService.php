@@ -42,8 +42,16 @@ final class RenewalService
         $o=$this->db->table('ofertas_rematricula'); $m=$this->db->table('matriculas'); $p=$this->db->table('periodos_letivos');
         $offers=$this->db->rows("SELECT o.*,m.idmatricula AS idmatricula_origem FROM $o o JOIN $m m ON m.idcurso=o.idcurso_origem JOIN $p po ON po.codperiodo=m.codperiodo JOIN $p pd ON pd.codperiodo=o.codperiodo_destino WHERE m.idaluno=%d AND m.status='ativa' AND o.ativo=1 AND UTC_TIMESTAMP() BETWEEN o.abertura_em AND o.encerramento_em AND pd.data_inicio>po.data_inicio AND NOT EXISTS (SELECT 1 FROM $m d WHERE d.idaluno=m.idaluno AND d.codperiodo=o.codperiodo_destino AND d.idcurso=o.idcurso_destino) ".($period?' AND m.codperiodo=%d':'')." ORDER BY o.idoferta",$period?[$student,$period]:[$student]);
         $ot=$this->db->table('oferta_turmas'); $t=$this->db->table('turmas');
-        foreach($offers as &$offer) { $offer['turmas']=$this->db->rows("SELECT t.idturma,t.nome FROM $ot ot JOIN $t t ON t.idturma=ot.idturma WHERE ot.idoferta=%d AND t.status='ativa'",[(int)$offer['idoferta']]); foreach($offer['turmas'] as &$class){try{$class['plano']=$this->academic->planForClass((int)$class['idturma']);}catch(RuleViolation $e){$class['plano']=null;}}unset($class); }
-        return $offers;
+        $eligible=[];
+        foreach($offers as $offer){
+            $origin=$this->db->get('matriculas',(int)$offer['idmatricula_origem']);$source=$this->db->get('turmas',(int)$origin['idturma_atual']);$next=(int)($source['idturma_proxima']??0);
+            if(!$next)continue;
+            $classes=$this->db->rows("SELECT t.idturma,t.nome,t.idcurso,t.codperiodo FROM $ot ot JOIN $t t ON t.idturma=ot.idturma WHERE ot.idoferta=%d AND t.idturma=%d AND t.status='ativa'",[(int)$offer['idoferta'],$next]);
+            if(!$classes)continue;$class=$classes[0];if((int)$class['codperiodo']!==(int)$offer['codperiodo_destino']||(int)$class['idcurso']!==(int)$offer['idcurso_destino'])continue;
+            try{$class['plano']=$this->academic->planForClass($next);}catch(RuleViolation $e){continue;}
+            $class['curso']=$this->db->get('cursos',(int)$class['idcurso'])['nome'];$offer['turmas']=[$class];$offer['destino_fixo']=true;$eligible[]=$offer;
+        }
+        return $eligible;
     }
     public function renew(array $d,string $key): array
     {
@@ -59,7 +67,9 @@ final class RenewalService
             $from=$this->db->get('periodos_letivos',(int)$origin['codperiodo']); $to=$this->db->get('periodos_letivos',(int)$offer['codperiodo_destino']);
             if($to['data_inicio']<=$from['data_inicio']) { throw new RuleViolation('A renovação exige um período posterior.'); }
             if(($d['aceite']??false)!==true || ($d['versao_termo']??'')!==$offer['versao_termo']) { throw new RuleViolation('Aceite a versão vigente do termo.'); }
-            $class=Input::id($d['idturma']??null); $ot=$this->db->table('oferta_turmas');
+            $source=$this->db->get('turmas',(int)$origin['idturma_atual'],true);
+            $class=(int)($source['idturma_proxima']??0);if(!$class)throw new RuleViolation('A escola ainda não definiu a próxima turma. Procure a secretaria.');
+            if(isset($d['idturma'])&&(int)$d['idturma']!==$class)throw new RuleViolation('O destino da rematrícula mudou. Recarregue a página para consultar a turma definida pela escola.'); $ot=$this->db->table('oferta_turmas');
             if(!$this->db->row("SELECT idturma FROM $ot WHERE idoferta=%d AND idturma=%d",[(int)$offer['idoferta'],$class])) { throw new RuleViolation('Turma não disponível nesta oferta.'); }
             $classRow=$this->db->get('turmas',$class);
             if($classRow['codperiodo']!==$offer['codperiodo_destino'] || $classRow['idcurso']!==$offer['idcurso_destino']) { throw new RuleViolation('Turma incompatível.'); }

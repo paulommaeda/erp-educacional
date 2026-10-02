@@ -177,6 +177,7 @@ final class Controller
         $name=$type==='periodos_letivos'?'descricao':'nome';
         $where[]=in_array($type,['pessoas','cursos','turnos','planos_pagamento'],true)?'ativo=1':($type==='turmas'?"status='ativa'":"status<>'encerrado'");
         if($q!=='') { $where[]="$name LIKE %s"; $args[]='%'.$this->db->wp->esc_like($q).'%'; }
+        if($type==='planos_pagamento'){$where[]='codperiodo=%d';$args[]=Input::id($r->get_param('codperiodo')?:SchoolSettings::current());}
         if($type==='turmas') {
             $where[]='codperiodo=%d'; $args[]=Input::id($r->get_param('codperiodo')?:SchoolSettings::current());
             if($r->get_param('idturno')) { $where[]='idturno=%d'; $args[]=Input::id($r->get_param('idturno')); }
@@ -216,6 +217,8 @@ final class Controller
         if($name==='turmas' && ($period=SchoolSettings::forViewer($r->get_param('codperiodo')))){$where.=($where?' AND ':' WHERE ').'codperiodo=%d';$args[]=$period;}
         $count=$this->db->row("SELECT COUNT(*) AS n FROM $t$where",$args);
         $rows=$this->db->rows("SELECT * FROM $t$where ORDER BY $pk DESC LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20]));
+        if($name==='planos_pagamento')foreach($rows as &$row){$row['periodo_nome']=empty($row['codperiodo'])?'Não definido — editar':$this->db->get('periodos_letivos',(int)$row['codperiodo'])['descricao'];}unset($row);
+        if($name==='turmas')foreach($rows as &$row){if(!empty($row['idturma_proxima'])){$row['proxima_turma']=$this->db->get('turmas',(int)$row['idturma_proxima']);}}unset($row);
         if($name==='pessoas') {
             $accounts=new Accounts($this->db);$a=$this->db->table('alunos');
             foreach($rows as &$row) {
