@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.2
+# ERP Educacional — 0.9.3
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -146,3 +146,15 @@ A estrutura acadêmica mantém listagens e filtros na página. Os botões Cadast
 Os diálogos usam o elemento nativo dialog para restringir o foco ao formulário aberto, oferecem Fechar/Escape e devolvem o foco ao botão de origem quando ele continua presente. Durante um envio ou upload de perfil, o fechamento fica bloqueado. Uma falha do servidor mantém o diálogo e os valores para correção. O salvamento fecha o diálogo e executa a atualização da tela correspondente. Fechar sem salvar não envia alterações ao servidor; formulários reutilizáveis preservam o rascunho enquanto a página permanece aberta.
 
 O componente compartilhado está em assets/modals.js e é carregado como dependência das interfaces do ERP. Não há migração de banco nesta versão (schema 9 mantido). Atualize pelo verificador do WordPress ou pelo ZIP.
+
+## Importação e cópia de estrutura — 0.9.3
+
+Disponível somente ao administrador WordPress.
+
+**Importar turmas:** em Importação, selecione Turmas e baixe o modelo CSV UTF-8. As colunas são `codigo_periodo;codigo;nome;codigo_curso;codigo_turno;capacidade;codigo_plano`. Use os códigos dos cadastros, não seus IDs internos. Período, curso, turno e plano devem existir. O plano é opcional, mas a turma precisa de um plano para gerar contrato na matrícula. A importação valida o período do plano, mantém registros idênticos e relata conflitos sem sobrescrever turmas existentes. Cada linha é uma transação independente. Há mapeamento, prévia e relatório de resultados.
+
+**Copiar para próximo período:** em Estrutura acadêmica, abra o botão correspondente. Escolha a origem e informe um novo período (código, descrição e datas) ou selecione um destino existente. Todos os planos e turmas ativos serão copiados, preservando valores, capacidades, cursos e turnos. Turmas que compartilham um plano continuam compartilhando um único novo plano no destino. Os códigos dos planos recebem o sufixo `-P<ID do destino>` para respeitar a unicidade global; códigos e nomes das turmas são preservados.
+
+O novo período fica planejado e é vinculado como próximo período da origem. O período vigente das configurações não muda. A operação é atômica e idempotente: uma falha reverte todas as inserções, inclusive um novo período; reenvios da mesma solicitação não duplicam cadastros. Novas solicitações que encontrem códigos em conflito são bloqueadas. Limite: 1.000 planos e turmas por cópia.
+
+Matrículas, contratos, parcelas, ofertas e vínculos de pessoas não são copiados. A próxima turma não é preenchida automaticamente: copiar a turma do 1º ano para outro período não significa que o aluno deva repetir o 1º ano. Configure a progressão depois da cópia, antes de publicar ofertas de rematrícula. Não há migração de banco nesta versão.

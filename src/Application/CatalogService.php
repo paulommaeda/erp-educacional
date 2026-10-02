@@ -216,7 +216,7 @@ final class CatalogService
         $plan=$this->db->get('planos_pagamento',(int)$d['idplano'],true);
         if(empty($plan['codperiodo'])||(int)$plan['codperiodo']!==(int)$d['codperiodo'])throw new RuleViolation('O plano de pagamento deve pertencer ao mesmo período letivo da turma.');
     }
-    private function nextPeriod(array $d,string $start,int $id=0):?int
+    public function nextPeriod(array $d,string $start,int $id=0):?int
     {
         $next=empty($d['codperiodo_proximo'])?null:Input::id($d['codperiodo_proximo']);
         if($next){

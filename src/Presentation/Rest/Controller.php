@@ -54,7 +54,7 @@ final class Controller
             'turmas'=>$this->db->rows('SELECT idturma,codperiodo,idcurso,idturno,nome FROM '.$this->db->table('turmas').' ORDER BY nome'),
             'cursos'=>$this->db->rows('SELECT idcurso,nome FROM '.$this->db->table('cursos').' ORDER BY nome'),
             'turnos'=>$this->db->rows('SELECT idturno,nome FROM '.$this->db->table('turnos').' ORDER BY nome')]);
-        $this->route('/importacao/(?P<tipo>pessoas|alunos)','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\ImportService($this->db,$this->catalog))->row($r['tipo'],$this->payload($r),$this->key($r)));
+        $this->route('/importacao/(?P<tipo>pessoas|alunos|turmas)','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\ImportService($this->db,$this->catalog))->row($r['tipo'],$this->payload($r),$this->key($r)));
         $this->route('/me/perfil','GET',fn()=>true,fn()=>$this->ownProfile());
         $this->route('/me/perfil','POST',fn()=>true,fn($r)=>$this->catalog->updateOwn($this->payload($r),$this->key($r)));
         $this->route('/me/foto','POST',fn()=>$this->access->person()!==null,fn($r)=>$this->uploadPhoto($r));
@@ -75,6 +75,7 @@ final class Controller
             $this->route('/cadastros/'.$table,'GET',$permission,fn($r)=>$this->listCatalog($table,$r));
             $this->route('/cadastros/'.$table.'/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->edit($table,(int)$r['id'],$this->payload($r),$this->key($r)));
         }
+        $this->route('/periodos/copiar','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\PeriodCopyService($this->db,$this->catalog,new Operations($this->db)))->copy($this->payload($r),$this->key($r)));
         $this->route('/secretaria/alunos','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentDirectory($r));
         $this->route('/secretaria/alunos','POST',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->workflow->createStudent($this->payload($r),$this->key($r)));
         $this->route('/secretaria/alunos/'.$id,'GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentSheet((int)$r['id']));

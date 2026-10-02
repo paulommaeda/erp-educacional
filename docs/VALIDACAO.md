@@ -40,3 +40,10 @@ JSDOM: edição por abas com salvamento antecipado e preservação dos campos; c
 - Perfil e permissões: formulários em diálogos, versão do cadastro mantida, resumo atualizado e menu mobile independente dos diálogos de cadastro.
 - Sintaxe dos quatro scripts de interface e dos PHP alterados validada.
 - Sem mudança no schema ou nas regras de negócio. Não houve teste visual em navegador real nem instalação em WordPress nesta revisão.
+
+## 0.9.3
+
+- PHP-WASM/SQLite com stubs WordPress: 22 verificações de importação de turmas, cópia, preservação dos vínculos, idempotência, reversão de transação e autorização.
+- As 15 verificações anteriores de importação de pessoas/alunos passaram.
+- JSDOM: modal de cópia em período novo/existente, envio do CSV de turmas após prévia e regressão dos modais acadêmicos passaram.
+- Sintaxe PHP/JavaScript validada. Não executado em WordPress/MySQL real nem validado visualmente no site.
