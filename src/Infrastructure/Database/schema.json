@@ -1,0 +1,1285 @@
+{
+  "pessoas": {
+    "pk": [
+      "codpessoa"
+    ],
+    "columns": {
+      "codpessoa": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "nome": "varchar(191) NOT NULL",
+      "nome_social": "varchar(191) DEFAULT NULL",
+      "cpf": "varchar(11) DEFAULT NULL",
+      "data_nascimento": "date DEFAULT NULL",
+      "email": "varchar(191) DEFAULT NULL",
+      "telefone": "varchar(30) DEFAULT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codpessoa_origem": "varchar(80) DEFAULT NULL",
+      "rg": "varchar(40) DEFAULT NULL",
+      "rua": "varchar(191) DEFAULT NULL",
+      "numero": "varchar(30) DEFAULT NULL",
+      "complemento": "varchar(191) DEFAULT NULL",
+      "bairro": "varchar(100) DEFAULT NULL",
+      "cep": "varchar(20) DEFAULT NULL",
+      "cidade": "varchar(100) DEFAULT NULL",
+      "estado": "varchar(100) DEFAULT NULL",
+      "pais": "varchar(2) NOT NULL DEFAULT 'BR'",
+      "estado_civil": "varchar(20) DEFAULT NULL",
+      "profissao": "varchar(100) DEFAULT NULL",
+      "religiao": "varchar(100) DEFAULT NULL",
+      "igreja": "varchar(191) DEFAULT NULL",
+      "sexo": "varchar(10) DEFAULT NULL",
+      "foto_attachment_id": "bigint(20) unsigned DEFAULT NULL",
+      "idestado_civil": "bigint(20) unsigned DEFAULT NULL"
+    },
+    "unique": [
+      [
+        "cpf"
+      ],
+      [
+        "codpessoa_origem"
+      ]
+    ],
+    "indexes": [
+      [
+        "nome"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idestado_civil"
+        ],
+        "target": "estados_civis",
+        "references": [
+          "idestado_civil"
+        ]
+      }
+    ]
+  },
+  "pessoa_enderecos": {
+    "pk": [
+      "idendereco"
+    ],
+    "columns": {
+      "idendereco": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "tipo": "varchar(30) NOT NULL",
+      "cep": "varchar(10) NOT NULL",
+      "logradouro": "varchar(191) NOT NULL",
+      "numero": "varchar(30) NOT NULL",
+      "complemento": "varchar(191) DEFAULT NULL",
+      "bairro": "varchar(100) NOT NULL",
+      "cidade": "varchar(100) NOT NULL",
+      "uf": "varchar(2) NOT NULL",
+      "pais": "varchar(2) NOT NULL DEFAULT 'BR'",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "pessoa_usuarios": {
+    "pk": [
+      "codpessoa"
+    ],
+    "columns": {
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "wp_user_id"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "alunos": {
+    "pk": [
+      "idaluno"
+    ],
+    "columns": {
+      "idaluno": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "ra": "varchar(40) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "tipo_aluno": "varchar(10) NOT NULL DEFAULT 'Regular'"
+    },
+    "unique": [
+      [
+        "codpessoa"
+      ],
+      [
+        "ra"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "aluno_responsaveis": {
+    "pk": [
+      "idvinculo"
+    ],
+    "columns": {
+      "idvinculo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codpessoa_responsavel": "bigint(20) unsigned NOT NULL",
+      "parentesco": "varchar(30) NOT NULL",
+      "responsavel_academico": "tinyint(1) NOT NULL DEFAULT 0",
+      "responsavel_financeiro": "tinyint(1) NOT NULL DEFAULT 0",
+      "pode_rematricular": "tinyint(1) NOT NULL DEFAULT 0",
+      "inicio_vigencia": "datetime NOT NULL",
+      "fim_vigencia": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [
+      [
+        "idaluno",
+        "fim_vigencia"
+      ],
+      [
+        "codpessoa_responsavel",
+        "fim_vigencia"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_responsavel"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "periodos_letivos": {
+    "pk": [
+      "codperiodo"
+    ],
+    "columns": {
+      "codperiodo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codigo": "varchar(30) NOT NULL",
+      "descricao": "varchar(191) NOT NULL",
+      "data_inicio": "date NOT NULL",
+      "data_fim": "date NOT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'planejado'",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codigo"
+      ]
+    ],
+    "indexes": [],
+    "fks": []
+  },
+  "cursos": {
+    "pk": [
+      "idcurso"
+    ],
+    "columns": {
+      "idcurso": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(191) NOT NULL",
+      "descricao": "text DEFAULT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codigo"
+      ]
+    ],
+    "indexes": [],
+    "fks": []
+  },
+  "turnos": {
+    "pk": [
+      "idturno"
+    ],
+    "columns": {
+      "idturno": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(100) NOT NULL",
+      "hora_inicio": "time DEFAULT NULL",
+      "hora_fim": "time DEFAULT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codigo"
+      ]
+    ],
+    "indexes": [],
+    "fks": []
+  },
+  "turmas": {
+    "pk": [
+      "idturma"
+    ],
+    "columns": {
+      "idturma": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codperiodo": "bigint(20) unsigned NOT NULL",
+      "idcurso": "bigint(20) unsigned NOT NULL",
+      "idturno": "bigint(20) unsigned NOT NULL",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(100) NOT NULL",
+      "capacidade": "int unsigned NOT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'ativa'",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idplano": "bigint(20) unsigned DEFAULT NULL"
+    },
+    "unique": [
+      [
+        "codperiodo",
+        "codigo"
+      ],
+      [
+        "idturma",
+        "codperiodo",
+        "idcurso"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "idcurso"
+        ],
+        "target": "cursos",
+        "references": [
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "idturno"
+        ],
+        "target": "turnos",
+        "references": [
+          "idturno"
+        ]
+      },
+      {
+        "columns": [
+          "idplano"
+        ],
+        "target": "planos_pagamento",
+        "references": [
+          "idplano"
+        ]
+      }
+    ]
+  },
+  "matriculas": {
+    "pk": [
+      "idmatricula"
+    ],
+    "columns": {
+      "idmatricula": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NOT NULL",
+      "idcurso": "bigint(20) unsigned NOT NULL",
+      "idturma_atual": "bigint(20) unsigned NOT NULL",
+      "idmatricula_origem": "bigint(20) unsigned DEFAULT NULL",
+      "data_matricula": "date NOT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'ativa'",
+      "origem": "varchar(30) NOT NULL",
+      "encerrado_em": "datetime DEFAULT NULL",
+      "motivo_encerramento": "text DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idaluno",
+        "codperiodo",
+        "idcurso"
+      ]
+    ],
+    "indexes": [
+      [
+        "codperiodo",
+        "idturma_atual",
+        "status"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "idcurso"
+        ],
+        "target": "cursos",
+        "references": [
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "idturma_atual",
+          "codperiodo",
+          "idcurso"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma",
+          "codperiodo",
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "idmatricula_origem"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      }
+    ]
+  },
+  "matricula_movimentacoes": {
+    "pk": [
+      "idmovimentacao"
+    ],
+    "columns": {
+      "idmovimentacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idmatricula": "bigint(20) unsigned NOT NULL",
+      "tipo": "varchar(30) NOT NULL",
+      "idturma_origem": "bigint(20) unsigned DEFAULT NULL",
+      "idturma_destino": "bigint(20) unsigned DEFAULT NULL",
+      "status_anterior": "varchar(20) DEFAULT NULL",
+      "status_novo": "varchar(20) NOT NULL",
+      "efetivado_em": "datetime NOT NULL",
+      "registrado_em": "datetime NOT NULL",
+      "motivo": "text NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [
+      [
+        "idmatricula",
+        "efetivado_em"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "idturma_origem"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "idturma_destino"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma"
+        ]
+      }
+    ]
+  },
+  "ofertas_rematricula": {
+    "pk": [
+      "idoferta"
+    ],
+    "columns": {
+      "idoferta": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codperiodo_destino": "bigint(20) unsigned NOT NULL",
+      "idcurso_origem": "bigint(20) unsigned NOT NULL",
+      "idcurso_destino": "bigint(20) unsigned NOT NULL",
+      "abertura_em": "datetime NOT NULL",
+      "encerramento_em": "datetime NOT NULL",
+      "versao_termo": "varchar(40) NOT NULL",
+      "texto_termo": "longtext NOT NULL",
+      "valor_total": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "numero_parcelas": "int unsigned NOT NULL",
+      "primeiro_vencimento": "date NOT NULL",
+      "dia_vencimento": "tinyint unsigned NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codperiodo_destino"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "idcurso_origem"
+        ],
+        "target": "cursos",
+        "references": [
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "idcurso_destino"
+        ],
+        "target": "cursos",
+        "references": [
+          "idcurso"
+        ]
+      }
+    ]
+  },
+  "oferta_turmas": {
+    "pk": [
+      "idoferta",
+      "idturma"
+    ],
+    "columns": {
+      "idoferta": "bigint(20) unsigned NOT NULL",
+      "idturma": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "idoferta"
+        ],
+        "target": "ofertas_rematricula",
+        "references": [
+          "idoferta"
+        ]
+      },
+      {
+        "columns": [
+          "idturma"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma"
+        ]
+      }
+    ]
+  },
+  "rematriculas": {
+    "pk": [
+      "idrematricula"
+    ],
+    "columns": {
+      "idrematricula": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idoferta": "bigint(20) unsigned NOT NULL",
+      "idmatricula_origem": "bigint(20) unsigned NOT NULL",
+      "idmatricula_destino": "bigint(20) unsigned DEFAULT NULL",
+      "codpessoa_solicitante": "bigint(20) unsigned NOT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "status": "varchar(20) NOT NULL",
+      "termo_versao": "varchar(40) NOT NULL",
+      "termo_hash": "varchar(64) NOT NULL",
+      "aceito_em": "datetime NOT NULL",
+      "concluido_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ],
+      [
+        "idoferta",
+        "idmatricula_origem"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "idoferta"
+        ],
+        "target": "ofertas_rematricula",
+        "references": [
+          "idoferta"
+        ]
+      },
+      {
+        "columns": [
+          "idmatricula_origem"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "idmatricula_destino"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_solicitante"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "contratos": {
+    "pk": [
+      "idcontrato"
+    ],
+    "columns": {
+      "idcontrato": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "numero": "varchar(50) NOT NULL",
+      "idmatricula": "bigint(20) unsigned NOT NULL",
+      "codpessoa_rf_original": "bigint(20) unsigned NOT NULL",
+      "codpessoa_rf_atual": "bigint(20) unsigned NOT NULL",
+      "data_contrato": "date NOT NULL",
+      "valor_original_total": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_incondicional_total": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "valor_liquido_total": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "quantidade_parcelas": "int unsigned NOT NULL",
+      "moeda": "varchar(3) NOT NULL DEFAULT 'BRL'",
+      "status": "varchar(20) NOT NULL DEFAULT 'ativo'",
+      "versao_termo": "varchar(40) NOT NULL",
+      "termo_snapshot": "longtext NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idplano": "bigint(20) unsigned DEFAULT NULL",
+      "plano_nome_snapshot": "varchar(100) DEFAULT NULL",
+      "plano_versao_snapshot": "bigint(20) unsigned DEFAULT NULL",
+      "primeiro_vencimento": "date DEFAULT NULL",
+      "parcelas_geradas": "tinyint(1) NOT NULL DEFAULT 1",
+      "parcelas_geradas_em": "datetime DEFAULT NULL"
+    },
+    "unique": [
+      [
+        "numero"
+      ]
+    ],
+    "indexes": [
+      [
+        "parcelas_geradas",
+        "idmatricula"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_rf_original"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_rf_atual"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "idplano"
+        ],
+        "target": "planos_pagamento",
+        "references": [
+          "idplano"
+        ]
+      }
+    ]
+  },
+  "parcelas": {
+    "pk": [
+      "idparcela"
+    ],
+    "columns": {
+      "idparcela": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "numero": "int unsigned NOT NULL",
+      "competencia": "date NOT NULL",
+      "vencimento_original": "date NOT NULL",
+      "valor_original": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_incondicional": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "valor_liquido": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_condicional_previsto": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "limite_desconto_condicional": "date DEFAULT NULL",
+      "regra_desconto_condicional": "longtext NOT NULL",
+      "taxa_juros_mensal": "decimal(9,6) NOT NULL DEFAULT 0",
+      "percentual_multa": "decimal(9,6) NOT NULL DEFAULT 0",
+      "regra_encargos": "longtext NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idcontrato",
+        "numero"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "idcontrato"
+        ]
+      }
+    ]
+  },
+  "lancamentos": {
+    "pk": [
+      "idlancamento"
+    ],
+    "columns": {
+      "idlancamento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idparcela": "bigint(20) unsigned NOT NULL",
+      "codpessoa_rf_original": "bigint(20) unsigned NOT NULL",
+      "codpessoa_rf_atual": "bigint(20) unsigned NOT NULL",
+      "descricao": "varchar(191) NOT NULL",
+      "emissao": "date NOT NULL",
+      "vencimento": "date NOT NULL",
+      "valor_original": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_incondicional": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "valor_liquido": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_condicional_aplicado": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "juros_aplicados": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "multa_aplicada": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "valor_baixa": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "saldo_aberto": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "status": "varchar(20) NOT NULL DEFAULT 'aberto'",
+      "cancelado_em": "datetime DEFAULT NULL",
+      "motivo_cancelamento": "text DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idparcela"
+      ]
+    ],
+    "indexes": [
+      [
+        "codpessoa_rf_atual",
+        "status",
+        "vencimento"
+      ],
+      [
+        "status",
+        "vencimento"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idparcela"
+        ],
+        "target": "parcelas",
+        "references": [
+          "idparcela"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_rf_original"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_rf_atual"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "baixas": {
+    "pk": [
+      "idbaixa"
+    ],
+    "columns": {
+      "idbaixa": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idlancamento": "bigint(20) unsigned NOT NULL",
+      "codpessoa_devedor": "bigint(20) unsigned NOT NULL",
+      "codpessoa_pagador": "bigint(20) unsigned DEFAULT NULL",
+      "data_pagamento": "date NOT NULL",
+      "registrado_em": "datetime NOT NULL",
+      "valor_pago": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "principal_liquidado": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "juros_pagos": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "multa_paga": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_condicional_concedido": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "forma_pagamento": "varchar(30) NOT NULL",
+      "referencia_externa": "varchar(100) DEFAULT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ]
+    ],
+    "indexes": [
+      [
+        "idlancamento",
+        "data_pagamento"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "idlancamento"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_devedor"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_pagador"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "baixa_estornos": {
+    "pk": [
+      "idestorno"
+    ],
+    "columns": {
+      "idestorno": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idbaixa": "bigint(20) unsigned NOT NULL",
+      "valor": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "motivo": "text NOT NULL",
+      "efetivado_em": "datetime NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "idbaixa"
+        ],
+        "target": "baixas",
+        "references": [
+          "idbaixa"
+        ]
+      }
+    ]
+  },
+  "lancamento_ajustes": {
+    "pk": [
+      "idajuste"
+    ],
+    "columns": {
+      "idajuste": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idlancamento": "bigint(20) unsigned NOT NULL",
+      "componente": "varchar(40) NOT NULL",
+      "valor_delta": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "motivo": "text NOT NULL",
+      "efetivado_em": "datetime NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "idlancamento"
+        ]
+      }
+    ]
+  },
+  "trocas_responsavel": {
+    "pk": [
+      "idtroca"
+    ],
+    "columns": {
+      "idtroca": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codpessoa_anterior": "bigint(20) unsigned NOT NULL",
+      "codpessoa_nova": "bigint(20) unsigned NOT NULL",
+      "efetivado_em": "datetime NOT NULL",
+      "motivo": "text NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_anterior"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_nova"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "troca_contratos": {
+    "pk": [
+      "idtroca",
+      "idcontrato"
+    ],
+    "columns": {
+      "idtroca": "bigint(20) unsigned NOT NULL",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "codpessoa_anterior": "bigint(20) unsigned NOT NULL",
+      "codpessoa_nova": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "idtroca"
+        ],
+        "target": "trocas_responsavel",
+        "references": [
+          "idtroca"
+        ]
+      },
+      {
+        "columns": [
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "idcontrato"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_anterior"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_nova"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "troca_lancamentos": {
+    "pk": [
+      "idtroca",
+      "idlancamento"
+    ],
+    "columns": {
+      "idtroca": "bigint(20) unsigned NOT NULL",
+      "idlancamento": "bigint(20) unsigned NOT NULL",
+      "codpessoa_anterior": "bigint(20) unsigned NOT NULL",
+      "codpessoa_nova": "bigint(20) unsigned NOT NULL",
+      "saldo_transferido": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "idtroca"
+        ],
+        "target": "trocas_responsavel",
+        "references": [
+          "idtroca"
+        ]
+      },
+      {
+        "columns": [
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "idlancamento"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_anterior"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_nova"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "auditoria": {
+    "pk": [
+      "idauditoria"
+    ],
+    "columns": {
+      "idauditoria": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "entidade": "varchar(50) NOT NULL",
+      "entidade_id": "bigint(20) unsigned NOT NULL",
+      "acao": "varchar(50) NOT NULL",
+      "antes_json": "longtext DEFAULT NULL",
+      "depois_json": "longtext DEFAULT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "ocorrido_em": "datetime NOT NULL",
+      "correlacao_id": "varchar(100) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [
+      [
+        "entidade",
+        "entidade_id",
+        "ocorrido_em"
+      ]
+    ],
+    "fks": []
+  },
+  "operacoes": {
+    "pk": [
+      "idoperacao"
+    ],
+    "columns": {
+      "idoperacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "chave": "varchar(100) NOT NULL",
+      "tipo": "varchar(50) NOT NULL",
+      "request_hash": "varchar(64) NOT NULL",
+      "resposta_json": "longtext DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "chave"
+      ]
+    ],
+    "indexes": [],
+    "fks": []
+  },
+  "aluno_periodos": {
+    "pk": [
+      "idvinculoperiodo"
+    ],
+    "columns": {
+      "idvinculoperiodo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NOT NULL",
+      "idmatricula": "bigint(20) unsigned DEFAULT NULL",
+      "status": "varchar(30) NOT NULL DEFAULT 'aguardando_turma'",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idaluno",
+        "codperiodo"
+      ],
+      [
+        "idmatricula"
+      ]
+    ],
+    "indexes": [
+      [
+        "codperiodo",
+        "status"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      }
+    ]
+  },
+  "planos_pagamento": {
+    "pk": [
+      "idplano"
+    ],
+    "columns": {
+      "idplano": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(100) NOT NULL",
+      "valor_anuidade": "decimal(15,2) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codigo"
+      ]
+    ],
+    "indexes": [],
+    "fks": []
+  },
+  "estados_civis": {
+    "pk": [
+      "idestado_civil"
+    ],
+    "columns": {
+      "idestado_civil": "bigint(20) unsigned NOT NULL",
+      "nome": "varchar(80) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": []
+  }
+}

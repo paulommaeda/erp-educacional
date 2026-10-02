@@ -1,0 +1,10 @@
+{
+  "name": "erp-educacional-tests",
+  "private": true,
+  "devDependencies": {
+    "jsdom": "30.1.1"
+  },
+  "scripts": {
+    "test": "node workflow-ui.cjs && node fields-ui.cjs && node portal-ui.cjs && node management-ui.cjs && node payment-ui.cjs"
+  }
+}
