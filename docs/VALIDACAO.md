@@ -17,3 +17,7 @@ Referência consultada: https://developer.wordpress.org/reference/functions/dbde
 ## 0.8.3
 
 Teste JSDOM people-ui: lista inicial, filtros combinados, obrigatórios, navegação por etapas, envio de cadastro e edição com versão. Sintaxe PHP/JavaScript validada. Ainda não validado visualmente em navegador real nem com WordPress/MySQL instalado.
+
+## 0.8.4
+
+JSDOM: edição por abas com salvamento antecipado e preservação dos campos; cadastro novo continua por etapas. Gestão acadêmica/matrículas: seletores sem busca extra, mantendo vínculos dependentes, filtros da listagem e envio em lote. Sem teste visual em WordPress real.

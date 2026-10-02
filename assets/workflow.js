@@ -28,7 +28,7 @@
   function picker(name,label,type,filters={},chosen=null){
     const node=h('div',undefined,'erp-picker'),searchLabel=h('label','Buscar '+label.toLowerCase()),q=h('input');q.type='search';q.placeholder='Digite parte do nome';searchLabel.append(q);
     const l=h('label',label),s=h('select');s.name=name;s.required=true;l.append(s);const nav=h('div',undefined,'erp-picker-nav'),note=h('small',''),more=button('Mais resultados',()=>{page++;load(true);},true),prev=button('Voltar ao início',()=>{page=1;load(false);},true);
-    nav.append(prev,more);node.append(searchLabel,l,note,nav);let page=1,timer,serial=0,current=chosen,loading=false;
+    nav.append(prev,more);if(type==='pessoas'||type==='alunos')node.append(searchLabel);node.append(l,note,nav);let page=1,timer,serial=0,current=chosen,loading=false;
     const initial=()=>{s.replaceChildren();const o=h('option','Selecione...');o.value='';s.append(o);if(current){const c=h('option',current.label);c.value=current.id;s.append(c);s.value=current.id;}};
     if(type==='periodos_letivos'&&name!=='codperiodo_destino'&&!current&&Number(EDERP.period)>0)current={id:String(EDERP.period),label:'Período configurado'};
     initial();
@@ -37,7 +37,7 @@
       if(type==='turmas'&&!extra.codperiodo){s.replaceChildren(new Option('Selecione primeiro o período',''));note.textContent='Escolha o período para carregar as turmas.';return;}
       const query=new URLSearchParams({...extra,search:q.value,page});const result=await api('opcoes/'+type+'?'+query);if(turn!==serial)return;
       if(!append)initial();const known=new Set([...s.options].map(o=>o.value));for(const item of result.items){const existing=[...s.options].find(o=>o.value===String(item.id));if(existing)existing.textContent=item.label;if(!known.has(String(item.id))){const o=h('option',item.label);o.value=item.id;s.append(o);}}
-      note.textContent=result.items.length?'Selecione o cadastro correspondente.':'Nenhum resultado. Cadastre a pessoa ou ajuste a busca.';more.hidden=!result.more;prev.hidden=page===1;
+      note.textContent=result.items.length?'Selecione o cadastro correspondente.':(type==='pessoas'?'Nenhum resultado. Cadastre a pessoa ou ajuste a busca.':'Nenhuma opção disponível para esta seleção.');more.hidden=!result.more;prev.hidden=page===1;
     }catch(e){if(turn===serial)note.textContent=e.message;}finally{if(turn===serial){loading=false;s.disabled=false;more.disabled=false;}}}
     q.addEventListener('input',()=>{clearTimeout(timer);serial++;current=null;s.value='';s.dispatchEvent(new Event('change'));timer=setTimeout(()=>{page=1;load(false);},250);});
     s.addEventListener('change',()=>{current=s.value?{id:s.value,label:s.selectedOptions[0].textContent}:null;});
@@ -57,13 +57,14 @@
     const close=()=>{if(dialog.querySelector('button[type=submit]')?.disabled)return;dialog.close();};header.append(title,button('Fechar',close,true));const content=h('div');dialog.append(header,content);root.append(dialog);
     personForm(content,async(r,d)=>{dialog.close();await done(r,d);},person);
     const f=content.querySelector('form');f.noValidate=true;const panels=[],names=['Identificação','Informações pessoais','Endereço','Foto e conclusão'],progress=h('ol',undefined,'erp-person-steps');
-    for(let i=0;i<4;i++){const p=h('section',undefined,'erp-person-step');p.setAttribute('aria-label',names[i]);panels.push(p);progress.append(h('li',names[i]));}
+    for(let i=0;i<4;i++){const p=h('section',undefined,'erp-person-step');p.setAttribute('aria-label',names[i]);panels.push(p);const item=h('li');if(person){const tab=button(i===3?'Foto e conta':names[i],()=>show(i,false),true);tab.id='erp-person-tab-'+i;tab.setAttribute('role','tab');tab.setAttribute('aria-controls','erp-person-panel-'+i);p.id='erp-person-panel-'+i;p.setAttribute('role','tabpanel');p.setAttribute('aria-labelledby',tab.id);tab.addEventListener('keydown',e=>{let next;if(e.key==='ArrowRight')next=(i+1)%4;else if(e.key==='ArrowLeft')next=(i+3)%4;else if(e.key==='Home')next=0;else if(e.key==='End')next=3;else return;e.preventDefault();show(next,false);progress.querySelectorAll('button')[next].focus();});item.setAttribute('role','presentation');item.append(tab);}else item.textContent=names[i];progress.append(item);}
+    if(person){progress.setAttribute('role','tablist');progress.setAttribute('aria-label','Dados da pessoa');progress.classList.add('erp-person-tabs');}
     const fields=[...f.children];for(const el of fields){if(el.tagName==='LABEL'&&!el.querySelector('[name=user_login],[name=ativo]'))panels[0].append(el);else if(el.tagName==='FIELDSET'){const i=el.querySelector('[name=rg]')?1:el.querySelector('[name=rua]')?2:3;panels[i].append(el);}else if(el.querySelector?.('[name=ativo]')||(el.tagName==='P'&&!el.classList.contains('erp-feedback')))panels[3].append(el);}
     const submit=f.querySelector('button[type=submit]'),nav=h('div',undefined,'erp-person-nav');let step=0;
-    function show(i){step=i;panels.forEach((p,j)=>p.hidden=j!==i);[...progress.children].forEach((li,j)=>{li.classList.toggle('current',j===i);if(j===i)li.setAttribute('aria-current','step');else li.removeAttribute('aria-current');});back.hidden=i===0;next.hidden=i===3;submit.hidden=i!==3;panels[i].querySelector('input:not([type=hidden]):not(:disabled),select:not(:disabled)')?.focus();}
+    function show(i,focus=true){step=i;panels.forEach((p,j)=>p.hidden=j!==i);[...progress.children].forEach((li,j)=>{li.classList.toggle('current',j===i);const tab=li.querySelector('[role=tab]');if(tab){tab.setAttribute('aria-selected',String(j===i));tab.tabIndex=j===i?0:-1;}if(j===i)li.setAttribute('aria-current','step');else li.removeAttribute('aria-current');});back.hidden=!!person||i===0;next.hidden=!!person||i===3;submit.hidden=!person&&i!==3;if(focus)panels[i].querySelector('input:not([type=hidden]):not(:disabled),select:not(:disabled)')?.focus();}
     function valid(i){for(const el of panels[i].querySelectorAll('input,select,textarea'))if(!el.checkValidity()){show(i);el.reportValidity();return false;}return true;}
     const back=button('Voltar',()=>show(step-1),true),next=button('Continuar',()=>{if(valid(step))show(step+1);});nav.append(back,next,submit);f.prepend(progress,...panels);f.append(nav);
-    f.addEventListener('submit',e=>{if(step<3){e.preventDefault();e.stopImmediatePropagation();if(valid(step))show(step+1);return;}for(let i=0;i<4;i++)if(!valid(i)){e.preventDefault();e.stopImmediatePropagation();return;}},true);
+    f.addEventListener('submit',e=>{if(!person&&step<3){e.preventDefault();e.stopImmediatePropagation();if(valid(step))show(step+1);return;}for(let i=0;i<4;i++)if(!valid(i)){e.preventDefault();e.stopImmediatePropagation();return;}},true);
     dialog.addEventListener('cancel',e=>{if(submit.disabled)e.preventDefault();});dialog.addEventListener('close',()=>{if(dialog.dataset.media==='open')return;dialog.remove();opener?.focus();});dialog.showModal();show(0);
   }
   async function people(){

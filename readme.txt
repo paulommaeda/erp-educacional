@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.8.3
+Stable tag: 0.8.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,8 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+= 0.8.4 =
+Seletores acadêmicos sem campo de busca duplicado. Edição de pessoa por abas com salvamento em qualquer aba.
 = 0.8.3 =
 Pessoas com filtros por nome e código, cadastro e edição em modal por etapas.
 = 0.8.2 =

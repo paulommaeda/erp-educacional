@@ -1,4 +1,4 @@
-# ERP Educacional — 0.8.3
+# ERP Educacional — 0.8.4
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -111,3 +111,7 @@ Repositório oficial: https://github.com/paulommaeda/erp-educacional. A versão 
 ## Pessoas — 0.8.3
 
 A página abre na listagem paginada, com filtros combinados por nome e código exato (interno ou de origem). Cadastrar novo abre um modal em quatro etapas; Editar reutiliza o modal com os dados preenchidos. Validação mantém o usuário na etapa com erro. Permissões de edição existentes preservadas; nenhuma migração adicional de banco.
+
+## Ajustes 0.8.4
+
+Seletores acadêmicos (período, curso, turno, turma e plano) sem busca duplicada. Mais resultados permanece disponível para listas paginadas. Edição de pessoas usa abas clicáveis, navegação por teclado e Salvar em qualquer aba; cadastro novo mantém etapas. Validação abre a aba que contém o campo inválido. Sem migração de banco.
