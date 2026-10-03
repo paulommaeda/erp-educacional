@@ -99,6 +99,9 @@ final class Controller
         $this->route('/lancamentos/'.$id.'/baixas','POST',$cap('erp_baixar_lancamentos'),fn($r)=>$this->finance->pay((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/lancamentos/'.$id.'/ajustes','POST',$cap('erp_ajustar_lancamentos'),fn($r)=>$this->finance->adjust((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/baixas/'.$id.'/estornos','POST',$cap('erp_estornar_baixas'),fn($r)=>$this->finance->reverse((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/ofertas-rematricula','GET',$cap('erp_gerenciar_academico'),fn($r)=>$this->renewal->listOffers($r->get_params()));
+        $this->route('/ofertas-rematricula/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$this->renewal->changeOffer((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/ofertas-rematricula/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$this->renewal->changeOffer((int)$r['id'],$this->payload($r),$this->key($r),true));
         $this->route('/ofertas-rematricula','POST',$cap('erp_gerenciar_academico'),fn($r)=>$this->renewal->createOffer($this->payload($r),$this->key($r)));
         $this->route('/alunos/'.$id.'/ofertas-rematricula','GET',fn($r)=>$this->access->canStudent((int)$r['id'],'renew'),fn($r)=>$this->renewal->offers((int)$r['id'],SchoolSettings::forViewer($r->get_param('codperiodo'))));
         $this->route('/rematriculas','POST',fn()=>$this->access->person()!==null,fn($r)=>$this->renewal->renew($this->payload($r),$this->key($r)));

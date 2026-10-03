@@ -9,7 +9,18 @@ final class RenewalService
     public function __construct(private Store $db,private Operations $ops,private AcademicService $academic,private Access $access) {}
     public function createOffer(array $d,string $key): array
     {
+        $this->requireManager();
         return $this->db->atomic(fn()=>$this->ops->run($key,'criar_oferta',$d,function()use($d,$key){
+            [$fields,$ids]=$this->offerData($d);
+            $id=$this->db->insert('ofertas_rematricula',$fields);
+            foreach($ids as $cid) { $this->db->insert('oferta_turmas',['idoferta'=>$id,'idturma'=>$cid]); }
+            $this->db->audit('ofertas_rematricula',$id,'criar',null,['turmas'=>array_values($ids),'valor_total'=>$fields['valor_total']],$key);
+            return ['idoferta'=>(string)$id];
+        }));
+    }
+    private function requireManager():void {if(!current_user_can('erp_gerenciar_academico'))throw new RuleViolation('Sem permissão para gerenciar ofertas.');}
+    private function offerData(array $d,bool $preserve=false):array
+    {
             $period=Input::id($d['codperiodo_destino']??null); $course=Input::id($d['idcurso_destino']??null);
             $open=Input::date($d['data_abertura']??null); $close=Input::date($d['data_encerramento']??null);
             if($close<$open) { throw new RuleViolation('Janela de rematrícula inválida.'); }
@@ -19,20 +30,57 @@ final class RenewalService
             if(!is_array($classes) || !$classes || count($classes)>100) { throw new RuleViolation('Informe até 100 turmas.'); }
             $ids=[];
             foreach($classes as $cid) {
-                $id=Input::id($cid); $c=$this->db->get('turmas',$id);
+                $id=Input::id($cid); $c=$this->db->get('turmas',$id,true);
+                if(!$preserve&&$c['status']!=='ativa')throw new RuleViolation('Selecione somente turmas ativas.');
                 if((int)$c['codperiodo']!==$period || (int)$c['idcurso']!==$course) { throw new RuleViolation('Turma incompatível com a oferta.'); }
-                $plan=$this->academic->planForClass($id);Money::split(Money::positive($plan['valor_anuidade']),$count);
+                if(!$preserve){$plan=$this->academic->planForClass($id);Money::split(Money::positive($plan['valor_anuidade']),$count);}
                 $ids[$id]=$id;
             }
+            $this->db->get('periodos_letivos',$period);$this->db->get('cursos',Input::id($d['idcurso_origem']??null));
             $zone=wp_timezone();
             $start=(new \DateTimeImmutable($open.' 00:00:00',$zone))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
             $end=(new \DateTimeImmutable($close.' 23:59:59',$zone))->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d H:i:s');
-            $id=$this->db->insert('ofertas_rematricula',['codperiodo_destino'=>$period,'idcurso_origem'=>Input::id($d['idcurso_origem']??null),'idcurso_destino'=>$course,
+            $fields=['codperiodo_destino'=>$period,'idcurso_origem'=>Input::id($d['idcurso_origem']??null),'idcurso_destino'=>$course,
                 'abertura_em'=>$start,'encerramento_em'=>$end,'versao_termo'=>Input::text($d['versao_termo']??'1',40),'texto_termo'=>Input::text($d['texto_termo']??null,20000),
-                'valor_total'=>Money::format($total),'numero_parcelas'=>$count,'primeiro_vencimento'=>$first,'dia_vencimento'=>(int)substr($first,8,2)]);
-            foreach($ids as $cid) { $this->db->insert('oferta_turmas',['idoferta'=>$id,'idturma'=>$cid]); }
-            $this->db->audit('ofertas_rematricula',$id,'criar',null,['turmas'=>array_values($ids),'valor_total'=>Money::format($total)],$key);
-            return ['idoferta'=>(string)$id];
+                'valor_total'=>Money::format($total),'numero_parcelas'=>$count,'primeiro_vencimento'=>$first,'dia_vencimento'=>(int)substr($first,8,2)];
+        if(!in_array($d['ativo']??1,[0,1,'0','1'],true))throw new RuleViolation('Situação inválida.');$fields['ativo']=(int)($d['ativo']??1);
+        return [$fields,array_values($ids)];
+    }
+    private function classIds(int $id):array {return array_map(static fn($r)=>(int)$r['idturma'],$this->db->rows('SELECT idturma FROM '.$this->db->table('oferta_turmas').' WHERE idoferta=%d ORDER BY idturma',[$id]));}
+    private function stamp(array $row,array $ids):string {return hash('sha256',json_encode([$row,$ids]));}
+    public function listOffers(array $filters):array
+    {
+        $this->requireManager();$page=max(1,(int)($filters['page']??1));$period=max(0,(int)($filters['codperiodo']??0));
+        $o=$this->db->table('ofertas_rematricula');$t=$this->db->table('turmas');$ot=$this->db->table('oferta_turmas');$r=$this->db->table('rematriculas');
+        $where=$period?' WHERE o.codperiodo_destino=%d':'';$args=$period?[$period]:[];
+        $total=(int)$this->db->row("SELECT COUNT(*) AS n FROM $o o$where",$args)['n'];
+        $rows=$this->db->rows("SELECT o.* FROM $o o$where ORDER BY o.idoferta DESC LIMIT 20 OFFSET %d",[...$args,($page-1)*20]);
+        foreach($rows as &$row){$id=(int)$row['idoferta'];$row['version']=$this->stamp($row,$this->classIds($id));
+            $row['periodo']=$this->db->get('periodos_letivos',(int)$row['codperiodo_destino'])['descricao'];
+            $row['curso_origem']=$this->db->get('cursos',(int)$row['idcurso_origem'])['nome'];$row['curso_destino']=$this->db->get('cursos',(int)$row['idcurso_destino'])['nome'];
+            $row['turmas']=$this->db->rows("SELECT t.idturma,t.nome FROM $ot ot JOIN $t t ON t.idturma=ot.idturma WHERE ot.idoferta=%d ORDER BY t.nome,t.idturma",[$id]);
+            $row['utilizacoes']=(int)$this->db->row("SELECT COUNT(*) AS n FROM $r WHERE idoferta=%d",[$id])['n'];
+            foreach(['abertura_em'=>'data_abertura','encerramento_em'=>'data_encerramento'] as $source=>$dest)$row[$dest]=(new \DateTimeImmutable($row[$source],new \DateTimeZone('UTC')))->setTimezone(wp_timezone())->format('Y-m-d');
+            $now=gmdate('Y-m-d H:i:s');$row['situacao']=!(int)$row['ativo']?'Inativa':($now<$row['abertura_em']?'Agendada':($now>$row['encerramento_em']?'Encerrada':'Disponível'));
+        }unset($row);return ['items'=>$rows,'total'=>$total];
+    }
+    public function changeOffer(int $id,array $d,string $key,bool $delete=false):array
+    {
+        Access::requireAdmin();return $this->db->atomic(fn()=>$this->ops->run($key,$delete?'excluir_oferta':'editar_oferta',['id'=>$id]+$d,function()use($id,$d,$key,$delete){
+            $before=$this->db->get('ofertas_rematricula',$id,true);$ids=$this->classIds($id);
+            if(!is_string($d['version']??null)||!hash_equals($this->stamp($before,$ids),$d['version']))throw new RuleViolation('Oferta alterada. Atualize a listagem antes de continuar.');
+            $used=$this->db->row('SELECT idrematricula FROM '.$this->db->table('rematriculas').' WHERE idoferta=%d LIMIT 1 FOR UPDATE',[$id]);
+            if($delete&&$used)throw new RuleViolation('Oferta com rematrículas vinculadas não pode ser excluída. Edite para desativá-la.');
+            $ot=$this->db->table('oferta_turmas');
+            if($delete){$reason=Input::text($d['motivo']??null,500);$this->db->query("DELETE FROM $ot WHERE idoferta=%d",[$id]);$this->db->query('DELETE FROM '.$this->db->table('ofertas_rematricula').' WHERE idoferta=%d',[$id]);$after=['motivo'=>$reason];}
+            else {
+                [$fields,$newIds]=$this->offerData($d,(bool)$used);
+                if($used){foreach(['codperiodo_destino','idcurso_origem','idcurso_destino','numero_parcelas','primeiro_vencimento','versao_termo','texto_termo'] as $field)if((string)$before[$field]!== (string)$fields[$field])throw new RuleViolation('Oferta utilizada: somente datas de abertura/encerramento e situação podem ser alteradas.');sort($newIds);if($newIds!==$ids)throw new RuleViolation('Oferta utilizada: preserve as turmas vinculadas.');}
+                elseif($fields['texto_termo']!==$before['texto_termo']&&$fields['versao_termo']===$before['versao_termo'])throw new RuleViolation('Ao alterar o termo, informe uma nova versão.');
+                if($used)$fields=array_intersect_key($fields,array_flip(['abertura_em','encerramento_em','ativo']));
+                $this->db->update('ofertas_rematricula',$id,$fields);$this->db->query("DELETE FROM $ot WHERE idoferta=%d",[$id]);foreach($newIds as $cid)$this->db->insert('oferta_turmas',['idoferta'=>$id,'idturma'=>$cid]);$after=$fields+['turmas'=>$newIds];
+            }
+            $this->db->audit('ofertas_rematricula',$id,$delete?'excluir':'editar',$before+['turmas'=>$ids],$after,$key);return ['idoferta'=>(string)$id,'excluido'=>$delete];
         }));
     }
     public function offers(int $student,int $period=0): array

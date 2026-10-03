@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.6
+# ERP Educacional — 0.9.7
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -195,3 +195,13 @@ O botão **Abrir personalizador do WordPress** abre a seção **ERP — Identida
 O botão Acessar como usuário e seu adaptador foram retirados do ERP. A edição de e-mail/senha permanece. O plugin Web357 instalado separadamente continua independente; suas permissões são administradas no próprio WordPress.
 
 Esta etapa oferece uma identidade por instalação WordPress. Ainda não implementa isolamento de múltiplas escolas na mesma base, assinaturas ou provisionamento de um SaaS. Schema 9 mantido, sem migração de tabelas.
+
+## Ofertas de rematrícula — 0.9.7
+
+Na área Ofertas de rematrícula, a página principal exibe as ofertas cadastradas, turmas, cursos, período de destino, janela, situação e quantidade de rematrículas, com paginação e filtro por período de destino (inicialmente todos, incluindo os futuros).
+
+**Nova oferta em lote** abre um modal. Selecione período de destino, curso atual e curso de destino; marque as turmas individualmente ou use Selecionar todas. Até 100 turmas do mesmo curso/período podem integrar uma oferta. As opções são carregadas também além da primeira página. A publicação é atômica, valida planos e turmas ativas e não duplica a oferta ao reenviar a mesma solicitação. Para outro par de cursos, publique outra oferta.
+
+O administrador pode **Editar** ou **Excluir**, sempre em modal. A exclusão exige motivo e é bloqueada quando existem rematrículas vinculadas. Uma oferta utilizada permite somente alteração da janela e ativação/desativação; destinos e condições aceitas são preservados. A alteração do texto de um termo ainda não utilizado exige nova versão. Alterações concorrentes são detectadas e as ações são auditadas.
+
+A seleção de turmas pertence à gestão. O responsável continua direcionado à próxima turma previamente configurada; a rematrícula continua criando contrato sem gerar parcelas. Schema 9 mantido.

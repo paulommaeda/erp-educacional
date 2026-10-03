@@ -66,3 +66,9 @@ JSDOM: filtro de curso enviado, remoção do filtro e regressões de gestão apr
 - JSDOM: 7 cenários de gestão e regressão da tela Usuários sem acesso assistido passaram.
 - Sintaxe PHP e JavaScript validada.
 - Não houve instalação em WordPress/MySQL real nem teste visual no site. O personalizador e a biblioteca de mídia precisam de homologação na instalação.
+
+## 0.9.7
+
+- PHP-WASM/SQLite: 42 verificações de planos e rematrícula e 14 de gestão de ofertas passaram (lote atômico, incompatibilidade de período, concorrência, idempotência, permissões e proteção de ofertas utilizadas).
+- JSDOM: seleção de várias turmas, envio, edição preenchida, exclusão em modal e restrição de ações passaram.
+- Sintaxe PHP e JavaScript verificada. Não houve teste em WordPress/MySQL real nem validação visual no site.

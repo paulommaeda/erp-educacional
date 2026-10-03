@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.9.6
+Stable tag: 0.9.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.9.7 =
+* Ofertas de rematrícula em lote com seleção de várias turmas.
+* Listagem paginada, filtro por período de destino, edição e exclusão em modal.
+* Preservação de ofertas utilizadas, auditoria e controle de edição concorrente.
+
 
 = 0.9.6 =
 * Configuração institucional do colégio, endereço, contatos e logo.
