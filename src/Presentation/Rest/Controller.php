@@ -217,8 +217,10 @@ final class Controller
             $where.=($where?' AND ':' WHERE ').'(CAST(codpessoa AS CHAR)=%s OR codpessoa_origem=%s)';$args[]=$code;$args[]=\EducacionalERP\Domain\CadastroText::upper($code);
         }
         if($name==='turmas' && ($period=SchoolSettings::forViewer($r->get_param('codperiodo')))){$where.=($where?' AND ':' WHERE ').'codperiodo=%d';$args[]=$period;}
+        if($name==='turmas' && $r->get_param('idcurso')){$where.=($where?' AND ':' WHERE ').'idcurso=%d';$args[]=Input::id($r->get_param('idcurso'));}
+        $order=$name==='turmas'?'nome ASC, codigo ASC, idturma ASC':"$pk DESC";
         $count=$this->db->row("SELECT COUNT(*) AS n FROM $t$where",$args);
-        $rows=$this->db->rows("SELECT * FROM $t$where ORDER BY $pk DESC LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20]));
+        $rows=$this->db->rows("SELECT * FROM $t$where ORDER BY $order LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20]));
         if($name==='periodos_letivos')foreach($rows as &$row){$row['proximo_periodo_nome']=empty($row['codperiodo_proximo'])?'Não definido':$this->db->get('periodos_letivos',(int)$row['codperiodo_proximo'])['descricao'];}unset($row);
         if($name==='planos_pagamento')foreach($rows as &$row){$row['periodo_nome']=empty($row['codperiodo'])?'Não definido — editar':$this->db->get('periodos_letivos',(int)$row['codperiodo'])['descricao'];}unset($row);
         if($name==='turmas')foreach($rows as &$row){if(!empty($row['idturma_proxima'])){$row['proxima_turma']=$this->db->get('turmas',(int)$row['idturma_proxima']);}}unset($row);

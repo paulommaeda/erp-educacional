@@ -47,3 +47,7 @@ JSDOM: edição por abas com salvamento antecipado e preservação dos campos; c
 - As 15 verificações anteriores de importação de pessoas/alunos passaram.
 - JSDOM: modal de cópia em período novo/existente, envio do CSV de turmas após prévia e regressão dos modais acadêmicos passaram.
 - Sintaxe PHP/JavaScript validada. Não executado em WordPress/MySQL real nem validado visualmente no site.
+
+## 0.9.4
+
+JSDOM: filtro de curso enviado, remoção do filtro e regressões de gestão aprovados. PHP-WASM/SQLite: curso, período e busca combinados e ordenação entre páginas validados. Não houve instalação nem teste visual no WordPress real.

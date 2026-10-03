@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.3
+# ERP Educacional — 0.9.4
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -158,3 +158,7 @@ Disponível somente ao administrador WordPress.
 O novo período fica planejado e é vinculado como próximo período da origem. O período vigente das configurações não muda. A operação é atômica e idempotente: uma falha reverte todas as inserções, inclusive um novo período; reenvios da mesma solicitação não duplicam cadastros. Novas solicitações que encontrem códigos em conflito são bloqueadas. Limite: 1.000 planos e turmas por cópia.
 
 Matrículas, contratos, parcelas, ofertas e vínculos de pessoas não são copiados. A próxima turma não é preenchida automaticamente: copiar a turma do 1º ano para outro período não significa que o aluno deva repetir o 1º ano. Configure a progressão depois da cópia, antes de publicar ofertas de rematrícula. Não há migração de banco nesta versão.
+
+## Listagem de turmas — 0.9.4
+
+Em Estrutura acadêmica → Turmas, selecione um curso para filtrar. O botão Todos os cursos remove esse filtro. A busca por nome e o período da consulta continuam combinados. Os resultados são ordenados pelo nome da turma (A–Z), com código e ID como desempate, antes da paginação. Não há migração de banco.
