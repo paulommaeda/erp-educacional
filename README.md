@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.7
+# ERP Educacional — 0.9.8
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -205,3 +205,25 @@ Na área Ofertas de rematrícula, a página principal exibe as ofertas cadastrad
 O administrador pode **Editar** ou **Excluir**, sempre em modal. A exclusão exige motivo e é bloqueada quando existem rematrículas vinculadas. Uma oferta utilizada permite somente alteração da janela e ativação/desativação; destinos e condições aceitas são preservados. A alteração do texto de um termo ainda não utilizado exige nova versão. Alterações concorrentes são detectadas e as ações são auditadas.
 
 A seleção de turmas pertence à gestão. O responsável continua direcionado à próxima turma previamente configurada; a rematrícula continua criando contrato sem gerar parcelas. Schema 9 mantido.
+
+## Login, códigos e ciclo de matrícula — 0.9.8
+
+**Atualização:** esta versão usa o schema 10. Depois de instalar, entre no painel WordPress como administrador para executar a migração automática. Se houver diagnóstico de migração, use ERP Educacional → Configurações → Verificar banco. A migração preserva as chaves relacionais e os cadastros existentes.
+
+**Acesso:** login, erro de senha, solicitação de recuperação e formulário de nova senha ficam no portal. A autenticação, a chave de recuperação e o salvamento da senha utilizam as APIs WordPress. O link do e-mail aponta ao ERP. Há nonce, validação de origem, mensagem genérica de recuperação e limite de tentativas. O formulário de nova senha exige 12 caracteres e confirmação. O envio do e-mail depende da configuração de correio da instalação. O administrador continua tendo seu painel WordPress.
+
+**Usuários e mobile:** a listagem mostra nome, e-mail e Editar, alinhados no desktop e reorganizados no celular. Login, perfis e código não aparecem na linha. A paginação das matrículas tem uma linha de informação e dois botões alinhados no celular.
+
+**Código da pessoa:** em Pessoas aparece apenas Código. Na importação, use `codigo_pessoa`; as colunas antigas `codpessoa` e `codpessoa_origem` continuam sendo reconhecidas no mapeamento. O código importado é mantido, inclusive zeros iniciais. RA continua separado do código da pessoa. As chaves internas não são renumeradas, preservando matrículas, usuários e referências anteriores.
+
+Em Configurações → Numeração de pessoas, informe o último número utilizado. 600 gera 601 e o contador passa a 601 após o cadastro concluído. Falhas não consomem a sequência. A configuração não retrocede; códigos numéricos importados também elevam o contador quando maiores. Códigos externos alfanuméricos continuam aceitos. A sequência automática aceita até 12 dígitos. Na migração, códigos de origem têm prioridade; pessoas criadas manualmente mantêm o código interno antigo como código visível quando livre, ou recebem um novo código se houver conflito. O campo separado de código de origem foi retirado do cadastro/edição.
+
+**Situações:** matrícula inicial e rematrícula começam em Reservado. A primeira parcela precisa ser integralmente quitada com pagamento para mudar para Cursando; pagamento parcial não confirma a matrícula. Estorno que reabre essa parcela retorna a Reservado. Situações encerradas não são reabertas por pagamentos. As vagas contam matrículas reservadas e cursando. Matrículas antigas ativas são migradas conforme a quitação da primeira parcela, com registro da alteração.
+
+**Ficha do aluno → Matrículas:** o administrador dispõe de Trocar turma, Transferência externa, Resultado do período e Cancelar rematrícula, conforme a situação da matrícula. Todas as ações abrem modal. O histórico mostra situações, motivo, data/hora no fuso WordPress e autor, inclusive nas mudanças automáticas. A consulta do histórico exige acesso acadêmico.
+
+**Transferência externa:** selecione um responsável vigente ou Outra pessoa e digite o nome, sem criar pessoa. Informe data da solicitação dentro do período letivo e colégio de destino. A declaração é opcional (PDF/JPG/PNG/WebP, 5 MB). O arquivo é criptografado e baixado mediante autorização do administrador no Histórico, sem URL pública legível. O servidor precisa de OpenSSL e Fileinfo. Backups devem preservar uploads e os salts WordPress usados na criptografia. A situação passa a Transferência externa; o financeiro existente permanece preservado.
+
+**Resultado:** selecione Aprovado ou Reprovado. Se o reprovado já tiver uma rematrícula ativa vinculada à matrícula atual, ela será cancelada e substituída automaticamente pela turma de mesmo código, curso e turno no próximo período configurado. Essa turma deve existir (pode ser copiada do período atual), ter vagas e plano válido. Ausência/incompatibilidade bloqueia toda a operação, sem alteração parcial. A matrícula e a solicitação anteriores ficam no histórico; o contrato existente é reassociado à substituta, preservando valores, descontos, parcelas e pagamentos, sem novas cobranças. O destino regular de progressão da turma não é alterado para os demais alunos. Se corrigir posteriormente Reprovado para Aprovado, a correção da situação não reposiciona a matrícula substituta; ajuste sua turma pela ação Trocar turma.
+
+**Cancelar rematrícula:** confirmação simples, sem excluir registros. Contratos ainda sem parcelas são cancelados e não podem gerar parcelas posteriormente. Cobranças e pagamentos já existentes não são apagados nem estornados automaticamente: devem ser tratados pelo financeiro. O banco permite uma nova matrícula vigente no mesmo curso/período mantendo as matrículas canceladas como histórico. Edição, transferência, resultados e cancelamento permanecem exclusivos do administrador.

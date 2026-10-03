@@ -114,3 +114,5 @@ foreach($schema as $name=>$meta){
 }
 function wp_attachment_is_image(int $id):bool{return $id===10;}
 function wp_get_attachment_image_url(int $id,string $size):string|false{return $id===10?'https://test.example/foto.jpg':false;}
+
+$wpdb->insert($wpdb->prefix."erp_numeracao_pessoas",["idnumeracao"=>1,"ultimo_codigo"=>0]);

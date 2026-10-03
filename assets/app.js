@@ -19,10 +19,10 @@
   function table(rows, onSelect) {
     const wrap=el('div',undefined,'ederp-table-wrap');
     if(!rows.length){wrap.append(el('p','Nenhum registro encontrado.'));return wrap;}
-    const keys=Object.keys(rows[0]).filter(k=>!['criado_em','atualizado_em','versao','termo_snapshot'].includes(k)&&typeof rows[0][k]!=='object');
+    const keys=Object.keys(rows[0]).filter(k=>!['criado_em','atualizado_em','versao','termo_snapshot','ativo_unico','idmatricula_origem'].includes(k)&&typeof rows[0][k]!=='object');
     const t=el('table',undefined,'journey-cards'), head=el('tr'); keys.forEach(k=>head.append(el('th',labels[k]||k.replaceAll('_',' ')))); if(onSelect)head.append(el('th','Ficha'));
     const thead=el('thead');thead.append(head);t.append(thead);const body=el('tbody');
-    rows.forEach(row=>{const tr=el('tr');keys.forEach(k=>{const td=el('td',row[k]??'');td.dataset.label=labels[k]||k.replaceAll('_',' ');tr.append(td);});if(onSelect){const cell=el('td'),b=el('button','Abrir');b.type='button';b.onclick=()=>onSelect(row);cell.append(b);tr.append(cell);}body.append(tr);});
+    rows.forEach(row=>{const tr=el('tr');keys.forEach(k=>{const td=el('td',k==='status'?({reservado:'Reservado',cursando:'Cursando',transferencia_externa:'Transferência externa',aprovado:'Aprovado',reprovado:'Reprovado',cancelada:'Cancelada'}[row[k]]||row[k]||''):(row[k]??''));td.dataset.label=labels[k]||k.replaceAll('_',' ');tr.append(td);});if(onSelect){const cell=el('td'),b=el('button','Abrir');b.type='button';b.onclick=()=>onSelect(row);cell.append(b);tr.append(cell);}body.append(tr);});
     t.append(body);wrap.append(t);return wrap;
   }
   function field(name,label,type='text',required=true){const l=el('label',label),i=el(type==='textarea'?'textarea':'input');i.name=name;if(type!=='textarea')i.type=type;i.required=required;l.append(i);return l;}

@@ -1,0 +1,10 @@
+<?php
+require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';
+use EducacionalERP\Infrastructure\WordPress\{Access,PrivateDocuments};
+Access::install();define('DAY_IN_SECONDS',86400);
+function wp_upload_dir(){return ['basedir'=>sys_get_temp_dir().'/erp-docs-test','error'=>false];}
+function wp_mkdir_p($path){return is_dir($path)||mkdir($path,0700,true);}
+function wp_salt($scheme){return 'test-only-secret';}
+function docCheck($v,$label){if(!$v)throw new RuntimeException($label);echo "PASS: $label\n";}
+function docDenied($fn,$label){try{$fn();}catch(EducacionalERP\Domain\RuleViolation $e){docCheck(true,$label);return;}throw new RuntimeException($label);}
+$token=bin2hex(random_bytes(32));$dir=wp_upload_dir()['basedir'].'/erp-documentos';wp_mkdir_p($dir);$payload=['owner'=>1,'created'=>time(),'name'=>'declaracao.pdf','mime'=>'application/pdf','data'=>base64_encode('%PDF-DECLARACAO-TESTE')];$iv=random_bytes(12);$tag='';$cipher=openssl_encrypt(json_encode($payload),'aes-256-gcm',hash('sha256',wp_salt('auth').'|erp-private-documents',true),OPENSSL_RAW_DATA,$iv,$tag);$file=$dir.'/'.$token.'.bin';file_put_contents($file,$iv.$tag.$cipher);$docs=new PrivateDocuments();docCheck($docs->read($token)['data']===$payload['data'],'documento criptografado lido com integridade');docCheck(!str_contains(file_get_contents($file),'%PDF'),'arquivo armazenado não revela declaração');docCheck($docs->validate($token)['documento_nome']==='declaracao.pdf','documento validado para solicitante administrador');docDenied(fn()=>$docs->read('../outside'),'token com caminho rejeitado');$other=wp_insert_user(['user_login'=>'outro.admin','role'=>'administrator']);wp_set_current_user($other);docDenied(fn()=>$docs->validate($token),'administrador não associa upload alheio');wp_set_current_user(1);file_put_contents($file,substr($iv.$tag.$cipher,0,-1).'x');docDenied(fn()=>$docs->read($token),'arquivo adulterado rejeitado');unlink($file);docDenied(fn()=>$docs->read($token),'documento ausente tratado');

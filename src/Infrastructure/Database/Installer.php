@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '9';
+    public const VERSION = '10';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -49,6 +49,25 @@ final class Installer
                 }
             }
             if(version_compare((string)get_option('ederp_schema_version','0'),'6','<'))(new \EducacionalERP\Application\CivilStatus($this->db))->migrate();
+            // New nullable active keys permit a replacement while keeping cancelled history.
+            foreach(['matriculas'=>['idaluno','codperiodo','idcurso'],'rematriculas'=>['idoferta','idmatricula_origem']] as $name=>$obsolete){
+                $table=$this->db->table($name);$indexes=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index){if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$indexes[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];}
+                foreach($indexes as $index=>$columns){ksort($columns);if(array_values($columns)===$obsolete)$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$index)."`");}
+            }
+            if(version_compare((string)get_option('ederp_schema_version','0'),'10','<')){
+                $this->db->atomic(function(){
+                    (new \EducacionalERP\Application\PersonNumbering($this->db))->migrate();
+                    $this->db->query('UPDATE '.$this->db->table('matriculas')." SET ativo_unico=NULL WHERE status='cancelada'");
+                    $this->db->query('UPDATE '.$this->db->table('rematriculas')." SET ativo_unico=NULL WHERE status='cancelada'");
+                    $m=$this->db->table('matriculas');
+                    foreach($this->db->rows("SELECT * FROM $m WHERE status='ativa'") as $row){
+                        $paid=$this->db->row('SELECT l.idlancamento FROM '.$this->db->table('lancamentos').' l JOIN '.$this->db->table('parcelas').' p ON p.idparcela=l.idparcela JOIN '.$this->db->table('contratos')." c ON c.idcontrato=p.idcontrato WHERE c.idmatricula=%d AND p.numero=1 AND l.status='quitado' AND l.valor_baixa>0 LIMIT 1",[(int)$row['idmatricula']]);
+                        $status=$paid?'cursando':'reservado';$this->db->update('matriculas',(int)$row['idmatricula'],['status'=>$status]);
+                        $now=gmdate('Y-m-d H:i:s');$this->db->insert('matricula_movimentacoes',['idmatricula'=>$row['idmatricula'],'tipo'=>'migracao_situacao','status_anterior'=>'ativa','status_novo'=>$status,'efetivado_em'=>$now,'registrado_em'=>$now,'motivo'=>'Adequação das situações da matrícula na versão 0.9.8','ator_wp_user_id'=>get_current_user_id()]);
+                        $this->db->audit('matriculas',(int)$row['idmatricula'],'migracao_situacao',$row,['status'=>$status],'schema-10');
+                    }
+                });
+            }
             foreach ($this->db->schema() as $name => $meta) {
                 $table = $this->db->table($name);
                 foreach ($meta['fks'] as $i => $fk) {

@@ -72,3 +72,13 @@ JSDOM: filtro de curso enviado, remoção do filtro e regressões de gestão apr
 - PHP-WASM/SQLite: 42 verificações de planos e rematrícula e 14 de gestão de ofertas passaram (lote atômico, incompatibilidade de período, concorrência, idempotência, permissões e proteção de ofertas utilizadas).
 - JSDOM: seleção de várias turmas, envio, edição preenchida, exclusão em modal e restrição de ações passaram.
 - Sintaxe PHP e JavaScript verificada. Não houve teste em WordPress/MySQL real nem validação visual no site.
+
+## 0.9.8
+
+- PHP-WASM/SQLite: 29 verificações novas de código, sequência, situações, pagamentos, estorno, reprovação atômica, preservação financeira, transferência externa, histórico e cancelamento; 42 verificações de planos/rematrícula, 22 do fluxo de matrícula, 15 de importação, 15 de usuários e 14 de ofertas passaram.
+- Migração de numeração: preservação de código importado/zeros, resolução de conflito com IDs e idempotência passaram.
+- Autenticação com mocks WordPress: 13 verificações de nonce, origem, erro/sucesso de login, mensagem genérica, link do e-mail no portal, validação/uso da chave e limite de tentativas passaram. Nenhum formulário de acesso usa wp-login.php.
+- Documentos: testes com OpenSSL real no runtime PHP validaram descriptografia, metadados, autoria, token, integridade e arquivo ausente. Upload HTTP multipart com APIs WordPress ainda requer homologação.
+- JSDOM: modais de transferência externa, resultado, cancelamento e histórico; listagem simplificada de usuários; regressões de pessoas, campos, configurações, gestão, ofertas, cópia, perfil e financeiro passaram.
+- A fixture antiga de student-workflow foi atualizada para associar os planos aos respectivos períodos, regra vigente desde o schema 8.
+- Sintaxe PHP/JS verificada. Não houve instalação em WordPress/MySQL real, envio real de e-mail nem teste visual no site. Homologar migração MySQL, cookies, e-mail e envio/download da declaração na instalação.

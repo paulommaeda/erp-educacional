@@ -8,7 +8,7 @@ function field(parent,name,title,value='',type='text'){const label=node('label',
 function choice(parent,name,title,options,value){const label=node('label',title),s=node('select');s.name=name;for(const [v,t] of options){const o=node('option',t);o.value=v;s.append(o);}s.value=value??'';label.append(s);parent.append(label);return s;}
 window.EDERPFields={attach(f,p){
  const box=node('fieldset'),legend=node('legend','Documentos e informações pessoais');box.append(legend);f.append(box);
- for(const [name,title] of [['codpessoa_origem','CODPESSOA de origem (importação)'],['rg','RG']])field(box,name,title,p[name]);
+ for(const [name,title] of [['rg','RG']])field(box,name,title,p[name]);
  choice(box,'sexo','Sexo',[['','Não informado'],['MASCULINO','MASCULINO'],['FEMININO','FEMININO']],p.sexo?.toUpperCase());
  const civil=choice(box,'idestado_civil','Estado civil',[['','Não informado']],p.idestado_civil);civil.disabled=true;let civilReady=false;
  const civilStatus=node('p','Carregando estados civis...');box.append(civilStatus);

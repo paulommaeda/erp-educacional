@@ -27,8 +27,9 @@ $period=$catalog->create('periodos_letivos',['codigo'=>'2027','descricao'=>'Ano 
 $other=$catalog->create('periodos_letivos',['codigo'=>'2028','descricao'=>'Ano letivo 2028','data_inicio'=>'2028-01-01','data_fim'=>'2028-12-31'],requestKey())['id'];
 $course=$catalog->create('cursos',['codigo'=>'EF','nome'=>'Ensino Fundamental'],requestKey())['id'];
 $shift=$catalog->create('turnos',['codigo'=>'M','nome'=>'Matutino'],requestKey())['id'];
-$plan=$catalog->create('planos_pagamento',['codigo'=>'P','nome'=>'Anuidade','valor_anuidade'=>'1200.00'],requestKey())['id'];
-$makeClass=fn($p,$code)=>$catalog->create('turmas',['idplano'=>$plan,'codperiodo'=>$p,'idcurso'=>$course,'idturno'=>$shift,'codigo'=>$code,'nome'=>'6º ano '.$code,'capacidade'=>1],requestKey())['id'];
+$plan=$catalog->create('planos_pagamento',['codperiodo'=>$period,'codigo'=>'P','nome'=>'Anuidade','valor_anuidade'=>'1200.00'],requestKey())['id'];
+$otherPlan=$catalog->create('planos_pagamento',['codperiodo'=>$other,'codigo'=>'P28','nome'=>'Anuidade 2028','valor_anuidade'=>'1200.00'],requestKey())['id'];
+$makeClass=fn($p,$code)=>$catalog->create('turmas',['idplano'=>$p===$period?$plan:$otherPlan,'codperiodo'=>$p,'idcurso'=>$course,'idturno'=>$shift,'codigo'=>$code,'nome'=>'6º ano '.$code,'capacidade'=>1],requestKey())['id'];
 $t=$makeClass($period,'A');$wrong=$makeClass($other,'B');
 $link=$flow->period($a,['codperiodo'=>$period],requestKey());
 check($link['status']==='aguardando_turma','período salvo sem exigir turma');

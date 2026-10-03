@@ -18,6 +18,7 @@ final class Portal
     }
     public function register():void
     {
+        Authentication::register();
         add_action('wp_enqueue_scripts',static function(){global $post;if($post instanceof \WP_Post && str_contains($post->post_content,'[erp_')){Pages::assets();wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);}});
         add_action('admin_init',[self::class,'setup'],20);
         add_action('admin_init',static function(){if(is_user_logged_in()&&!Access::isAdmin()&&!wp_doing_ajax()){wp_safe_redirect(self::url());exit;}},1);
@@ -36,7 +37,7 @@ final class Portal
     }
     private function nav():string
     {
-        if(!is_user_logged_in())return ''; $html='<nav class="journey-menu" aria-label="Navegação do ERP">';
+        if(!is_user_logged_in()||in_array($view,['recuperar_senha','redefinir_senha'],true))return Authentication::render($logo,$view);
         foreach(MenuPolicy::available() as $key=>$label)$html.='<a href="'.esc_url(self::url($key)).'">'.esc_html($label).'</a>';
         return $html.'</nav>';
     }
@@ -45,7 +46,7 @@ final class Portal
         $view=isset($_GET['erp_tela'])?sanitize_key(wp_unslash($_GET['erp_tela'])):$fallback;
         Pages::assets();wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);
         wp_enqueue_script('journey-portal',plugins_url('assets/portal.js',EDERP_FILE),['ederp','ederp-person-fields'],EDERP_VERSION,true);
-        wp_localize_script('journey-portal','JOURNEY',['view'=>$view,'menus'=>MenuPolicy::available(),'url'=>self::url(),'logout'=>wp_logout_url(self::url()),'school'=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read()['nome'],'logo'=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::logo(),'name'=>wp_get_current_user()->display_name??'','admin'=>Access::isAdmin()]);
+        wp_localize_script('journey-portal','JOURNEY',['view'=>$view,'menus'=>MenuPolicy::available(),'url'=>self::url(),'logout'=>Authentication::logoutUrl(),'school'=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read()['nome'],'logo'=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::logo(),'name'=>wp_get_current_user()->display_name??'','admin'=>Access::isAdmin()]);
         $identity=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read();$schoolName=esc_html($identity['nome']);$logoUrl=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::logo();
         $logo=$logoUrl?'<img src="'.esc_url($logoUrl).'" alt="'.$schoolName.'" width="245" height="56">':'<span class="erp-school-name">'.$schoolName.'</span>';
         if(!is_user_logged_in())return '<div class="journey-login ederp">'.$logo.'<h1>Bem-vindo à sua jornada.</h1><p>Acesse sua vida acadêmica e mantenha seus dados em dia.</p>'.wp_login_form(['echo'=>false,'redirect'=>self::url(),'label_username'=>'Usuário ou e-mail','label_password'=>'Senha','label_log_in'=>'Entrar','label_remember'=>'Manter conectado']).'<a href="'.esc_url(wp_lostpassword_url(self::url())).'">Esqueci minha senha</a></div>';
@@ -56,7 +57,7 @@ final class Portal
             (new Pages())->screen($view,MenuPolicy::MENUS[$view],$caps[$view]);
         }elseif(in_array($view,['meus_estudos','meu_financeiro','renovacao'],true))echo '<section data-ederp-portal="'.esc_attr(['meus_estudos'=>'academic','meu_financeiro'=>'finance','renovacao'=>'renew'][$view]).'"><p role="status">Carregando...</p></section>';
         else echo '<section data-journey-view="'.esc_attr($view).'"><p role="status">Carregando...</p></section>';
-        echo '</main><footer class="journey-footer">'.$schoolName.' · Portal educacional</footer></div><nav class="journey-bottom" aria-label="Navegação rápida"></nav><dialog class="journey-drawer"><div class="journey-drawer-head"><h2>Seu portal</h2><button type="button" data-close-menu aria-label="Fechar menu">Fechar</button></div>'.$this->nav().'<a class="journey-logout" href="'.esc_url(wp_logout_url(self::url())).'">Sair da conta</a></dialog></div>';
+        echo '</main><footer class="journey-footer">'.$schoolName.' · Portal educacional</footer></div><nav class="journey-bottom" aria-label="Navegação rápida"></nav><dialog class="journey-drawer"><div class="journey-drawer-head"><h2>Seu portal</h2><button type="button" data-close-menu aria-label="Fechar menu">Fechar</button></div>'.$this->nav().'<a class="journey-logout" href="'.esc_url(Authentication::logoutUrl()).'">Sair da conta</a></dialog></div>';
         return ob_get_clean();
     }
 }

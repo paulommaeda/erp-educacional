@@ -26,6 +26,7 @@ final class CatalogService
             switch ($table) {
                 case 'pessoas':
                     $data=$this->personData($d);
+                    $data['codigo_pessoa']=(new PersonNumbering($this->db))->reserve($data['codpessoa_origem']);
                     break;
                 case 'alunos': $data=['codpessoa'=>Input::id($d['codpessoa']??null),'ra'=>Input::text($d['ra']??null,40),'tipo_aluno'=>\EducacionalERP\Domain\PersonFields::studentType($d['tipo_aluno']??'Regular')]; break;
                 case 'periodos_letivos':
@@ -103,7 +104,7 @@ final class CatalogService
             if(array_key_exists('estado_civil',$data)&&!array_key_exists('idestado_civil',$data))$data['idestado_civil']=$data['estado_civil'];
             $valid=$this->personData(array_merge($before,$data));
             if(isset($data['ativo'])) { if(!in_array($data['ativo'],[0,1,'0','1',true,false],true)) { throw new RuleViolation('Situação inválida.'); } $valid['ativo']=(int)$data['ativo']; }
-            $this->db->update('pessoas',$id,$valid);
+            $valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);
             $account=$this->accounts->ensure($id,$data['user_login']??null);
             $this->db->audit('pessoas',$id,'editar',$before,$valid,$key);
             return ['codpessoa'=>(string)$id]+$account;
@@ -122,7 +123,7 @@ final class CatalogService
             if(!isset($data['versao'])||(string)$data['versao']!==$before['versao'])throw new RuleViolation('Seus dados mudaram. Recarregue o perfil antes de salvar.');
             if(!empty($data['foto_attachment_id'])&&(int)$data['foto_attachment_id']!==(int)$before['foto_attachment_id']&&!\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()&&(int)get_post_field('post_author',(int)$data['foto_attachment_id'])!==$user)throw new RuleViolation('Use uma foto enviada pela sua própria conta.');
             if(array_key_exists('estado_civil',$data)&&!array_key_exists('idestado_civil',$data))$data['idestado_civil']=$data['estado_civil'];
-            $valid=$this->personData(array_merge($before,$data));$this->db->update('pessoas',$id,$valid);$this->accounts->sync($id);
+            $valid=$this->personData(array_merge($before,$data));$valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);$this->accounts->sync($id);
             $this->db->audit('pessoas',$id,'editar_proprio_perfil',$before,$valid,$key);
             return ['salvo'=>true,'versao'=>(string)((int)$before['versao']+1)];
         }));

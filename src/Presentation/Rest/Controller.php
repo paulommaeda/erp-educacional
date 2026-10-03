@@ -78,6 +78,8 @@ final class Controller
         $this->route('/periodos/copiar','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\PeriodCopyService($this->db,$this->catalog,new Operations($this->db)))->copy($this->payload($r),$this->key($r)));
         $this->route('/colegio','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::payload());
         $this->route('/colegio','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::save($this->payload($r)));
+        $this->route('/numeracao-pessoas','GET',fn()=>Access::isAdmin(),fn()=>(new \EducacionalERP\Application\PersonNumbering($this->db))->read());
+        $this->route('/numeracao-pessoas','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\PersonNumbering($this->db))->save($this->payload($r),$this->key($r)));
         $this->route('/usuarios','GET',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->listing(['page'=>$r->get_param('page'),'search'=>$r->get_param('search')]));
         $this->route('/usuarios/'.$id,'POST',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->update((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/secretaria/alunos','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentDirectory($r));
@@ -94,6 +96,14 @@ final class Controller
         $this->route('/alunos/'.$id.'/responsaveis','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->guardianView((int)$r['id']));
         $this->route('/alunos/'.$id.'/responsaveis','POST',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->catalog->link((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/matriculas','POST',$cap('erp_gerenciar_academico'),fn($r)=>$this->academic->enroll($this->payload($r),$this->key($r)));
+        $this->route('/matriculas/'.$id.'/historico','GET',$cap('erp_gerenciar_academico'),fn($r)=>(new \EducacionalERP\Application\EnrollmentLifecycle($this->db,new Operations($this->db)))->history((int)$r['id']));
+        $this->route('/matriculas/'.$id.'/transferencia-externa','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\EnrollmentLifecycle($this->db,new Operations($this->db)))->external((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/matriculas/'.$id.'/resultado','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\EnrollmentLifecycle($this->db,new Operations($this->db)))->outcome((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/matriculas/'.$id.'/cancelar-rematricula','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\EnrollmentLifecycle($this->db,new Operations($this->db)))->cancel((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/documentos-transferencia','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Infrastructure\WordPress\PrivateDocuments())->upload($r->get_file_params()['documento']??[]));
+        $this->route('/matriculas/'.$id.'/documentos/(?P<token>[a-f0-9]{64})','GET',fn()=>Access::isAdmin(),function($r){
+            if(!$this->db->row('SELECT idmovimentacao FROM '.$this->db->table('matricula_movimentacoes').' WHERE idmatricula=%d AND documento_token=%s',[(int)$r['id'],(string)$r['token']]))throw new RuleViolation('Documento não vinculado à matrícula.');$d=(new \EducacionalERP\Infrastructure\WordPress\PrivateDocuments())->read((string)$r['token']);return ['nome'=>$d['name'],'mime'=>$d['mime'],'data'=>$d['data']];
+        });
         $this->route('/matriculas/'.$id.'/transferencias','POST',fn()=>Access::isAdmin(),fn($r)=>$this->academic->transfer((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/alunos/'.$id.'/trocas-responsavel-financeiro','POST',$cap('erp_trocar_responsavel_financeiro'),fn($r)=>$this->finance->changeGuardian((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/lancamentos/'.$id.'/baixas','POST',$cap('erp_baixar_lancamentos'),fn($r)=>$this->finance->pay((int)$r['id'],$this->payload($r),$this->key($r)));
@@ -113,7 +123,7 @@ final class Controller
     private function pendingContracts(\WP_REST_Request $r):array
     {
         $ct=$this->db->table('contratos');$m=$this->db->table('matriculas');$a=$this->db->table('alunos');$p=$this->db->table('pessoas');$t=$this->db->table('turmas');$pl=$this->db->table('periodos_letivos');
-        $join=" FROM $ct c JOIN $m m ON m.idmatricula=c.idmatricula JOIN $a a ON a.idaluno=m.idaluno JOIN $p p ON p.codpessoa=a.codpessoa JOIN $t t ON t.idturma=m.idturma_atual JOIN $pl pl ON pl.codperiodo=m.codperiodo WHERE c.parcelas_geradas=0 AND c.status='ativo' AND m.status='ativa'";$args=[];
+        $join=" FROM $ct c JOIN $m m ON m.idmatricula=c.idmatricula JOIN $a a ON a.idaluno=m.idaluno JOIN $p p ON p.codpessoa=a.codpessoa JOIN $t t ON t.idturma=m.idturma_atual JOIN $pl pl ON pl.codperiodo=m.codperiodo WHERE c.parcelas_geradas=0 AND c.status='ativo' AND m.status IN ('reservado','cursando','ativa')";$args=[];
         $period=SchoolSettings::resolve($r->get_param('codperiodo'));if($period){$join.=' AND m.codperiodo=%d';$args[]=$period;}
         $search=trim((string)$r->get_param('search'));if($search!==''){$join.=' AND (p.nome LIKE %s OR a.ra LIKE %s)';$term='%'.$this->db->wp->esc_like($search).'%';$args[]=$term;$args[]=$term;}
         $page=max(1,(int)$r->get_param('page'));$total=(int)$this->db->row('SELECT COUNT(*) AS n'.$join,$args)['n'];
@@ -133,7 +143,7 @@ final class Controller
         $person=$this->access->person();if(!$person)throw new RuleViolation('Sua conta não está vinculada a uma pessoa. Procure a secretaria.');
         $p=(new \EducacionalERP\Application\CivilStatus($this->db))->decorate($this->db->get('pessoas',$person));unset($p['codpessoa_origem'],$p['ativo']);
         $p['foto_url']=!empty($p['foto_attachment_id'])?wp_get_attachment_image_url((int)$p['foto_attachment_id'],'thumbnail'):null;
-        return ['pessoa'=>$p,'conta'=>(new Accounts($this->db))->summary($person),'redefinir_senha'=>wp_lostpassword_url(\EducacionalERP\Presentation\Portal\Portal::url('perfil'))];
+        return ['pessoa'=>$p,'conta'=>(new Accounts($this->db))->summary($person),'redefinir_senha'=>\EducacionalERP\Presentation\Portal\Portal::url('recuperar_senha')];
     }
     private function dashboard(int $period=0):array
     {
@@ -221,7 +231,7 @@ final class Controller
         $col=in_array($name,['pessoas','cursos','turnos','turmas','planos_pagamento'],true)?'nome':($name==='alunos'?'ra':'descricao');
         if($q!=='') { $where=" WHERE $col LIKE %s"; $args[]='%'.$this->db->wp->esc_like($q).'%'; }
         if($name==='pessoas' && ($code=trim(sanitize_text_field((string)$r->get_param('codigo'))))!==''){
-            $where.=($where?' AND ':' WHERE ').'(CAST(codpessoa AS CHAR)=%s OR codpessoa_origem=%s)';$args[]=$code;$args[]=\EducacionalERP\Domain\CadastroText::upper($code);
+            $where.=($where?' AND ':' WHERE ').'codigo_pessoa=%s';$args[]=\EducacionalERP\Domain\CadastroText::upper($code);
         }
         if($name==='turmas' && ($period=SchoolSettings::forViewer($r->get_param('codperiodo')))){$where.=($where?' AND ':' WHERE ').'codperiodo=%d';$args[]=$period;}
         if($name==='turmas' && $r->get_param('idcurso')){$where.=($where?' AND ':' WHERE ').'idcurso=%d';$args[]=Input::id($r->get_param('idcurso'));}
@@ -250,7 +260,7 @@ final class Controller
     public function academicView(int $student,int $period=0): array
     {
         $m=$this->db->table('matriculas'); $t=$this->db->table('turmas'); $c=$this->db->table('cursos'); $p=$this->db->table('periodos_letivos'); $u=$this->db->table('turnos'); $ct=$this->db->table('contratos');
-        return $this->db->rows("SELECT m.versao,m.idmatricula,m.codperiodo,m.idcurso,m.idturma_atual,m.status,m.data_matricula,(SELECT COUNT(*) FROM $ct ct WHERE ct.idmatricula=m.idmatricula) AS contratos,p.codigo AS periodo,c.nome AS curso,t.nome AS turma,u.nome AS turno FROM $m m JOIN $t t ON t.idturma=m.idturma_atual JOIN $c c ON c.idcurso=m.idcurso JOIN $p p ON p.codperiodo=m.codperiodo JOIN $u u ON u.idturno=t.idturno WHERE m.idaluno=%d".($period?' AND m.codperiodo=%d':'')." ORDER BY p.data_inicio DESC",$period?[$student,$period]:[$student]);
+        return $this->db->rows("SELECT m.versao,m.idmatricula,m.idmatricula_origem,m.codperiodo,m.idcurso,m.idturma_atual,m.status,m.data_matricula,(SELECT COUNT(*) FROM $ct ct WHERE ct.idmatricula=m.idmatricula) AS contratos,p.codigo AS periodo,c.nome AS curso,t.nome AS turma,u.nome AS turno FROM $m m JOIN $t t ON t.idturma=m.idturma_atual JOIN $c c ON c.idcurso=m.idcurso JOIN $p p ON p.codperiodo=m.codperiodo JOIN $u u ON u.idturno=t.idturno WHERE m.idaluno=%d".($period?' AND m.codperiodo=%d':'')." ORDER BY p.data_inicio DESC",$period?[$student,$period]:[$student]);
     }
     public function financeView(int $student,int $period=0): array
     {

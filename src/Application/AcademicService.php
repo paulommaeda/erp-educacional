@@ -18,14 +18,14 @@ final class AcademicService
         $class = $this->db->get('turmas', Input::id($data['idturma'] ?? null), true);
         $this->checkClass($class);
         $matriculas = $this->db->table('matriculas');
-        if ($this->db->row("SELECT idmatricula FROM $matriculas WHERE idaluno=%d AND codperiodo=%d AND idcurso=%d FOR UPDATE", [(int)$student['idaluno'],(int)$class['codperiodo'],(int)$class['idcurso']])) { throw new RuleViolation('O aluno já possui matrícula neste curso e período.'); }
+        if ($this->db->row("SELECT idmatricula FROM $matriculas WHERE idaluno=%d AND codperiodo=%d AND idcurso=%d AND ativo_unico=1 FOR UPDATE", [(int)$student['idaluno'],(int)$class['codperiodo'],(int)$class['idcurso']])) { throw new RuleViolation('O aluno já possui matrícula neste curso e período.'); }
         $enrollment = $this->db->insert('matriculas', ['idaluno'=>$student['idaluno'],'codperiodo'=>$class['codperiodo'],'idcurso'=>$class['idcurso'],
-            'idturma_atual'=>$class['idturma'],'idmatricula_origem'=>$origin,'data_matricula'=>Input::today(),'status'=>'ativa','origem'=>$origin ? 'portal' : 'secretaria']);
+            'idturma_atual'=>$class['idturma'],'idmatricula_origem'=>$origin,'data_matricula'=>Input::today(),'status'=>'reservado','origem'=>$origin ? 'portal' : 'secretaria']);
         $pre=$this->db->table('aluno_periodos');
         $pending=$this->db->row("SELECT idvinculoperiodo FROM $pre WHERE idaluno=%d AND codperiodo=%d AND status='aguardando_turma' FOR UPDATE",[(int)$student['idaluno'],(int)$class['codperiodo']]);
         if($pending) { $this->db->update('aluno_periodos',(int)$pending['idvinculoperiodo'],['idmatricula'=>$enrollment,'status'=>'matriculado']); }
         $financial=$this->createContractInside($enrollment,$data,$key,$origin!==null);
-        $this->movement($enrollment,null,(int)$class['idturma'],'matricula','Matrícula inicial',null,'ativa');
+        $this->movement($enrollment,null,(int)$class['idturma'],'matricula','Matrícula inicial',null,'reservado');
         $result = ['idmatricula'=>(string)$enrollment]+$financial;
         $this->db->audit('matriculas',$enrollment,'criar',null,$result,$key);
         return $result;
@@ -40,7 +40,7 @@ final class AcademicService
         $initial=$this->db->get('matriculas',$enrollment);
         $student=$this->db->get('alunos',(int)$initial['idaluno'],true);
         $matricula=$this->db->get('matriculas',$enrollment,true);
-        if($matricula['status']!=='ativa') { throw new RuleViolation('A matrícula deve estar ativa para gerar o contrato.'); }
+        if(!\EducacionalERP\Domain\EnrollmentStatus::open($matricula['status'])) { throw new RuleViolation('A matrícula deve estar ativa para gerar o contrato.'); }
         $contracts=$this->db->table('contratos');
         if($this->db->row("SELECT idcontrato FROM $contracts WHERE idmatricula=%d FOR UPDATE",[$enrollment])) { throw new RuleViolation('Esta matrícula já possui contrato financeiro.'); }
         $links = $this->db->table('aluno_responsaveis');
@@ -87,7 +87,7 @@ final class AcademicService
         $initial=$this->db->get('contratos',$id);$m=$this->db->get('matriculas',(int)$initial['idmatricula']);
         $student=$this->db->get('alunos',(int)$m['idaluno'],true);$m=$this->db->get('matriculas',(int)$m['idmatricula'],true);$contract=$this->db->get('contratos',$id,true);
         if((int)$contract['parcelas_geradas'])return ['idcontrato'=>(string)$id,'quantidade_parcelas'=>(int)$contract['quantidade_parcelas'],'ja_geradas'=>true];
-        if($m['status']!=='ativa'||$contract['status']!=='ativo')throw new RuleViolation('Matrícula e contrato devem estar ativos.');
+        if(!\EducacionalERP\Domain\EnrollmentStatus::open($m['status'])||$contract['status']!=='ativo')throw new RuleViolation('Matrícula e contrato devem estar ativos.');
         if($this->db->row('SELECT idparcela FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d FOR UPDATE',[$id]))throw new RuleViolation('Contrato com parcelas existentes e situação divergente. Procure o administrador.');
         $person=$this->db->get('pessoas',(int)$contract['codpessoa_rf_atual']);if(!(int)$person['ativo'])throw new RuleViolation('Responsável financeiro inativo.');
         $count=(int)$contract['quantidade_parcelas'];$original=Money::positive($contract['valor_original_total']);$discount=Money::cents($contract['desconto_incondicional_total']);
@@ -114,9 +114,9 @@ final class AcademicService
         if((int)$class['codperiodo']!==$periodId) { throw new RuleViolation('A turma não pertence ao período selecionado.'); }
         $this->checkClass($class);
         $m=$this->db->table('matriculas');
-        if($this->db->row("SELECT idmatricula FROM $m WHERE idaluno=%d AND codperiodo=%d AND idcurso=%d FOR UPDATE",[$studentId,$periodId,(int)$class['idcurso']])) { throw new RuleViolation('O aluno já está matriculado neste curso e período.'); }
-        $id=$this->db->insert('matriculas',['idaluno'=>$studentId,'codperiodo'=>$periodId,'idcurso'=>$class['idcurso'],'idturma_atual'=>$classId,'data_matricula'=>Input::today(),'status'=>'ativa','origem'=>'secretaria']);
-        $this->movement($id,null,$classId,'matricula','Vinculação de turma pela ficha do aluno',null,'ativa');
+        if($this->db->row("SELECT idmatricula FROM $m WHERE idaluno=%d AND codperiodo=%d AND idcurso=%d AND ativo_unico=1 FOR UPDATE",[$studentId,$periodId,(int)$class['idcurso']])) { throw new RuleViolation('O aluno já está matriculado neste curso e período.'); }
+        $id=$this->db->insert('matriculas',['idaluno'=>$studentId,'codperiodo'=>$periodId,'idcurso'=>$class['idcurso'],'idturma_atual'=>$classId,'data_matricula'=>Input::today(),'status'=>'reservado','origem'=>'secretaria']);
+        $this->movement($id,null,$classId,'matricula','Vinculação de turma pela ficha do aluno',null,'reservado');
         $result=['idmatricula'=>(string)$id,'idturma'=>(string)$classId];
         $this->db->audit('matriculas',$id,'criar',null,$result,$key);
         return $result;
@@ -128,8 +128,9 @@ final class AcademicService
             $initial = $this->db->get('matriculas',$id);
             $this->db->get('alunos',(int)$initial['idaluno'],true);
             $m = $this->db->get('matriculas',$id,true);
+            if(isset($data['versao'])&&(string)$data['versao']!==(string)$m['versao'])throw new RuleViolation('Matrícula alterada. Atualize a ficha.');
             $destination = Input::id($data['idturma_destino'] ?? null);
-            if ($m['status'] !== 'ativa' || $destination === (int)$m['idturma_atual']) { throw new RuleViolation('Matrícula inativa ou turma sem alteração.'); }
+            if (!\EducacionalERP\Domain\EnrollmentStatus::open($m['status']) || $destination === (int)$m['idturma_atual']) { throw new RuleViolation('Matrícula inativa ou turma sem alteração.'); }
             $ids = [(int)$m['idturma_atual'],$destination]; sort($ids);
             foreach ($ids as $classId) { $this->db->get('turmas',$classId,true); }
             $class = $this->db->get('turmas',$destination);
@@ -137,13 +138,13 @@ final class AcademicService
             $this->checkClass($class);
             $reason = Input::text($data['motivo'] ?? null,2000);
             $this->db->update('matriculas',$id,['idturma_atual'=>$destination]);
-            $this->movement($id,(int)$m['idturma_atual'],$destination,'transferencia_turma',$reason,'ativa','ativa');
+            $this->movement($id,(int)$m['idturma_atual'],$destination,'transferencia_turma',$reason,$m['status'],$m['status']);
             $after = $this->db->get('matriculas',$id);
             $this->db->audit('matriculas',$id,'transferir',$m,$after,$key);
             return ['idmatricula'=>(string)$id,'idturma_atual'=>(string)$destination];
         }));
     }
-    private function checkClass(array $class): void
+    public function checkClass(array $class): void
     {
         if ($class['status'] !== 'ativa') { throw new RuleViolation('Turma inativa.'); }
         $period = $this->db->get('periodos_letivos',(int)$class['codperiodo']);
@@ -153,10 +154,10 @@ final class AcademicService
         }
         $table = $this->db->table('matriculas');
         // Current locking read, not an older consistent snapshot: prevents overbooking.
-        $occupied = $this->db->rows("SELECT idmatricula FROM $table WHERE idturma_atual=%d AND status='ativa' FOR UPDATE", [(int)$class['idturma']]);
+        $occupied = $this->db->rows("SELECT idmatricula FROM $table WHERE idturma_atual=%d AND status IN ('reservado','cursando','ativa') FOR UPDATE", [(int)$class['idturma']]);
         if (count($occupied) >= (int)$class['capacidade']) { throw new RuleViolation('Turma sem vagas.'); }
     }
-    private function movement(int $id, ?int $from, ?int $to, string $type, string $reason, ?string $old, string $new): void
+    public function movement(int $id, ?int $from, ?int $to, string $type, string $reason, ?string $old, string $new): void
     {
         $now = gmdate('Y-m-d H:i:s');
         $this->db->insert('matricula_movimentacoes',['idmatricula'=>$id,'tipo'=>$type,'idturma_origem'=>$from,'idturma_destino'=>$to,

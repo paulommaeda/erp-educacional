@@ -30,7 +30,7 @@ final class FinanceService
     public function pay(int $id,array $data,string $key): array
     {
         return $this->db->atomic(fn()=>$this->operations->run($key,'baixar',['idlancamento'=>$id]+$data,function() use($id,$data,$key){
-            [$l]=$this->lockTitle($id);
+            [$l,$contract]=$this->lockTitle($id);
             $amount=Money::positive($data['valor_pago']??null);
             $balance=Money::cents($l['saldo_aberto']);
             if ($amount>$balance) { throw new RuleViolation('Pagamento excede o saldo aberto.'); }
@@ -51,6 +51,7 @@ final class FinanceService
             $this->db->update('lancamentos',$id,['valor_baixa'=>Money::format(Money::cents($l['valor_baixa'])+$amount),'saldo_aberto'=>Money::format($balance-$amount),'status'=>$balance===$amount?'quitado':'parcial']);
             $after=$this->db->get('lancamentos',$id);
             $this->db->audit('lancamentos',$id,'baixa',$l,$after,$key);
+            EnrollmentLifecycle::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);
             return ['idbaixa'=>(string)$idbaixa,'saldo_aberto'=>$after['saldo_aberto'],'status'=>$after['status']];
         }));
     }
@@ -71,6 +72,7 @@ final class FinanceService
             $this->db->update('lancamentos',(int)$l['idlancamento'],['valor_baixa'=>Money::format($paid),'saldo_aberto'=>Money::format(Money::cents($l['saldo_aberto'])+$amount),
                 'status'=>$paid>0?'parcial':'aberto','codpessoa_rf_atual'=>$contract['codpessoa_rf_atual']]);
             $this->db->audit('lancamentos',(int)$l['idlancamento'],'estorno',$l,$this->db->get('lancamentos',(int)$l['idlancamento']),$key);
+            EnrollmentLifecycle::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);
             return ['idestorno'=>(string)$estorno,'valor'=>$b['valor_pago']];
         }));
     }
@@ -95,6 +97,7 @@ final class FinanceService
             $this->db->update('lancamentos',$id,[$component=>Money::format($values[$component]),'valor_liquido'=>Money::format($net),'saldo_aberto'=>Money::format($balance),
                 'status'=>$balance===0?'quitado':($values['valor_baixa']>0?'parcial':'aberto'),'codpessoa_rf_atual'=>$balance>0?$contract['codpessoa_rf_atual']:$l['codpessoa_rf_atual']]);
             $this->db->audit('lancamentos',$id,'ajuste',$l,$this->db->get('lancamentos',$id),$key);
+            EnrollmentLifecycle::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);
             return ['idajuste'=>(string)$adjustment,'saldo_aberto'=>Money::format($balance)];
         }));
     }

@@ -51,7 +51,7 @@ final class StudentWorkflow
             $existing=$this->db->row("SELECT * FROM $v WHERE idaluno=%d AND codperiodo=%d FOR UPDATE",[$student,$period]);
             if($existing) { return ['idvinculoperiodo'=>$existing['idvinculoperiodo'],'status'=>$existing['status']]; }
             $m=$this->db->table('matriculas');
-            if($this->db->row("SELECT idmatricula FROM $m WHERE idaluno=%d AND codperiodo=%d FOR UPDATE",[$student,$period])) { throw new RuleViolation('O aluno já possui matrícula neste período. Consulte a turma na ficha.'); }
+            if($this->db->row("SELECT idmatricula FROM $m WHERE idaluno=%d AND codperiodo=%d AND ativo_unico=1 FOR UPDATE",[$student,$period])) { throw new RuleViolation('O aluno já possui matrícula neste período. Consulte a turma na ficha.'); }
             $id=$this->db->insert('aluno_periodos',['idaluno'=>$student,'codperiodo'=>$period,'status'=>'aguardando_turma']);
             $result=['idvinculoperiodo'=>(string)$id,'status'=>'aguardando_turma'];
             $this->db->audit('aluno_periodos',$id,'vincular_periodo',null,['idaluno'=>$student,'codperiodo'=>$period],$key);

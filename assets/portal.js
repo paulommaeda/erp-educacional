@@ -27,9 +27,9 @@ async function users(){
  const prev=button('Anterior',()=>{page--;load();}),next=button('Próxima',()=>{page++;load();});nav.append(prev,status,next);host.append(filters,list,nav);
  async function load(){const turn=++serial;try{const data=await api('usuarios?'+new URLSearchParams({page,search:search.value}));if(turn!==serial)return;list.replaceChildren();
   if(!data.items.length)list.append(h('p','Nenhum usuário encontrado.'));
-  for(const u of data.items){const c=card(u.nome,'Login: '+u.login);c.append(h('p','E-mail: '+(u.email||'Não informado')),h('p','Perfis: '+u.perfis.join(', ')),h('p','Pessoa: '+(u.codpessoa||'Sem vínculo')));
-   if(u.editavel&&(data.permissions.email||data.permissions.password))c.append(button('Editar conta',()=>edit(u,data.permissions)));
-   list.append(c);
+  list.className='erp-users-list';
+  for(const u of data.items){const c=h('div',undefined,'erp-user-row');c.append(h('strong',u.nome,'erp-user-name'),h('span',u.email||'E-mail não informado','erp-user-email'));
+   if(u.editavel&&(data.permissions.email||data.permissions.password))c.append(button('Editar',()=>edit(u,data.permissions)));list.append(c);
   }
   status.textContent='Página '+page+' · '+data.total+' usuários';prev.disabled=page===1;next.disabled=page*20>=data.total;
  }catch(e){if(turn===serial)list.replaceChildren(h('p',e.message));}}
