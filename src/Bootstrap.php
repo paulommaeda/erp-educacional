@@ -18,6 +18,7 @@ final class Bootstrap
     public function boot(): void
     {
         global $wpdb;
+        \EducacionalERP\Infrastructure\WordPress\SchoolIdentity::register();
         $db=new Database($wpdb); $ops=new Operations($db); $access=new Access($db); $academic=new AcademicService($db,$ops);
         $accounts=new Accounts($db);$catalog=new CatalogService($db,$ops,$accounts);
         $controller=new Controller($db,$access,$academic,$catalog,new FinanceService($db,$ops),new ExportService($db),new RenewalService($db,$ops,$academic,$access),new StudentWorkflow($db,$ops,$catalog,$academic));

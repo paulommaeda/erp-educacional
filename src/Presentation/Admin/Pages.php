@@ -15,11 +15,12 @@ final class Pages
     public static function assets(): void
     {
         global $post;
-        $photoPage=in_array(sanitize_key((string)($_GET['erp_tela']??'')),['pessoas','alunos'],true)||($post instanceof \WP_Post && preg_match('/\[erp_(pessoas|alunos)\b/',$post->post_content));
+        $photoPage=in_array(sanitize_key((string)($_GET['erp_tela']??'')),['pessoas','alunos','configuracoes'],true)||($post instanceof \WP_Post && preg_match('/\[erp_(pessoas|alunos|configuracoes)\b/',$post->post_content));
         if(current_user_can('upload_files') && (is_admin()||$photoPage)) { wp_enqueue_media(); }
         wp_enqueue_script('ederp-person-fields',plugins_url('assets/person-fields.js',EDERP_FILE),[],EDERP_VERSION,true);
         wp_enqueue_script('ederp-import',plugins_url('assets/import.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_style('ederp',plugins_url('assets/app.css',EDERP_FILE),[],EDERP_VERSION);
+        wp_add_inline_style('ederp',\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::css());
         wp_enqueue_script('ederp-modals',plugins_url('assets/modals.js',EDERP_FILE),[],EDERP_VERSION,true);
         wp_enqueue_script('ederp',plugins_url('assets/app.js',EDERP_FILE),['ederp-modals'],EDERP_VERSION,true);
         wp_localize_script('ederp','EDERP',['root'=>esc_url_raw(rest_url('erp-educacional/v1/')),'nonce'=>wp_create_nonce('wp_rest'),'assets'=>plugins_url('assets/',EDERP_FILE),'parentescos'=>\EducacionalERP\Domain\Relationships::LABELS,
@@ -58,7 +59,7 @@ final class Pages
                 'data_abertura:date'=>'Data de abertura','data_encerramento:date'=>'Data de encerramento','valor_total'=>'Valor total (ex.: 12000.00)','numero_parcelas:number'=>'Número de parcelas','primeiro_vencimento:date'=>'Primeiro vencimento','turmas'=>'IDs das turmas separados por vírgula','versao_termo'=>'Versão do termo','texto_termo:textarea'=>'Texto integral do termo']);
             echo '<p>O responsável verá as ofertas elegíveis no Portal e confirmará a renovação com aceite do termo.</p>';
         } elseif($slug==='config') {
-            echo '<p><a href="'.esc_url(\EducacionalERP\Presentation\Portal\Portal::url()).'">Abrir Portal Journey</a></p>';
+            echo '<p><a href="'.esc_url(\EducacionalERP\Presentation\Portal\Portal::url()).'">Abrir portal escolar</a></p>';
             echo '<h2>Contas WordPress automáticas</h2><p>Cadastre as pessoas em Pessoas. A conta é criada com o nascimento informado, e os perfis são sincronizados pelos vínculos.</p>';
             echo '<h2>Banco de dados</h2><p>Versão instalada: '.esc_html((string)get_option('ederp_schema_version','não instalada')).'</p>';
             if(get_option('ederp_schema_error')) { echo '<p>'.esc_html((string)get_option('ederp_schema_error')).'</p>'; }

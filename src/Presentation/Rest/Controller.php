@@ -76,6 +76,8 @@ final class Controller
             $this->route('/cadastros/'.$table.'/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->edit($table,(int)$r['id'],$this->payload($r),$this->key($r)));
         }
         $this->route('/periodos/copiar','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\PeriodCopyService($this->db,$this->catalog,new Operations($this->db)))->copy($this->payload($r),$this->key($r)));
+        $this->route('/colegio','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::payload());
+        $this->route('/colegio','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::save($this->payload($r)));
         $this->route('/usuarios','GET',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->listing(['page'=>$r->get_param('page'),'search'=>$r->get_param('search')]));
         $this->route('/usuarios/'.$id,'POST',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->update((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/secretaria/alunos','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentDirectory($r));

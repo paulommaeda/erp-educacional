@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.5
+# ERP Educacional — 0.9.6
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -163,7 +163,9 @@ Matrículas, contratos, parcelas, ofertas e vínculos de pessoas não são copia
 
 Em Estrutura acadêmica → Turmas, selecione um curso para filtrar. O botão Todos os cursos remove esse filtro. A busca por nome e o período da consulta continuam combinados. Os resultados são ordenados pelo nome da turma (A–Z), com código e ID como desempate, antes da paginação. Não há migração de banco.
 
-## Gestão de usuários e acesso assistido — 0.9.5
+## Gestão de usuários e acesso assistido — 0.9.5 (histórico)
+
+**A integração de acesso assistido descrita abaixo foi removida na versão 0.9.6.**
 
 A nova área **Usuários** fica no portal e também pode ser usada pelo shortcode `[erp_usuarios]`. Possui busca por nome, login ou e-mail, paginação, perfis e pessoa vinculada. A edição em modal permite alterar e-mail e definir uma nova senha (mínimo 12 caracteres). Deixe a senha vazia para manter a atual. Não é possível consultar a senha atual. O login e os papéis não são alterados por esta tela.
 
@@ -183,3 +185,13 @@ Referências do fornecedor (consultadas em 03/10/2026):
 - https://docs.web357.com/login-as-a-user-wordpress-plugin/intro/
 - https://docs.web357.com/login-as-a-user-wordpress-plugin/configuration/
 - https://docs.web357.com/login-as-a-user-wordpress-plugin/guides/shortcode/
+
+## Identidade do colégio — 0.9.6
+
+Em **Configurações → Colégio e identidade visual → Personalizar colégio**, o administrador configura nome, razão social, CNPJ, telefone, e-mail, site e endereço completo. O formulário em modal permite selecionar/enviar o logo pela biblioteca de mídia e escolher as cores dos botões, destaques, cor secundária, texto, fundo e cartões/menus. Ao salvar, a página recarrega com a identidade atualizada.
+
+O botão **Abrir personalizador do WordPress** abre a seção **ERP — Identidade do colégio**, com nome, logo e as mesmas seis cores. As duas interfaces compartilham a configuração. A identidade é usada no portal, login do portal e menus; o tema do site fora do ERP não é alterado. Sem configuração, a identidade Journey é preservada. Ao salvar sem logo, aparece o nome do colégio.
+
+O botão Acessar como usuário e seu adaptador foram retirados do ERP. A edição de e-mail/senha permanece. O plugin Web357 instalado separadamente continua independente; suas permissões são administradas no próprio WordPress.
+
+Esta etapa oferece uma identidade por instalação WordPress. Ainda não implementa isolamento de múltiplas escolas na mesma base, assinaturas ou provisionamento de um SaaS. Schema 9 mantido, sem migração de tabelas.

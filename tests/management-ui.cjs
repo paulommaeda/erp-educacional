@@ -7,6 +7,7 @@ w.fetch=async(raw,options={})=>{const u=new URL(raw),route=u.pathname.slice(5);c
 if(body)data={total:2,codperiodo:Number(body.codperiodo),excluido:true};
 else if(route==='turmas/9/plano')data={idplano:'4',versao:'2',nome:'Anuidade',valor_anuidade:'1200.00'};
 else if(route.startsWith('cadastros/periodos_letivos/'))data={codperiodo_proximo:8,codigo:'2027',descricao:'Próximo'};
+else if(route==='colegio')data={data:{nome:'ESCOLA TESTE',logo_id:0,cor_primaria:'#087862',cor_superficie:'#ffffff',cor_texto:'#193d38',cor_destaque:'#26ba9b'},fields:{nome:'Nome do colégio'},colors:{cor_primaria:'Botões',cor_superficie:'Cartões',cor_texto:'Texto',cor_destaque:'Destaque'},version:'v1',customizer_url:'https://example.test/customize'};
 else if(route==='configuracoes')data={codperiodo:7,periodos:[{codperiodo:7,codigo:'2026',descricao:'Atual'},{codperiodo:8,codigo:'2027',descricao:'Próximo'}]};
 else if(route==='matriculas/filtros')data={cursos:[{idcurso:4,nome:'Fundamental'}],turnos:[{idturno:5,nome:'Manhã'}],turmas:[{idturma:9,codperiodo:7,idcurso:4,idturno:5,nome:'Turma A'},{idturma:10,codperiodo:8,idcurso:4,idturno:5,nome:'Turma B'}]};
 else if(route==='matriculas')data={items:[{idmatricula:1,idaluno:2,ra:'0002',aluno:'Sofia',turma:'Turma A',turno:'Manhã',curso:'Fundamental',periodo:'2026',versao:3,status:'ativa'}],total:1};

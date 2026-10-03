@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.9.5
+Stable tag: 0.9.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.9.6 =
+* Configuração institucional do colégio, endereço, contatos e logo.
+* Cores do ERP e identidade integradas ao personalizador WordPress.
+* Removida integração Acessar como usuário; edição de e-mail e senha preservada.
+* Uma identidade por instalação, sem alteração no schema.
+
 = 0.9.5 =
 * Tela Usuários com pesquisa, paginação e edição de e-mail/senha em modal.
 * Permissões de consulta, e-mail, senha e acesso assistido independentes.

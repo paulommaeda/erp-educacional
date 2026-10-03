@@ -59,3 +59,10 @@ JSDOM: filtro de curso enviado, remoção do filtro e regressões de gestão apr
 - JSDOM: busca, edição em modal, confirmação de senha, conta sem e-mail e link ao acesso assistido; regressões de perfil e permissões passaram.
 - Sintaxe de 59 arquivos PHP validada.
 - O adaptador foi testado com shortcode simulado. Não houve acesso à instalação nem à licença do Web357 do usuário, teste real de troca/retorno de sessão ou teste visual no WordPress. Homologar com duas contas de teste e barra de retorno habilitada antes de uso operacional.
+
+## 0.9.6
+
+- PHP-WASM com stubs WordPress: 12 verificações de identidade, validação, autorização, versão, logo e CSS; 15 verificações de gestão de usuários.
+- JSDOM: 7 cenários de gestão e regressão da tela Usuários sem acesso assistido passaram.
+- Sintaxe PHP e JavaScript validada.
+- Não houve instalação em WordPress/MySQL real nem teste visual no site. O personalizador e a biblioteca de mídia precisam de homologação na instalação.

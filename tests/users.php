@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';
 use EducacionalERP\Infrastructure\Database\Database;
-use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,UserPermissions,LoginAsUser};
+use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,UserPermissions};
 use EducacionalERP\Application\{UserService,CatalogService,Operations};
 use EducacionalERP\Domain\RuleViolation;
 function sanitize_text_field($s){return trim(strip_tags($s));}function wp_salt($s){return 'test-only-salt';}function wp_cache_delete(...$a){}function shortcode_exists($s){return $GLOBALS['vendor']??false;}function user_can($u,$cap){foreach($u->roles as $r)if(!empty($GLOBALS['test_roles'][$r]['capabilities'][$cap]))return true;return false;}function is_super_admin($id){return $id===1;}
@@ -11,7 +11,7 @@ class WP_User_Query {private array $rows;public function __construct($a){global 
 Access::install();$db=new Database($wpdb);$cat=new CatalogService($db,new Operations($db));$service=new UserService($db);$n=0;
 function kU(){return bin2hex(random_bytes(16));}function okU($b,$m){global $n;if(!$b)throw new RuntimeException($m);$n++;echo "PASS: $m\n";}function denyU($f,$m){try{$f();}catch(RuleViolation $e){okU(true,$m);return;}throw new RuntimeException($m);}
 $p=$cat->create('pessoas',['nome'=>'Familia Teste','data_nascimento'=>'1980-01-01','email'=>'familia@example.test'],kU());$uid=(int)$p['wp_user_id'];$person=(int)$p['id'];$secretary=wp_insert_user(['user_login'=>'secretaria','role'=>'erp_secretaria']);wp_set_current_user($secretary);
-$list=$service->listing(['search'=>'familia']);okU($list['total']===1&&$list['permissions']['password']&&!$list['permissions']['switch'],'secretaria consulta e edita, sem impersonação padrão');$version=$list['items'][0]['version'];
+$list=$service->listing(['search'=>'familia']);okU($list['total']===1&&$list['permissions']['password']&&!isset($list['permissions']['switch']),'secretaria consulta e edita, sem impersonação padrão');$version=$list['items'][0]['version'];
 $service->update($uid,['email'=>'novo@example.test','password'=>'New!Pass987654','version'=>$version],kU());okU(get_userdata($uid)->user_email==='novo@example.test'&&$db->get('pessoas',$person)['email']==='novo@example.test','e-mail sincronizado entre conta e pessoa');
 okU(get_userdata($uid)->user_pass==='New!Pass987654','nova senha encaminhada à API WordPress');
 $audit=wp_json_encode($db->rows('SELECT * FROM '.$db->table('auditoria')));okU(!str_contains($audit,'New!Pass987654'),'auditoria não guarda senha');
@@ -23,6 +23,5 @@ $other=wp_insert_user(['user_login'=>'outro','user_email'=>'ocupado@example.test
 denyU(fn()=>$service->update($uid,['password'=>'curta','version'=>$version],kU()),'senha curta rejeitada');
 $GLOBALS['test_update_error']=new WP_Error('fail','Falha simulada');denyU(fn()=>$service->update($uid,['email'=>'falha@example.test','version'=>$version],kU()),'falha WordPress propagada');unset($GLOBALS['test_update_error']);okU($db->get('pessoas',$person)['email']==='novo@example.test','falha reverte e-mail da pessoa');
 wp_set_current_user(1);MenuPolicy::save(['role'=>'erp_secretaria','menus'=>['usuarios'],'user_permissions'=>['email']]);wp_set_current_user($secretary);denyU(fn()=>$service->update($uid,['password'=>'Revoked1234567','version'=>$version],kU()),'revogação de senha vale na API');
-wp_set_current_user(1);$coord=MenuPolicy::create(['nome'=>'Coordenação']);MenuPolicy::save(['role'=>$coord['slug'],'menus'=>['usuarios'],'user_permissions'=>['switch']]);$operator=wp_insert_user(['user_login'=>'coord','role'=>$coord['slug']]);wp_set_current_user($operator);okU(UserPermissions::can('switch')&&!UserPermissions::can('email'),'coordenação tem permissão independente');
-okU(str_contains(LoginAsUser::panel($uid),'PRO'),'plugin ausente não gera link inseguro');$GLOBALS['vendor']=true;okU(str_contains(LoginAsUser::panel($uid),'edit_users'),'permissão do Web357 continua obrigatória');get_role($coord['slug'])->add_cap('edit_users');okU(str_contains(LoginAsUser::panel($uid),'Acesso assistido'),'integração usa shortcode oficial');okU(str_contains($GLOBALS['rendered_shortcode'],'user_id="'.$uid.'"')&&str_contains($GLOBALS['rendered_shortcode'],'logout_redirect_url='),'shortcode recebe alvo e retorno ao portal');okU(str_contains(LoginAsUser::panel(1),'não está disponível'),'administrador protegido no acesso assistido');
+okU(!UserPermissions::can('switch'),'acesso assistido removido do ERP');
 wp_set_current_user($uid);denyU(fn()=>$service->listing([]),'pessoa sem permissão não lista usuários');echo "$n verificações aprovadas\n";

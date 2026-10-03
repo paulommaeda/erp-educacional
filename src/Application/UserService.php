@@ -19,9 +19,9 @@ final class UserService
         $items=[];foreach($query->get_results() as $u){
             // Read directory is available to authorized staff; protected accounts are never editable by them.
             $safe=UserPermissions::portalTarget($u);$link=$this->db->row('SELECT codpessoa FROM '.$this->db->table('pessoa_usuarios').' WHERE wp_user_id=%d',[(int)$u->ID]);$person=$link?$this->db->get('pessoas',(int)$link['codpessoa']):null;
-            $items[]=['id'=>(int)$u->ID,'login'=>$u->user_login,'nome'=>$u->display_name,'email'=>$u->user_email,'perfis'=>array_map(fn($r)=>wp_roles()->roles[$r]['name']??$r,$u->roles),'codpessoa'=>$link['codpessoa']??null,'version'=>$this->version($u,$person),'editavel'=>Access::isAdmin()||$safe,'acessavel'=>$safe&&(int)$u->ID!==get_current_user_id()&&UserPermissions::can('switch')];
+            $items[]=['id'=>(int)$u->ID,'login'=>$u->user_login,'nome'=>$u->display_name,'email'=>$u->user_email,'perfis'=>array_map(fn($r)=>wp_roles()->roles[$r]['name']??$r,$u->roles),'codpessoa'=>$link['codpessoa']??null,'version'=>$this->version($u,$person),'editavel'=>Access::isAdmin()||$safe];
         }
-        return ['items'=>$items,'total'=>(int)$query->get_total(),'page'=>$page,'permissions'=>array_map(fn($a)=>UserPermissions::can($a),array_combine(array_keys(UserPermissions::ACTIONS),array_keys(UserPermissions::ACTIONS))),'web357_disponivel'=>shortcode_exists('login_as_user')];
+        return ['items'=>$items,'total'=>(int)$query->get_total(),'page'=>$page,'permissions'=>array_map(fn($a)=>UserPermissions::can($a),array_combine(array_keys(UserPermissions::ACTIONS),array_keys(UserPermissions::ACTIONS)))];
     }
     public function update(int $id,array $d,string $key):array {
         $user=$this->target($id);Input::key($key);
