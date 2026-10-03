@@ -51,3 +51,11 @@ JSDOM: edição por abas com salvamento antecipado e preservação dos campos; c
 ## 0.9.4
 
 JSDOM: filtro de curso enviado, remoção do filtro e regressões de gestão aprovados. PHP-WASM/SQLite: curso, período e busca combinados e ordenação entre páginas validados. Não houve instalação nem teste visual no WordPress real.
+
+## 0.9.5
+
+- PHP-WASM/SQLite + mocks WordPress: 20 verificações de usuários, alvos protegidos, revogação, concorrência, rollback, sincronização, auditoria e adaptador de shortcode.
+- 22 verificações anteriores de perfil e autorização passaram.
+- JSDOM: busca, edição em modal, confirmação de senha, conta sem e-mail e link ao acesso assistido; regressões de perfil e permissões passaram.
+- Sintaxe de 59 arquivos PHP validada.
+- O adaptador foi testado com shortcode simulado. Não houve acesso à instalação nem à licença do Web357 do usuário, teste real de troca/retorno de sessão ou teste visual no WordPress. Homologar com duas contas de teste e barra de retorno habilitada antes de uso operacional.

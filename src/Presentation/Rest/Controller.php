@@ -76,6 +76,8 @@ final class Controller
             $this->route('/cadastros/'.$table.'/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->edit($table,(int)$r['id'],$this->payload($r),$this->key($r)));
         }
         $this->route('/periodos/copiar','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\PeriodCopyService($this->db,$this->catalog,new Operations($this->db)))->copy($this->payload($r),$this->key($r)));
+        $this->route('/usuarios','GET',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->listing(['page'=>$r->get_param('page'),'search'=>$r->get_param('search')]));
+        $this->route('/usuarios/'.$id,'POST',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->update((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/secretaria/alunos','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentDirectory($r));
         $this->route('/secretaria/alunos','POST',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->workflow->createStudent($this->payload($r),$this->key($r)));
         $this->route('/secretaria/alunos/'.$id,'GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentSheet((int)$r['id']));

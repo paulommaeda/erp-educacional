@@ -54,6 +54,7 @@ final class Portal
             $caps=['pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro','rematriculas'=>'erp_gerenciar_academico','importacao'=>'manage_options','configuracoes'=>'manage_options'];
             (new Pages())->screen($view,MenuPolicy::MENUS[$view],$caps[$view]);
         }elseif(in_array($view,['meus_estudos','meu_financeiro','renovacao'],true))echo '<section data-ederp-portal="'.esc_attr(['meus_estudos'=>'academic','meu_financeiro'=>'finance','renovacao'=>'renew'][$view]).'"><p role="status">Carregando...</p></section>';
+        elseif($view==='usuarios'&&!empty($_GET['erp_usuario']))echo \EducacionalERP\Infrastructure\WordPress\LoginAsUser::panel(absint($_GET['erp_usuario'])).'<a href="'.esc_url(self::url('usuarios')).'">Voltar aos usuários</a>';
         else echo '<section data-journey-view="'.esc_attr($view).'"><p role="status">Carregando...</p></section>';
         echo '</main><footer class="journey-footer">Colégio Journey · Portal educacional</footer></div><nav class="journey-bottom" aria-label="Navegação rápida"></nav><dialog class="journey-drawer"><div class="journey-drawer-head"><h2>Seu portal</h2><button type="button" data-close-menu aria-label="Fechar menu">Fechar</button></div>'.$this->nav().'<a class="journey-logout" href="'.esc_url(wp_logout_url(self::url())).'">Sair da conta</a></dialog></div>';
         return ob_get_clean();

@@ -62,8 +62,8 @@ function current_user_can(string $cap,...$args): bool {if(get_current_user_id()=
 function remove_accents(string $s):string{return strtr($s,['á'=>'a','ã'=>'a','â'=>'a','à'=>'a','é'=>'e','ê'=>'e','í'=>'i','ó'=>'o','ô'=>'o','õ'=>'o','ú'=>'u','ç'=>'c','Ã'=>'A','Â'=>'A','À'=>'A','Ê'=>'E','Í'=>'I','Ó'=>'O','Ô'=>'O','Õ'=>'O','Ú'=>'U','Á'=>'A','É'=>'E','Ç'=>'C']);}
 function clean_user_cache(int $id):void{}
 class WP_User {
- public int $ID;public string $user_login;public string $display_name;public string $user_email;public array $roles;
- function __construct(array $row){$this->ID=(int)$row['ID'];$this->display_name=$row['display_name']??$row['user_login'];$this->user_email=$row['user_email']??'';$this->user_login=$row['user_login'];$this->roles=json_decode($row['roles'],true);}
+ public int $ID;public string $user_login;public string $user_pass;public string $display_name;public string $user_email;public array $roles;
+ function __construct(array $row){$this->ID=(int)$row['ID'];$this->user_pass=$row['user_pass']??'';$this->display_name=$row['display_name']??$row['user_login'];$this->user_email=$row['user_email']??'';$this->user_login=$row['user_login'];$this->roles=json_decode($row['roles'],true);}
  function add_role(string $r):void{if(!in_array($r,$this->roles,true))$this->roles[]=$r;$this->save();}
  function remove_role(string $r):void{$this->roles=array_values(array_diff($this->roles,[$r]));$this->save();}
  private function save():void{global $wpdb;$wpdb->update('mock_users',['roles'=>json_encode($this->roles)],['ID'=>$this->ID]);}

@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.4
+# ERP Educacional — 0.9.5
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -162,3 +162,24 @@ Matrículas, contratos, parcelas, ofertas e vínculos de pessoas não são copia
 ## Listagem de turmas — 0.9.4
 
 Em Estrutura acadêmica → Turmas, selecione um curso para filtrar. O botão Todos os cursos remove esse filtro. A busca por nome e o período da consulta continuam combinados. Os resultados são ordenados pelo nome da turma (A–Z), com código e ID como desempate, antes da paginação. Não há migração de banco.
+
+## Gestão de usuários e acesso assistido — 0.9.5
+
+A nova área **Usuários** fica no portal e também pode ser usada pelo shortcode `[erp_usuarios]`. Possui busca por nome, login ou e-mail, paginação, perfis e pessoa vinculada. A edição em modal permite alterar e-mail e definir uma nova senha (mínimo 12 caracteres). Deixe a senha vazia para manter a atual. Não é possível consultar a senha atual. O login e os papéis não são alterados por esta tela.
+
+**Configuração pelo administrador:**
+1. Entre em Perfis e acessos e edite o perfil Secretaria. Marque o menu Usuários e as permissões Alterar e-mail e Redefinir senha. Se a política do perfil nunca foi personalizada, esses acessos já são padrão. Em instalações com a matriz salva anteriormente, habilite o novo menu explicitamente.
+2. Para Coordenação, utilize o perfil existente ou crie um perfil personalizado e atribua-o às pessoas responsáveis. Marque Usuários e Acessar como usuário; não é necessário conceder edição de senha/e-mail.
+3. No WordPress, configure **Login as a User PRO (Web357)**. O shortcode de front-end e a matriz de permissões por papel são recursos PRO segundo a documentação do fornecedor. Habilite o perfil de Coordenação em Edit Users Capability Assignment e autorize somente Pessoa/Aluno/Responsáveis na matriz de destinos. Mantenha a barra de retorno no front-end habilitada. A configuração do Web357 é feita pelo administrador; o ERP não altera a licença nem concede edit_users automaticamente.
+4. Na tela Usuários, clique em Acessar como usuário e depois no botão oficial do Web357. O shortcode recebe o destino do portal e o retorno à tela Usuários. Para sair da sessão assistida, use a barra de retorno do plugin.
+
+O adaptador utiliza `[login_as_user user_id="..." redirect_to="..." logout_redirect_url="..." button_name="..."]`, renderizado no servidor em uma página normal para permitir os recursos nativos do fornecedor. Plugin ausente, shortcode indisponível ou falta da permissão edit_users são mostrados na tela. As autorizações finais e a sessão de troca/retorno pertencem ao Web357. Esta integração não cria uma alternativa de autenticação própria.
+
+A Secretaria pode consultar contas, mas só edita contas comuns do portal; contas administrativas, operacionais e com privilégios adicionais são protegidas. O acesso assistido pelo ERP também é restrito a contas comuns, inclusive para administradores. Ele é uma sessão real com as ações disponíveis ao usuário, não uma visualização somente leitura.
+
+E-mail alterado é sincronizado com a Pessoa vinculada. `wp_update_user` realiza a atualização e aplica os mecanismos e notificações nativos WordPress. A auditoria guarda autor, alvo, mudança de e-mail e indicação de senha redefinida, nunca a senha. Um token de versão opaco bloqueia gravações sobre uma consulta desatualizada. Nenhum campo de senha é retornado na API. As novas permissões não permitem editar perfis nem atribuir privilégios. Não há migração de banco.
+
+Referências do fornecedor (consultadas em 03/10/2026):
+- https://docs.web357.com/login-as-a-user-wordpress-plugin/intro/
+- https://docs.web357.com/login-as-a-user-wordpress-plugin/configuration/
+- https://docs.web357.com/login-as-a-user-wordpress-plugin/guides/shortcode/

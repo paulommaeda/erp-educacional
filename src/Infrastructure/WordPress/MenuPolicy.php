@@ -4,14 +4,14 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\RuleViolation;
 final class MenuPolicy
 {
-    public const MENUS=['inicio'=>'Início','pessoas'=>'Pessoas','alunos'=>'Alunos','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Gestão financeira','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
+    public const MENUS=['inicio'=>'Início','usuarios'=>'Usuários','pessoas'=>'Pessoas','alunos'=>'Alunos','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Gestão financeira','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
     private const ADMIN=['importacao','perfis','configuracoes'];
     private const CAPS=['pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','rematriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro'];
     public static function defaults(string $role):array
     {
         return match($role){
             'erp_financeiro'=>['financeiro'],
-            'erp_secretaria'=>['pessoas','alunos','academico','matriculas','financeiro','rematriculas'],
+            'erp_secretaria'=>['usuarios','pessoas','alunos','academico','matriculas','financeiro','rematriculas'],
             'erp_aluno'=>['meus_estudos'],
             'erp_responsavel_academico'=>['meus_estudos','renovacao'],
             'erp_responsavel_financeiro'=>['meu_financeiro','renovacao'],
@@ -35,6 +35,7 @@ final class MenuPolicy
     public static function route(string $path,string $method):bool
     {
         if(Access::isAdmin())return true;
+        if(str_starts_with($path,'/usuarios'))return self::can('usuarios');
         if(str_starts_with($path,'/exclusoes')||($path==='/configuracoes'&&$method!=='GET'))return false;
         if(str_starts_with($path,'/perfis')||str_starts_with($path,'/importacao')||str_starts_with($path,'/contas'))return false;
         if(str_starts_with($path,'/contratos/')||str_starts_with($path,'/financeiro/pendentes'))return self::can('financeiro');
@@ -57,8 +58,8 @@ final class MenuPolicy
     public static function describe():array
     {
         Access::requireAdmin();$data=get_option('ederp_menu_policy',[]);$rows=[];
-        foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'custom'=>str_starts_with($slug,'erp_custom_')];
-        return ['roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','importacao','perfis','configuracoes']))];
+        foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'user_permissions'=>UserPermissions::forRole($slug),'custom'=>str_starts_with($slug,'erp_custom_')];
+        return ['user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','importacao','perfis','configuracoes']))];
     }
     public static function save(array $data):array
     {
@@ -67,6 +68,7 @@ final class MenuPolicy
         $menus=$data['menus']??[];
         if(!is_array($menus)||count($menus)>count(self::MENUS))throw new RuleViolation('Menus inválidos.');
         foreach($menus as $menu)if(!is_string($menu)||!isset(self::MENUS[$menu])||in_array($menu,self::ADMIN,true))throw new RuleViolation('Menu reservado ou inválido.');
+        if(isset($data['user_permissions'])){if(!is_array($data['user_permissions']))throw new RuleViolation('Permissões inválidas.');UserPermissions::save($role,$data['user_permissions']);}
         $menus=array_values(array_unique($menus));$all=get_option('ederp_menu_policy',[]);$all[$role]=$menus;
         foreach(array_unique(array_values(self::CAPS)) as $cap){$grant=false;foreach(self::CAPS as $menu=>$c)if($cap===$c&&in_array($menu,$menus,true))$grant=true;if($grant)$r->add_cap($cap);else $r->remove_cap($cap);}
         if(in_array('matriculas',$menus,true))$r->add_cap('erp_gerenciar_pessoas');

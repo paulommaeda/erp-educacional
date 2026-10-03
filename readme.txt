@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.9.4
+Stable tag: 0.9.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+= 0.9.5 =
+* Tela Usuários com pesquisa, paginação e edição de e-mail/senha em modal.
+* Permissões de consulta, e-mail, senha e acesso assistido independentes.
+* Integração pelo shortcode oficial Login as a User PRO (Web357), com configuração requerida no fornecedor.
+* Proteção de contas privilegiadas, sincronização de e-mail e auditoria sem senhas.
+
 = 0.9.4 =
 * Filtro por curso na listagem de turmas.
 * Ordenação alfabética por nome antes da paginação.
