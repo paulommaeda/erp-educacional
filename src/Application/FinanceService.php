@@ -101,6 +101,44 @@ final class FinanceService
             return ['idajuste'=>(string)$adjustment,'saldo_aberto'=>Money::format($balance)];
         }));
     }
+    /** Caller holds the student lock. Paid amounts and overdue balances remain intact. */
+    public static function cancelFutureInside(Store $db,int $enrollment,string $reason,string $key):void
+    {
+        $contracts=$db->rows('SELECT * FROM '.$db->table('contratos').' WHERE idmatricula=%d ORDER BY idcontrato FOR UPDATE',[$enrollment]);
+        foreach($contracts as $contract){
+            $titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND l.vencimento>=%s AND l.saldo_aberto>0 AND l.status<>\'cancelado\' ORDER BY l.idlancamento FOR UPDATE',[(int)$contract['idcontrato'],Input::today()]);
+            foreach($titles as $title){if(Money::cents($title['saldo_aberto'])<=0)continue;$id=(int)$title['idlancamento'];$db->update('lancamentos',$id,['status'=>'cancelado','valor_cancelado'=>$title['saldo_aberto'],'saldo_aberto'=>'0.00','cancelado_em'=>gmdate('Y-m-d H:i:s'),'motivo_cancelamento'=>$reason]);$db->audit('lancamentos',$id,'cancelar_saldo_futuro',$title,$db->get('lancamentos',$id),$key);}
+            if(!(int)$contract['parcelas_geradas']&&$contract['status']!=='cancelado'){$db->update('contratos',(int)$contract['idcontrato'],['status'=>'cancelado']);$db->audit('contratos',(int)$contract['idcontrato'],'cancelar_pendente',$contract,$db->get('contratos',(int)$contract['idcontrato']),$key);}
+        }
+    }
+    public function edit(int $id,array $data,string $key):array
+    {
+        return $this->editBatch(['lancamentos'=>[['idlancamento'=>$id,'versao'=>$data['versao']??null]],'alteracoes'=>$data,'motivo'=>$data['motivo']??null],$key);
+    }
+    public function editBatch(array $data,string $key):array
+    {
+        if(!current_user_can('erp_ajustar_lancamentos'))throw new RuleViolation('Sem permissão para editar lançamentos.');
+        $items=$data['lancamentos']??[];$changes=$data['alteracoes']??[];
+        if(!is_array($items)||!array_is_list($items)||!count($items)||count($items)>100)throw new RuleViolation('Selecione entre 1 e 100 lançamentos.');
+        if(!is_array($changes)||(!array_key_exists('vencimento',$changes)&&!array_key_exists('valor_original',$changes)))throw new RuleViolation('Informe o vencimento ou o valor original.');
+        $reason=Input::text($data['motivo']??null,2000);
+        $due=array_key_exists('vencimento',$changes)?Input::date($changes['vencimento']):null;
+        $original=array_key_exists('valor_original',$changes)?Money::positive($changes['valor_original']):null;
+        $ids=[];foreach($items as $item){if(!is_array($item))throw new RuleViolation('Seleção inválida.');$id=Input::id($item['idlancamento']??null);if(isset($ids[$id]))throw new RuleViolation('Lançamento duplicado na seleção.');$ids[$id]=$item['versao']??null;}ksort($ids);
+        return $this->db->atomic(fn()=>$this->operations->run($key,'editar_lancamentos',$data,function()use($ids,$due,$original,$reason,$key){
+            // Acquire all students in a stable order before any contract/title lock.
+            $students=[];$contracts=[];
+            foreach($ids as $id=>$_){$path=$this->db->row('SELECT m.idaluno,c.idcontrato FROM '.$this->db->table('lancamentos').' l JOIN '.$this->db->table('parcelas').' p ON p.idparcela=l.idparcela JOIN '.$this->db->table('contratos').' c ON c.idcontrato=p.idcontrato JOIN '.$this->db->table('matriculas').' m ON m.idmatricula=c.idmatricula WHERE l.idlancamento=%d',[$id]);if(!$path)throw new RuleViolation('Lançamento não encontrado.');$students[(int)$path['idaluno']]=true;$contracts[(int)$path['idcontrato']]=true;}
+            ksort($students);ksort($contracts);foreach($students as $id=>$_)$this->db->get('alunos',$id,true);foreach($contracts as $id=>$_)$this->db->get('contratos',$id,true);
+            $result=[];
+            foreach($ids as $id=>$version){[$title,$contract]=$this->lockTitle($id);if((string)$version!==(string)$title['versao'])throw new RuleViolation('Lançamento alterado. Atualize a listagem antes de salvar.');if(Money::cents($title['saldo_aberto'])===0)throw new RuleViolation('Lançamentos baixados não podem ser editados.');
+                $update=[];if($due!==null)$update['vencimento']=$due;
+                if($original!==null){$net=$original-Money::cents($title['desconto_incondicional']);$paid=$this->paidComponents($id);if($net-Money::cents($title['desconto_condicional_aplicado'])<$paid['principal_liquidado'])throw new RuleViolation('Valor original inferior aos descontos ou ao principal já baixado.');$balance=$net-Money::cents($title['desconto_condicional_aplicado'])+Money::cents($title['juros_aplicados'])+Money::cents($title['multa_aplicada'])-Money::cents($title['valor_baixa']);if($balance<0)throw new RuleViolation('A edição gera saldo negativo.');$update+=['valor_original'=>Money::format($original),'valor_liquido'=>Money::format($net),'saldo_aberto'=>Money::format($balance),'status'=>$balance===0?'quitado':(Money::cents($title['valor_baixa'])>0?'parcial':'aberto')];}
+                $this->db->update('lancamentos',$id,$update);$after=$this->db->get('lancamentos',$id);$this->db->audit('lancamentos',$id,'editar',['dados'=>$title],['dados'=>$after,'motivo'=>$reason],$key);EnrollmentLifecycle::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);$result[]=\EducacionalERP\Domain\FinancialStatus::present($after);
+            }
+            return ['alterados'=>count($result),'lancamentos'=>$result];
+        }));
+    }
     public function changeGuardian(int $id,array $data,string $key): array
     {
         return $this->db->atomic(fn()=>$this->operations->run($key,'trocar_responsavel',['idaluno'=>$id]+$data,function()use($id,$data,$key){

@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.8
+# ERP Educacional — 0.9.9
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -206,7 +206,7 @@ O administrador pode **Editar** ou **Excluir**, sempre em modal. A exclusão exi
 
 A seleção de turmas pertence à gestão. O responsável continua direcionado à próxima turma previamente configurada; a rematrícula continua criando contrato sem gerar parcelas. Schema 9 mantido.
 
-## Login, códigos e ciclo de matrícula — 0.9.8
+## Login, códigos e ciclo de matrícula — 0.9.9
 
 **Atualização:** esta versão usa o schema 10. Depois de instalar, entre no painel WordPress como administrador para executar a migração automática. Se houver diagnóstico de migração, use ERP Educacional → Configurações → Verificar banco. A migração preserva as chaves relacionais e os cadastros existentes.
 
@@ -227,3 +227,15 @@ Em Configurações → Numeração de pessoas, informe o último número utiliza
 **Resultado:** selecione Aprovado ou Reprovado. Se o reprovado já tiver uma rematrícula ativa vinculada à matrícula atual, ela será cancelada e substituída automaticamente pela turma de mesmo código, curso e turno no próximo período configurado. Essa turma deve existir (pode ser copiada do período atual), ter vagas e plano válido. Ausência/incompatibilidade bloqueia toda a operação, sem alteração parcial. A matrícula e a solicitação anteriores ficam no histórico; o contrato existente é reassociado à substituta, preservando valores, descontos, parcelas e pagamentos, sem novas cobranças. O destino regular de progressão da turma não é alterado para os demais alunos. Se corrigir posteriormente Reprovado para Aprovado, a correção da situação não reposiciona a matrícula substituta; ajuste sua turma pela ação Trocar turma.
 
 **Cancelar rematrícula:** confirmação simples, sem excluir registros. Contratos ainda sem parcelas são cancelados e não podem gerar parcelas posteriormente. Cobranças e pagamentos já existentes não são apagados nem estornados automaticamente: devem ser tratados pelo financeiro. O banco permite uma nova matrícula vigente no mesmo curso/período mantendo as matrículas canceladas como histórico. Edição, transferência, resultados e cancelamento permanecem exclusivos do administrador.
+
+## Versão 0.9.9 — financeiro
+
+A migração 11 concilia índices existentes fora do dbDelta, sem recriar nomes legados. Se o ERP estava bloqueado por erro de banco, instale esta versão e execute **Verificar banco** como administrador. O log recebido contém erros de índices de 02/10 e avisos do Portal de 03/10. O menu foi corrigido para inicializar seu HTML e não usar variáveis da tela de login; a autenticação própria é chamada pela renderização do Portal. Valide o resultado com um log novo.
+
+Na transferência externa e no cancelamento manual de matrícula/rematrícula, saldos não vencidos (vencimento hoje ou futuro, no fuso do WordPress) são cancelados na mesma transação. Valores pagos ficam preservados; débitos anteriores a hoje continuam exigíveis. O valor cancelado, data, motivo e auditoria são mantidos. Contratos ainda sem parcelas ficam cancelados. A substituição automática por reprovação transfere o contrato para a matrícula substituta e preserva suas cobranças.
+
+Financeiro → selecione o aluno → filtre a situação. **Editar** abre modal individual; marque lançamentos e use **Editar selecionados** para alterar em lote (máximo 100). No lote, campos vazios são preservados, e o valor preenchido é aplicado a cada título. Vencimento e valor original atuais podem ser renegociados; líquido/saldo são recalculados com descontos, encargos e baixas existentes. Contrato e cronograma original permanecem como histórico. Títulos baixados/cancelados são bloqueados para edição. Permissão: `erp_ajustar_lancamentos`, além do menu Financeiro.
+
+A situação pública dos títulos é `em_aberto`, `vencido`, `baixado` ou `cancelado`, calculada a cada consulta; o estado interno de liquidação continua em `status_liquidacao`. Baixas parciais permanecem em aberto ou vencidas pelo saldo restante. Não depende de cron. API: `POST /lancamentos/{id}/editar` e `POST /lancamentos/editar-lote`, com nonce, Idempotency-Key, versões e motivo. Exportação também apresenta essas situações.
+
+Validação local: serviços transacionais em SQLite/PHP-WASM e modais com JSDOM. dbDelta, índices e bloqueios devem ser homologados em WordPress/MySQL antes de produção.

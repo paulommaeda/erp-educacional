@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '10';
+    public const VERSION = '11';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -26,12 +26,12 @@ final class Installer
                 $lines[] = 'PRIMARY KEY  (' . implode(',', $meta['pk']) . ')';
                 $exists=$this->db->row('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s',[$table]);
                 $previousIndexes=$exists?$this->db->rows("SHOW INDEX FROM $table"):[];
-                $lines=array_merge($lines,SchemaIndexes::lines($meta,$previousIndexes));
+                // Secondary indexes are reconciled explicitly; dbDelta can misread legacy names.
                 dbDelta("CREATE TABLE $table (\n" . implode(",\n", $lines) . "\n) ENGINE=InnoDB " . $this->db->wp->get_charset_collate() . ';');
                 if ($this->db->wp->last_error) { throw new \RuntimeException('dbDelta falhou em ' . $name . ': ' . $this->db->wp->last_error); }
                 $engine = $this->db->row('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', [$table]);
                 if (strtoupper($engine['ENGINE'] ?? '') !== 'INNODB') { throw new \RuntimeException('Tabela ' . $name . ' deve utilizar InnoDB.'); }
-                SchemaIndexes::verify($meta,$this->db->rows("SHOW INDEX FROM $table"));
+                SchemaIndexes::ensure($this->db,$table,$meta);
                 $columns = $this->db->rows("SHOW COLUMNS FROM $table");
                 if (count($columns) !== count($meta['columns'])) { throw new \RuntimeException('Estrutura divergente em ' . $name); }
             }

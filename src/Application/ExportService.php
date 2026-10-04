@@ -50,6 +50,7 @@ final class ExportService
                 foreach($parcels as &$parcel) {
                     $title=$this->related('lancamentos','idparcela',(int)$parcel['idparcela'])[0]??null;
                     if($title) {
+                        $title=\EducacionalERP\Domain\FinancialStatus::present($title);
                         $payments=$this->related('baixas','idlancamento',(int)$title['idlancamento'],'idbaixa');
                         foreach($payments as &$payment) { $payment['estornos']=$this->related('baixa_estornos','idbaixa',(int)$payment['idbaixa'],'idestorno'); }
                         unset($payment);

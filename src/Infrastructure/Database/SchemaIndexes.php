@@ -23,10 +23,21 @@ final class SchemaIndexes
         $existing=self::existing($rows);$lines=[];
         foreach(self::required($meta) as $signature=>$wanted){$name=null;
             foreach($existing as $candidate=>$index)if($candidate!=='PRIMARY'&&$index['usable']&&$index['unique']===$wanted['unique']&&$index['columns']===$wanted['columns']){$name=$candidate;break;}
-            if($name===null){$base=($wanted['unique']?'uq_':'ix_').substr(hash('sha256',$signature),0,24);$name=$base;$n=0;while(isset($existing[$name]))$name=$base.'_'.(++$n);$existing[$name]=$wanted+['usable'=>true];}
+            if($name===null){$base=($wanted['unique']?'uq_':'ix_').substr(hash('sha256',$signature),0,24);$name=$base;$n=0;while(in_array(strtolower($name),array_map('strtolower',array_keys($existing)),true))$name=$base.'_'.(++$n);$existing[$name]=$wanted+['usable'=>true];}
             $lines[]=($wanted['unique']?'UNIQUE KEY ':'KEY ').'`'.str_replace('`','``',$name).'` ('.implode(',',$wanted['columns']).')';
         }
         return $lines;
+    }
+    public static function ensure(Database $db,string $table,array $meta):void
+    {
+        foreach(self::required($meta) as $wanted){
+            $rows=$db->rows("SHOW INDEX FROM $table");$existing=self::existing($rows);$found=false;
+            foreach($existing as $index)if($index['usable']&&$index['unique']===$wanted['unique']&&$index['columns']===$wanted['columns']){$found=true;break;}
+            if($found)continue;
+            $single=['unique'=>$wanted['unique']?[$wanted['columns']]:[],'indexes'=>$wanted['unique']?[]:[$wanted['columns']],'fks'=>[]];
+            $line=self::lines($single,$rows)[0];$db->query("ALTER TABLE $table ADD $line");
+        }
+        self::verify($meta,$db->rows("SHOW INDEX FROM $table"));
     }
     public static function verify(array $meta,array $rows):void
     {

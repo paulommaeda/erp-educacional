@@ -27,6 +27,7 @@ final class EnrollmentLifecycle
                 $person=Input::id($d['solicitante_codpessoa']??null);$link=$this->db->row('SELECT idvinculo FROM '.$this->db->table('aluno_responsaveis').' WHERE idaluno=%d AND codpessoa_responsavel=%d AND fim_vigencia IS NULL AND inicio_vigencia<=UTC_TIMESTAMP() FOR UPDATE',[(int)$m['idaluno'],$person]);if(!$link)throw new RuleViolation('Selecione um responsável vigente vinculado ao aluno.');$name=$this->db->get('pessoas',$person)['nome'];
             }elseif(($d['solicitante_tipo']??'')==='outro')$name=Input::text($d['solicitante_nome']??null,191);else throw new RuleViolation('Selecione o tipo de solicitante.');
             $school=Input::text($d['colegio_destino']??null,191);$doc=[];if(!empty($d['documento_token']))$doc=(new \EducacionalERP\Infrastructure\WordPress\PrivateDocuments())->validate((string)$d['documento_token']);
+            FinanceService::cancelFutureInside($this->db,$id,'Transferência externa',$key);
             $this->changeInside($m,'transferencia_externa','Transferência externa para '.$school,$key);
             $now=gmdate('Y-m-d H:i:s');$movement=$this->db->insert('matricula_movimentacoes',['idmatricula'=>$id,'tipo'=>'solicitacao_transferencia','status_anterior'=>$m['status'],'status_novo'=>'transferencia_externa','efetivado_em'=>$now,'registrado_em'=>$now,'motivo'=>'Solicitação de transferência externa','ator_wp_user_id'=>get_current_user_id(),'solicitante_codpessoa'=>$person,'solicitante_nome'=>\EducacionalERP\Domain\CadastroText::upper($name),'data_solicitacao'=>$day,'colegio_destino'=>\EducacionalERP\Domain\CadastroText::upper($school)]+$doc);
             $this->db->audit('matriculas',$id,'solicitacao_transferencia',null,['idmovimentacao'=>$movement,'solicitante'=>$name,'colegio_destino'=>$school,'data_solicitacao'=>$day,'documento'=>!empty($doc)],$key);return ['idmatricula'=>(string)$id,'status'=>'transferencia_externa'];
@@ -59,12 +60,13 @@ final class EnrollmentLifecycle
     }
     public function cancel(int $id,array $d,string $key):array
     {
-        Access::requireAdmin();return $this->db->atomic(fn()=>$this->ops->run($key,'cancelar_rematricula',['id'=>$id]+$d,function()use($id,$d,$key){$m=$this->lock($id,$d);if(empty($m['idmatricula_origem']))throw new RuleViolation('Esta matrícula não é uma rematrícula.');if(!EnrollmentStatus::open($m['status']))throw new RuleViolation('Rematrícula não permite cancelamento.');$this->cancelInside($m,'Cancelamento de rematrícula solicitado pela escola',$key);return ['idmatricula'=>(string)$id,'status'=>'cancelada'];}));
+        Access::requireAdmin();return $this->db->atomic(fn()=>$this->ops->run($key,'cancelar_rematricula',['id'=>$id]+$d,function()use($id,$d,$key){$m=$this->lock($id,$d);if(!EnrollmentStatus::open($m['status']))throw new RuleViolation('Matrícula não permite cancelamento.');$this->cancelInside($m,'Cancelamento de matrícula solicitado pela escola',$key);return ['idmatricula'=>(string)$id,'status'=>'cancelada'];}));
     }
     private function cancelInside(array $m,string $reason,string $key,bool $stopPending=true):void
     {
         $this->changeInside($m,'cancelada',$reason,$key);$r=$this->db->table('rematriculas');foreach($this->db->rows("SELECT * FROM $r WHERE idmatricula_destino=%d AND ativo_unico=1 FOR UPDATE",[(int)$m['idmatricula']]) as $row){$this->db->update('rematriculas',(int)$row['idrematricula'],['status'=>'cancelada','ativo_unico'=>null]);$this->db->audit('rematriculas',(int)$row['idrematricula'],'cancelar',$row,['status'=>'cancelada'],$key);}
-        if($stopPending)foreach($this->db->rows('SELECT * FROM '.$this->db->table('contratos').' WHERE idmatricula=%d AND parcelas_geradas=0 FOR UPDATE',[(int)$m['idmatricula']]) as $contract){$this->db->update('contratos',(int)$contract['idcontrato'],['status'=>'cancelado']);$this->db->audit('contratos',(int)$contract['idcontrato'],'cancelar_pendente',$contract,['status'=>'cancelado'],$key);}
+        if($stopPending)FinanceService::cancelFutureInside($this->db,(int)$m['idmatricula'],$reason,$key);
+        if($stopPending)foreach($this->db->rows('SELECT * FROM '.$this->db->table('contratos').' WHERE idmatricula=%d AND parcelas_geradas=0 AND status<>\'cancelado\' FOR UPDATE',[(int)$m['idmatricula']]) as $contract){$this->db->update('contratos',(int)$contract['idcontrato'],['status'=>'cancelado']);$this->db->audit('contratos',(int)$contract['idcontrato'],'cancelar_pendente',$contract,['status'=>'cancelado'],$key);}
     }
     private function changeInside(array $m,string $status,string $reason,string $key):void
     {

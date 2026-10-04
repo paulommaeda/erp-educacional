@@ -107,6 +107,8 @@ final class Controller
         $this->route('/matriculas/'.$id.'/transferencias','POST',fn()=>Access::isAdmin(),fn($r)=>$this->academic->transfer((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/alunos/'.$id.'/trocas-responsavel-financeiro','POST',$cap('erp_trocar_responsavel_financeiro'),fn($r)=>$this->finance->changeGuardian((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/lancamentos/'.$id.'/baixas','POST',$cap('erp_baixar_lancamentos'),fn($r)=>$this->finance->pay((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/lancamentos/'.$id.'/editar','POST',$cap('erp_ajustar_lancamentos'),fn($r)=>$this->finance->edit((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/lancamentos/editar-lote','POST',$cap('erp_ajustar_lancamentos'),fn($r)=>$this->finance->editBatch($this->payload($r),$this->key($r)));
         $this->route('/lancamentos/'.$id.'/ajustes','POST',$cap('erp_ajustar_lancamentos'),fn($r)=>$this->finance->adjust((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/baixas/'.$id.'/estornos','POST',$cap('erp_estornar_baixas'),fn($r)=>$this->finance->reverse((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/ofertas-rematricula','GET',$cap('erp_gerenciar_academico'),fn($r)=>$this->renewal->listOffers($r->get_params()));
@@ -267,6 +269,6 @@ final class Controller
         $l=$this->db->table('lancamentos'); $p=$this->db->table('parcelas'); $c=$this->db->table('contratos'); $m=$this->db->table('matriculas');
         $where=$period?' AND m.codperiodo=%d':''; $args=$period?[$student,$period]:[$student];
         if(!current_user_can('erp_consultar_financeiro')) { $where.=' AND l.codpessoa_rf_atual=%d'; $args[]=$this->access->person()??0; }
-        return $this->db->rows("SELECT l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d$where ORDER BY l.vencimento,l.idlancamento",$args);
+        return array_map([\EducacionalERP\Domain\FinancialStatus::class,'present'], $this->db->rows("SELECT l.versao,l.valor_cancelado,l.cancelado_em,l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d$where ORDER BY l.vencimento,l.idlancamento",$args));
     }
 }

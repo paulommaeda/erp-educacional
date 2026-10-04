@@ -37,7 +37,8 @@ final class Portal
     }
     private function nav():string
     {
-        if(!is_user_logged_in()||in_array($view,['recuperar_senha','redefinir_senha'],true))return Authentication::render($logo,$view);
+        if(!is_user_logged_in())return '';
+        $html='<nav class="journey-menu" aria-label="Navegação do ERP">';
         foreach(MenuPolicy::available() as $key=>$label)$html.='<a href="'.esc_url(self::url($key)).'">'.esc_html($label).'</a>';
         return $html.'</nav>';
     }
@@ -49,7 +50,7 @@ final class Portal
         wp_localize_script('journey-portal','JOURNEY',['view'=>$view,'menus'=>MenuPolicy::available(),'url'=>self::url(),'logout'=>Authentication::logoutUrl(),'school'=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read()['nome'],'logo'=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::logo(),'name'=>wp_get_current_user()->display_name??'','admin'=>Access::isAdmin()]);
         $identity=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read();$schoolName=esc_html($identity['nome']);$logoUrl=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::logo();
         $logo=$logoUrl?'<img src="'.esc_url($logoUrl).'" alt="'.$schoolName.'" width="245" height="56">':'<span class="erp-school-name">'.$schoolName.'</span>';
-        if(!is_user_logged_in())return '<div class="journey-login ederp">'.$logo.'<h1>Bem-vindo à sua jornada.</h1><p>Acesse sua vida acadêmica e mantenha seus dados em dia.</p>'.wp_login_form(['echo'=>false,'redirect'=>self::url(),'label_username'=>'Usuário ou e-mail','label_password'=>'Senha','label_log_in'=>'Entrar','label_remember'=>'Manter conectado']).'<a href="'.esc_url(wp_lostpassword_url(self::url())).'">Esqueci minha senha</a></div>';
+        if(!is_user_logged_in()||in_array($view,['recuperar_senha','redefinir_senha'],true))return Authentication::render($logo,$view);
         ob_start();echo '<div class="journey-app ederp"><a class="journey-skip" href="#journey-content">Ir para o conteúdo</a><aside class="journey-sidebar"><a class="journey-brand" href="'.esc_url(self::url()).'">'.$logo.'</a>'.$this->nav().'<p class="journey-sidebar-note">Gestão escolar<br>'.$schoolName.'</p></aside><div class="journey-body"><header class="journey-header"><a href="'.esc_url(self::url()).'">'.$logo.'</a><span>Portal educacional</span><a class="journey-account" href="'.esc_url(self::url('perfil')).'">'.get_avatar(get_current_user_id(),40).'<span>'.esc_html(wp_get_current_user()->display_name).'</span></a></header><main id="journey-content" class="journey-content" data-journey-screen="'.esc_attr($view).'" tabindex="-1">';
         if(!MenuPolicy::can($view))echo '<section class="ederp-card"><h1>Acesso indisponível</h1><p>Seu perfil não tem acesso a esta área.</p><a href="'.esc_url(self::url()).'">Voltar ao início</a></section>';
         elseif(in_array($view,['pessoas','alunos','academico','matriculas','financeiro','rematriculas','importacao','configuracoes'],true)){
