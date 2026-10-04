@@ -16,11 +16,25 @@ final class Authentication
     }
     public static function logoutUrl():string {return wp_nonce_url(add_query_arg('erp_auth','sair',Portal::url()),'ederp_logout');}
     private static function text(string $key,array $source):string {return isset($source[$key])&&is_string($source[$key])?wp_unslash($source[$key]):'';}
+    private static function origin(string $url):?string
+    {
+        $parts=parse_url($url);if(!is_array($parts)||!isset($parts['scheme'],$parts['host'])||isset($parts['user'])||isset($parts['pass']))return null;
+        $scheme=strtolower($parts['scheme']);if(!in_array($scheme,['http','https'],true))return null;
+        $port=$parts['port']??($scheme==='https'?443:80);
+        return $scheme.'://'.strtolower($parts['host']).':'.$port;
+    }
+    private static function validOrigin(string $header):bool
+    {
+        $origin=self::origin($header);if($origin===null)return false;
+        $allowed=[home_url()];if(function_exists('site_url'))$allowed[]=site_url();
+        foreach($allowed as $url)if($origin===self::origin($url))return true;
+        return false;
+    }
     public static function process(string $action,array $data):string
     {
         if(!wp_verify_nonce(self::text('_wpnonce',$data),'ederp_auth_'.$action))return 'A sessão do formulário expirou. Atualize a página.';
         $origin=$_SERVER['HTTP_ORIGIN']??'';
-        if($origin&&parse_url($origin,PHP_URL_HOST)!==parse_url(home_url(),PHP_URL_HOST))return 'Origem do formulário inválida.';
+        if($origin&&!self::validOrigin($origin))return 'Origem do formulário inválida.';
         $login=trim(self::text('login',$data));
         $rate='ederp_auth_'.hash('sha256',($_SERVER['REMOTE_ADDR']??'').'|'.$action.'|'.strtolower($login));
         $attempts=(int)get_transient($rate);if($attempts>=10)return 'Aguarde alguns minutos antes de tentar novamente.';set_transient($rate,$attempts+1,10*MINUTE_IN_SECONDS);
@@ -49,7 +63,7 @@ final class Authentication
     public static function handle():void
     {
         global $post;if(!$post instanceof \WP_Post||!str_contains($post->post_content,'[erp_'))return;
-        if(!defined('DONOTCACHEPAGE'))define('DONOTCACHEPAGE',true);nocache_headers();header('Referrer-Policy: no-referrer');
+        if(!defined('DONOTCACHEPAGE'))define('DONOTCACHEPAGE',true);nocache_headers();header('Referrer-Policy: same-origin');
         if(($_GET['erp_auth']??'')==='sair'){
             if(wp_verify_nonce(self::text('_wpnonce',$_GET),'ederp_logout')){wp_logout();wp_safe_redirect(Portal::url());exit;}
             self::$message='Não foi possível sair. Atualize a página.';

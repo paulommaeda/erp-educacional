@@ -292,3 +292,6 @@ Resumo financeiro sem nome do plano e vencimento em DD/MM/AAAA. Parcelamento exc
 
 ### 0.10.9
 Rematrícula no mobile até 700px em um único nível: removidos bordas, sombras, fundos e paddings dos cartões aninhados, mantendo apenas o espaçamento externo da página. Termo sem caixa interna, confirmação em largura total. Desktop e aviso danger preservados.
+
+### 0.11.0
+Correção do login: política Referrer-Policy same-origin evita origem opaca/null em POST local. Validação normaliza esquema, host e porta e aceita somente origens dos endereços home/site configurados no WordPress. Nonce e limite de tentativas preservados. Após atualizar, limpar cache e recarregar completamente a página de login.
