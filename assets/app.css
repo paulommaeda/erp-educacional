@@ -85,3 +85,16 @@
 .ederp.journey-confirm input,.ederp.journey-confirm select,.ederp.journey-confirm textarea{max-width:100%;box-sizing:border-box}
 .ederp .erp-modal-header{align-items:center;gap:16px}.ederp .erp-modal-header h2{flex:1;min-width:0}.ederp .erp-modal-header button{flex-shrink:0}
 @media(max-width:600px){.ederp.journey-confirm{padding:16px}.ederp.journey-confirm .ederp-form>button,.ederp .erp-modal-body .ederp-form>button{width:100%;align-self:stretch}.ederp .erp-pdf-reader iframe{height:60dvh}}
+
+/* Mobile renewal: one content level, using the page's outer gutter only. */
+@media(max-width:700px){
+ .ederp [data-ederp-portal] .ederp-card.erp-renewal-section,
+ .ederp [data-ederp-portal] .erp-renewal-section .ederp-card{border:0;border-radius:0;box-shadow:none;background:transparent;padding:0;margin:0;min-width:0;width:100%;max-width:100%}
+ .ederp [data-ederp-portal] .erp-renewal-section{margin-top:20px}
+ .ederp [data-ederp-portal] .erp-renewal-section .ederp-term{padding:0;margin:12px 0;background:transparent;border:0;border-radius:0;max-width:100%;overflow-wrap:anywhere}
+ .ederp [data-ederp-portal] .erp-renewal-section .ederp-form{padding:0;margin:0;gap:12px;width:100%}
+ .ederp [data-ederp-portal] .erp-renewal-section h3{margin:12px 0}
+ .ederp [data-ederp-portal] .erp-renewal-section .erp-renewal-progress{margin:12px 0 18px}
+ .ederp [data-ederp-portal] .erp-renewal-section .erp-renewal-nav{margin-top:16px}
+ .ederp [data-ederp-portal] .erp-renewal-section .ederp-form>button[type=submit]{width:100%;align-self:stretch}
+}

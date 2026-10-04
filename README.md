@@ -289,3 +289,6 @@ Correção: rematrícula bloqueada somente por saldo positivo em lançamento nã
 
 ### 0.10.8
 Resumo financeiro sem nome do plano e vencimento em DD/MM/AAAA. Parcelamento exclusivamente definido pela oferta, inclusive na API. Manual PDF selecionável/enviável pela mídia em Configurações: quando configurado, surge antes do termo, com visualizador do navegador, tela cheia, download e aceite obrigatório. Versão SHA-256 validada pela API e registrada em auditoria com responsável/data. Sem manual configurado, mantém o fluxo anterior. Não usa serviço externo Issuu; navegação e zoom dependem do leitor PDF do navegador, com download para dispositivos sem suporte. Modais com controles e tipografia uniformizados.
+
+### 0.10.9
+Rematrícula no mobile até 700px em um único nível: removidos bordas, sombras, fundos e paddings dos cartões aninhados, mantendo apenas o espaçamento externo da página. Termo sem caixa interna, confirmação em largura total. Desktop e aviso danger preservados.

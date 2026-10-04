@@ -91,7 +91,7 @@
       async function show(){const current=++generation,id=select.value;contents.replaceChildren();
         const sections=scope==='all'?['academic','finance','renew']:[scope];
         for(const section of sections){if(current!==generation)return;const box=el('section',undefined,'ederp-card');contents.append(box);
-          try{if(section==='renew'){const offers=await api('alunos/'+id+'/ofertas-rematricula?codperiodo='+encodeURIComponent(EDERP.currentPeriod||''));if(current!==generation)return;box.append(el('h3','Rematrícula'));if(!offers.length)box.append(el('p','Nenhuma oferta disponível neste momento.'));
+          try{if(section==='renew'){box.classList.add('erp-renewal-section');const offers=await api('alunos/'+id+'/ofertas-rematricula?codperiodo='+encodeURIComponent(EDERP.currentPeriod||''));if(current!==generation)return;box.append(el('h3','Rematrícula'));if(!offers.length)box.append(el('p','Nenhuma oferta disponível neste momento.'));
             offers.forEach(o=>{
               const card=el('section',undefined,'ederp-card erp-renewal-flow'),target=o.turmas[0];box.append(card);
               card.append(el('h3','Rematrícula · '+(target?.nome||'Próximo período')));
