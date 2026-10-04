@@ -699,7 +699,7 @@
     ],
     "columns": {
       "idcontrato": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
-      "numero": "varchar(50) NOT NULL",
+      "numero": "varchar(100) NOT NULL",
       "idmatricula": "bigint(20) unsigned NOT NULL",
       "codpessoa_rf_original": "bigint(20) unsigned NOT NULL",
       "codpessoa_rf_atual": "bigint(20) unsigned NOT NULL",

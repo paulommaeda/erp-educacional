@@ -14,8 +14,8 @@ final class FinancialStatus
         $available=\EducacionalERP\Application\ContractDiscounts::conditional($title);$applied=Money::cents($title['desconto_condicional_aplicado']??'0.00');
         $title['valor_liquido_contratual']=$title['valor_liquido'];
         $title['desconto_condicional']=Money::format($available+$applied);$title['saldo_a_pagar']=Money::format(max(0,Money::cents($title['saldo_aberto'])-$available));
-        $title['valor_liquido_sem_pontualidade']=Money::format(Money::cents($title['valor_liquido'])-$applied);
-        $title['valor_liquido']=Money::format(max(0,Money::cents($title['valor_liquido'])-$applied-$available));
+        $title['valor_liquido_sem_pontualidade']=$title['valor_liquido'];
+        $title['valor_com_pontualidade']=Money::format(max(0,Money::cents($title['valor_liquido'])-$applied-$available));
         $title['status_liquidacao']=$title['status'];$title['status']=self::value($title);return $title;
     }
 }

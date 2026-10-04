@@ -101,3 +101,5 @@ Códigos HTTP: 200 sucesso; 401 sem autenticação; 403 sem permissão; 409 esco
 GET/POST `/contratos/{idcontrato}/descontos` consultam ou cadastram múltiplos descontos com `nome`, `valor` fixo por parcela, `parcela_inicio` e `parcela_fim`. POST `/descontos/{iddesconto}/excluir` exige `versao` e desativa o desconto, recalculando apenas parcelas não vencidas sem pagamentos. Descontos aparecem dentro do contrato nas consultas de matrículas e na exportação.
 
 Lançamentos agora incluem `desconto_condicional`, `desconto_incondicional`, `valor_liquido`, `valor_baixa`, `valor_liquido_contratual` e `saldo_a_pagar`. O desconto condicional é previsto até o vencimento e aplicado efetivamente na quitação pontual; use `saldo_a_pagar` na baixa. Baixa registra apenas dinheiro recebido. O valor da pontualidade é configurado pelo administrador em Configurações, válido para contratos existentes e novos.
+
+Correção 0.10.3: `valor_liquido` é original menos descontos incondicionais, sem pontualidade. `valor_com_pontualidade` e `saldo_a_pagar` expõem o benefício separadamente. Número do contrato: RA + código do período letivo.

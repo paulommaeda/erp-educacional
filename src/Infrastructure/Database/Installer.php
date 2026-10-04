@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '12';
+    public const VERSION = '13';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -80,6 +80,9 @@ final class Installer
                     }
                     $this->db->query("ALTER TABLE $table ADD CONSTRAINT $constraint FOREIGN KEY (" . implode(',', $fk['columns']) . ") REFERENCES $target (" . implode(',', $fk['references']) . ') ON DELETE RESTRICT ON UPDATE RESTRICT');
                 }
+            }
+            if(version_compare((string)get_option('ederp_schema_version','0'),'13','<')){
+                $this->db->atomic(function(){foreach($this->db->rows('SELECT * FROM '.$this->db->table('contratos')." WHERE numero LIKE 'CT-%' ORDER BY idcontrato FOR UPDATE") as $contract){$id=(int)$contract['idcontrato'];$number=\EducacionalERP\Application\ContractNumbers::forEnrollment($this->db,(int)$contract['idmatricula'],$id);$this->db->update('contratos',$id,['numero'=>$number]);$this->db->audit('contratos',$id,'padronizar_numero',$contract,['numero'=>$number],'migracao_13_contrato');}});
             }
             update_option('ederp_schema_version', self::VERSION, false);
             delete_option('ederp_schema_error');

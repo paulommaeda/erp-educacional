@@ -57,7 +57,7 @@ final class AcademicService
         if($discount<0||$discount>=$original)throw new RuleViolation('Bolsa deve ser menor que a anuidade e não pode ser negativa.');
         $count=Input::id($data['quantidade_parcelas']??null);Money::split($original-$discount,$count);
         $first=Input::date($data['primeiro_vencimento']??null);
-        $contract=$this->db->insert('contratos',['numero'=>'CT-'.gmdate('Y').'-'.$enrollment,'idmatricula'=>$enrollment,
+        $contract=$this->db->insert('contratos',['numero'=>ContractNumbers::forEnrollment($this->db,$enrollment),'idmatricula'=>$enrollment,
             'codpessoa_rf_original'=>$person['codpessoa'],'codpessoa_rf_atual'=>$person['codpessoa'],'data_contrato'=>Input::today(),
             'valor_original_total'=>Money::format($original),'desconto_incondicional_total'=>Money::format($discount),'valor_liquido_total'=>Money::format($original-$discount),
             'quantidade_parcelas'=>$count,'primeiro_vencimento'=>$first,'versao_termo'=>Input::text($data['versao_termo']??'1',40),
