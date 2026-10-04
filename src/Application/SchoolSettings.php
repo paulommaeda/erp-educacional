@@ -7,7 +7,7 @@ final class SchoolSettings
 {
     public function __construct(private Store $db) {}
     public static function renewalIntroduction():string { return (string)get_option('ederp_renewal_introduction','É uma alegria seguir com sua família em mais um período letivo. Confira a próxima turma e leia o termo com atenção antes de confirmar a rematrícula.'); }
-    public static function renewalBlockMessage():string { return (string)get_option('ederp_renewal_block_message',RenewalService::BLOCK_MESSAGE); }
+    public static function renewalBlockMessage():string {  $message=(string)get_option('ederp_renewal_block_message',RenewalService::BLOCK_MESSAGE);return $message===str_replace('parcelas vencidas','parcelas em aberto',RenewalService::BLOCK_MESSAGE)?RenewalService::BLOCK_MESSAGE:$message; }
     public static function current():int { return (int)get_option('ederp_current_period',0); }
     public static function resolve(mixed $value):int { return $value===null||$value===''?self::current():($value==='todos'?0:Input::id($value)); }
     public static function canChoose(string $scope='academic'):bool

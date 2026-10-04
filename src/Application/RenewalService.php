@@ -83,11 +83,11 @@ final class RenewalService
             $this->db->audit('ofertas_rematricula',$id,$delete?'excluir':'editar',$before+['turmas'=>$ids],$after,$key);return ['idoferta'=>(string)$id,'excluido'=>$delete];
         }));
     }
-    public const BLOCK_MESSAGE = 'Queremos continuar a caminhada com sua família. Neste momento, a rematrícula está indisponível porque há parcelas em aberto. Por favor, procure a secretaria para regularizar a situação e receber orientação sobre os próximos passos.';
-    private function hasOpenPayments(int $student):bool
+    public const BLOCK_MESSAGE = 'Queremos continuar a caminhada com sua família. Neste momento, a rematrícula está indisponível porque há parcelas vencidas. Por favor, procure a secretaria para regularizar a situação e receber orientação sobre os próximos passos.';
+    private function hasOverduePayments(int $student):bool
     {
         $l=$this->db->table('lancamentos');$p=$this->db->table('parcelas');$c=$this->db->table('contratos');$m=$this->db->table('matriculas');
-        foreach($this->db->rows("SELECT l.saldo_aberto FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND l.status<>'cancelado'",[$student]) as $row)if(Money::cents($row['saldo_aberto'])>0)return true;
+        foreach($this->db->rows("SELECT l.saldo_aberto FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND l.status<>'cancelado' AND l.vencimento<%s",[$student,Input::today()]) as $row)if(Money::cents($row['saldo_aberto'])>0)return true;
         return false;
     }
     public function offers(int $student,int $period=0): array
@@ -104,7 +104,7 @@ final class RenewalService
             $classes=$this->db->rows("SELECT t.idturma,t.nome,t.idcurso,t.codperiodo FROM $ot ot JOIN $t t ON t.idturma=ot.idturma WHERE ot.idoferta=%d AND t.idturma=%d AND t.status='ativa'",[(int)$offer['idoferta'],$next]);
             if(!$classes)continue;$class=$classes[0];if((int)$class['codperiodo']!==(int)$offer['codperiodo_destino']||(int)$class['idcurso']!==(int)$offer['idcurso_destino'])continue;
             try{$class['plano']=$this->academic->planForClass($next);}catch(RuleViolation $e){continue;}
-            $class['curso']=$this->db->get('cursos',(int)$class['idcurso'])['nome'];$offer['turmas']=[$class];$offer['destino_fixo']=true;$offer['indisponivel']=$this->hasOpenPayments($student);$offer['mensagem_indisponivel']=SchoolSettings::renewalBlockMessage();$offer['texto_apresentacao']=SchoolSettings::renewalIntroduction();$eligible[]=$offer;
+            $class['curso']=$this->db->get('cursos',(int)$class['idcurso'])['nome'];$offer['turmas']=[$class];$offer['destino_fixo']=true;$offer['indisponivel']=$this->hasOverduePayments($student);$offer['mensagem_indisponivel']=SchoolSettings::renewalBlockMessage();$offer['texto_apresentacao']=SchoolSettings::renewalIntroduction();$eligible[]=$offer;
         }
         return $eligible;
     }
@@ -115,7 +115,7 @@ final class RenewalService
             $student=(int)$origin['idaluno']; $this->db->get('alunos',$student,true);
             if(!$this->access->canStudent($student,'renew',true) || !$this->access->person()) { throw new RuleViolation('Responsável não autorizado.'); }
             $origin=$this->db->get('matriculas',(int)$origin['idmatricula'],true);
-            if($this->hasOpenPayments($student))throw new RuleViolation(SchoolSettings::renewalBlockMessage());
+            if($this->hasOverduePayments($student))throw new RuleViolation(SchoolSettings::renewalBlockMessage());
             if(!SchoolSettings::canChoose('academic')&&(int)$origin['codperiodo']!==SchoolSettings::forViewer(null,'academic'))throw new RuleViolation('A rematrícula deve partir do período vigente.');
             $offer=$this->db->get('ofertas_rematricula',Input::id($d['idoferta']??null),true);
             $now=gmdate('Y-m-d H:i:s');

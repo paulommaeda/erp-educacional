@@ -283,3 +283,6 @@ Rematrícula no portal em três etapas: apresentação, destino fixo e aceite. T
 
 ### 0.10.6
 Configurações permite personalizar a mensagem de bloqueio da rematrícula por parcelas em aberto. A mesma mensagem é usada no portal e na validação da API. Alteração exclusiva do administrador, com auditoria e preservação do texto padrão nas instalações existentes.
+
+### 0.10.7
+Correção: rematrícula bloqueada somente por saldo positivo em lançamento não cancelado com vencimento anterior à data atual do WordPress. Parcelas futuras e que vencem hoje não bloqueiam. Regra aplicada ao portal e à confirmação pela API. Texto padrão atualizado para parcelas vencidas; textos personalizados preservados. Sem migração de banco.
