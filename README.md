@@ -280,3 +280,6 @@ Modal de destino da rematrícula com escopo ERP próprio, formulário em coluna 
 
 ### 0.10.5
 Rematrícula no portal em três etapas: apresentação, destino fixo e aceite. Texto da apresentação em Configurações, junto ao período vigente. Qualquer saldo positivo não cancelado do aluno (inclusive parcelas futuras e pagamentos parciais, em qualquer período) bloqueia o início e a confirmação pela API. Após regularização, atualizar o portal. Mensagem de bloqueio em estilo danger. Não há migração de banco.
+
+### 0.10.6
+Configurações permite personalizar a mensagem de bloqueio da rematrícula por parcelas em aberto. A mesma mensagem é usada no portal e na validação da API. Alteração exclusiva do administrador, com auditoria e preservação do texto padrão nas instalações existentes.

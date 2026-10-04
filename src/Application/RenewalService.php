@@ -104,7 +104,7 @@ final class RenewalService
             $classes=$this->db->rows("SELECT t.idturma,t.nome,t.idcurso,t.codperiodo FROM $ot ot JOIN $t t ON t.idturma=ot.idturma WHERE ot.idoferta=%d AND t.idturma=%d AND t.status='ativa'",[(int)$offer['idoferta'],$next]);
             if(!$classes)continue;$class=$classes[0];if((int)$class['codperiodo']!==(int)$offer['codperiodo_destino']||(int)$class['idcurso']!==(int)$offer['idcurso_destino'])continue;
             try{$class['plano']=$this->academic->planForClass($next);}catch(RuleViolation $e){continue;}
-            $class['curso']=$this->db->get('cursos',(int)$class['idcurso'])['nome'];$offer['turmas']=[$class];$offer['destino_fixo']=true;$offer['indisponivel']=$this->hasOpenPayments($student);$offer['mensagem_indisponivel']=self::BLOCK_MESSAGE;$offer['texto_apresentacao']=SchoolSettings::renewalIntroduction();$eligible[]=$offer;
+            $class['curso']=$this->db->get('cursos',(int)$class['idcurso'])['nome'];$offer['turmas']=[$class];$offer['destino_fixo']=true;$offer['indisponivel']=$this->hasOpenPayments($student);$offer['mensagem_indisponivel']=SchoolSettings::renewalBlockMessage();$offer['texto_apresentacao']=SchoolSettings::renewalIntroduction();$eligible[]=$offer;
         }
         return $eligible;
     }
@@ -115,7 +115,7 @@ final class RenewalService
             $student=(int)$origin['idaluno']; $this->db->get('alunos',$student,true);
             if(!$this->access->canStudent($student,'renew',true) || !$this->access->person()) { throw new RuleViolation('Responsável não autorizado.'); }
             $origin=$this->db->get('matriculas',(int)$origin['idmatricula'],true);
-            if($this->hasOpenPayments($student))throw new RuleViolation(self::BLOCK_MESSAGE);
+            if($this->hasOpenPayments($student))throw new RuleViolation(SchoolSettings::renewalBlockMessage());
             if(!SchoolSettings::canChoose('academic')&&(int)$origin['codperiodo']!==SchoolSettings::forViewer(null,'academic'))throw new RuleViolation('A rematrícula deve partir do período vigente.');
             $offer=$this->db->get('ofertas_rematricula',Input::id($d['idoferta']??null),true);
             $now=gmdate('Y-m-d H:i:s');

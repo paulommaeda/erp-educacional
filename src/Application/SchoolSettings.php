@@ -7,6 +7,7 @@ final class SchoolSettings
 {
     public function __construct(private Store $db) {}
     public static function renewalIntroduction():string { return (string)get_option('ederp_renewal_introduction','É uma alegria seguir com sua família em mais um período letivo. Confira a próxima turma e leia o termo com atenção antes de confirmar a rematrícula.'); }
+    public static function renewalBlockMessage():string { return (string)get_option('ederp_renewal_block_message',RenewalService::BLOCK_MESSAGE); }
     public static function current():int { return (int)get_option('ederp_current_period',0); }
     public static function resolve(mixed $value):int { return $value===null||$value===''?self::current():($value==='todos'?0:Input::id($value)); }
     public static function canChoose(string $scope='academic'):bool
@@ -22,7 +23,7 @@ final class SchoolSettings
     {
         $periods=$this->db->rows('SELECT codperiodo,codigo,descricao,status FROM '.$this->db->table('periodos_letivos').' ORDER BY data_inicio DESC,codperiodo DESC');
         if(!self::canChoose()&&!self::canChoose('finance'))$periods=array_values(array_filter($periods,fn($p)=>(int)$p['codperiodo']===self::current()));
-        return ['codperiodo'=>self::current(),'periodos'=>$periods,'texto_apresentacao_rematricula'=>self::renewalIntroduction()];
+        return ['codperiodo'=>self::current(),'periodos'=>$periods,'texto_apresentacao_rematricula'=>self::renewalIntroduction(),'texto_bloqueio_rematricula'=>self::renewalBlockMessage()];
     }
     public function save(array $data,string $key):array
     {
@@ -33,8 +34,10 @@ final class SchoolSettings
         try {
             $this->db->get('periodos_letivos',$id);
             $introduction=Input::text($data['texto_apresentacao_rematricula']??self::renewalIntroduction(),20000);
+            $blockMessage=Input::text($data['texto_bloqueio_rematricula']??self::renewalBlockMessage(),20000);
+            $oldBlockMessage=self::renewalBlockMessage();update_option('ederp_renewal_block_message',$blockMessage,false);
             $before=self::current();$oldIntroduction=self::renewalIntroduction();update_option('ederp_renewal_introduction',$introduction,false);update_option('ederp_current_period',$id,false);
-            $this->db->audit('configuracoes',0,'periodo_atual',['codperiodo'=>$before,'texto_apresentacao_rematricula'=>$oldIntroduction],['codperiodo'=>$id,'texto_apresentacao_rematricula'=>$introduction],$key);
+            $this->db->audit('configuracoes',0,'periodo_atual',['codperiodo'=>$before,'texto_apresentacao_rematricula'=>$oldIntroduction,'texto_bloqueio_rematricula'=>$oldBlockMessage],['codperiodo'=>$id,'texto_apresentacao_rematricula'=>$introduction,'texto_bloqueio_rematricula'=>$blockMessage],$key);
             return $this->read();
         } finally { $this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$name]); }
     }
