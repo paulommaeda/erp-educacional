@@ -135,7 +135,7 @@
       const c=card('Vincular período letivo','Salve este vínculo agora. A turma poderá ser escolhida na próxima tela ou mais tarde.'),f=h('form',undefined,'ederp-form'),choice=picker('codperiodo','Período letivo','periodos_letivos');f.append(choice.node);c.append(f);root.append(c);f.dataset.modalAuto='1';bind(f,'alunos/'+studentId+'/periodos',()=>({codperiodo:choice.value()}),r=>{location.href=url('matriculas',{aluno:studentId,vinculo:r.idvinculoperiodo});},'Salvar período e escolher turma →');}
   }
   function classRenewalModal(row,reload){
-    const dialog=h('dialog',undefined,'journey-confirm'),f=h('form',undefined,'ederp-form'),source={input:{value:String(row.codperiodo),addEventListener:()=>{}}};
+    const dialog=h('dialog',undefined,'journey-confirm ederp erp-renewal-dialog'),f=h('form',undefined,'ederp-form'),source={input:{value:String(row.codperiodo),addEventListener:()=>{}}};
     dialog.append(h('h2','Rematrícula · '+row.nome),h('p','Altere o destino de rematrícula mesmo com alunos cadastrados. Matrículas e contratos atuais serão preservados.'),f);nextClassFields(f,row.proxima_turma,source);const close=button('Fechar',()=>dialog.close(),true);dialog.append(close);document.body.append(dialog);dialog.addEventListener('cancel',e=>{if(f.dataset.saving==='1')e.preventDefault();});close.onclick=()=>{if(f.dataset.saving!=='1')dialog.close();};dialog.onclose=()=>dialog.remove();bind(f,'turmas/'+row.idturma+'/rematricula',()=>{const data=dataOf(f);return {idturma_proxima:data.idturma_proxima||null,versao:row.versao};},()=>{dialog.close();reload();},'Salvar destino');dialog.showModal();
   }
   function nextClassFields(f,next=null,source){

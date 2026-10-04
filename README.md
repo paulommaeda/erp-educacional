@@ -1,4 +1,4 @@
-# ERP Educacional — 0.10.3
+# ERP Educacional — 0.10.4
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -273,3 +273,7 @@ Testes locais cobrem acumulação/faixas, exclusão prospectiva, preservação d
 Valor líquido é sempre original menos descontos incondicionais. Pontualidade permanece separada como benefício previsto/aplicado e altera apenas o valor de quitação (`saldo_a_pagar`); `valor_com_pontualidade` mostra a simulação. Mesmo após pagamento, o líquido não é reduzido pelo desconto condicional.
 
 Modal de bolsas possui escopo CSS próprio, layout responsivo, controles estilizados e título dimensionado. Contratos novos são numerados `RA-CODIGO_DO_PERIODO`, preservando zeros do RA. Havendo mais de um contrato para o mesmo RA/período, um sufixo numérico preserva unicidade. Migração 13 renomeia contratos antigos com padrão CT-, sem alterar parcelas/pagamentos. Execute Verificar banco como administrador.
+
+## Versão 0.10.4
+
+Modal de destino da rematrícula com escopo ERP próprio, formulário em coluna única, controles estilizados, título dimensionado e botões sem esticar na altura do formulário. Layout responsivo para celular e desktop. Sem alteração de banco.
