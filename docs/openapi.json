@@ -1,0 +1,4172 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "ERP Educacional — APIs de integração",
+    "version": "0.10.0",
+    "description": "Consultas e gravações autenticadas como administrador. Leia integracao-api.md. JSON monetário decimal string; autenticação nativa WordPress por senha de aplicativo sobre HTTPS."
+  },
+  "servers": [
+    {
+      "url": "/wp-json/erp-educacional/v1/integracao"
+    }
+  ],
+  "security": [
+    {
+      "WordPressApplicationPassword": []
+    }
+  ],
+  "paths": {
+    "/alunos": {
+      "get": {
+        "summary": "Consulta completa e paginada de alunos",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "codperiodo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "idaluno",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "ra",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coleção",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "gerado_em": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Aluno"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      },
+      "post": {
+        "summary": "Cadastra aluno, pessoas e vínculos atomicamente",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CadastroAluno"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/alunos/{id}": {
+      "get": {
+        "summary": "Detalhe completo por idaluno",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "gerado_em": {
+                      "type": "string"
+                    },
+                    "item": {
+                      "$ref": "#/components/schemas/Aluno"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Edita RA, tipo e ativo; versao obrigatória",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "versao"
+                ],
+                "properties": {
+                  "ra": {
+                    "type": "string"
+                  },
+                  "tipo_aluno": {
+                    "type": "string"
+                  },
+                  "ativo": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9]+$"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  },
+                  "versao": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9]+$"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  }
+                }
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/matriculas": {
+      "get": {
+        "summary": "Consulta completa e paginada de matriculas",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "codperiodo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "idaluno",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "idturma",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coleção",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "gerado_em": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Matricula"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      },
+      "post": {
+        "summary": "Matrícula inicial, contrato e parcelas",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NovaMatricula"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/matriculas/{id}": {
+      "get": {
+        "summary": "Detalhe completo por idmatricula",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "gerado_em": {
+                      "type": "string"
+                    },
+                    "item": {
+                      "$ref": "#/components/schemas/Matricula"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/financeiro": {
+      "get": {
+        "summary": "Consulta completa e paginada de financeiro",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "codperiodo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "idaluno",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "idturma",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vencimento_de",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "vencimento_ate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Coleção",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "gerado_em": {
+                      "type": "string",
+                      "format": "date-time"
+                    },
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Financeiro"
+                      }
+                    },
+                    "next_cursor": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "limit": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      },
+      "post": {
+        "summary": "Gera lançamentos conforme contrato: idcontrato",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/financeiro/{id}": {
+      "get": {
+        "summary": "Detalhe completo por idlancamento",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalhe",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "schema_version": {
+                      "type": "string"
+                    },
+                    "gerado_em": {
+                      "type": "string"
+                    },
+                    "item": {
+                      "$ref": "#/components/schemas/Financeiro"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      },
+      "patch": {
+        "summary": "Edita vencimento e/ou valor original",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EdicaoLancamento"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/pessoas": {
+      "post": {
+        "summary": "Cadastra pessoa e usuário WordPress",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CadastroPessoa"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/pessoas/{id}": {
+      "patch": {
+        "summary": "Edita pessoa; versao obrigatória",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "versao"
+                ],
+                "properties": {
+                  "nome": {
+                    "type": "string"
+                  },
+                  "nome_social": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cpf": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "data_nascimento": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "format": "date"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "email": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "telefone": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "ativo": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9]+$"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  },
+                  "rg": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "rua": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "numero": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "complemento": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "bairro": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cep": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "cidade": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "estado": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "pais": {
+                    "type": "string"
+                  },
+                  "estado_civil": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "profissao": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "religiao": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "igreja": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "sexo": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "foto_attachment_id": {
+                    "anyOf": [
+                      {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[0-9]+$"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "idestado_civil": {
+                    "anyOf": [
+                      {
+                        "oneOf": [
+                          {
+                            "type": "string",
+                            "pattern": "^[0-9]+$"
+                          },
+                          {
+                            "type": "integer"
+                          }
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "user_login": {
+                    "type": "string"
+                  },
+                  "versao": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^[0-9]+$"
+                      },
+                      {
+                        "type": "integer"
+                      }
+                    ]
+                  }
+                }
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/alunos/{id}/vinculos": {
+      "post": {
+        "summary": "Grava vínculo com pessoa existente",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Vinculo"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/alunos/{id}/responsavel-financeiro": {
+      "post": {
+        "summary": "Troca responsável: codpessoa_nova e motivo",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/matriculas/{id}/transferencia": {
+      "post": {
+        "summary": "Transferência interna: idturma_destino, motivo, versao",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/matriculas/{id}/cancelamento": {
+      "post": {
+        "summary": "Cancela matrícula e cobranças futuras: versao",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/matriculas/{id}/resultado": {
+      "post": {
+        "summary": "Resultado: status aprovado/reprovado e versao",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/financeiro/editar-lote": {
+      "post": {
+        "summary": "Edita até 100 títulos: lancamentos com idlancamento/versao, alteracoes e motivo",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/financeiro/{id}/baixas": {
+      "post": {
+        "summary": "Baixa: valor_pago, data_pagamento, forma_pagamento",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/baixas/{id}/estorno": {
+      "post": {
+        "summary": "Estorno integral: motivo",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    },
+    "/contratos/{id}/parcelas": {
+      "post": {
+        "summary": "Gera parcelas de contrato pendente",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              },
+              "description": "Consulte integracao-api.md para campos e exemplos"
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Operação concluída; IDs e resultado da operação",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Sem autenticação"
+          },
+          "403": {
+            "description": "Sem permissão"
+          },
+          "409": {
+            "description": "Escolha um login"
+          },
+          "422": {
+            "description": "Regra, versão ou dados inválidos"
+          },
+          "500": {
+            "description": "Persistência falhou"
+          },
+          "503": {
+            "description": "Migração pendente"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "WordPressApplicationPassword": {
+        "type": "http",
+        "scheme": "basic",
+        "description": "Usuário WordPress administrador + Senha de Aplicativo, somente sobre HTTPS"
+      }
+    },
+    "schemas": {
+      "Pessoa": {
+        "type": "object",
+        "properties": {
+          "codpessoa": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "nome": {
+            "type": "string"
+          },
+          "nome_social": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cpf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ativo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_origem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rua": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "numero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "complemento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pais": {
+            "type": "string"
+          },
+          "estado_civil": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profissao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "religiao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "igreja": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sexo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "foto_attachment_id": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "idestado_civil": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "codigo_pessoa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enderecos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Endereco"
+            }
+          }
+        }
+      },
+      "Aluno": {
+        "type": "object",
+        "properties": {
+          "idaluno": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "ra": {
+            "type": "string"
+          },
+          "ativo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "tipo_aluno": {
+            "type": "string"
+          },
+          "pessoa": {
+            "$ref": "#/components/schemas/Pessoa"
+          },
+          "vinculos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vinculo"
+            }
+          },
+          "pai": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vinculo"
+            }
+          },
+          "mae": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vinculo"
+            }
+          },
+          "outros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Vinculo"
+            }
+          }
+        }
+      },
+      "Vinculo": {
+        "type": "object",
+        "properties": {
+          "idvinculo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idaluno": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_responsavel": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "parentesco": {
+            "type": "string"
+          },
+          "responsavel_academico": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "responsavel_financeiro": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "pode_rematricular": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "inicio_vigencia": {
+            "type": "string"
+          },
+          "fim_vigencia": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "pessoa": {
+            "$ref": "#/components/schemas/Pessoa"
+          },
+          "vigente": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Matricula": {
+        "type": "object",
+        "properties": {
+          "idmatricula": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idaluno": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codperiodo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idcurso": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idturma_atual": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idmatricula_origem": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_matricula": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string"
+          },
+          "origem": {
+            "type": "string"
+          },
+          "encerrado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "motivo_encerramento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "ativo_unico": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "aluno": {
+            "$ref": "#/components/schemas/Aluno"
+          },
+          "periodo": {
+            "$ref": "#/components/schemas/Periodo"
+          },
+          "curso": {
+            "$ref": "#/components/schemas/Curso"
+          },
+          "turma": {
+            "$ref": "#/components/schemas/Turma"
+          },
+          "turno": {
+            "$ref": "#/components/schemas/Turno"
+          },
+          "movimentacoes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Movimento"
+            }
+          },
+          "contratos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Contrato"
+            }
+          }
+        }
+      },
+      "Turma": {
+        "type": "object",
+        "properties": {
+          "idturma": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codperiodo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idcurso": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idturno": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "capacidade": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "status": {
+            "type": "string"
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idplano": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "idturma_proxima": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "Periodo": {
+        "type": "object",
+        "properties": {
+          "codperiodo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "data_inicio": {
+            "type": "string",
+            "format": "date"
+          },
+          "data_fim": {
+            "type": "string",
+            "format": "date"
+          },
+          "status": {
+            "type": "string"
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codperiodo_proximo": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "Curso": {
+        "type": "object",
+        "properties": {
+          "idcurso": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "descricao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ativo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          }
+        }
+      },
+      "Turno": {
+        "type": "object",
+        "properties": {
+          "idturno": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "hora_inicio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "hora_fim": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ativo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          }
+        }
+      },
+      "Contrato": {
+        "type": "object",
+        "properties": {
+          "idcontrato": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "numero": {
+            "type": "string"
+          },
+          "idmatricula": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_rf_original": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_rf_atual": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "data_contrato": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor_original_total": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "desconto_incondicional_total": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "valor_liquido_total": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "quantidade_parcelas": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "moeda": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "versao_termo": {
+            "type": "string"
+          },
+          "termo_snapshot": {
+            "type": "string"
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idplano": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plano_nome_snapshot": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "plano_versao_snapshot": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "primeiro_vencimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "parcelas_geradas": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "parcelas_geradas_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "responsavel_financeiro": {
+            "$ref": "#/components/schemas/Pessoa"
+          },
+          "parcelas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Parcela"
+            }
+          }
+        }
+      },
+      "Parcela": {
+        "type": "object",
+        "properties": {
+          "idparcela": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idcontrato": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "numero": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "competencia": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimento_original": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor_original": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "desconto_incondicional": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "valor_liquido": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "desconto_condicional_previsto": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "limite_desconto_condicional": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "regra_desconto_condicional": {
+            "type": "string"
+          },
+          "taxa_juros_mensal": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "percentual_multa": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "regra_encargos": {
+            "type": "string"
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "lancamentos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Lancamento"
+            }
+          }
+        }
+      },
+      "Lancamento": {
+        "type": "object",
+        "properties": {
+          "idlancamento": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idparcela": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_rf_original": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_rf_atual": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "descricao": {
+            "type": "string"
+          },
+          "emissao": {
+            "type": "string",
+            "format": "date"
+          },
+          "vencimento": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor_original": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "desconto_incondicional": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "valor_liquido": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "desconto_condicional_aplicado": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "juros_aplicados": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "multa_aplicada": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "valor_baixa": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "saldo_aberto": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "em_aberto",
+              "vencido",
+              "baixado",
+              "cancelado"
+            ]
+          },
+          "cancelado_em": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "motivo_cancelamento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "valor_cancelado": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "status_liquidacao": {
+            "type": "string"
+          },
+          "baixas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Baixa"
+            }
+          },
+          "ajustes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Ajuste"
+            }
+          }
+        }
+      },
+      "Baixa": {
+        "type": "object",
+        "properties": {
+          "idbaixa": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idlancamento": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_devedor": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_pagador": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_pagamento": {
+            "type": "string",
+            "format": "date"
+          },
+          "registrado_em": {
+            "type": "string"
+          },
+          "valor_pago": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "principal_liquidado": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "juros_pagos": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "multa_paga": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "desconto_condicional_concedido": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "forma_pagamento": {
+            "type": "string"
+          },
+          "referencia_externa": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "idempotencia": {
+            "type": "string"
+          },
+          "ator_wp_user_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "estornos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Estorno"
+            }
+          }
+        }
+      },
+      "Estorno": {
+        "type": "object",
+        "properties": {
+          "idestorno": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idbaixa": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "valor": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "efetivado_em": {
+            "type": "string"
+          },
+          "ator_wp_user_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idempotencia": {
+            "type": "string"
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          }
+        }
+      },
+      "Ajuste": {
+        "type": "object",
+        "properties": {
+          "idajuste": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idlancamento": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "componente": {
+            "type": "string"
+          },
+          "valor_delta": {
+            "type": "string",
+            "pattern": "^-?[0-9]+\\.[0-9]{2}$"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "efetivado_em": {
+            "type": "string"
+          },
+          "ator_wp_user_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idempotencia": {
+            "type": "string"
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          }
+        }
+      },
+      "Endereco": {
+        "type": "object",
+        "properties": {
+          "idendereco": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "cep": {
+            "type": "string"
+          },
+          "logradouro": {
+            "type": "string"
+          },
+          "numero": {
+            "type": "string"
+          },
+          "complemento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bairro": {
+            "type": "string"
+          },
+          "cidade": {
+            "type": "string"
+          },
+          "uf": {
+            "type": "string"
+          },
+          "pais": {
+            "type": "string"
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          }
+        }
+      },
+      "Movimento": {
+        "type": "object",
+        "properties": {
+          "idmovimentacao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "idmatricula": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "idturma_origem": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "idturma_destino": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status_anterior": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status_novo": {
+            "type": "string"
+          },
+          "efetivado_em": {
+            "type": "string"
+          },
+          "registrado_em": {
+            "type": "string"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "ator_wp_user_id": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "criado_em": {
+            "type": "string"
+          },
+          "atualizado_em": {
+            "type": "string"
+          },
+          "versao": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "solicitante_codpessoa": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "solicitante_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_solicitacao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "colegio_destino": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documento_nome": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documento_mime": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "Financeiro": {
+        "type": "object",
+        "properties": {
+          "lancamento": {
+            "$ref": "#/components/schemas/Lancamento"
+          },
+          "parcela": {
+            "$ref": "#/components/schemas/Parcela"
+          },
+          "contrato": {
+            "$ref": "#/components/schemas/Contrato"
+          },
+          "responsavel_financeiro": {
+            "$ref": "#/components/schemas/Pessoa"
+          },
+          "aluno": {
+            "$ref": "#/components/schemas/Aluno"
+          },
+          "matricula": {
+            "$ref": "#/components/schemas/Matricula"
+          }
+        }
+      },
+      "CadastroPessoa": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": "string"
+          },
+          "nome_social": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cpf": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "data_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "email": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "telefone": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "ativo": {
+            "oneOf": [
+              {
+                "type": "string",
+                "pattern": "^[0-9]+$"
+              },
+              {
+                "type": "integer"
+              }
+            ]
+          },
+          "codpessoa_origem": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rg": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rua": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "numero": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "complemento": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cep": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "cidade": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "estado": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "pais": {
+            "type": "string"
+          },
+          "estado_civil": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "profissao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "religiao": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "igreja": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "sexo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "foto_attachment_id": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "idestado_civil": {
+            "anyOf": [
+              {
+                "oneOf": [
+                  {
+                    "type": "string",
+                    "pattern": "^[0-9]+$"
+                  },
+                  {
+                    "type": "integer"
+                  }
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "user_login": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "nome",
+          "data_nascimento"
+        ]
+      },
+      "CadastroAluno": {
+        "type": "object",
+        "required": [
+          "aluno"
+        ],
+        "properties": {
+          "pessoa": {
+            "$ref": "#/components/schemas/CadastroPessoa"
+          },
+          "codpessoa": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "aluno": {
+            "type": "object",
+            "required": [
+              "ra"
+            ],
+            "properties": {
+              "ra": {
+                "type": "string"
+              },
+              "tipo_aluno": {
+                "type": "string",
+                "enum": [
+                  "REGULAR",
+                  "AEE"
+                ]
+              }
+            }
+          },
+          "vinculos": {
+            "type": "array",
+            "maxItems": 20,
+            "items": {
+              "type": "object",
+              "properties": {
+                "pessoa": {
+                  "$ref": "#/components/schemas/CadastroPessoa"
+                },
+                "codpessoa_responsavel": {
+                  "type": [
+                    "string",
+                    "integer"
+                  ]
+                },
+                "parentesco": {
+                  "type": "string"
+                },
+                "responsavel_financeiro": {
+                  "type": "boolean"
+                },
+                "responsavel_academico": {
+                  "type": "boolean"
+                },
+                "pode_rematricular": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "parentesco"
+              ]
+            }
+          }
+        }
+      },
+      "NovaMatricula": {
+        "type": "object",
+        "required": [
+          "idaluno",
+          "idturma",
+          "quantidade_parcelas",
+          "primeiro_vencimento"
+        ],
+        "properties": {
+          "idaluno": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "idturma": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "quantidade_parcelas": {
+            "type": [
+              "integer",
+              "string"
+            ]
+          },
+          "primeiro_vencimento": {
+            "type": "string",
+            "format": "date"
+          },
+          "desconto_incondicional_total": {
+            "type": "string"
+          }
+        }
+      },
+      "EdicaoLancamento": {
+        "type": "object",
+        "required": [
+          "versao",
+          "motivo"
+        ],
+        "properties": {
+          "versao": {
+            "type": [
+              "string",
+              "integer"
+            ]
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "vencimento": {
+            "type": "string",
+            "format": "date"
+          },
+          "valor_original": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

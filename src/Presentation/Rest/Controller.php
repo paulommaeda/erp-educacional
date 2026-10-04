@@ -40,6 +40,8 @@ final class Controller
     {
         $cap=static fn(string $c)=>static fn()=>current_user_can($c);
         $id='(?P<id>[1-9][0-9]{0,17})';
+        $this->integrationRoutes();
+        $this->route('/turmas/'.$id.'/rematricula','POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->classRenewal((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/turmas/'.$id.'/plano','GET',$cap('erp_gerenciar_academico'),fn($r)=>$this->academic->planForClass((int)$r['id']));
         $this->route('/financeiro/pendentes','GET',fn()=>Access::canGenerate(),fn($r)=>$this->pendingContracts($r));
         $this->route('/contratos/'.$id.'/parcelas','POST',fn()=>Access::canGenerate(),fn($r)=>$this->academic->generateInstallments((int)$r['id'],$this->key($r)));
@@ -263,6 +265,36 @@ final class Controller
     {
         $m=$this->db->table('matriculas'); $t=$this->db->table('turmas'); $c=$this->db->table('cursos'); $p=$this->db->table('periodos_letivos'); $u=$this->db->table('turnos'); $ct=$this->db->table('contratos');
         return $this->db->rows("SELECT m.versao,m.idmatricula,m.idmatricula_origem,m.codperiodo,m.idcurso,m.idturma_atual,m.status,m.data_matricula,(SELECT COUNT(*) FROM $ct ct WHERE ct.idmatricula=m.idmatricula) AS contratos,p.codigo AS periodo,c.nome AS curso,t.nome AS turma,u.nome AS turno FROM $m m JOIN $t t ON t.idturma=m.idturma_atual JOIN $c c ON c.idcurso=m.idcurso JOIN $p p ON p.codperiodo=m.codperiodo JOIN $u u ON u.idturno=t.idturno WHERE m.idaluno=%d".($period?' AND m.codperiodo=%d':'')." ORDER BY p.data_inicio DESC",$period?[$student,$period]:[$student]);
+    }
+    private function integrationRoutes():void
+    {
+        $service=new \EducacionalERP\Application\IntegrationService($this->db,new Operations($this->db),$this->catalog);
+        $admin=static fn()=>Access::isAdmin();$id='(?P<id>[1-9][0-9]{0,17})';
+        foreach(['alunos','matriculas','financeiro'] as $resource){
+            $this->route('/integracao/'.$resource,'GET',$admin,fn($r)=>$service->collection($resource,$r->get_params()));
+            $this->route('/integracao/'.$resource.'/'.$id,'GET',$admin,fn($r)=>$service->detail($resource,(int)$r['id']));
+        }
+        $this->route('/integracao/alunos','POST',$admin,fn($r)=>$service->createStudent($this->payload($r),$this->key($r)));
+        $this->route('/integracao/alunos/'.$id,'PATCH',$admin,fn($r)=>$this->catalog->edit('alunos',(int)$r['id'],$this->versioned($r),$this->key($r)));
+        $this->route('/integracao/pessoas','POST',$admin,fn($r)=>$this->catalog->create('pessoas',$this->payload($r),$this->key($r)));
+        $this->route('/integracao/pessoas/'.$id,'PATCH',$admin,fn($r)=>$this->catalog->edit('pessoas',(int)$r['id'],$this->versioned($r),$this->key($r)));
+        $this->route('/integracao/alunos/'.$id.'/vinculos','POST',$admin,fn($r)=>$this->catalog->link((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/alunos/'.$id.'/responsavel-financeiro','POST',$admin,fn($r)=>$this->finance->changeGuardian((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/matriculas','POST',$admin,fn($r)=>$this->academic->enroll($this->payload($r),$this->key($r)));
+        $life=new \EducacionalERP\Application\EnrollmentLifecycle($this->db,new Operations($this->db));
+        $this->route('/integracao/matriculas/'.$id.'/transferencia','POST',$admin,fn($r)=>$this->academic->transfer((int)$r['id'],$this->versioned($r),$this->key($r)));
+        $this->route('/integracao/matriculas/'.$id.'/cancelamento','POST',$admin,fn($r)=>$life->cancel((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/matriculas/'.$id.'/resultado','POST',$admin,fn($r)=>$life->outcome((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/financeiro','POST',$admin,fn($r)=>$this->academic->generateInstallments(Input::id($this->payload($r)['idcontrato']??null),$this->key($r)));
+        $this->route('/integracao/financeiro/'.$id,'PATCH',$admin,fn($r)=>$this->finance->edit((int)$r['id'],$this->versioned($r),$this->key($r)));
+        $this->route('/integracao/financeiro/editar-lote','POST',$admin,fn($r)=>$this->finance->editBatch($this->payload($r),$this->key($r)));
+        $this->route('/integracao/financeiro/'.$id.'/baixas','POST',$admin,fn($r)=>$this->finance->pay((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/baixas/'.$id.'/estorno','POST',$admin,fn($r)=>$this->finance->reverse((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/contratos/'.$id.'/parcelas','POST',$admin,fn($r)=>$this->academic->generateInstallments((int)$r['id'],$this->key($r)));
+    }
+    private function versioned(\WP_REST_Request $r):array
+    {
+        $data=$this->payload($r);Input::id($data['versao']??null);return $data;
     }
     public function financeView(int $student,int $period=0): array
     {

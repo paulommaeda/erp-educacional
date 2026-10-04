@@ -50,7 +50,11 @@ final class CatalogService
     }
     public function link(int $student,array $data,string $key): array
     {
-        return $this->db->atomic(fn()=>$this->ops->run($key,'vincular',['idaluno'=>$student]+$data,function()use($student,$data,$key){
+        return $this->db->atomic(fn()=>$this->ops->run($key,'vincular',['idaluno'=>$student]+$data,fn()=>$this->linkInside($student,$data,$key)));
+    }
+    /** Internal composition: caller owns the transaction. */
+    public function linkInside(int $student,array $data,string $key):array
+    {
             $this->db->get('alunos',$student,true);
             $person=Input::id($data['codpessoa_responsavel']??null);
             if (!(int)$this->db->get('pessoas',$person)['ativo']) { throw new RuleViolation('Pessoa inativa.'); }
@@ -80,7 +84,6 @@ final class CatalogService
             $this->accounts->sync($person);
             $this->db->audit('aluno_responsaveis',$id,'vincular',null,$flags+['idaluno'=>$student,'codpessoa'=>$person],$key);
             return ['idvinculo'=>(string)$id];
-        }));
     }
     private function personData(array $d): array
     {
@@ -192,7 +195,7 @@ final class CatalogService
                 $changes['status']=$d['status'];
                 $m=$this->db->table('matriculas');$used=$this->db->rows("SELECT idmatricula,status FROM $m WHERE idturma_atual=%d FOR UPDATE",[$id]);
                 $mov=$this->db->table('matricula_movimentacoes');$history=$this->db->row("SELECT idmovimentacao FROM $mov WHERE idturma_origem=%d OR idturma_destino=%d LIMIT 1 FOR UPDATE",[$id,$id]);
-                if($changes['capacidade']<count(array_filter($used,fn($r)=>$r['status']==='ativa'))) { throw new RuleViolation('A capacidade não pode ser menor que a quantidade de alunos ativos.'); }
+                if($changes['capacidade']<count(array_filter($used,fn($r)=>\EducacionalERP\Domain\EnrollmentStatus::open($r['status'])))) { throw new RuleViolation('A capacidade não pode ser menor que a quantidade de alunos ativos.'); }
                 foreach(['codperiodo','idcurso','idturno'] as $field) {
                     $changes[$field]=Input::id($d[$field]);
                     if(($used||$history) && $changes[$field]!== (int)$before[$field]) { throw new RuleViolation('Turma com histórico: mantenha período, curso e turno. Cadastre a nova turma e transfira os alunos.'); }
@@ -209,6 +212,18 @@ final class CatalogService
             if($table==='alunos') { $this->accounts->sync((int)$before['codpessoa']); }
             $this->db->audit($table,$id,'editar',$before,$changes,$key);
             return ['id'=>(string)$id,'versao'=>(string)((int)$before['versao']+1)];
+        }));
+    }
+    public function classRenewal(int $id,array $data,string $key):array
+    {
+        Access::requireAdmin();
+        return $this->db->atomic(fn()=>$this->ops->run($key,'destino_rematricula_turma',['id'=>$id]+$data,function()use($id,$data,$key){
+            $before=$this->db->get('turmas',$id,true);
+            if((string)($data['versao']??'')!==(string)$before['versao'])throw new RuleViolation('A turma mudou. Atualize a listagem.');
+            if(!array_key_exists('idturma_proxima',$data))throw new RuleViolation('Informe a próxima turma ou null para remover o destino.');
+            $target=$this->nextClass($data,(int)$before['codperiodo'],$id);
+            $this->db->update('turmas',$id,['idturma_proxima'=>$target]);$this->db->audit('turmas',$id,'destino_rematricula',$before,$this->db->get('turmas',$id),$key);
+            return ['idturma'=>(string)$id,'idturma_proxima'=>$target===null?null:(string)$target,'versao'=>(string)((int)$before['versao']+1)];
         }));
     }
     private function validateClassPlan(array $d):void

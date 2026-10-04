@@ -1,4 +1,4 @@
-# ERP Educacional — 0.9.9
+# ERP Educacional — 0.10.0
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -206,7 +206,7 @@ O administrador pode **Editar** ou **Excluir**, sempre em modal. A exclusão exi
 
 A seleção de turmas pertence à gestão. O responsável continua direcionado à próxima turma previamente configurada; a rematrícula continua criando contrato sem gerar parcelas. Schema 9 mantido.
 
-## Login, códigos e ciclo de matrícula — 0.9.9
+## Login, códigos e ciclo de matrícula — 0.10.0
 
 **Atualização:** esta versão usa o schema 10. Depois de instalar, entre no painel WordPress como administrador para executar a migração automática. Se houver diagnóstico de migração, use ERP Educacional → Configurações → Verificar banco. A migração preserva as chaves relacionais e os cadastros existentes.
 
@@ -239,3 +239,9 @@ Financeiro → selecione o aluno → filtre a situação. **Editar** abre modal 
 A situação pública dos títulos é `em_aberto`, `vencido`, `baixado` ou `cancelado`, calculada a cada consulta; o estado interno de liquidação continua em `status_liquidacao`. Baixas parciais permanecem em aberto ou vencidas pelo saldo restante. Não depende de cron. API: `POST /lancamentos/{id}/editar` e `POST /lancamentos/editar-lote`, com nonce, Idempotency-Key, versões e motivo. Exportação também apresenta essas situações.
 
 Validação local: serviços transacionais em SQLite/PHP-WASM e modais com JSDOM. dbDelta, índices e bloqueios devem ser homologados em WordPress/MySQL antes de produção.
+
+## Versão 0.10.0
+
+Estrutura acadêmica → Turmas → **Rematrícula** abre modal para alterar somente o destino, mesmo em turma ocupada. Próximo período/turma continuam validados; matrículas e contratos atuais não são modificados.
+
+APIs bidirecionais em `/wp-json/erp-educacional/v1/integracao`: consultas paginadas completas e operações de cadastro/edição de alunos, pessoas e vínculos, matrículas, geração/edição de cobranças e baixas/estornos. Autenticação WordPress por Senha de Aplicativo (HTTPS); acesso global restrito ao administrador nesta versão. Documentação e exemplos: [docs/integracao-api.md](docs/integracao-api.md); contrato OpenAPI: [docs/openapi.json](docs/openapi.json).
