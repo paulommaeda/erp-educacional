@@ -1,0 +1,21 @@
+<?php
+require __DIR__.'/payment-plans.php';
+wp_set_current_user(1);
+$ef1=$course;$ef2=addP('cursos',['codigo'=>'EF2','nome'=>'Ensino Fundamental 2']);$em=addP('cursos',['codigo'=>'EM','nome'=>'Ensino Medio']);
+function transitionP(string $code,int $originCourse,int $destCourse):array{
+ global $db,$cat,$academic,$flow,$renew,$access,$ops,$period,$next,$shift,$plan,$futurePlan;
+ $source=addP('turmas',['codperiodo'=>$period,'idcurso'=>$originCourse,'idturno'=>$shift,'idplano'=>$plan,'codigo'=>$code.'-ORIG','nome'=>$code.' Atual','capacidade'=>10]);
+ $dest=addP('turmas',['codperiodo'=>$next,'idcurso'=>$destCourse,'idturno'=>$shift,'idplano'=>$futurePlan,'codigo'=>$code.'-DEST','nome'=>$code.' Destino','capacidade'=>10]);
+ $row=$db->get('turmas',$source);$cat->classRenewal($source,['versao'=>$row['versao'],'idturma_proxima'=>$dest],keyP());
+ $guardian=addP('pessoas',['nome'=>'Responsavel '.$code,'data_nascimento'=>'1980-01-01']);$a=$flow->createStudent(['nome'=>'Aluno '.$code,'data_nascimento'=>'2010-01-01','ra'=>$code],keyP());$cat->link((int)$a['idaluno'],['codpessoa_responsavel'=>$guardian,'parentesco'=>'mae','responsavel_academico'=>1,'responsavel_financeiro'=>1,'pode_rematricular'=>1],keyP());
+ $enrollment=$academic->enroll(['idaluno'=>$a['idaluno'],'idturma'=>$source,'quantidade_parcelas'=>3,'primeiro_vencimento'=>'2026-01-01'],keyP());
+ // Legacy offer has destination course recorded as its reference/origin course.
+ $o=$renew->createOffer(['codperiodo_destino'=>$next,'idcurso_origem'=>$destCourse,'idcurso_destino'=>$destCourse,'data_abertura'=>'2026-01-01','data_encerramento'=>'2028-12-31','numero_parcelas'=>10,'primeiro_vencimento'=>'2027-01-01','turmas'=>[$dest],'texto_termo'=>'Termo '.$code,'versao_termo'=>'1'],keyP());
+ $user=(int)(new EducacionalERP\Infrastructure\WordPress\Accounts($db))->summary($guardian)['wp_user_id'];wp_set_current_user($user);
+ $offers=$renew->offers((int)$a['idaluno']);$eligible=array_values(array_filter($offers,fn($r)=>(int)$r['idoferta']===(int)$o['idoferta']));testP(count($eligible)===1,$code.': oferta entre cursos aparece para responsável');testP(count($eligible[0]['turmas'])===1&&(int)$eligible[0]['turmas'][0]['idturma']===$dest,$code.': somente próxima turma configurada');
+ $payload=['idoferta'=>$o['idoferta'],'idmatricula_origem'=>$enrollment['idmatricula'],'idturma'=>$dest,'aceite'=>true,'versao_termo'=>'1','quantidade_parcelas'=>5];deniedP(fn()=>$renew->renew(array_replace($payload,['idturma'=>$source]),keyP()),$code.': não escolhe outro destino');$key=keyP();$result=$renew->renew($payload,$key);testP($renew->renew($payload,$key)===$result,$code.': reenvio não duplica');$m=$db->get('matriculas',(int)$result['idmatricula']);testP((int)$m['idcurso']===$destCourse&&(int)$m['idturma_atual']===$dest,$code.': matrícula criada no novo curso');testP(parcelsP((int)$result['idcontrato'])===[],$code.': rematrícula mantém geração financeira posterior');testP(!array_filter($renew->offers((int)$a['idaluno']),fn($r)=>(int)$r['idoferta']===(int)$o['idoferta']),$code.': oferta desaparece depois de rematricular');wp_set_current_user(1);
+ return [$source,$dest,$a,$o,$enrollment,$user];
+}
+$five=transitionP('5ANOV-6ANOV',$ef1,$ef2);$nine=transitionP('9ANOV-1SERIE',$ef2,$em);
+// Sharing an origin/reference course is insufficient if the next class was not offered.
+$unrelated=$flow->createStudent(['nome'=>'Aluno Sem Destino Ofertado','data_nascimento'=>'2011-01-01','ra'=>'SEM-DEST'],keyP());$cat->link((int)$unrelated['idaluno'],['codpessoa_responsavel'=>$rf,'parentesco'=>'pai','pode_rematricular'=>1,'responsavel_financeiro'=>1],keyP());$academic->enroll(['idaluno'=>$unrelated['idaluno'],'idturma'=>$t,'quantidade_parcelas'=>3,'primeiro_vencimento'=>'2026-01-01'],keyP());wp_set_current_user($rfUser);$offers=$renew->offers((int)$unrelated['idaluno']);testP(!array_filter($offers,fn($r)=>in_array((int)$r['idoferta'],[(int)$five[3]['idoferta'],(int)$nine[3]['idoferta']],true)),'transição não libera oferta para turma sem vínculo com destino ofertado');echo "PASS: transições de curso concluídas\n";

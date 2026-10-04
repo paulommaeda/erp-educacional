@@ -1,4 +1,4 @@
-# ERP Educacional — 0.10.0
+# ERP Educacional — 0.10.1
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -245,3 +245,9 @@ Validação local: serviços transacionais em SQLite/PHP-WASM e modais com JSDOM
 Estrutura acadêmica → Turmas → **Rematrícula** abre modal para alterar somente o destino, mesmo em turma ocupada. Próximo período/turma continuam validados; matrículas e contratos atuais não são modificados.
 
 APIs bidirecionais em `/wp-json/erp-educacional/v1/integracao`: consultas paginadas completas e operações de cadastro/edição de alunos, pessoas e vínculos, matrículas, geração/edição de cobranças e baixas/estornos. Autenticação WordPress por Senha de Aplicativo (HTTPS); acesso global restrito ao administrador nesta versão. Documentação e exemplos: [docs/integracao-api.md](docs/integracao-api.md); contrato OpenAPI: [docs/openapi.json](docs/openapi.json).
+
+## Versão 0.10.1 — rematrícula entre cursos
+
+Ofertas são elegíveis pelo vínculo turma atual → próxima turma ofertada, inclusive entre cursos diferentes. O curso de origem/referência da oferta permanece por compatibilidade, mas não restringe a elegibilidade: quem define o destino é a próxima turma cadastrada, cujo curso/período precisam corresponder à oferta. Isso permite 5º ano do Fundamental I → 6º ano do Fundamental II e 9º ano do Fundamental II → 1ª série do Médio, sem regras presas a nomes/códigos de curso.
+
+Ofertas existentes passam a atender esses vínculos sem recriação. Continuam obrigatórios período vigente/próximo período, turma de destino ativa com plano, janela da oferta, autorização do responsável e ausência de matrícula ativa no curso/período de destino. O responsável não pode escolher outra turma. Aceite e exibição seguem o mesmo destino fixo; a rematrícula cria contrato e deixa parcelas para geração posterior pelo financeiro.

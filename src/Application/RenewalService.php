@@ -87,8 +87,8 @@ final class RenewalService
     {
         $period=SchoolSettings::forViewer($period?:'todos','academic');
         if(!$this->access->canStudent($student,'renew')) { throw new RuleViolation('Sem autorização para rematrícula.'); }
-        $o=$this->db->table('ofertas_rematricula'); $m=$this->db->table('matriculas'); $p=$this->db->table('periodos_letivos');
-        $offers=$this->db->rows("SELECT o.*,m.idmatricula AS idmatricula_origem FROM $o o JOIN $m m ON m.idcurso=o.idcurso_origem JOIN $p po ON po.codperiodo=m.codperiodo JOIN $p pd ON pd.codperiodo=o.codperiodo_destino WHERE m.idaluno=%d AND m.status IN ('reservado','cursando','ativa','aprovado') AND o.ativo=1 AND UTC_TIMESTAMP() BETWEEN o.abertura_em AND o.encerramento_em AND pd.data_inicio>po.data_inicio AND po.codperiodo_proximo=o.codperiodo_destino AND NOT EXISTS (SELECT 1 FROM $m d WHERE d.idaluno=m.idaluno AND d.codperiodo=o.codperiodo_destino AND d.idcurso=o.idcurso_destino AND d.ativo_unico=1) ".($period?' AND m.codperiodo=%d':'')." ORDER BY o.idoferta",$period?[$student,$period]:[$student]);
+        $o=$this->db->table('ofertas_rematricula'); $m=$this->db->table('matriculas'); $p=$this->db->table('periodos_letivos');$t=$this->db->table('turmas');$ot=$this->db->table('oferta_turmas');
+        $offers=$this->db->rows("SELECT o.*,m.idmatricula AS idmatricula_origem FROM $m m JOIN $t source ON source.idturma=m.idturma_atual JOIN $ot offered ON offered.idturma=source.idturma_proxima JOIN $o o ON o.idoferta=offered.idoferta JOIN $p po ON po.codperiodo=m.codperiodo JOIN $p pd ON pd.codperiodo=o.codperiodo_destino WHERE m.idaluno=%d AND m.status IN ('reservado','cursando','ativa','aprovado') AND o.ativo=1 AND UTC_TIMESTAMP() BETWEEN o.abertura_em AND o.encerramento_em AND pd.data_inicio>po.data_inicio AND po.codperiodo_proximo=o.codperiodo_destino AND NOT EXISTS (SELECT 1 FROM $m d WHERE d.idaluno=m.idaluno AND d.codperiodo=o.codperiodo_destino AND d.idcurso=o.idcurso_destino AND d.ativo_unico=1) ".($period?' AND m.codperiodo=%d':'')." ORDER BY o.idoferta",$period?[$student,$period]:[$student]);
         $ot=$this->db->table('oferta_turmas'); $t=$this->db->table('turmas');
         $eligible=[];
         foreach($offers as $offer){
@@ -111,7 +111,7 @@ final class RenewalService
             if(!SchoolSettings::canChoose('academic')&&(int)$origin['codperiodo']!==SchoolSettings::forViewer(null,'academic'))throw new RuleViolation('A rematrícula deve partir do período vigente.');
             $offer=$this->db->get('ofertas_rematricula',Input::id($d['idoferta']??null),true);
             $now=gmdate('Y-m-d H:i:s');
-            if(!(int)$offer['ativo'] || $now<$offer['abertura_em'] || $now>$offer['encerramento_em'] || !in_array($origin['status'],['reservado','cursando','ativa','aprovado'],true) || $origin['idcurso']!==$offer['idcurso_origem']) { throw new RuleViolation('Oferta fora da janela ou incompatível com a matrícula.'); }
+            if(!(int)$offer['ativo'] || $now<$offer['abertura_em'] || $now>$offer['encerramento_em'] || !in_array($origin['status'],['reservado','cursando','ativa','aprovado'],true)) { throw new RuleViolation('Oferta fora da janela ou incompatível com a matrícula.'); }
             $from=$this->db->get('periodos_letivos',(int)$origin['codperiodo']); $to=$this->db->get('periodos_letivos',(int)$offer['codperiodo_destino']);
             if((int)($from['codperiodo_proximo']??0)!==(int)$offer['codperiodo_destino'])throw new RuleViolation('A escola precisa configurar o próximo período letivo correspondente à oferta.');
             if($to['data_inicio']<=$from['data_inicio']) { throw new RuleViolation('A renovação exige um período posterior.'); }
