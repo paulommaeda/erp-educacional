@@ -46,6 +46,7 @@ final class ExportService
             $enrollment['movimentacoes']=$this->related('matricula_movimentacoes','idmatricula',(int)$enrollment['idmatricula'],'idmovimentacao');
             $contracts=$this->related('contratos','idmatricula',(int)$enrollment['idmatricula'],'idcontrato');
             foreach($contracts as &$contract) {
+                $contract['descontos']=$this->related('contrato_descontos','idcontrato',(int)$contract['idcontrato'],'iddesconto');
                 $parcels=$this->related('parcelas','idcontrato',(int)$contract['idcontrato'],'numero');
                 foreach($parcels as &$parcel) {
                     $title=$this->related('lancamentos','idparcela',(int)$parcel['idparcela'])[0]??null;

@@ -41,6 +41,16 @@ final class Controller
         $cap=static fn(string $c)=>static fn()=>current_user_can($c);
         $id='(?P<id>[1-9][0-9]{0,17})';
         $this->integrationRoutes();
+        $discounts=new \EducacionalERP\Application\ContractDiscounts($this->db,new Operations($this->db));
+        $this->route('/configuracoes/pontualidade','GET',fn()=>Access::isAdmin(),fn()=>$discounts->settings());
+        $this->route('/configuracoes/pontualidade','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->saveSettings($this->payload($r),$this->key($r)));
+        $this->route('/alunos/'.$id.'/contratos','GET',fn()=>Access::isAdmin(),fn($r)=>$discounts->contracts((int)$r['id']));
+        $this->route('/contratos/'.$id.'/descontos','GET',fn()=>Access::isAdmin(),fn($r)=>$discounts->list((int)$r['id']));
+        $this->route('/contratos/'.$id.'/descontos','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->add((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/contratos/'.$id.'/descontos','GET',fn()=>Access::isAdmin(),fn($r)=>$discounts->list((int)$r['id']));
+        $this->route('/integracao/contratos/'.$id.'/descontos','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->add((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/descontos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->remove((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/descontos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/turmas/'.$id.'/rematricula','POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->classRenewal((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/turmas/'.$id.'/plano','GET',$cap('erp_gerenciar_academico'),fn($r)=>$this->academic->planForClass((int)$r['id']));
         $this->route('/financeiro/pendentes','GET',fn()=>Access::canGenerate(),fn($r)=>$this->pendingContracts($r));

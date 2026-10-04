@@ -28,7 +28,7 @@ final class IntegrationService
     {
         $row=$this->db->get('matriculas',$id);$row['aluno']=$this->student((int)$row['idaluno']);$row['periodo']=$this->db->get('periodos_letivos',(int)$row['codperiodo']);$row['curso']=$this->db->get('cursos',(int)$row['idcurso']);$row['turma']=$this->db->get('turmas',(int)$row['idturma_atual']);$row['turno']=$this->db->get('turnos',(int)$row['turma']['idturno']);
         $row['movimentacoes']=$this->related('matricula_movimentacoes','idmatricula',$id,'idmovimentacao');foreach($row['movimentacoes'] as &$move){unset($move['documento_token']);}unset($move);
-        if($financial){$row['contratos']=$this->related('contratos','idmatricula',$id,'idcontrato');foreach($row['contratos'] as &$contract){$contract['responsavel_financeiro']=$this->person((int)$contract['codpessoa_rf_atual']);$contract['parcelas']=$this->related('parcelas','idcontrato',(int)$contract['idcontrato'],'numero');foreach($contract['parcelas'] as &$parcel){$parcel['lancamentos']=array_map(fn($t)=>$this->title($t),$this->related('lancamentos','idparcela',(int)$parcel['idparcela'],'idlancamento'));}unset($parcel);}unset($contract);}
+        if($financial){$row['contratos']=$this->related('contratos','idmatricula',$id,'idcontrato');foreach($row['contratos'] as &$contract){$contract['descontos']=$this->related('contrato_descontos','idcontrato',(int)$contract['idcontrato'],'iddesconto');$contract['responsavel_financeiro']=$this->person((int)$contract['codpessoa_rf_atual']);$contract['parcelas']=$this->related('parcelas','idcontrato',(int)$contract['idcontrato'],'numero');foreach($contract['parcelas'] as &$parcel){$parcel['lancamentos']=array_map(fn($t)=>$this->title($t),$this->related('lancamentos','idparcela',(int)$parcel['idparcela'],'idlancamento'));}unset($parcel);}unset($contract);}
         return $row;
     }
     private function title(array $row):array
@@ -38,7 +38,7 @@ final class IntegrationService
     }
     private function financial(int $id):array
     {
-        $row=$this->title($this->db->get('lancamentos',$id));$parcel=$this->db->get('parcelas',(int)$row['idparcela']);$contract=$this->db->get('contratos',(int)$parcel['idcontrato']);$enrollment=$this->enrollment((int)$contract['idmatricula'],false);
+        $row=$this->title($this->db->get('lancamentos',$id));$parcel=$this->db->get('parcelas',(int)$row['idparcela']);$contract=$this->db->get('contratos',(int)$parcel['idcontrato']);$contract['descontos']=$this->related('contrato_descontos','idcontrato',(int)$contract['idcontrato'],'iddesconto');$enrollment=$this->enrollment((int)$contract['idmatricula'],false);
         return ['lancamento'=>$row,'parcela'=>$parcel,'contrato'=>$contract,'responsavel_financeiro'=>$this->person((int)$row['codpessoa_rf_atual']),'aluno'=>$enrollment['aluno'],'matricula'=>$enrollment];
     }
     private function build(string $resource,int $id):array

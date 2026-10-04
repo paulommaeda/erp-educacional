@@ -102,6 +102,7 @@ final class AcademicService
             $this->db->insert('lancamentos',$values+['idparcela'=>$parcel,'codpessoa_rf_original'=>$contract['codpessoa_rf_original'],'codpessoa_rf_atual'=>$contract['codpessoa_rf_atual'],
                 'descricao'=>'Parcela '.($i+1).' - RA '.$student['ra'],'emissao'=>Input::today(),'vencimento'=>$due,'saldo_aberto'=>Money::format($net)]);
         }
+        (new ContractDiscounts($this->db,$this->operations))->applyInside($id,$key);
         $this->db->update('contratos',$id,['parcelas_geradas'=>1,'parcelas_geradas_em'=>gmdate('Y-m-d H:i:s')]);
         $result=['idcontrato'=>(string)$id,'quantidade_parcelas'=>$count,'ja_geradas'=>false];$this->db->audit('contratos',$id,'gerar_parcelas',null,$result,$key);return $result;
     }

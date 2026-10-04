@@ -1357,5 +1357,88 @@
     "unique": [],
     "indexes": [],
     "fks": []
+  },
+  "contrato_descontos": {
+    "pk": [
+      "iddesconto"
+    ],
+    "columns": {
+      "iddesconto": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "nome": "varchar(191) NOT NULL",
+      "valor": "decimal(15,2) NOT NULL",
+      "parcela_inicio": "int unsigned NOT NULL",
+      "parcela_fim": "int unsigned NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "excluido_em": "datetime NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [
+      [
+        "idcontrato",
+        "ativo"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "idcontrato"
+        ]
+      }
+    ]
+  },
+  "desconto_lancamentos": {
+    "pk": [
+      "idaplicacao"
+    ],
+    "columns": {
+      "idaplicacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "iddesconto": "bigint(20) unsigned NOT NULL",
+      "idlancamento": "bigint(20) unsigned NOT NULL",
+      "valor": "decimal(15,2) NOT NULL",
+      "revertido_em": "datetime NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "iddesconto",
+        "idlancamento"
+      ]
+    ],
+    "indexes": [
+      [
+        "idlancamento"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "iddesconto"
+        ],
+        "target": "contrato_descontos",
+        "references": [
+          "iddesconto"
+        ]
+      },
+      {
+        "columns": [
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "idlancamento"
+        ]
+      }
+    ]
   }
 }

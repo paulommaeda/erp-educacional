@@ -31,11 +31,18 @@ final class FinanceService
     {
         return $this->db->atomic(fn()=>$this->operations->run($key,'baixar',['idlancamento'=>$id]+$data,function() use($id,$data,$key){
             [$l,$contract]=$this->lockTitle($id);
-            $amount=Money::positive($data['valor_pago']??null);
+            $amount=Money::cents($data['valor_pago']??null);if($amount<0)throw new RuleViolation('Pagamento não pode ser negativo.');
             $balance=Money::cents($l['saldo_aberto']);
-            if ($amount>$balance) { throw new RuleViolation('Pagamento excede o saldo aberto.'); }
+
             $date=Input::date($data['data_pagamento']??Input::today());
             if ($date>Input::today()) { throw new RuleViolation('Pagamento não pode estar no futuro.'); }
+            $grant=ContractDiscounts::conditional($l,$date);
+            if($amount===0&&($grant<=0||$grant!==$balance))throw new RuleViolation('Pagamento zero somente quando a pontualidade liquida todo o saldo.');
+            if($grant>0&&$amount>=$balance-$grant){
+                $balance-=$grant;if($amount>$balance)throw new RuleViolation('Pagamento excede o saldo com desconto por pontualidade.');
+                $this->db->update('lancamentos',$id,['desconto_condicional_aplicado'=>Money::format(Money::cents($l['desconto_condicional_aplicado'])+$grant),'saldo_aberto'=>Money::format($balance)]);
+            }else $grant=0;
+            if($amount>$balance)throw new RuleViolation('Pagamento excede o saldo aberto.');
             $method=Input::text($data['forma_pagamento']??null,30);
             if (!in_array($method,['pix','boleto','cartao','dinheiro','transferencia','outro'],true)) { throw new RuleViolation('Forma de pagamento inválida.'); }
             $paid=$this->paidComponents($id);
@@ -46,7 +53,7 @@ final class FinanceService
             $payer=isset($data['codpessoa_pagador']) ? Input::id($data['codpessoa_pagador']) : null;
             $idbaixa=$this->db->insert('baixas',['idlancamento'=>$id,'codpessoa_devedor'=>$l['codpessoa_rf_atual'],'codpessoa_pagador'=>$payer,
                 'data_pagamento'=>$date,'registrado_em'=>gmdate('Y-m-d H:i:s'),'valor_pago'=>Money::format($amount),'principal_liquidado'=>Money::format($principal),
-                'juros_pagos'=>Money::format($interest),'multa_paga'=>Money::format($fine),'desconto_condicional_concedido'=>'0.00','forma_pagamento'=>$method,
+                'juros_pagos'=>Money::format($interest),'multa_paga'=>Money::format($fine),'desconto_condicional_concedido'=>Money::format($grant),'forma_pagamento'=>$method,
                 'referencia_externa'=>isset($data['referencia_externa'])?Input::text($data['referencia_externa'],100):null,'idempotencia'=>$key,'ator_wp_user_id'=>get_current_user_id()]);
             $this->db->update('lancamentos',$id,['valor_baixa'=>Money::format(Money::cents($l['valor_baixa'])+$amount),'saldo_aberto'=>Money::format($balance-$amount),'status'=>$balance===$amount?'quitado':'parcial']);
             $after=$this->db->get('lancamentos',$id);
@@ -69,7 +76,7 @@ final class FinanceService
             $estorno=$this->db->insert('baixa_estornos',['idbaixa'=>$id,'valor'=>$b['valor_pago'],'motivo'=>Input::text($data['motivo']??null,2000),
                 'efetivado_em'=>gmdate('Y-m-d H:i:s'),'ator_wp_user_id'=>get_current_user_id(),'idempotencia'=>$key]);
             $paid=Money::cents($l['valor_baixa'])-$amount;
-            $this->db->update('lancamentos',(int)$l['idlancamento'],['valor_baixa'=>Money::format($paid),'saldo_aberto'=>Money::format(Money::cents($l['saldo_aberto'])+$amount),
+            $this->db->update('lancamentos',(int)$l['idlancamento'],['valor_baixa'=>Money::format($paid),'saldo_aberto'=>Money::format(Money::cents($l['saldo_aberto'])+$amount+Money::cents($b['desconto_condicional_concedido'])),'desconto_condicional_aplicado'=>Money::format(Money::cents($l['desconto_condicional_aplicado'])-Money::cents($b['desconto_condicional_concedido'])),
                 'status'=>$paid>0?'parcial':'aberto','codpessoa_rf_atual'=>$contract['codpessoa_rf_atual']]);
             $this->db->audit('lancamentos',(int)$l['idlancamento'],'estorno',$l,$this->db->get('lancamentos',(int)$l['idlancamento']),$key);
             EnrollmentLifecycle::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);

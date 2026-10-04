@@ -1,4 +1,4 @@
-# ERP Educacional — 0.10.1
+# ERP Educacional — 0.10.2
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -251,3 +251,19 @@ APIs bidirecionais em `/wp-json/erp-educacional/v1/integracao`: consultas pagina
 Ofertas são elegíveis pelo vínculo turma atual → próxima turma ofertada, inclusive entre cursos diferentes. O curso de origem/referência da oferta permanece por compatibilidade, mas não restringe a elegibilidade: quem define o destino é a próxima turma cadastrada, cujo curso/período precisam corresponder à oferta. Isso permite 5º ano do Fundamental I → 6º ano do Fundamental II e 9º ano do Fundamental II → 1ª série do Médio, sem regras presas a nomes/códigos de curso.
 
 Ofertas existentes passam a atender esses vínculos sem recriação. Continuam obrigatórios período vigente/próximo período, turma de destino ativa com plano, janela da oferta, autorização do responsável e ausência de matrícula ativa no curso/período de destino. O responsável não pode escolher outra turma. Aceite e exibição seguem o mesmo destino fixo; a rematrícula cria contrato e deixa parcelas para geração posterior pelo financeiro.
+
+## Versão 0.10.2 — bolsas e descontos
+
+Atualize e execute **Verificar banco** como administrador para a migração 12 (tabelas `contrato_descontos` e `desconto_lancamentos`, com FKs).
+
+**Configurações → Desconto por pontualidade**: valor fixo em R$ por parcela, aplicado a todos os contratos nas consultas e novas quitações, incluindo contratos existentes. Zero desativa; baixas anteriores não são recalculadas. O benefício é limitado ao principal restante e concedido ao quitar até o vencimento, considerando a data do pagamento. Em pagamentos parciais, permanece previsto e só é efetivado na quitação. Pagamento acima do saldo com pontualidade é rejeitado para evitar sobrepagamento. Estorno integral restaura saldo e desconto concedido.
+
+**Ficha do aluno → Financeiro → Bolsas e descontos dos contratos**: escolha o contrato e adicione descontos com nome, valor em R$ por parcela, parcela inicial e final. Vários descontos podem se acumular e somam à bolsa base já registrada na matrícula. Valores que geram líquido negativo são rejeitados. Cadastro/exclusão sempre em modal. A concessão modifica parcelas sem pagamentos na faixa, inclusive vencidas; parcelas pagas ou com baixa parcial são preservadas. Contratos ainda sem parcelas recebem os descontos na geração posterior.
+
+Excluir desativa o desconto, mantém histórico e retira somente sua aplicação em parcelas com vencimento hoje ou futuro que ainda não tiveram pagamentos. Parcelas vencidas, canceladas ou com baixas são preservadas. Outros descontos continuam válidos. Uma concessão posterior não desfaz a preservação histórica de descontos excluídos.
+
+Nas consultas: valor original, desconto condicional (previsto enquanto elegível ou efetivamente aplicado após quitação), desconto incondicional, valor líquido e valor pago. O líquido público é `original - incondicional - condicional`, com encargos separados. `valor_liquido_contratual` preserva o líquido antes da pontualidade; `saldo_aberto` preserva a cobrança contábil antes da condição, e `saldo_a_pagar` mostra o valor exigível com o benefício atual. Envie `saldo_a_pagar` ao quitar em dia. Após o vencimento, o benefício previsto desaparece; pagamentos pontuais registrados depois usam sua data comprovada.
+
+Contratos/parcelas originais ficam como snapshot; renegociações aparecem nos lançamentos e na auditoria. APIs e exportação incluem a lista de descontos do contrato e os novos campos calculados. GET/POST `/integracao/contratos/{id}/descontos`; POST `/integracao/descontos/{id}/excluir` com `versao`. Cadastro requer `nome`, `valor`, `parcela_inicio`, `parcela_fim`; autenticação e Idempotency-Key seguem a documentação de integração.
+
+Testes locais cobrem acumulação/faixas, exclusão prospectiva, preservação de pagamentos, excesso de descontos, pontualidade, estorno e contratos pendentes. Homologar migração em WordPress/MySQL.
