@@ -91,9 +91,25 @@
         const sections=scope==='all'?['academic','finance','renew']:[scope];
         for(const section of sections){if(current!==generation)return;const box=el('section',undefined,'ederp-card');contents.append(box);
           try{if(section==='renew'){const offers=await api('alunos/'+id+'/ofertas-rematricula?codperiodo='+encodeURIComponent(EDERP.currentPeriod||''));if(current!==generation)return;box.append(el('h3','Rematrícula'));if(!offers.length)box.append(el('p','Nenhuma oferta disponível neste momento.'));
-            offers.forEach(o=>{const card=form('Confirmar rematrícula','rematriculas',[],{idoferta:o.idoferta,idmatricula_origem:o.idmatricula_origem,versao_termo:o.versao_termo});const f=card.querySelector('form'),term=el('div',o.texto_termo,'ederp-term');f.prepend(term);
-              const target=o.turmas[0],l=el('p','Destino definido pela escola: '+(target?.nome||'Não definido')+(target?.curso?' · '+target.curso:'')),s=el('input');s.type='hidden';s.name='idturma';s.value=target?.idturma||'';f.append(s);const planName=el('p'),countLabel=field('quantidade_parcelas','Número de parcelas','number'),count=countLabel.querySelector('input');count.min='1';count.max='120';count.value=o.numero_parcelas;const pid=el('input'),pv=el('input');pid.type=pv.type='hidden';pid.name='idplano';pv.name='plano_versao';function plan(){const t=o.turmas.find(t=>String(t.idturma)===s.value),p=t?.plano;planName.textContent=p?'Plano: '+p.nome+' · Anuidade R$ '+p.valor_anuidade+' · Primeiro vencimento: '+o.primeiro_vencimento:'Nenhuma turma com plano disponível.';pid.value=p?.idplano||'';pv.value=p?.versao||'';f.querySelector('button').disabled=!p;}s.onchange=plan;plan();f.insertBefore(planName,f.querySelector('button'));f.insertBefore(countLabel,f.querySelector('button'));f.append(pid,pv);f.insertBefore(el('p','A rematrícula registra o contrato. As parcelas serão geradas posteriormente pelo setor financeiro.'),f.querySelector('button'));
-              const check=el('label','Li e aceito o termo da rematrícula.','ederp-check'),input=el('input');input.type='checkbox';input.name='aceite';input.required=true;check.prepend(input);f.insertBefore(l,f.querySelector('button'));f.insertBefore(check,f.querySelector('button'));box.append(card);});
+            offers.forEach(o=>{
+              const card=el('section',undefined,'ederp-card erp-renewal-flow'),target=o.turmas[0];box.append(card);
+              card.append(el('h3','Rematrícula · '+(target?.nome||'Próximo período')));
+              const start=el('button','Iniciar rematrícula');start.type='button';card.append(start);
+              start.onclick=()=>{
+                if(o.indisponivel){const warning=el('div',undefined,'erp-renewal-danger');warning.setAttribute('role','alert');warning.append(el('h4','Rematrícula indisponível'),el('p',o.mensagem_indisponivel));card.replaceChildren(warning);return;}
+                let step=0;const progress=el('p',undefined,'erp-renewal-progress'),body=el('div'),nav=el('div',undefined,'erp-renewal-nav'),back=el('button','Voltar'),next=el('button','Avançar');back.type=next.type='button';nav.append(back,next);card.replaceChildren(progress,body,nav);progress.setAttribute('aria-live','polite');
+                function paint(){progress.textContent='Etapa '+(step+1)+' de 3 · '+['Apresentação','Turma de destino','Termo e confirmação'][step];body.replaceChildren();back.hidden=step===0;next.hidden=step===2;
+                  if(step===0)body.append(el('h3','Vamos iniciar a rematrícula'),el('p',o.texto_apresentacao,'ederp-term'));
+                  if(step===1)body.append(el('h3','Próxima turma'),el('p',target?.nome),el('p',target?.curso),el('p','A turma de destino foi definida pela escola.'));
+                  if(step===2){const panel=form('Termo de rematrícula','rematriculas',[],{idoferta:o.idoferta,idmatricula_origem:o.idmatricula_origem,versao_termo:o.versao_termo,idturma:target.idturma,idplano:target.plano.idplano,plano_versao:target.plano.versao}),f=panel.querySelector('form');f.dataset.modalInline='1';
+                    const submit=f.querySelector('[type=submit]');submit.textContent='Confirmar rematrícula';const countLabel=field('quantidade_parcelas','Número de parcelas','number'),count=countLabel.querySelector('input');count.min='1';count.max='120';count.value=o.numero_parcelas;
+                    const check=el('label',undefined,'ederp-check'),accept=el('input');accept.type='checkbox';accept.name='aceite';accept.required=true;check.append(accept,el('span','Li e aceito o termo da rematrícula.'));
+                    f.insertBefore(el('div',o.texto_termo,'ederp-term'),submit);f.insertBefore(el('p','Plano: '+target.plano.nome+' · Anuidade R$ '+target.plano.valor_anuidade+' · Primeiro vencimento: '+o.primeiro_vencimento),submit);f.insertBefore(countLabel,submit);f.insertBefore(el('p','As parcelas serão geradas posteriormente pelo setor financeiro.'),submit);f.insertBefore(check,submit);body.append(panel);
+                  }
+                }
+                back.onclick=()=>{step--;paint();};next.onclick=()=>{step++;paint();};paint();
+              };
+            });
           }else{const rows=await api('alunos/'+id+'/'+(section==='finance'?'financeiro':'matriculas')+'?codperiodo='+encodeURIComponent(EDERP.currentPeriod||''));if(current!==generation)return;box.append(el('h3',section==='finance'?'Financeiro':'Matrículas'),table(rows));}}
           catch(e){box.append(el('p',e.message));}
         }

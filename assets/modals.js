@@ -4,7 +4,7 @@
   const instances = new WeakMap();
   const element = (tag, text, cls) => { const node = document.createElement(tag); if (text) node.textContent = text; if (cls) node.className = cls; return node; };
   function prepare(form, options = {}) {
-    if (!form.isConnected || form.closest('dialog') || instances.has(form)) return instances.get(form);
+    if (form.dataset.modalInline==='1' || !form.isConnected || form.closest('dialog') || instances.has(form)) return instances.get(form);
     const parent = form.parentElement;
     if(form.dataset.modalTransient==='1')parent.classList.add('erp-modal-transient');
     const heading = parent.querySelector(':scope > h2, :scope > h3, :scope > summary');

@@ -44,9 +44,22 @@ testP(count((new SchoolSettings($db))->read()['periodos'])===1,'responsável só
 $db->update('turmas',$t,['idturma_proxima'=>null]);testP($renew->offers($student)===[],'sem próxima turma não oferece escolha livre');$db->update('turmas',$t,['idturma_proxima'=>$future]);$offers=$renew->offers($student);testP(count($offers[0]['turmas'])===1&&(int)$offers[0]['turmas'][0]['idturma']===$future,'oferta só retorna o destino definido');testP($offers[0]['turmas'][0]['plano']['valor_anuidade']==='1500.00','rematrícula apresenta anuidade do plano da turma futura');
 $db->update('periodos_letivos',$period,['codperiodo_proximo'=>null]);testP($renew->offers($student)===[],'sem próximo período não exibe oferta');$db->update('periodos_letivos',$period,['codperiodo_proximo'=>$next]);
 $payload=['idoferta'=>$offer['idoferta'],'idmatricula_origem'=>$initial['idmatricula'],'idturma'=>$future,'aceite'=>true,'versao_termo'=>'1','idplano'=>$futurePlan,'plano_versao'=>1,'quantidade_parcelas'=>5];
+testP($offers[0]['indisponivel']===true,'saldo em aberto bloqueia início');
+deniedP(fn()=>$renew->renew($payload,keyP()),'API bloqueia confirmação com parcelas em aberto');
+// Temporarily clear the ledger to exercise renewal; restore it for downstream finance fixtures.
+$openFixture=$db->rows('SELECT * FROM '.$db->table('lancamentos'));
+foreach($openFixture as $title)$db->update('lancamentos',(int)$title['idlancamento'],['saldo_aberto'=>'0.00']);
+testP($renew->offers($student)[0]['indisponivel']===false,'regularização libera oferta');
+$sample=$openFixture[0];$db->update('lancamentos',(int)$sample['idlancamento'],['saldo_aberto'=>'0.01','vencimento'=>'2030-01-01','status'=>'parcial']);
+testP($renew->offers($student)[0]['indisponivel']===true,'parcela futura com saldo parcial também bloqueia');
+$db->update('lancamentos',(int)$sample['idlancamento'],['status'=>'cancelado']);
+testP($renew->offers($student)[0]['indisponivel']===false,'lançamento cancelado não bloqueia');
+$db->update('lancamentos',(int)$sample['idlancamento'],['saldo_aberto'=>'0.00','status'=>$sample['status'],'vencimento'=>$sample['vencimento']]);
+
 $db->update('periodos_letivos',$period,['codperiodo_proximo'=>null]);deniedP(fn()=>$renew->renew($payload,keyP()),'API exige próximo período configurado');$db->update('periodos_letivos',$period,['codperiodo_proximo'=>$next]);
 deniedP(fn()=>$renew->renew(array_merge($payload,['idturma'=>$t]),keyP()),'API rejeita troca do destino pelo responsável');
 deniedP(fn()=>$renew->renew($payload,keyP()),'plano alterado desde a consulta impede aceite desatualizado');$payload['plano_versao']=2;$key=keyP();$result=$renew->renew($payload,$key);$pending=(int)$result['idcontrato'];
+foreach($openFixture as $title)$db->update('lancamentos',(int)$title['idlancamento'],['saldo_aberto'=>$title['saldo_aberto']]);
 testP($renew->renew($payload,$key)===$result,'reenvio de rematrícula não duplica contrato');
 testP(count(parcelsP($pending))===0&&(int)$db->get('contratos',$pending)['parcelas_geradas']===0,'rematrícula cria contrato sem parcelas');
 testP($db->get('contratos',$pending)['quantidade_parcelas']==='5','rematrícula preserva quantidade escolhida');

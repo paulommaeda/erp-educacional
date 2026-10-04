@@ -277,3 +277,6 @@ Modal de bolsas possui escopo CSS próprio, layout responsivo, controles estiliz
 ## Versão 0.10.4
 
 Modal de destino da rematrícula com escopo ERP próprio, formulário em coluna única, controles estilizados, título dimensionado e botões sem esticar na altura do formulário. Layout responsivo para celular e desktop. Sem alteração de banco.
+
+### 0.10.5
+Rematrícula no portal em três etapas: apresentação, destino fixo e aceite. Texto da apresentação em Configurações, junto ao período vigente. Qualquer saldo positivo não cancelado do aluno (inclusive parcelas futuras e pagamentos parciais, em qualquer período) bloqueia o início e a confirmação pela API. Após regularização, atualizar o portal. Mensagem de bloqueio em estilo danger. Não há migração de banco.
