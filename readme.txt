@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.10.7
+Stable tag: 0.10.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,7 +16,7 @@ Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar.
 
 == Changelog ==
 
-= 0.10.7 =
+= 0.10.8 =
 * Login, recuperação e redefinição de senha no portal do ERP.
 * Lista de usuários simplificada e paginação adaptada ao mobile.
 * Código de pessoa preservado na importação e sequência configurável.

@@ -286,3 +286,6 @@ Configurações permite personalizar a mensagem de bloqueio da rematrícula por 
 
 ### 0.10.7
 Correção: rematrícula bloqueada somente por saldo positivo em lançamento não cancelado com vencimento anterior à data atual do WordPress. Parcelas futuras e que vencem hoje não bloqueiam. Regra aplicada ao portal e à confirmação pela API. Texto padrão atualizado para parcelas vencidas; textos personalizados preservados. Sem migração de banco.
+
+### 0.10.8
+Resumo financeiro sem nome do plano e vencimento em DD/MM/AAAA. Parcelamento exclusivamente definido pela oferta, inclusive na API. Manual PDF selecionável/enviável pela mídia em Configurações: quando configurado, surge antes do termo, com visualizador do navegador, tela cheia, download e aceite obrigatório. Versão SHA-256 validada pela API e registrada em auditoria com responsável/data. Sem manual configurado, mantém o fluxo anterior. Não usa serviço externo Issuu; navegação e zoom dependem do leitor PDF do navegador, com download para dispositivos sem suporte. Modais com controles e tipografia uniformizados.

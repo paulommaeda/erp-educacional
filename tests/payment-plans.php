@@ -43,7 +43,7 @@ testP(SchoolSettings::forViewer('todos')===$period&&SchoolSettings::forViewer($n
 testP(count((new SchoolSettings($db))->read()['periodos'])===1,'responsável só recebe configuração do período vigente');
 $db->update('turmas',$t,['idturma_proxima'=>null]);testP($renew->offers($student)===[],'sem próxima turma não oferece escolha livre');$db->update('turmas',$t,['idturma_proxima'=>$future]);$offers=$renew->offers($student);testP(count($offers[0]['turmas'])===1&&(int)$offers[0]['turmas'][0]['idturma']===$future,'oferta só retorna o destino definido');testP($offers[0]['turmas'][0]['plano']['valor_anuidade']==='1500.00','rematrícula apresenta anuidade do plano da turma futura');
 $db->update('periodos_letivos',$period,['codperiodo_proximo'=>null]);testP($renew->offers($student)===[],'sem próximo período não exibe oferta');$db->update('periodos_letivos',$period,['codperiodo_proximo'=>$next]);
-$payload=['idoferta'=>$offer['idoferta'],'idmatricula_origem'=>$initial['idmatricula'],'idturma'=>$future,'aceite'=>true,'versao_termo'=>'1','idplano'=>$futurePlan,'plano_versao'=>1,'quantidade_parcelas'=>5];
+$payload=['idoferta'=>$offer['idoferta'],'idmatricula_origem'=>$initial['idmatricula'],'idturma'=>$future,'aceite'=>true,'versao_termo'=>'1','idplano'=>$futurePlan,'plano_versao'=>1,'quantidade_parcelas'=>10];
 testP($offers[0]['indisponivel']===true,'saldo em aberto bloqueia início');
 deniedP(fn()=>$renew->renew($payload,keyP()),'API bloqueia confirmação com parcelas em aberto');
 // Temporarily clear the ledger to exercise renewal; restore it for downstream finance fixtures.
@@ -66,16 +66,16 @@ deniedP(fn()=>$renew->renew($payload,keyP()),'plano alterado desde a consulta im
 foreach($openFixture as $title)$db->update('lancamentos',(int)$title['idlancamento'],['saldo_aberto'=>$title['saldo_aberto']]);
 testP($renew->renew($payload,$key)===$result,'reenvio de rematrícula não duplica contrato');
 testP(count(parcelsP($pending))===0&&(int)$db->get('contratos',$pending)['parcelas_geradas']===0,'rematrícula cria contrato sem parcelas');
-testP($db->get('contratos',$pending)['quantidade_parcelas']==='5','rematrícula preserva quantidade escolhida');
+testP($db->get('contratos',$pending)['quantidade_parcelas']==='10','rematrícula usa quantidade definida pela escola');
 testP(count($db->rows('SELECT * FROM '.$db->table('lancamentos')))===3,'rematrícula não cria lançamentos financeiros');
 deniedP(fn()=>$academic->generateInstallments($pending,keyP()),'responsável financeiro não é operador Financeiro');
 wp_set_current_user(1);$staff=wp_insert_user(['user_login'=>'secretaria.teste','role'=>'erp_secretaria']);wp_set_current_user($staff);deniedP(fn()=>$academic->generateInstallments($pending,keyP()),'Secretaria não gera parcelas de rematrícula');
 wp_set_current_user(1);(new FinanceService($db,$ops))->changeGuardian($student,['codpessoa_nova'=>$rf2,'motivo'=>'Troca antes da geração'],keyP());
 $cat->edit('planos_pagamento',$plan,['versao'=>2,'valor_anuidade'=>'1800.00'],keyP());$employee=wp_insert_user(['user_login'=>'financeiro.teste','role'=>'erp_financeiro']);wp_set_current_user($employee);
 testP(Access::canGenerate()&&MenuPolicy::can('financeiro'),'perfil Financeiro tem acesso à geração');$key=keyP();$generated=$academic->generateInstallments($pending,$key);
-testP(count(parcelsP($pending))===5,'Financeiro gera quantidade contratada');testP(parcelsP($pending)[0]['valor_original']==='300.00','geração posterior usa valor contratado e não plano alterado');
-$rows=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d',[$pending]);testP(count($rows)===5&&(int)$rows[0]['codpessoa_rf_atual']===$rf2,'lançamentos pertencem ao responsável atual após troca');
-testP($academic->generateInstallments($pending,$key)===$generated,'reenvio da geração é idempotente');$again=$academic->generateInstallments($pending,keyP());testP($again['ja_geradas']&&count(parcelsP($pending))===5,'nova solicitação também não duplica parcelas');
+testP(count(parcelsP($pending))===10,'Financeiro gera quantidade contratada');testP(parcelsP($pending)[0]['valor_original']==='150.00','geração posterior usa valor contratado e não plano alterado');
+$rows=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d',[$pending]);testP(count($rows)===10&&(int)$rows[0]['codpessoa_rf_atual']===$rf2,'lançamentos pertencem ao responsável atual após troca');
+testP($academic->generateInstallments($pending,$key)===$generated,'reenvio da geração é idempotente');$again=$academic->generateInstallments($pending,keyP());testP($again['ja_geradas']&&count(parcelsP($pending))===10,'nova solicitação também não duplica parcelas');
 wp_set_current_user((int)(new Accounts($db))->summary((int)$a['codpessoa'])['wp_user_id']);testP(SchoolSettings::forViewer($next)===$period,'aluno também fica restrito ao período vigente');update_option('ederp_current_period',0);deniedP(fn()=>SchoolSettings::forViewer('todos'),'sem período vigente não libera histórico ao portal');
 wp_set_current_user(1);update_option('ederp_current_period',$period);$bare=addP('turmas',['idcurso'=>$course,'idturno'=>$shift,'codperiodo'=>$next,'codigo'=>'SEM','nome'=>'Sem plano','capacidade'=>10]);deniedP(fn()=>$academic->planForClass($bare),'turma sem plano não permite orçamento');
 $other=$flow->createStudent(['nome'=>'Sem Responsavel','data_nascimento'=>'2015-01-01','ra'=>'00078'],keyP());$before=count($db->rows('SELECT * FROM '.$db->table('matriculas')));deniedP(fn()=>$flow->batch(['codperiodo'=>$period,'idturma'=>$t,'alunos'=>[$other['idaluno']],'quantidade_parcelas'=>3,'primeiro_vencimento'=>'2026-01-01'],keyP()),'matrícula sem responsável financeiro é bloqueada');testP(count($db->rows('SELECT * FROM '.$db->table('matriculas')))===$before,'falha financeira reverte matrícula inicial');

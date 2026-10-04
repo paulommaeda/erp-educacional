@@ -104,7 +104,7 @@ final class RenewalService
             $classes=$this->db->rows("SELECT t.idturma,t.nome,t.idcurso,t.codperiodo FROM $ot ot JOIN $t t ON t.idturma=ot.idturma WHERE ot.idoferta=%d AND t.idturma=%d AND t.status='ativa'",[(int)$offer['idoferta'],$next]);
             if(!$classes)continue;$class=$classes[0];if((int)$class['codperiodo']!==(int)$offer['codperiodo_destino']||(int)$class['idcurso']!==(int)$offer['idcurso_destino'])continue;
             try{$class['plano']=$this->academic->planForClass($next);}catch(RuleViolation $e){continue;}
-            $class['curso']=$this->db->get('cursos',(int)$class['idcurso'])['nome'];$offer['turmas']=[$class];$offer['destino_fixo']=true;$offer['indisponivel']=$this->hasOverduePayments($student);$offer['mensagem_indisponivel']=SchoolSettings::renewalBlockMessage();$offer['texto_apresentacao']=SchoolSettings::renewalIntroduction();$eligible[]=$offer;
+            $class['curso']=$this->db->get('cursos',(int)$class['idcurso'])['nome'];$offer['turmas']=[$class];$offer['destino_fixo']=true;$offer['indisponivel']=$this->hasOverduePayments($student);$offer['mensagem_indisponivel']=SchoolSettings::renewalBlockMessage();$offer['texto_apresentacao']=SchoolSettings::renewalIntroduction();$offer['manual_aluno']=SchoolSettings::manual();$eligible[]=$offer;
         }
         return $eligible;
     }
@@ -124,17 +124,21 @@ final class RenewalService
             if((int)($from['codperiodo_proximo']??0)!==(int)$offer['codperiodo_destino'])throw new RuleViolation('A escola precisa configurar o próximo período letivo correspondente à oferta.');
             if($to['data_inicio']<=$from['data_inicio']) { throw new RuleViolation('A renovação exige um período posterior.'); }
             if(($d['aceite']??false)!==true || ($d['versao_termo']??'')!==$offer['versao_termo']) { throw new RuleViolation('Aceite a versão vigente do termo.'); }
+            $manual=SchoolSettings::manual();
+            if($manual&&(($d['aceite_manual']??false)!==true||!is_string($d['manual_versao']??null)||!hash_equals($manual['versao'],$d['manual_versao'])))throw new RuleViolation('Leia e aceite a versão vigente do Manual do Aluno.');
+            if(isset($d['quantidade_parcelas'])&&(int)$d['quantidade_parcelas']!==(int)$offer['numero_parcelas'])throw new RuleViolation('A quantidade de parcelas é definida pela escola.');
             $source=$this->db->get('turmas',(int)$origin['idturma_atual'],true);
             $class=(int)($source['idturma_proxima']??0);if(!$class)throw new RuleViolation('A escola ainda não definiu a próxima turma. Procure a secretaria.');
             if(isset($d['idturma'])&&(int)$d['idturma']!==$class)throw new RuleViolation('O destino da rematrícula mudou. Recarregue a página para consultar a turma definida pela escola.'); $ot=$this->db->table('oferta_turmas');
             if(!$this->db->row("SELECT idturma FROM $ot WHERE idoferta=%d AND idturma=%d",[(int)$offer['idoferta'],$class])) { throw new RuleViolation('Turma não disponível nesta oferta.'); }
             $classRow=$this->db->get('turmas',$class);
             if($classRow['codperiodo']!==$offer['codperiodo_destino'] || $classRow['idcurso']!==$offer['idcurso_destino']) { throw new RuleViolation('Turma incompatível.'); }
-            $result=$this->academic->enrollInside(['idaluno'=>$student,'idturma'=>$class,'valor_original_total'=>$offer['valor_total'],'quantidade_parcelas'=>$d['quantidade_parcelas']??$offer['numero_parcelas'],
+            $result=$this->academic->enrollInside(['idaluno'=>$student,'idturma'=>$class,'valor_original_total'=>$offer['valor_total'],'quantidade_parcelas'=>$offer['numero_parcelas'],
                 'idplano'=>$d['idplano']??$classRow['idplano'],'plano_versao'=>$d['plano_versao']??$this->academic->planForClass($class)['versao'],'primeiro_vencimento'=>$offer['primeiro_vencimento'],'termo'=>$offer['texto_termo'],'versao_termo'=>$offer['versao_termo']],$key,(int)$origin['idmatricula']);
             $renewal=$this->db->insert('rematriculas',['idoferta'=>$offer['idoferta'],'idmatricula_origem'=>$origin['idmatricula'],'idmatricula_destino'=>$result['idmatricula'],
                 'codpessoa_solicitante'=>$this->access->person(),'idempotencia'=>$key,'status'=>'concluida','termo_versao'=>$offer['versao_termo'],
                 'termo_hash'=>hash('sha256',$offer['texto_termo']),'aceito_em'=>$now,'concluido_em'=>$now]);
+            if($manual)$this->db->audit('rematriculas',$renewal,'aceite_manual',null,['manual_id'=>$manual['id'],'manual_versao'=>$manual['versao'],'codpessoa_solicitante'=>$this->access->person(),'aceito_em'=>$now],$key);
             return $result+['idrematricula'=>(string)$renewal];
         }));
     }

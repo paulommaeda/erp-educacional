@@ -72,3 +72,16 @@
 .ederp .erp-renewal-danger p{margin:0}
 .ederp .erp-renewal-flow .ederp-term{white-space:pre-wrap;overflow-wrap:anywhere}
 @media(max-width:600px){.ederp .erp-renewal-nav button{width:100%}.ederp .erp-renewal-flow button{min-height:48px}}
+
+/* PDF reader and shared modal controls */
+.ederp .erp-pdf-reader{background:#26332f;border-radius:14px;overflow:hidden;border:1px solid var(--j-line,#ccd8d2)}
+.ederp .erp-pdf-toolbar{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px;flex-wrap:wrap;background:var(--j-surface,#fff)}
+.ederp .erp-pdf-reader iframe{display:block;width:100%;height:65dvh;min-height:320px;border:0;background:#fff}
+.ederp .erp-pdf-reader:fullscreen{border-radius:0;width:100%;height:100%;display:flex;flex-direction:column}.ederp .erp-pdf-reader:fullscreen iframe{flex:1;height:auto}
+.ederp.journey-confirm{box-sizing:border-box;width:calc(100% - 24px);max-width:860px;max-height:calc(100dvh - 24px);margin:auto;background:var(--j-surface,#fff);padding:24px;overflow:auto;font-family:system-ui,sans-serif;line-height:1.5}
+.ederp.journey-confirm>h2,.ederp .erp-modal-header h2{font-size:clamp(20px,4vw,28px);line-height:1.25;margin:0;overflow-wrap:anywhere}
+.ederp.journey-confirm>h2{margin-bottom:18px}.ederp.journey-confirm .ederp-form,.ederp .erp-modal-body .ederp-form{display:flex;flex-direction:column;gap:16px;min-width:0}
+.ederp.journey-confirm button,.ederp .erp-form-dialog button{min-height:44px;flex:none;height:auto;align-self:flex-start}
+.ederp.journey-confirm input,.ederp.journey-confirm select,.ederp.journey-confirm textarea{max-width:100%;box-sizing:border-box}
+.ederp .erp-modal-header{align-items:center;gap:16px}.ederp .erp-modal-header h2{flex:1;min-width:0}.ederp .erp-modal-header button{flex-shrink:0}
+@media(max-width:600px){.ederp.journey-confirm{padding:16px}.ederp.journey-confirm .ederp-form>button,.ederp .erp-modal-body .ederp-form>button{width:100%;align-self:stretch}.ederp .erp-pdf-reader iframe{height:60dvh}}
