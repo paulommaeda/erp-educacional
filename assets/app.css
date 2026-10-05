@@ -115,3 +115,5 @@
 .erp-finance-summary .erp-finance-overdue strong{color:#b42318}@media(min-width:701px) and (max-width:1000px){.erp-finance-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
 .erp-finance-fixed-info{grid-column:1/-1;padding:12px 16px;background:var(--j-soft,#f4f8e0);border-radius:12px}.erp-finance-fixed-info p{margin:4px 0}.erp-finance-operations form [hidden]{display:none!important}
+
+.journey-app .erp-finance-workspace .erp-finance-search-form{margin-bottom:18px;gap:14px}.journey-app .erp-finance-workspace .erp-pagination{margin-top:14px;margin-bottom:14px;display:flex;gap:12px}.journey-app .erp-finance-workspace .erp-pagination button{flex:0 0 auto!important;width:auto!important;min-width:110px}.journey-app .erp-finance-workspace .erp-finance-filter-tools{margin-top:20px;gap:12px}.journey-app .erp-finance-workspace .erp-finance-filters>label{margin-top:14px}.erp-payment-preview{grid-column:1/-1;padding:12px;background:var(--j-soft,#edf4ee);border-radius:10px;line-height:1.6}@media(max-width:700px){.journey-app .erp-finance-workspace .erp-pagination button{flex:1 1 100px!important}}

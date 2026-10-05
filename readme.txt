@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.10
+Stable tag: 0.12.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.12.11 =
+* Exibe desconto condicional previsto, mantém líquido sem pontualidade e calcula previsão da baixa pela data de pagamento. Espaçamento dos filtros financeiros.
 
 = 0.12.10 =
 * Chat com campo de mensagem na largura total e ações lado a lado. Primeiro nome do responsável. Perfil removido da navegação inferior.
