@@ -25,6 +25,7 @@ final class Bootstrap
         $accounts=new Accounts($db);$catalog=new CatalogService($db,$ops,$accounts);
         $controller=new Controller($db,$access,$academic,$catalog,new FinanceService($db,$ops),new ExportService($db),new RenewalService($db,$ops,$academic,$access),new StudentWorkflow($db,$ops,$catalog,$academic));
         add_action('rest_api_init',[$controller,'register']);
+        $chat=new \EducacionalERP\Presentation\Rest\ChatController(new \EducacionalERP\Application\ChatService($db));add_action('rest_api_init',[$chat,'register']);
         add_filter('get_avatar_data', [new \EducacionalERP\Infrastructure\WordPress\Avatar($db),'filter'],10,2);
         $pages=new Pages(); add_action('admin_menu',[$pages,'register']);
         (new \EducacionalERP\Presentation\Portal\Portal())->register();

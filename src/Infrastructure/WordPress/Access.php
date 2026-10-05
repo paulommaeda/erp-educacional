@@ -4,17 +4,18 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Infrastructure\Database\Database;
 final class Access
 {
-    public const CAPS=['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_baixar_lancamentos','erp_estornar_baixas','erp_ajustar_lancamentos','erp_trocar_responsavel_financeiro','erp_exportar_dados','erp_configurar','erp_auditar','erp_gerar_parcelas'];
+    public const CAPS=['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_baixar_lancamentos','erp_estornar_baixas','erp_ajustar_lancamentos','erp_trocar_responsavel_financeiro','erp_exportar_dados','erp_configurar','erp_auditar','erp_gerar_parcelas','erp_chat_atender','erp_chat_supervisao'];
     public function __construct(private Database $db) {}
     public static function install(): void
     {
-        $roles=['erp_financeiro'=>['Financeiro',['erp_consultar_financeiro','erp_gerar_parcelas']], 'erp_secretaria'=>['Secretaria',['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro']],
+        $roles=['erp_supervisao'=>['Supervisão',['erp_chat_supervisao']], 'erp_coordenacao'=>['Coordenação',['erp_chat_atender']], 'erp_orientacao'=>['Orientação',['erp_chat_atender']], 'erp_financeiro'=>['Financeiro',['erp_consultar_financeiro','erp_gerar_parcelas']], 'erp_secretaria'=>['Secretaria',['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_chat_atender']],
             'erp_pessoa'=>['Pessoa',[]],'erp_responsavel_academico'=>['Responsável acadêmico',[]],'erp_responsavel_financeiro'=>['Responsável financeiro',[]],'erp_aluno'=>['Aluno',[]],'erp_responsavel'=>['Responsável',[]]];
         foreach ($roles as $slug=>[$label,$caps]) {
             add_role($slug,$label,['read'=>true]);
             $role=get_role($slug);
             if ($role) { foreach (array_merge(['read'],$caps) as $cap) { $role->add_cap($cap); } }
         }
+        if(!get_option('ederp_chat_menus_installed')){$policy=get_option('ederp_menu_policy',[]);foreach(['erp_secretaria','erp_coordenacao','erp_orientacao','erp_supervisao','erp_responsavel','erp_responsavel_academico','erp_responsavel_financeiro'] as $slug)if(isset($policy[$slug]))$policy[$slug]=array_values(array_unique([...$policy[$slug],'chat']));foreach(wp_roles()->roles as $slug=>$meta)if(str_starts_with($slug,'erp_custom_')&&preg_match('/secret|coordena|orienta/iu',$meta['name']))$policy[$slug]=array_values(array_unique([...($policy[$slug]??[]),'chat']));update_option('ederp_menu_policy',$policy,false);update_option('ederp_chat_menus_installed',true,false);}
         $admin=get_role('administrator');
         if ($admin) { foreach (self::CAPS as $cap) { $admin->add_cap($cap); } }
     }

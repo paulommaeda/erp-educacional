@@ -18,6 +18,8 @@ final class Pages
         $photoPage=in_array(sanitize_key((string)($_GET['erp_tela']??'')),['pessoas','alunos','configuracoes'],true)||($post instanceof \WP_Post && preg_match('/\[erp_(pessoas|alunos|configuracoes)\b/',$post->post_content));
         if(current_user_can('upload_files') && (is_admin()||$photoPage)) { wp_enqueue_media(); }
         wp_enqueue_script('ederp-person-fields',plugins_url('assets/person-fields.js',EDERP_FILE),[],EDERP_VERSION,true);
+        wp_enqueue_script('ederp-chat',plugins_url('assets/chat.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
+        wp_enqueue_style('ederp-chat',plugins_url('assets/chat.css',EDERP_FILE),['ederp'],EDERP_VERSION);
         wp_enqueue_script('ederp-history',plugins_url('assets/history.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-export',plugins_url('assets/export.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-import',plugins_url('assets/import.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);

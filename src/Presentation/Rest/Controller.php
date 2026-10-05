@@ -217,7 +217,7 @@ final class Controller
     private function assignRole(array $d,string $key):array
     {
         Access::requireAdmin();$role=(string)($d['role']??'');
-        if((!in_array($role,['erp_secretaria','erp_financeiro'],true)&&!str_starts_with($role,'erp_custom_'))||!get_role($role))throw new RuleViolation('Selecione Secretaria, Financeiro ou um perfil personalizado. Os perfis Aluno e Responsável são definidos pelos vínculos.');
+        if((!in_array($role,['erp_secretaria','erp_financeiro','erp_coordenacao','erp_orientacao','erp_supervisao'],true)&&!str_starts_with($role,'erp_custom_'))||!get_role($role))throw new RuleViolation('Selecione um perfil de equipe ou um perfil personalizado. Os perfis Aluno e Responsável são definidos pelos vínculos.');
         $person=Input::id($d['codpessoa']??null);$link=$this->db->row('SELECT wp_user_id FROM '.$this->db->table('pessoa_usuarios').' WHERE codpessoa=%d',[$person]);
         $u=$link?get_userdata((int)$link['wp_user_id']):false;if(!$u)throw new RuleViolation('A pessoa não possui conta WordPress.');
         if(($d['acao']??'')==='adicionar')$u->add_role($role);elseif(($d['acao']??'')==='remover')$u->remove_role($role);else throw new RuleViolation('Ação inválida.');
