@@ -49,6 +49,10 @@ final class Controller
         $this->route('/coligadas/destino-periodo','GET',fn()=>current_user_can('erp_gerenciar_academico'),fn($r)=>$companies->nextPeriod(Input::id($r->get_param('codperiodo')),Input::id($r->get_param('codcoligada'))));
         $this->route('/coligadas/selecionar','POST',fn()=>\EducacionalERP\Application\Coligadas::management(),fn($r)=>$companies->choose($this->payload($r)));
 
+        $dataExport=new \EducacionalERP\Application\DataExport($this->db);
+        $this->route('/exportacao/catalogo','GET',fn()=>Access::isAdmin(),fn()=>$dataExport->catalog());
+        $this->route('/exportacao/dados','POST',fn()=>Access::isAdmin(),fn($r)=>$dataExport->page($this->payload($r)));
+        $this->route('/exportacao/configuracoes','POST',fn()=>Access::isAdmin(),fn($r)=>$dataExport->settings($this->payload($r)));
         $this->integrationRoutes();
         $discounts=new \EducacionalERP\Application\ContractDiscounts($this->db,new Operations($this->db));
         $this->route('/configuracoes/pontualidade','GET',fn()=>Access::isAdmin(),fn()=>$discounts->settings());

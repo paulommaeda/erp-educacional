@@ -4,8 +4,8 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\RuleViolation;
 final class MenuPolicy
 {
-    public const MENUS=['inicio'=>'Início','usuarios'=>'Usuários','pessoas'=>'Pessoas','alunos'=>'Alunos','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Gestão financeira','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
-    private const ADMIN=['importacao','perfis','configuracoes'];
+    public const MENUS=['inicio'=>'Início','usuarios'=>'Usuários','pessoas'=>'Pessoas','alunos'=>'Alunos','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Gestão financeira','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
+    private const ADMIN=['exportacao','importacao','perfis','configuracoes'];
     private const CAPS=['pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','rematriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro'];
     public static function defaults(string $role):array
     {
@@ -59,7 +59,7 @@ final class MenuPolicy
     {
         Access::requireAdmin();$data=get_option('ederp_menu_policy',[]);$rows=[];
         foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'user_permissions'=>UserPermissions::forRole($slug),'custom'=>str_starts_with($slug,'erp_custom_')];
-        return ['user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','importacao','perfis','configuracoes']))];
+        return ['user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','exportacao','importacao','perfis','configuracoes']))];
     }
     public static function save(array $data):array
     {

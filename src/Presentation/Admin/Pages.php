@@ -7,7 +7,7 @@ final class Pages
     {
         add_menu_page('ERP Educacional','ERP Educacional','erp_acessar_admin','ederp',[$this,'home'],'dashicons-welcome-learn-more',26);
         foreach(['alunos'=>['Alunos','erp_gerenciar_pessoas'],'pessoas'=>['Pessoas','erp_gerenciar_pessoas'],'academico'=>['Estrutura acadêmica','erp_gerenciar_academico'],'matriculas'=>['Matrículas','erp_gerenciar_academico'],
-            'financeiro'=>['Financeiro','erp_consultar_financeiro'],'rematriculas'=>['Rematrículas','erp_gerenciar_academico'],'importacao'=>['Importação','manage_options'],'perfis'=>['Perfis e acessos','manage_options'],'config'=>['Configurações','erp_configurar']] as $slug=>[$title,$cap]) {
+            'financeiro'=>['Financeiro','erp_consultar_financeiro'],'rematriculas'=>['Rematrículas','erp_gerenciar_academico'],'exportacao'=>['Exportação','manage_options'],'importacao'=>['Importação','manage_options'],'perfis'=>['Perfis e acessos','manage_options'],'config'=>['Configurações','erp_configurar']] as $slug=>[$title,$cap]) {
             add_submenu_page('ederp',$title,$title,$cap,'ederp-'.$slug,fn()=>$this->screen($slug,$title,$cap));
         }
         add_action('admin_enqueue_scripts',function($hook){ if(str_contains((string)$hook,'ederp')) { self::assets(); } });
@@ -18,6 +18,7 @@ final class Pages
         $photoPage=in_array(sanitize_key((string)($_GET['erp_tela']??'')),['pessoas','alunos','configuracoes'],true)||($post instanceof \WP_Post && preg_match('/\[erp_(pessoas|alunos|configuracoes)\b/',$post->post_content));
         if(current_user_can('upload_files') && (is_admin()||$photoPage)) { wp_enqueue_media(); }
         wp_enqueue_script('ederp-person-fields',plugins_url('assets/person-fields.js',EDERP_FILE),[],EDERP_VERSION,true);
+        wp_enqueue_script('ederp-export',plugins_url('assets/export.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-import',plugins_url('assets/import.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_style('ederp',plugins_url('assets/app.css',EDERP_FILE),[],EDERP_VERSION);
         wp_add_inline_style('ederp',\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::css());
@@ -40,7 +41,7 @@ final class Pages
     {
         if($slug==='importacao' && !\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()) { wp_die('Somente administradores.'); }
         if(!current_user_can($cap)) { wp_die('Sem permissão.'); }
-        if(in_array($slug,['alunos','pessoas','matriculas','academico','importacao','rematriculas','configuracoes'],true)) {
+        if(in_array($slug,['alunos','pessoas','matriculas','academico','exportacao','importacao','rematriculas','configuracoes'],true)) {
             echo '<div class="wrap ederp erp-workflow" data-erp-screen="'.esc_attr($slug).'"><p role="status">Carregando...</p></div>';
             return;
         }
