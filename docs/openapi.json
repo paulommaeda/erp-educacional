@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "ERP Educacional — APIs de integração",
-    "version": "0.10.3",
+    "version": "0.12.0",
     "description": "Consultas e gravações autenticadas como administrador. Leia integracao-api.md. JSON monetário decimal string; autenticação nativa WordPress por senha de aplicativo sobre HTTPS."
   },
   "servers": [

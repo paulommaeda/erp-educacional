@@ -98,3 +98,5 @@
  .ederp [data-ederp-portal] .erp-renewal-section .erp-renewal-nav{margin-top:16px}
  .ederp [data-ederp-portal] .erp-renewal-section .ederp-form>button[type=submit]{width:100%;align-self:stretch}
 }
+
+.erp-coligada-bar{display:flex;flex-wrap:wrap;gap:12px;padding:14px;margin-bottom:16px;border:1px solid var(--j-line,#ddd);border-radius:12px;background:var(--j-surface,#fff)}.erp-coligada-bar label{display:grid;gap:6px;min-width:0;flex:1}.erp-coligada-bar select{width:100%;min-height:46px;max-width:100%;font:inherit}@media(max-width:700px){.erp-coligada-bar{padding:12px}.erp-coligada-bar select{font-size:16px}}

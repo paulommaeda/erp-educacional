@@ -15,10 +15,13 @@ final class Controller
             if(get_option('ederp_schema_version')!==Installer::VERSION || get_option('ederp_schema_error')) { return new \WP_Error('erp_schema','Banco do ERP requer migração.',['status'=>503]); }
             if(!is_user_logged_in()) { return new \WP_Error('erp_login','Autenticação necessária.',['status'=>401]); }
             return (MenuPolicy::route($path,$method) && $permission($r))?true:new \WP_Error('erp_forbidden','Sem permissão para este recurso.',['status'=>403]);
-        },'callback'=>function($r)use($handler){
+        },'callback'=>function($r)use($handler,$path){
             $before=$this->db->wp->suppress_errors(true);
             try {
-                $result=$handler($r);
+                $company=\EducacionalERP\Application\Coligadas::current();
+                if(!\EducacionalERP\Application\Coligadas::management()&&str_starts_with($path,'/alunos/')&&isset($r['id']))$company=(int)$this->db->get('alunos',(int)$r['id'])['codcoligada'];
+                if(Access::isAdmin()&&str_starts_with($path,'/integracao/')&&$r->get_param('codcoligada')){$company=Input::id($r->get_param('codcoligada'));$this->db->get('coligadas',$company);}
+                $result=\EducacionalERP\Application\Coligadas::within($company,fn()=>$handler($r));
                 $response=new \WP_REST_Response($result,200);
                 $response->header('Cache-Control','private, no-store, max-age=0');
                 return $response;
@@ -40,6 +43,12 @@ final class Controller
     {
         $cap=static fn(string $c)=>static fn()=>current_user_can($c);
         $id='(?P<id>[1-9][0-9]{0,17})';
+        $companies=new \EducacionalERP\Application\Coligadas($this->db);
+        $this->route('/coligadas','GET',fn()=>\EducacionalERP\Application\Coligadas::management(),fn()=>$companies->listing());
+        $this->route('/coligadas','POST',fn()=>Access::isAdmin(),fn($r)=>$companies->save($this->payload($r),$this->key($r)));
+        $this->route('/coligadas/destino-periodo','GET',fn()=>current_user_can('erp_gerenciar_academico'),fn($r)=>$companies->nextPeriod(Input::id($r->get_param('codperiodo')),Input::id($r->get_param('codcoligada'))));
+        $this->route('/coligadas/selecionar','POST',fn()=>\EducacionalERP\Application\Coligadas::management(),fn($r)=>$companies->choose($this->payload($r)));
+
         $this->integrationRoutes();
         $discounts=new \EducacionalERP\Application\ContractDiscounts($this->db,new Operations($this->db));
         $this->route('/configuracoes/pontualidade','GET',fn()=>Access::isAdmin(),fn()=>$discounts->settings());
@@ -63,9 +72,9 @@ final class Controller
         $this->route('/matriculas','GET',$cap('erp_gerenciar_academico'),fn($r)=>(new EnrollmentDirectory($this->db))->search($r->get_params()));
         $this->route('/matriculas/lote','POST',$cap('erp_gerenciar_academico'),fn($r)=>$this->workflow->batch($this->payload($r),$this->key($r)));
         $this->route('/matriculas/filtros','GET',$cap('erp_gerenciar_academico'),fn()=>[
-            'turmas'=>$this->db->rows('SELECT idturma,codperiodo,idcurso,idturno,nome FROM '.$this->db->table('turmas').' ORDER BY nome'),
-            'cursos'=>$this->db->rows('SELECT idcurso,nome FROM '.$this->db->table('cursos').' ORDER BY nome'),
-            'turnos'=>$this->db->rows('SELECT idturno,nome FROM '.$this->db->table('turnos').' ORDER BY nome')]);
+            'turmas'=>$this->db->rows('SELECT idturma,codperiodo,idcurso,idturno,nome FROM '.$this->db->table('turmas').' WHERE codcoligada=%d ORDER BY nome',[\EducacionalERP\Application\Coligadas::current()]),
+            'cursos'=>$this->db->rows('SELECT idcurso,nome FROM '.$this->db->table('cursos').' WHERE codcoligada=%d ORDER BY nome',[\EducacionalERP\Application\Coligadas::current()]),
+            'turnos'=>$this->db->rows('SELECT idturno,nome FROM '.$this->db->table('turnos').' WHERE codcoligada=%d ORDER BY nome',[\EducacionalERP\Application\Coligadas::current()])]);
         $this->route('/importacao/(?P<tipo>pessoas|alunos|turmas)','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\ImportService($this->db,$this->catalog))->row($r['tipo'],$this->payload($r),$this->key($r)));
         $this->route('/me/perfil','GET',fn()=>true,fn()=>$this->ownProfile());
         $this->route('/me/perfil','POST',fn()=>true,fn($r)=>$this->catalog->updateOwn($this->payload($r),$this->key($r)));
@@ -137,7 +146,7 @@ final class Controller
     private function pendingContracts(\WP_REST_Request $r):array
     {
         $ct=$this->db->table('contratos');$m=$this->db->table('matriculas');$a=$this->db->table('alunos');$p=$this->db->table('pessoas');$t=$this->db->table('turmas');$pl=$this->db->table('periodos_letivos');
-        $join=" FROM $ct c JOIN $m m ON m.idmatricula=c.idmatricula JOIN $a a ON a.idaluno=m.idaluno JOIN $p p ON p.codpessoa=a.codpessoa JOIN $t t ON t.idturma=m.idturma_atual JOIN $pl pl ON pl.codperiodo=m.codperiodo WHERE c.parcelas_geradas=0 AND c.status='ativo' AND m.status IN ('reservado','cursando','ativa')";$args=[];
+        $join=" FROM $ct c JOIN $m m ON m.idmatricula=c.idmatricula JOIN $a a ON a.idaluno=m.idaluno JOIN $p p ON p.codpessoa=a.codpessoa JOIN $t t ON t.idturma=m.idturma_atual JOIN $pl pl ON pl.codperiodo=m.codperiodo WHERE c.parcelas_geradas=0 AND c.status='ativo' AND m.status IN ('reservado','cursando','ativa') AND m.codcoligada=%d";$args=[\EducacionalERP\Application\Coligadas::current()];
         $period=SchoolSettings::resolve($r->get_param('codperiodo'));if($period){$join.=' AND m.codperiodo=%d';$args[]=$period;}
         $search=trim((string)$r->get_param('search'));if($search!==''){$join.=' AND (p.nome LIKE %s OR a.ra LIKE %s)';$term='%'.$this->db->wp->esc_like($search).'%';$args[]=$term;$args[]=$term;}
         $page=max(1,(int)$r->get_param('page'));$total=(int)$this->db->row('SELECT COUNT(*) AS n'.$join,$args)['n'];
@@ -149,8 +158,9 @@ final class Controller
         $page=max(1,min(100000,(int)($r->get_param('page')?:1))); $where=''; $args=[];
         $q=sanitize_text_field((string)$r->get_param('search'));
         if($q!=='') { $where=' WHERE (p.nome LIKE %s OR a.ra LIKE %s)'; $term='%'.$this->db->wp->esc_like($q).'%'; $args=[$term,$term]; }
+        $where.=($where?' AND ':' WHERE ').'a.codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();
         $count=$this->db->row("SELECT COUNT(*) AS n FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa$where",$args);
-        return ['items'=>$this->db->rows("SELECT a.idaluno,a.ra,a.ativo,a.versao,p.nome,p.data_nascimento FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa$where ORDER BY p.nome,a.idaluno LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20])),'page'=>$page,'total'=>(int)$count['n']];
+        return ['items'=>$this->db->rows("SELECT a.idaluno,a.codcoligada,a.ra,a.ativo,a.versao,p.nome,p.data_nascimento FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa$where ORDER BY p.nome,a.idaluno LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20])),'page'=>$page,'total'=>(int)$count['n']];
     }
     private function ownProfile():array
     {
@@ -162,7 +172,10 @@ final class Controller
     private function dashboard(int $period=0):array
     {
         $cards=[];
-        foreach(['pessoas'=>['pessoas','Pessoas cadastradas'],'alunos'=>['alunos','Alunos cadastrados'],'academico'=>['turmas','Turmas cadastradas'],'matriculas'=>['matriculas','Matrículas registradas']] as $menu=>[$table,$title])if(MenuPolicy::can($menu))$cards[]=['menu'=>$menu,'titulo'=>$title,'total'=>(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table($table).($period&&in_array($table,['turmas','matriculas'],true)?' WHERE codperiodo=%d':''),$period&&in_array($table,['turmas','matriculas'],true)?[$period]:[])['n']];
+        foreach(['pessoas'=>['pessoas','Pessoas cadastradas'],'alunos'=>['alunos','Alunos cadastrados'],'academico'=>['turmas','Turmas cadastradas'],'matriculas'=>['matriculas','Matrículas registradas']] as $menu=>[$table,$title])if(MenuPolicy::can($menu)){
+            $where=[];$args=[];if($table!=='pessoas'){$where[]='codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();}if($period&&in_array($table,['turmas','matriculas'],true)){$where[]='codperiodo=%d';$args[]=$period;}
+            $cards[]=['menu'=>$menu,'titulo'=>$title,'total'=>(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table($table).($where?' WHERE '.implode(' AND ',$where):''),$args)['n']];
+        }
         return ['cards'=>$cards,'alunos'=>$this->access->students()];
     }
     private function uploadPhoto(\WP_REST_Request $r):array
@@ -206,7 +219,7 @@ final class Controller
     public function options(string $type,\WP_REST_Request $r): array
     {
         $t=$this->db->table($type); $pk=$this->db->schema()[$type]['pk'][0]; $page=max(1,min(100000,(int)($r->get_param('page')?:1)));
-        $where=[]; $args=[]; $q=sanitize_text_field((string)$r->get_param('search'));
+        $where=[]; $args=[];if($type!=='pessoas'){$where[]='codcoligada=%d';$args[]=Input::id($r->get_param('codcoligada')?:\EducacionalERP\Application\Coligadas::current());} $q=sanitize_text_field((string)$r->get_param('search'));
         $name=$type==='periodos_letivos'?'descricao':'nome';
         $where[]=in_array($type,['pessoas','cursos','turnos','planos_pagamento'],true)?'ativo=1':($type==='turmas'?"status='ativa'":"status<>'encerrado'");
         if($q!=='') { $where[]="$name LIKE %s"; $args[]='%'.$this->db->wp->esc_like($q).'%'; }
@@ -249,6 +262,7 @@ final class Controller
         }
         if($name==='turmas' && ($period=SchoolSettings::forViewer($r->get_param('codperiodo')))){$where.=($where?' AND ':' WHERE ').'codperiodo=%d';$args[]=$period;}
         if($name==='turmas' && $r->get_param('idcurso')){$where.=($where?' AND ':' WHERE ').'idcurso=%d';$args[]=Input::id($r->get_param('idcurso'));}
+        if($name!=='pessoas'){$where.=($where?' AND ':' WHERE ').'codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();}
         $order=$name==='turmas'?'nome ASC, codigo ASC, idturma ASC':"$pk DESC";
         $count=$this->db->row("SELECT COUNT(*) AS n FROM $t$where",$args);
         $rows=$this->db->rows("SELECT * FROM $t$where ORDER BY $order LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20]));
@@ -260,7 +274,7 @@ final class Controller
             foreach($rows as &$row) {
                 $row=(new \EducacionalERP\Application\CivilStatus($this->db))->decorate($row);
                 $row['conta']=$accounts->summary((int)$row['codpessoa']);
-                $student=$this->db->row("SELECT idaluno FROM $a WHERE codpessoa=%d",[(int)$row['codpessoa']]);
+                $student=$this->db->row("SELECT idaluno FROM $a WHERE codpessoa=%d AND codcoligada=%d",[(int)$row['codpessoa'],\EducacionalERP\Application\Coligadas::current()]);
                 $row['idaluno']=$student['idaluno']??null;
             }
         }
@@ -280,6 +294,11 @@ final class Controller
     {
         $service=new \EducacionalERP\Application\IntegrationService($this->db,new Operations($this->db),$this->catalog);
         $admin=static fn()=>Access::isAdmin();$id='(?P<id>[1-9][0-9]{0,17})';
+        $companies=new \EducacionalERP\Application\Coligadas($this->db);
+        $this->route('/coligadas','GET',fn()=>\EducacionalERP\Application\Coligadas::management(),fn()=>$companies->listing());
+        $this->route('/coligadas','POST',fn()=>Access::isAdmin(),fn($r)=>$companies->save($this->payload($r),$this->key($r)));
+        $this->route('/coligadas/selecionar','POST',fn()=>\EducacionalERP\Application\Coligadas::management(),fn($r)=>$companies->choose($this->payload($r)));
+
         foreach(['alunos','matriculas','financeiro'] as $resource){
             $this->route('/integracao/'.$resource,'GET',$admin,fn($r)=>$service->collection($resource,$r->get_params()));
             $this->route('/integracao/'.$resource.'/'.$id,'GET',$admin,fn($r)=>$service->detail($resource,(int)$r['id']));
@@ -311,6 +330,6 @@ final class Controller
         $l=$this->db->table('lancamentos'); $p=$this->db->table('parcelas'); $c=$this->db->table('contratos'); $m=$this->db->table('matriculas');
         $where=$period?' AND m.codperiodo=%d':''; $args=$period?[$student,$period]:[$student];
         if(!current_user_can('erp_consultar_financeiro')) { $where.=' AND l.codpessoa_rf_atual=%d'; $args[]=$this->access->person()??0; }
-        return array_map([\EducacionalERP\Domain\FinancialStatus::class,'present'], $this->db->rows("SELECT l.versao,l.valor_cancelado,l.cancelado_em,l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d$where ORDER BY l.vencimento,l.idlancamento",$args));
+        return array_map([\EducacionalERP\Domain\FinancialStatus::class,'present'], $this->db->rows("SELECT l.versao,l.codcoligada,l.valor_cancelado,l.cancelado_em,l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d$where ORDER BY l.vencimento,l.idlancamento",$args));
     }
 }

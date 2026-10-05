@@ -11,14 +11,14 @@ final class ContractDiscounts
         if(in_array($title['status'],['cancelado','quitado'],true)||($day??Input::today())>$title['vencimento'])return 0;
         // Applied conditional adjustments are preserved; grant this rule only once at settlement.
         if(Money::cents($title['desconto_condicional_aplicado']??'0.00')>0)return 0;
-        return min(Money::cents(get_option('ederp_pontualidade','0.00')),max(0,Money::cents($title['valor_liquido'])-Money::cents($title['valor_baixa'])));
+        return min(Money::cents(Coligadas::within((int)($title['codcoligada']??Coligadas::current()),fn()=>get_option(Coligadas::option('ederp_pontualidade'),'0.00'))),max(0,Money::cents($title['valor_liquido'])-Money::cents($title['valor_baixa'])));
     }
-    public function settings():array{Access::requireAdmin();return ['valor'=>get_option('ederp_pontualidade','0.00')];}
+    public function settings():array{Access::requireAdmin();return ['valor'=>get_option(Coligadas::option('ederp_pontualidade'),'0.00')];}
     public function saveSettings(array $data,string $key):array
     {
         Access::requireAdmin();$value=Money::cents($data['valor']??null);if($value<0)throw new RuleViolation('Desconto não pode ser negativo.');$name='ederp_pontualidade_'.substr(hash('sha256',$this->db->table('contratos')),0,20);
         if((int)($this->db->row('SELECT GET_LOCK(%s,5) AS acquired',[$name])['acquired']??0)!==1)throw new RuleViolation('Configuração em atualização.');
-        try{$before=get_option('ederp_pontualidade','0.00');$after=Money::format($value);$this->db->audit('configuracoes',0,'pontualidade',['valor'=>$before],['valor'=>$after],$key);update_option('ederp_pontualidade',$after,false);return ['valor'=>$after];}finally{$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$name]);}
+        try{$before=get_option(Coligadas::option('ederp_pontualidade'),'0.00');$after=Money::format($value);$this->db->audit('configuracoes',0,'pontualidade',['valor'=>$before],['valor'=>$after],$key);update_option(Coligadas::option('ederp_pontualidade'),$after,false);return ['valor'=>$after];}finally{$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$name]);}
     }
     private function lock(int $id):array
     {

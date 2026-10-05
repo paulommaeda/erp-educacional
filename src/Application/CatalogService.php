@@ -41,6 +41,7 @@ final class CatalogService
                     $this->validateClassPlan($data);$data['idturma_proxima']=$this->nextClass($d,(int)$data['codperiodo']);
                     if ($data['capacidade']>10000) { throw new RuleViolation('Capacidade acima do limite.'); } break;
             }
+            if($table!=='pessoas')$data['codcoligada']=Input::id($d['codcoligada']??Coligadas::current());
             $id=$this->db->insert($table,$data);
             $account=[];
             if($table==='pessoas') { $account=$this->accounts->ensure($id,$d['user_login']??null); }
@@ -151,6 +152,7 @@ final class CatalogService
         if(!in_array($table,self::TABLES,true)) { throw new RuleViolation('Cadastro não editável.'); }
         return $this->db->atomic(fn()=>$this->ops->run($key,'editar_'.$table,['id'=>$id]+$data,function()use($table,$id,$data,$key){
             $before=$this->db->get($table,$id,true);
+            if(isset($data['codcoligada'])&&(int)$data['codcoligada']!==(int)$before['codcoligada'])throw new RuleViolation('A coligada do cadastro não pode ser alterada.');
             if(isset($data['versao']) && (string)$data['versao']!==$before['versao']) { throw new RuleViolation('O cadastro mudou. Recarregue a tela antes de salvar.'); }
             $d=\EducacionalERP\Domain\CadastroText::normalize(array_merge($before,$data));$changes=[];
             if($table==='alunos') {
@@ -243,7 +245,7 @@ final class CatalogService
         if($id){
             $p=$this->db->table('periodos_letivos');$t=$this->db->table('turmas');
             if($this->db->row("SELECT codperiodo FROM $p WHERE codperiodo_proximo=%d AND data_inicio>=%s LIMIT 1 FOR UPDATE",[$id,$start]))throw new RuleViolation('A data inicial invalidaria um período que aponta para este destino.');
-            if($this->db->row("SELECT a.idturma FROM $t a JOIN $t b ON b.idturma=a.idturma_proxima WHERE a.codperiodo=%d AND b.codperiodo<>%d LIMIT 1 FOR UPDATE",[$id,$next??0]))throw new RuleViolation('Existem próximas turmas de outro período. Remova esses destinos antes de alterar o próximo período.');
+            if($this->db->row("SELECT a.idturma FROM $t a JOIN $t b ON b.idturma=a.idturma_proxima WHERE a.codperiodo=%d AND b.codperiodo<>%d AND a.codcoligada=b.codcoligada LIMIT 1 FOR UPDATE",[$id,$next??0]))throw new RuleViolation('Existem próximas turmas de outro período. Remova esses destinos antes de alterar o próximo período.');
         }
         return $next;
     }
@@ -252,7 +254,7 @@ final class CatalogService
         if(empty($d['idturma_proxima']))return null;
         $next=Input::id($d['idturma_proxima']);if($next===$id)throw new RuleViolation('A próxima turma deve ser diferente da atual.');
         $row=$this->db->get('turmas',$next,true);$from=$this->db->get('periodos_letivos',$period);$to=$this->db->get('periodos_letivos',(int)$row['codperiodo']);
-        if((int)($from['codperiodo_proximo']??0)!==(int)$row['codperiodo'])throw new RuleViolation('A próxima turma deve pertencer ao próximo período configurado no cadastro do período letivo.');
+        if(!Coligadas::destinationPeriod($this->db,$from,$to))throw new RuleViolation('A próxima turma deve pertencer ao próximo período configurado no cadastro do período letivo.');
         if($row['status']!=='ativa'||$to['data_inicio']<=$from['data_inicio'])throw new RuleViolation('Selecione uma próxima turma ativa de um período posterior.');
         return $next;
     }

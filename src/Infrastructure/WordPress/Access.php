@@ -52,6 +52,6 @@ final class Access
     {
         $a=$this->db->table('alunos'); $p=$this->db->table('pessoas'); $v=$this->db->table('aluno_responsaveis');
         $person=$this->person(); if (!$person) { return []; }
-        return $this->db->rows("SELECT a.idaluno,a.ra,p.nome FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa WHERE a.codpessoa=%d OR EXISTS (SELECT 1 FROM $v v WHERE v.idaluno=a.idaluno AND v.codpessoa_responsavel=%d AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND (v.responsavel_academico=1 OR v.responsavel_financeiro=1 OR v.pode_rematricular=1)) ORDER BY p.nome",[$person,$person]);
+        return $this->db->rows("SELECT a.idaluno,a.codcoligada,a.ra,p.nome,company.nome AS coligada FROM $a a JOIN {$this->db->table('coligadas')} company ON company.codcoligada=a.codcoligada JOIN $p p ON p.codpessoa=a.codpessoa WHERE a.codpessoa=%d OR EXISTS (SELECT 1 FROM $v v WHERE v.idaluno=a.idaluno AND v.codpessoa_responsavel=%d AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND (v.responsavel_academico=1 OR v.responsavel_financeiro=1 OR v.pode_rematricular=1)) ORDER BY p.nome",[$person,$person]);
     }
 }

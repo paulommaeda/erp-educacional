@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '13';
+    public const VERSION = '14';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -31,6 +31,12 @@ final class Installer
                 if ($this->db->wp->last_error) { throw new \RuntimeException('dbDelta falhou em ' . $name . ': ' . $this->db->wp->last_error); }
                 $engine = $this->db->row('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', [$table]);
                 if (strtoupper($engine['ENGINE'] ?? '') !== 'INNODB') { throw new \RuntimeException('Tabela ' . $name . ' deve utilizar InnoDB.'); }
+                if($name==='coligadas')(new \EducacionalERP\Application\Coligadas($this->db))->seed();
+                // Remove obsolete global business keys; local unique keys below replace them.
+                if(in_array($name,['alunos','periodos_letivos','cursos','turnos','planos_pagamento','contratos'],true)){
+                    $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index)if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$keys[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];
+                    foreach($keys as $key=>$cols){ksort($cols);$cols=array_values($cols);if(!in_array('codcoligada',$cols,true)&&!in_array($cols,$meta['unique'],true))$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
+                }
                 SchemaIndexes::ensure($this->db,$table,$meta);
                 $columns = $this->db->rows("SHOW COLUMNS FROM $table");
                 if (count($columns) !== count($meta['columns'])) { throw new \RuntimeException('Estrutura divergente em ' . $name); }

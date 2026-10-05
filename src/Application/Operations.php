@@ -15,9 +15,9 @@ final class Operations
             foreach ($data as &$v) { if (is_array($v)) { $v = $normalize($v); } }
             return $data;
         };
-        $hash = hash('sha256', wp_json_encode([$type, get_current_user_id(), $normalize($request)]));
+        $hash = hash('sha256', wp_json_encode([$type, get_current_user_id(), Coligadas::current(), $normalize($request)]));
         $t = $this->db->table('operacoes');
-        $this->db->query("INSERT INTO $t (chave,tipo,request_hash) VALUES (%s,%s,%s) ON DUPLICATE KEY UPDATE chave=chave", [$key,$type,$hash]);
+        $this->db->query("INSERT INTO $t (chave,tipo,request_hash,codcoligada) VALUES (%s,%s,%s,%d) ON DUPLICATE KEY UPDATE chave=chave", [$key,$type,$hash,Coligadas::current()]);
         $op = $this->db->row("SELECT * FROM $t WHERE chave=%s FOR UPDATE", [$key]);
         if (!$op || !hash_equals($op['request_hash'], $hash) || $op['tipo'] !== $type) { throw new RuleViolation('Chave de idempotência já usada com outra operação ou conteúdo.'); }
         if ($op['resposta_json'] !== null) { return json_decode($op['resposta_json'], true, 512, JSON_THROW_ON_ERROR); }

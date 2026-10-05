@@ -40,12 +40,14 @@ final class Database implements \EducacionalERP\Domain\Store
     }
     public function insert(string $table, array $data): int
     {
+        $data=Ownership::apply($this,$table,$data);
         $this->validateColumns($table, $data);
         if ($this->wp->insert($this->table($table), $data) === false) { throw new \RuntimeException('Não foi possível inserir o registro; verifique duplicidade e referências.'); }
         return (int)$this->wp->insert_id;
     }
     public function update(string $table, int $id, array $data): void
     {
+        $data=Ownership::apply($this,$table,$data,$this->get($table,$id));
         $data['atualizado_em'] = gmdate('Y-m-d H:i:s');
         $this->validateColumns($table, $data);
         $pk = $this->schema[$table]['pk'][0];
@@ -79,7 +81,9 @@ final class Database implements \EducacionalERP\Domain\Store
     }
     public function audit(string $entity, int $id, string $action, ?array $before, array $after, string $key): void
     {
-        $this->insert('auditoria', ['entidade'=>$entity,'entidade_id'=>$id,'acao'=>$action,
+        $company=\EducacionalERP\Application\Coligadas::current();
+        if(isset($this->schema[$entity]['columns']['codcoligada'])&&$entity!=='coligadas'){$pk=$this->schema[$entity]['pk'][0];$row=$this->row('SELECT codcoligada FROM '.$this->table($entity)." WHERE $pk=%d",[$id]);$company=(int)($row['codcoligada']??$before['codcoligada']??$company);}
+        $this->insert('auditoria', ['codcoligada'=>$company,'entidade'=>$entity,'entidade_id'=>$id,'acao'=>$action,
             'antes_json'=>$before === null ? null : wp_json_encode($before),'depois_json'=>wp_json_encode($after),
             'ator_wp_user_id'=>get_current_user_id(),'ocorrido_em'=>gmdate('Y-m-d H:i:s'),'correlacao_id'=>$key]);
     }

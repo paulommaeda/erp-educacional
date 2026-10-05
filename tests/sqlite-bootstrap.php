@@ -116,3 +116,8 @@ function wp_attachment_is_image(int $id):bool{return $id===10;}
 function wp_get_attachment_image_url(int $id,string $size):string|false{return $id===10?'https://test.example/foto.jpg':false;}
 
 $wpdb->insert($wpdb->prefix."erp_numeracao_pessoas",["idnumeracao"=>1,"ultimo_codigo"=>0]);
+
+$wpdb->insert($wpdb->prefix.'erp_coligadas',['codcoligada'=>1,'nome'=>'COLIGADA PRINCIPAL','razao_social'=>'COLIGADA PRINCIPAL']);
+$GLOBALS['test_user_meta']=[];
+function get_user_meta($id,$key,$single=true){return $GLOBALS['test_user_meta'][$id][$key]??'';}
+function update_user_meta($id,$key,$value){$GLOBALS['test_user_meta'][$id][$key]=$value;}

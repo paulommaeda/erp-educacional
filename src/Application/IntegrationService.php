@@ -18,7 +18,7 @@ final class IntegrationService
     }
     private function student(int $id):array
     {
-        $student=$this->db->get('alunos',$id);$student['pessoa']=$this->person((int)$student['codpessoa']);
+        $student=$this->db->get('alunos',$id);$student['coligada']=$this->db->get('coligadas',(int)$student['codcoligada']);$student['pessoa']=$this->person((int)$student['codpessoa']);
         $student['vinculos']=$this->related('aluno_responsaveis','idaluno',$id,'idvinculo');$student['pai']=[];$student['mae']=[];$student['outros']=[];
         foreach($student['vinculos'] as &$link){$link['pessoa']=$this->person((int)$link['codpessoa_responsavel']);$link['vigente']=$link['fim_vigencia']===null&&$link['inicio_vigencia']<=gmdate('Y-m-d H:i:s');
             if($link['vigente']){$group=match($link['parentesco']){'pai'=>'pai','mae'=>'mae',default=>'outros'};$student[$group][]=$link;}
@@ -26,7 +26,7 @@ final class IntegrationService
     }
     private function enrollment(int $id,bool $financial=true):array
     {
-        $row=$this->db->get('matriculas',$id);$row['aluno']=$this->student((int)$row['idaluno']);$row['periodo']=$this->db->get('periodos_letivos',(int)$row['codperiodo']);$row['curso']=$this->db->get('cursos',(int)$row['idcurso']);$row['turma']=$this->db->get('turmas',(int)$row['idturma_atual']);$row['turno']=$this->db->get('turnos',(int)$row['turma']['idturno']);
+        $row=$this->db->get('matriculas',$id);$row['coligada']=$this->db->get('coligadas',(int)$row['codcoligada']);$row['aluno']=$this->student((int)$row['idaluno']);$row['periodo']=$this->db->get('periodos_letivos',(int)$row['codperiodo']);$row['curso']=$this->db->get('cursos',(int)$row['idcurso']);$row['turma']=$this->db->get('turmas',(int)$row['idturma_atual']);$row['turno']=$this->db->get('turnos',(int)$row['turma']['idturno']);
         $row['movimentacoes']=$this->related('matricula_movimentacoes','idmatricula',$id,'idmovimentacao');foreach($row['movimentacoes'] as &$move){unset($move['documento_token']);}unset($move);
         if($financial){$row['contratos']=$this->related('contratos','idmatricula',$id,'idcontrato');foreach($row['contratos'] as &$contract){$contract['descontos']=$this->related('contrato_descontos','idcontrato',(int)$contract['idcontrato'],'iddesconto');$contract['responsavel_financeiro']=$this->person((int)$contract['codpessoa_rf_atual']);$contract['parcelas']=$this->related('parcelas','idcontrato',(int)$contract['idcontrato'],'numero');foreach($contract['parcelas'] as &$parcel){$parcel['lancamentos']=array_map(fn($t)=>$this->title($t),$this->related('lancamentos','idparcela',(int)$parcel['idparcela'],'idlancamento'));}unset($parcel);}unset($contract);}
         return $row;
@@ -55,7 +55,7 @@ final class IntegrationService
         if(!empty($query['vencimento_de'])&&!empty($query['vencimento_ate'])&&Input::date($query['vencimento_de'])>Input::date($query['vencimento_ate']))throw new RuleViolation('Intervalo de vencimentos invertido.');
         $period=!empty($query['codperiodo'])?Input::id($query['codperiodo']):null;$student=!empty($query['idaluno'])?Input::id($query['idaluno']):null;
         return $this->db->atomic(function()use($resource,$cursor,$limit,$period,$student,$query){
-            $args=[(int)$cursor];$where='';$joins='';
+            $args=[(int)$cursor];$where=' AND r.codcoligada=%d';$args[]=Coligadas::current();$joins='';
             if($resource==='alunos'){$table=$this->db->table('alunos');$pk='idaluno';if($period){$where.=' AND EXISTS (SELECT 1 FROM '.$this->db->table('matriculas').' m WHERE m.idaluno=r.idaluno AND m.codperiodo=%d)';$args[]=$period;}if(!empty($query['ra'])){$where.=' AND r.ra=%s';$args[]=Input::text($query['ra'],40);}if($student){$where.=' AND r.idaluno=%d';$args[]=$student;}}
             elseif($resource==='matriculas'){$table=$this->db->table('matriculas');$pk='idmatricula';if($period){$where.=' AND r.codperiodo=%d';$args[]=$period;}if($student){$where.=' AND r.idaluno=%d';$args[]=$student;}if(!empty($query['idturma'])){$where.=' AND r.idturma_atual=%d';$args[]=Input::id($query['idturma']);}}
             elseif($resource==='financeiro'){$table=$this->db->table('lancamentos');$pk='idlancamento';$joins=' JOIN '.$this->db->table('parcelas').' p ON p.idparcela=r.idparcela JOIN '.$this->db->table('contratos').' c ON c.idcontrato=p.idcontrato JOIN '.$this->db->table('matriculas').' m ON m.idmatricula=c.idmatricula';if($period){$where.=' AND m.codperiodo=%d';$args[]=$period;}if($student){$where.=' AND m.idaluno=%d';$args[]=$student;}if(!empty($query['idturma'])){$where.=' AND m.idturma_atual=%d';$args[]=Input::id($query['idturma']);}
@@ -71,7 +71,7 @@ final class IntegrationService
         return $this->db->atomic(fn()=>$this->ops->run($key,'integracao_criar_aluno',$data,function()use($data,$student,$links,$key){
             if(!empty($data['codpessoa'])){$person=Input::id($data['codpessoa']);if(!(int)$this->db->get('pessoas',$person,true)['ativo'])throw new RuleViolation('Pessoa inativa.');}
             else{if(!is_array($data['pessoa']??null))throw new RuleViolation('Informe pessoa ou codpessoa.');$person=(int)$this->catalog->createInside('pessoas',$data['pessoa'],$key)['id'];}
-            $created=$this->catalog->createInside('alunos',['codpessoa'=>$person,'ra'=>$student['ra']??null,'tipo_aluno'=>$student['tipo_aluno']??'REGULAR'],$key);$id=(int)$created['id'];
+            $created=$this->catalog->createInside('alunos',['codcoligada'=>$student['codcoligada']??Coligadas::current(),'codpessoa'=>$person,'ra'=>$student['ra']??null,'tipo_aluno'=>$student['tipo_aluno']??'REGULAR'],$key);$id=(int)$created['id'];
             foreach($links as $link){if(!is_array($link))throw new RuleViolation('Vínculo inválido.');if(empty($link['codpessoa_responsavel'])){if(!is_array($link['pessoa']??null))throw new RuleViolation('Informe pessoa do responsável ou codpessoa_responsavel.');$link['codpessoa_responsavel']=$this->catalog->createInside('pessoas',$link['pessoa'],$key)['id'];}$this->catalog->linkInside($id,$link,$key);}
             return ['idaluno'=>(string)$id,'codpessoa'=>(string)$person,'item'=>$this->student($id)];
         }));

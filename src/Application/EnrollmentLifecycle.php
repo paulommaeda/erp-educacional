@@ -43,16 +43,18 @@ final class EnrollmentLifecycle
                 $period=$this->db->get('periodos_letivos',(int)$m['codperiodo']);$next=(int)($period['codperiodo_proximo']??0);
                 $future=$this->db->rows('SELECT * FROM '.$this->db->table('matriculas').' WHERE idmatricula_origem=%d AND ativo_unico=1 ORDER BY idmatricula FOR UPDATE',[$id]);
                 if(count($future)>1)throw new RuleViolation('Mais de uma rematrícula vinculada. Regularize a ficha antes de registrar a reprovação.');
-                if($future){$f=$future[0];if((int)$f['codperiodo']!==$next||!EnrollmentStatus::open($f['status']))throw new RuleViolation('Rematrícula posterior incompatível com o próximo período.');
+                if($future){$f=$future[0];if(!Coligadas::destinationPeriod($this->db,$period,$this->db->get('periodos_letivos',(int)$f['codperiodo']))||!EnrollmentStatus::open($f['status']))throw new RuleViolation('Rematrícula posterior incompatível com o próximo período.');
                     $source=$this->db->get('turmas',(int)$m['idturma_atual']);$target=$this->db->row('SELECT * FROM '.$this->db->table('turmas').' WHERE codperiodo=%d AND idcurso=%d AND idturno=%d AND codigo=%s FOR UPDATE',[$next,(int)$m['idcurso'],(int)$source['idturno'],$source['codigo']]);
                     if(!$target)throw new RuleViolation('Cadastre ou copie a turma atual (mesmo código, curso e turno) no próximo período antes de reprovar.');
                     $this->academic->planForClass((int)$target['idturma']);$contracts=$this->db->rows('SELECT * FROM '.$this->db->table('contratos').' WHERE idmatricula=%d ORDER BY idcontrato FOR UPDATE',[(int)$f['idmatricula']]);
-                    $this->cancelInside($f,'Rematrícula cancelada por reprovação no período anterior',$key,false);
+                    $cross=(int)$f['codcoligada']!==(int)$m['codcoligada'];
+                    $this->cancelInside($f,'Rematrícula cancelada por reprovação no período anterior',$key,$cross);
                     $replacement=$this->academic->placeInside((int)$m['idaluno'],$next,(int)$target['idturma'],$key);$newId=(int)$replacement['idmatricula'];$this->db->update('matriculas',$newId,['idmatricula_origem'=>$id,'origem'=>'reprovacao']);
-                    foreach($contracts as $contract){$this->db->update('contratos',(int)$contract['idcontrato'],['idmatricula'=>$newId]);$this->db->audit('contratos',(int)$contract['idcontrato'],'reassociar_reprovacao',$contract,['idmatricula'=>$newId,'condicoes_financeiras_preservadas'=>true],$key);}
-                    $links=$this->db->rows('SELECT * FROM '.$this->db->table('aluno_periodos').' WHERE idmatricula=%d FOR UPDATE',[(int)$f['idmatricula']]);foreach($links as $link)$this->db->update('aluno_periodos',(int)$link['idvinculoperiodo'],['idmatricula'=>$newId]);
+                    if($cross&&$contracts){$first=$contracts[0];$replacement+=$this->academic->createContractInside($newId,['quantidade_parcelas'=>$first['quantidade_parcelas'],'primeiro_vencimento'=>$first['primeiro_vencimento'],'termo'=>'Contrato de rematrícula por reprovação na coligada de origem.'],$key,true);}
+                    if(!$cross) foreach($contracts as $contract){$this->db->update('contratos',(int)$contract['idcontrato'],['idmatricula'=>$newId]);$this->db->audit('contratos',(int)$contract['idcontrato'],'reassociar_reprovacao',$contract,['idmatricula'=>$newId,'condicoes_financeiras_preservadas'=>true],$key);}
+                    $links=$cross?[]:$this->db->rows('SELECT * FROM '.$this->db->table('aluno_periodos').' WHERE idmatricula=%d FOR UPDATE',[(int)$f['idmatricula']]);foreach($links as $link)$this->db->update('aluno_periodos',(int)$link['idvinculoperiodo'],['idmatricula'=>$newId]);
                     $this->academic->movement($newId,null,(int)$target['idturma'],'rematricula_reprovacao','Repetição automática; matrícula anterior #'.$f['idmatricula'],null,'reservado');
-                    foreach($contracts as $contract)self::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);
+                    if(!$cross)foreach($contracts as $contract)self::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);
                 }
             }
             $this->changeInside($m,$status,'Resultado do período letivo: '.$status,$key);return ['idmatricula'=>(string)$id,'status'=>$status,'rematricula_substituta'=>$replacement];

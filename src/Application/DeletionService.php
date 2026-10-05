@@ -19,7 +19,7 @@ final class DeletionService
             if(isset($initial['idaluno'])&&$type!=='alunos')$this->db->get('alunos',(int)$initial['idaluno'],true);
             $row=$this->db->get($type,$id,true);
             if((int)$row['versao']!==$version)throw new RuleViolation('Registro alterado. Atualize a tela antes de excluir.');
-            if($type==='periodos_letivos'&&SchoolSettings::current()===$id)throw new RuleViolation('Este é o período letivo atual. Selecione outro nas Configurações antes de excluir.');
+            if($type==='periodos_letivos'&&Coligadas::within((int)$row['codcoligada'],fn()=>SchoolSettings::current())===$id)throw new RuleViolation('Este é o período letivo atual. Selecione outro nas Configurações antes de excluir.');
             $skip=[];$children=[];
             if($type==='pessoas')$skip=['pessoa_usuarios'];
             if($type==='aluno_responsaveis'){

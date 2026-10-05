@@ -18,6 +18,7 @@ final class PeriodCopyService
                 $this->db->update('periodos_letivos',$target,['status'=>'planejado']);
             }
             $to=$this->db->get('periodos_letivos',$target,true);
+            if((int)$from['codcoligada']!==Coligadas::current()||(int)$to['codcoligada']!==Coligadas::current())throw new RuleViolation('A cópia de período deve ocorrer dentro da coligada selecionada.');
             if($origin===$target||$to['data_inicio']<=$from['data_inicio']||$to['status']==='encerrado')throw new RuleViolation('Escolha um período de destino posterior e não encerrado.');
             if(!empty($from['codperiodo_proximo'])&&(int)$from['codperiodo_proximo']!==$target)throw new RuleViolation('O destino deve ser o próximo período configurado na origem.');
             $t=$this->db->table('turmas');$p=$this->db->table('planos_pagamento');
@@ -27,9 +28,9 @@ final class PeriodCopyService
             if(count($classes)+count($plans)>1000)throw new RuleViolation('Limite de 1.000 cadastros por cópia.');
             $map=[];$classMap=[];
             foreach($plans as $plan){
-                // Plan codes are globally unique; preserve the name and append the destination PK.
+                // Keep a destination suffix for compatibility; plan codes are unique per company and period.
                 $suffix='-P'.$target;$prefix=substr($plan['codigo'],0,30-strlen($suffix));while(!preg_match('//u',$prefix))$prefix=substr($prefix,0,-1);$code=$prefix.$suffix;
-                if($this->db->row("SELECT idplano FROM $p WHERE codigo=%s",[$code]))throw new RuleViolation('Já existe plano com código '.$code.'. Nenhum cadastro foi copiado.');
+                if($this->db->row("SELECT idplano FROM $p WHERE codigo=%s AND codcoligada=%d AND codperiodo=%d",[$code,Coligadas::current(),$target]))throw new RuleViolation('Já existe plano com código '.$code.'. Nenhum cadastro foi copiado.');
                 $map[(int)$plan['idplano']]=(int)$this->catalog->createInside('planos_pagamento',['codperiodo'=>$target,'codigo'=>$code,'nome'=>$plan['nome'],'valor_anuidade'=>$plan['valor_anuidade']],$key)['id'];
             }
             foreach($classes as $class){

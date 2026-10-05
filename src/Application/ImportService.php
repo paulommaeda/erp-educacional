@@ -24,7 +24,7 @@ final class ImportService
             }
             if(!$person)throw new RuleViolation('CODPESSOA de origem não localizado. Importe a pessoa primeiro.');
             $ra=Input::text($data['ra']??null,40);
-            $existing=$this->db->row("SELECT * FROM $a WHERE codpessoa=%d OR ra=%s FOR UPDATE",[(int)$person['codpessoa'],$ra]);
+            $existing=$this->db->row("SELECT * FROM $a WHERE (codpessoa=%d OR ra=%s) AND codcoligada=%d FOR UPDATE",[(int)$person['codpessoa'],$ra,Coligadas::current()]);
             if($existing) {
                 if((int)$existing['codpessoa']===(int)$person['codpessoa'] && $existing['ra']===$ra)return ['status'=>'existente','id'=>$existing['idaluno'],'mensagem'=>'Pessoa e RA já vinculados; dados mantidos.'];
                 throw new RuleViolation('Conflito: pessoa já possui outro RA ou este RA pertence a outra pessoa. Nenhum vínculo foi alterado.');
@@ -39,7 +39,7 @@ final class ImportService
             $resolved=[];
             foreach(['periodos_letivos'=>['codigo_periodo','codperiodo'],'cursos'=>['codigo_curso','idcurso'],'turnos'=>['codigo_turno','idturno']] as $table=>$fields){
                 $code=Input::text($data[$fields[0]]??null,30);$t=$this->db->table($table);
-                $row=$this->db->row("SELECT * FROM $t WHERE codigo=%s FOR UPDATE",[$code]);
+                $row=$this->db->row("SELECT * FROM $t WHERE codigo=%s AND codcoligada=%d FOR UPDATE",[$code,Coligadas::current()]);
                 if(!$row)throw new RuleViolation('Código não encontrado: '.$fields[0].' = '.$code);
                 if(isset($row['ativo'])&&!(int)$row['ativo'])throw new RuleViolation('Cadastro inativo: '.$fields[0]);
                 if(($row['status']??'')==='encerrado')throw new RuleViolation('Período encerrado.');
@@ -47,7 +47,7 @@ final class ImportService
             }
             $resolved['idplano']=null;
             if(!empty($data['codigo_plano'])){
-                $t=$this->db->table('planos_pagamento');$plan=$this->db->row("SELECT * FROM $t WHERE codigo=%s FOR UPDATE",[Input::text($data['codigo_plano'],30)]);
+                $t=$this->db->table('planos_pagamento');$plan=$this->db->row("SELECT * FROM $t WHERE codigo=%s AND codcoligada=%d AND codperiodo=%d FOR UPDATE",[Input::text($data['codigo_plano'],30),Coligadas::current(),$resolved['codperiodo']]);
                 if(!$plan||!(int)$plan['ativo']||(int)$plan['codperiodo']!==$resolved['codperiodo'])throw new RuleViolation('Plano não encontrado, inativo ou de outro período.');
                 $resolved['idplano']=(int)$plan['idplano'];
             }

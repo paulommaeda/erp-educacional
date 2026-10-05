@@ -36,7 +36,7 @@ final class StudentWorkflow
                 if(!(int)$this->db->get('pessoas',$person,true)['ativo']) { throw new RuleViolation('Pessoa inativa.'); }
             } else { $person=(int)$this->catalog->createInside('pessoas',$data,$key)['id']; }
             $a=$this->db->table('alunos');
-            if($this->db->row("SELECT idaluno FROM $a WHERE codpessoa=%d FOR UPDATE",[$person])) { throw new RuleViolation('Essa pessoa já possui ficha de aluno. Localize-a na lista de alunos.'); }
+            if($this->db->row("SELECT idaluno FROM $a WHERE codpessoa=%d AND codcoligada=%d FOR UPDATE",[$person,Coligadas::current()])) { throw new RuleViolation('Essa pessoa já possui ficha de aluno. Localize-a na lista de alunos.'); }
             $student=$this->catalog->createInside('alunos',['codpessoa'=>$person,'ra'=>$data['ra']??null,'tipo_aluno'=>$data['tipo_aluno']??'Regular'],$key);
             return ['idaluno'=>$student['id'],'codpessoa'=>(string)$person];
         }));
