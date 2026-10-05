@@ -330,3 +330,8 @@ A instalação requer escrita na pasta de temas. Falha fica explícita em aviso 
 
 ### 0.12.4 — Visão dos responsáveis
 Tabela acadêmica no portal familiar apresenta Situação, Data da matrícula (dd/mm/aaaa), Contratos, Período (nome/código legível), Curso (nome), Turma e Turno. Oculta IDs internos de matrícula, período, curso e turma. APIs e telas de gestão mantêm os campos originais. Cartão inicial de rematrícula identifica o período de destino e exibe Disponível de dd/mm/aaaa até dd/mm/aaaa; a turma continua na etapa própria. Oferta inclui periodo_destino (codperiodo, codigo, descricao). Sem migração de banco.
+
+### 0.12.5 — Gestão financeira mobile
+Consultas separadas em Lançamentos e Contratos aguardando parcelas. Filtros em seção própria, resumo dos valores filtrados e operações em botões que abrem modais, sem formulários escondidos dentro de acordeões. Celular até 700px usa cartões com valores essenciais; Detalhes mostra descontos e valor líquido. Datas dd/mm/aaaa e moeda brasileira. Seleção individual/em lote, Selecionar todos disponível no mobile, limite de 100 preservado. Registrar baixa no cartão abre a operação com lançamento preenchido. Operações atualizam consultas ao concluir, preservando endpoints, permissões e regras financeiras.
+
+Validado em Chromium com tela de 390px, sem transbordamento horizontal; detalhes e baixa em modal, envio da baixa, testes de edição individual/lote e sintaxe. Sem migração de banco.

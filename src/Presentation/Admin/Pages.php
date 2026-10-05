@@ -27,7 +27,7 @@ final class Pages
         wp_enqueue_script('ederp-modals',plugins_url('assets/modals.js',EDERP_FILE),[],EDERP_VERSION,true);
         wp_enqueue_script('ederp',plugins_url('assets/app.js',EDERP_FILE),['ederp-modals'],EDERP_VERSION,true);
         wp_localize_script('ederp','EDERP',['root'=>esc_url_raw(rest_url('erp-educacional/v1/')),'nonce'=>wp_create_nonce('wp_rest'),'assets'=>plugins_url('assets/',EDERP_FILE),'parentescos'=>\EducacionalERP\Domain\Relationships::LABELS,
-            'coligada'=>\EducacionalERP\Application\Coligadas::current(),'currentPeriod'=>\EducacionalERP\Application\SchoolSettings::current(),'period'=>sanitize_text_field((string)($_GET['erp_periodo']??(\EducacionalERP\Application\SchoolSettings::current()?:'todos'))),'front'=>!is_admin(),'portal'=>\EducacionalERP\Presentation\Portal\Portal::url(),'allowed'=>array_keys(\EducacionalERP\Infrastructure\WordPress\MenuPolicy::available()),'admin'=>admin_url('admin.php'),'caps'=>['editFinance'=>current_user_can('erp_ajustar_lancamentos'),'generate'=>\EducacionalERP\Infrastructure\WordPress\Access::canGenerate(),'periods'=>\EducacionalERP\Application\SchoolSettings::canChoose()||\EducacionalERP\Application\SchoolSettings::canChoose('finance'),'people'=>current_user_can('erp_gerenciar_pessoas'),'academic'=>current_user_can('erp_gerenciar_academico'),'finance'=>current_user_can('erp_consultar_financeiro'),'changeGuardian'=>current_user_can('erp_trocar_responsavel_financeiro'),'admin'=>\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()]]);
+            'coligada'=>\EducacionalERP\Application\Coligadas::current(),'currentPeriod'=>\EducacionalERP\Application\SchoolSettings::current(),'period'=>sanitize_text_field((string)($_GET['erp_periodo']??(\EducacionalERP\Application\SchoolSettings::current()?:'todos'))),'front'=>!is_admin(),'portal'=>\EducacionalERP\Presentation\Portal\Portal::url(),'allowed'=>array_keys(\EducacionalERP\Infrastructure\WordPress\MenuPolicy::available()),'admin'=>admin_url('admin.php'),'caps'=>['editFinance'=>current_user_can('erp_ajustar_lancamentos'),'generate'=>\EducacionalERP\Infrastructure\WordPress\Access::canGenerate(),'periods'=>\EducacionalERP\Application\SchoolSettings::canChoose()||\EducacionalERP\Application\SchoolSettings::canChoose('finance'),'people'=>current_user_can('erp_gerenciar_pessoas'),'academic'=>current_user_can('erp_gerenciar_academico'),'finance'=>current_user_can('erp_consultar_financeiro'),'settle'=>current_user_can('erp_baixar_lancamentos'),'adjust'=>current_user_can('erp_ajustar_lancamentos'),'reverse'=>current_user_can('erp_estornar_baixas'),'changeGuardian'=>current_user_can('erp_trocar_responsavel_financeiro'),'admin'=>\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()]]);
         { wp_enqueue_script('ederp-workflow',plugins_url('assets/workflow.js',EDERP_FILE),['ederp','ederp-person-fields','ederp-history'],EDERP_VERSION,true); }
     }
     public function home(): void
@@ -51,12 +51,16 @@ final class Pages
         if($slug==='perfis') { echo (new \EducacionalERP\Presentation\Portal\Portal())->render('perfis');return; }
         echo '<div class="wrap ederp"><h1>'.esc_html($title).'</h1>';
         if($slug==='financeiro') {
-            if(\EducacionalERP\Infrastructure\WordPress\Access::canGenerate())echo '<section class="ederp-card" data-ederp-pending><h2>Contratos aguardando parcelas</h2></section>';
-            echo '<div data-ederp-finance-search></div>';
-            if(current_user_can('erp_baixar_lancamentos')) { $this->form('Registrar baixa','lancamentos/{id}/baixas',['id:number'=>'ID do lançamento','valor_pago'=>'Valor pago (ex.: 100.00)','data_pagamento:date'=>'Data do pagamento','forma_pagamento'=>'Forma: pix, boleto, cartao, dinheiro, transferencia ou outro','referencia_externa?'=>'Referência externa']); }
-            if(current_user_can('erp_trocar_responsavel_financeiro')) { $this->form('Trocar responsável financeiro','alunos/{id}/trocas-responsavel-financeiro',['id:number'=>'ID do aluno','codpessoa_nova:number'=>'Código da nova pessoa já vinculada','motivo'=>'Motivo']); }
-            if(current_user_can('erp_ajustar_lancamentos')) { $this->form('Ajuste financeiro auditado','lancamentos/{id}/ajustes',['id:number'=>'ID do lançamento','componente'=>'desconto_incondicional, desconto_condicional_aplicado, juros_aplicados ou multa_aplicada','valor_delta'=>'Variação decimal (ex.: 10.00 ou -10.00)','motivo'=>'Motivo']); }
-            if(current_user_can('erp_estornar_baixas')) { $this->form('Estornar baixa integral','baixas/{id}/estornos',['id:number'=>'ID da baixa','motivo'=>'Motivo']); }
+            echo '<section class="erp-finance-workspace"><nav class="erp-tabs erp-finance-tabs" aria-label="Consultas financeiras"><button type="button" data-finance-tab="titles" aria-pressed="true" class="active">Lançamentos</button>';
+            if(\EducacionalERP\Infrastructure\WordPress\Access::canGenerate())echo '<button type="button" data-finance-tab="pending" aria-pressed="false">Contratos aguardando parcelas</button>';
+            echo '</nav>';
+            if(\EducacionalERP\Infrastructure\WordPress\Access::canGenerate())echo '<section class="erp-finance-panel" data-ederp-pending data-finance-panel="pending" hidden><h2>Contratos aguardando parcelas</h2></section>';
+            echo '<section class="erp-finance-panel" data-finance-panel="titles" data-ederp-finance-search></section><section class="erp-finance-operations"><h2>Operações financeiras</h2><p>Use as ações de cada lançamento ou abra uma operação abaixo.</p><div class="erp-finance-action-grid">';
+            if(current_user_can('erp_baixar_lancamentos')) { $this->form('Registrar baixa','lancamentos/{id}/baixas',['id:number'=>'Lançamento','valor_pago'=>'Valor pago (ex.: 100.00)','data_pagamento:date'=>'Data do pagamento','forma_pagamento'=>'Forma: pix, boleto, cartao, dinheiro, transferencia ou outro','referencia_externa?'=>'Referência externa']); }
+            if(current_user_can('erp_trocar_responsavel_financeiro')) { $this->form('Trocar responsável financeiro','alunos/{id}/trocas-responsavel-financeiro',['id:number'=>'Aluno','codpessoa_nova:number'=>'Código da nova pessoa já vinculada','motivo'=>'Motivo']); }
+            if(current_user_can('erp_ajustar_lancamentos')) { $this->form('Ajuste financeiro auditado','lancamentos/{id}/ajustes',['id:number'=>'Lançamento','componente'=>'desconto_incondicional, desconto_condicional_aplicado, juros_aplicados ou multa_aplicada','valor_delta'=>'Variação decimal (ex.: 10.00 ou -10.00)','motivo'=>'Motivo']); }
+            if(current_user_can('erp_estornar_baixas')) { $this->form('Estornar baixa integral','baixas/{id}/estornos',['id:number'=>'Baixa','motivo'=>'Motivo']); }
+            echo '</div></section></section>';
         } elseif($slug==='rematriculas') {
             $this->form('Publicar oferta de rematrícula','ofertas-rematricula',['codperiodo_destino:number'=>'Código do próximo período','idcurso_origem:number'=>'ID do curso de origem','idcurso_destino:number'=>'ID do curso de destino',
                 'data_abertura:date'=>'Data de abertura','data_encerramento:date'=>'Data de encerramento','valor_total'=>'Valor total (ex.: 12000.00)','numero_parcelas:number'=>'Número de parcelas','primeiro_vencimento:date'=>'Primeiro vencimento','turmas'=>'IDs das turmas separados por vírgula','versao_termo'=>'Versão do termo','texto_termo:textarea'=>'Texto integral do termo']);
@@ -73,7 +77,7 @@ final class Pages
     }
     private function form(string $title,string $route,array $fields): void
     {
-        echo '<details class="ederp-card"><summary>'.esc_html($title).'</summary><form data-ederp-form="'.esc_attr($route).'" class="ederp-form">';
+        echo '<section class="erp-finance-action"><h3 hidden>'.esc_html($title).'</h3><form data-ederp-form="'.esc_attr($route).'" class="ederp-form">';
         foreach($fields as $spec=>$label) {
             [$key,$type]=array_pad(explode(':',$spec,2),2,'text'); $optional=str_ends_with($key,'?'); $key=rtrim($key,'?');
             echo '<label>'.esc_html($label);
@@ -81,6 +85,6 @@ final class Pages
             else { echo '<input name="'.esc_attr($key).'" type="'.esc_attr($type).'"'.($type==='number'?' min="1" step="1"':'').($optional?'':' required').'>'; }
             echo '</label>';
         }
-        echo '<button class="button button-primary" type="submit">Confirmar</button><p role="status" class="ederp-status"></p></form></details>';
+        echo '<button class="button button-primary" type="submit">Confirmar</button><p role="status" class="ederp-status"></p></form></section>';
     }
 }
