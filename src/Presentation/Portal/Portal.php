@@ -12,7 +12,8 @@ final class Portal
     }
     public static function setup():void
     {
-        if(!Access::isAdmin()||get_option('ederp_portal_page'))return;
+        if(!Access::isAdmin())return;
+        $existing=(int)get_option('ederp_portal_page',0);if($existing&&get_post_type($existing)==='page'&&get_post_status($existing)!=='trash'){if(get_post_status($existing)!=='publish')wp_update_post(['ID'=>$existing,'post_status'=>'publish']);return;}
         $id=wp_insert_post(['post_type'=>'page','post_status'=>'publish','post_title'=>'Portal escolar','post_name'=>'portal-journey','post_content'=>'[erp_app]'],true);
         if(!is_wp_error($id))update_option('ederp_portal_page',(int)$id,false);
     }

@@ -21,7 +21,8 @@ final class Pages
         wp_enqueue_script('ederp-history',plugins_url('assets/history.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-export',plugins_url('assets/export.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-import',plugins_url('assets/import.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
-        wp_enqueue_style('ederp',plugins_url('assets/app.css',EDERP_FILE),[],EDERP_VERSION);
+        wp_enqueue_style('ederp-fonts','https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',[],'1');
+        wp_enqueue_style('ederp',plugins_url('assets/app.css',EDERP_FILE),['ederp-fonts'],EDERP_VERSION);
         wp_add_inline_style('ederp',\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::css());
         wp_enqueue_script('ederp-modals',plugins_url('assets/modals.js',EDERP_FILE),[],EDERP_VERSION,true);
         wp_enqueue_script('ederp',plugins_url('assets/app.js',EDERP_FILE),['ederp-modals'],EDERP_VERSION,true);

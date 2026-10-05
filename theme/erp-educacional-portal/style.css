@@ -1,0 +1,12 @@
+/*
+Theme Name: ERP Educacional Portal
+Theme URI: https://github.com/paulommaeda/erp-educacional
+Author: Paulo Maeda
+Description: Tema básico mobile first para o portal do ERP Educacional.
+Version: 1.0.0
+Requires at least: 6.4
+Requires PHP: 8.1
+License: GPL-2.0-or-later
+Text Domain: erp-educacional-portal
+*/
+body{margin:0;background:#f5f8f5;color:#193d38;font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}*{box-sizing:border-box}input,select,textarea,button{font:inherit}.erp-theme-content{max-width:1100px;margin:0 auto;padding:24px;min-height:100dvh}.erp-theme-content img{max-width:100%;height:auto}a{color:#087862}:focus-visible{outline:3px solid #087862;outline-offset:3px}

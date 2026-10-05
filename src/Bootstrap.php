@@ -14,11 +14,13 @@ final class Bootstrap
         try { (new Installer(new Database($wpdb)))->install(); Access::install(); }
         catch(\Throwable $e) { update_option('ederp_schema_error',$e->getMessage(),false); wp_die(esc_html('ERP não ativado: '.$e->getMessage())); }
         finally { $wpdb->suppress_errors($previous); }
+        \EducacionalERP\Infrastructure\WordPress\PortalTheme::setup(true);
     }
     public function boot(): void
     {
         global $wpdb;
         \EducacionalERP\Infrastructure\WordPress\SchoolIdentity::register();
+        \EducacionalERP\Infrastructure\WordPress\PortalTheme::register();
         $db=new Database($wpdb); $ops=new Operations($db); $access=new Access($db); $academic=new AcademicService($db,$ops);
         $accounts=new Accounts($db);$catalog=new CatalogService($db,$ops,$accounts);
         $controller=new Controller($db,$access,$academic,$catalog,new FinanceService($db,$ops),new ExportService($db),new RenewalService($db,$ops,$academic,$access),new StudentWorkflow($db,$ops,$catalog,$academic));

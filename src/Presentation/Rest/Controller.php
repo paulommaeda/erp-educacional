@@ -90,7 +90,7 @@ final class Controller
         $this->route('/me/perfil','POST',fn()=>true,fn($r)=>$this->catalog->updateOwn($this->payload($r),$this->key($r)));
         $this->route('/me/foto','POST',fn()=>$this->access->person()!==null,fn($r)=>$this->uploadPhoto($r));
         $this->route('/financeiro/alunos','GET',fn()=>current_user_can('erp_consultar_financeiro') && MenuPolicy::can('financeiro'),fn($r)=>$this->studentDirectory($r));
-        $this->route('/painel','GET',fn()=>true,fn($r)=>$this->dashboard(SchoolSettings::forViewer($r->get_param('codperiodo'))));
+        $this->route('/painel','GET',fn()=>true,fn($r)=>$this->dashboard(\EducacionalERP\Application\Coligadas::management()?SchoolSettings::forViewer($r->get_param('codperiodo')):0));
         $this->route('/perfis','GET',fn()=>Access::isAdmin(),fn()=>MenuPolicy::describe());
         $this->route('/perfis','POST',fn()=>Access::isAdmin(),fn($r)=>$this->policyChange('criar',$this->payload($r),$this->key($r)));
         $this->route('/perfis/menus','POST',fn()=>Access::isAdmin(),fn($r)=>$this->policyChange('menus',$this->payload($r),$this->key($r)));
@@ -146,10 +146,10 @@ final class Controller
         $this->route('/ofertas-rematricula/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$this->renewal->changeOffer((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/ofertas-rematricula/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$this->renewal->changeOffer((int)$r['id'],$this->payload($r),$this->key($r),true));
         $this->route('/ofertas-rematricula','POST',$cap('erp_gerenciar_academico'),fn($r)=>$this->renewal->createOffer($this->payload($r),$this->key($r)));
-        $this->route('/alunos/'.$id.'/ofertas-rematricula','GET',fn($r)=>$this->access->canStudent((int)$r['id'],'renew'),fn($r)=>$this->renewal->offers((int)$r['id'],SchoolSettings::forViewer($r->get_param('codperiodo'))));
+        $this->route('/alunos/'.$id.'/ofertas-rematricula','GET',fn($r)=>(bool)$this->access->accessibleIds((int)$r['id'],'renew'),fn($r)=>$this->portalData((int)$r['id'],'renew',$r->get_param('codperiodo')));
         $this->route('/rematriculas','POST',fn()=>$this->access->person()!==null,fn($r)=>$this->renewal->renew($this->payload($r),$this->key($r)));
-        $this->route('/alunos/'.$id.'/matriculas','GET',fn($r)=>$this->access->canStudent((int)$r['id']),fn($r)=>$this->academicView((int)$r['id'],SchoolSettings::forViewer($r->get_param('codperiodo'))));
-        $this->route('/alunos/'.$id.'/financeiro','GET',fn($r)=>$this->access->canStudent((int)$r['id'],'finance'),fn($r)=>$this->financeView((int)$r['id'],SchoolSettings::forViewer($r->get_param('codperiodo'),'finance')));
+        $this->route('/alunos/'.$id.'/matriculas','GET',fn($r)=>(bool)$this->access->accessibleIds((int)$r['id'],'academic'),fn($r)=>$this->portalData((int)$r['id'],'academic',$r->get_param('codperiodo')));
+        $this->route('/alunos/'.$id.'/financeiro','GET',fn($r)=>(bool)$this->access->accessibleIds((int)$r['id'],'finance'),fn($r)=>$this->portalData((int)$r['id'],'finance',$r->get_param('codperiodo')));
         $this->route('/exportacao/alunos/'.$id,'GET',$cap('erp_exportar_dados'),fn($r)=>$this->export->student((int)$r['id'],Input::id($r->get_param('codperiodo')?:SchoolSettings::current())));
         $this->route('/exportacao/alunos','GET',$cap('erp_exportar_dados'),fn($r)=>$this->export->collection(Input::id($r->get_param('codperiodo')?:SchoolSettings::current()),max(0,(int)$r->get_param('cursor')),max(1,min(20,(int)($r->get_param('limit')?:10)))));
     }
@@ -294,6 +294,18 @@ final class Controller
     {
         $v=$this->db->table('aluno_responsaveis'); $p=$this->db->table('pessoas');
         return $this->db->rows("SELECT v.versao,v.idvinculo,v.codpessoa_responsavel,p.nome,v.parentesco,v.responsavel_academico,v.responsavel_financeiro,v.pode_rematricular,v.inicio_vigencia,v.fim_vigencia FROM $v v JOIN $p p ON p.codpessoa=v.codpessoa_responsavel WHERE v.idaluno=%d ORDER BY v.idvinculo DESC",[$student]);
+    }
+    public function portalData(int $student,string $scope,mixed $requested=null):array
+    {
+        $management=\EducacionalERP\Application\Coligadas::management();if($management&&!$this->access->canStudent($student,$scope))throw new RuleViolation('Sem autorização para consultar este aluno.');$ids=$management?[$student]:$this->access->accessibleIds($student,$scope);$out=[];$configured=false;
+        foreach($ids as $id){$local=$this->db->get('alunos',$id);$rows=\EducacionalERP\Application\Coligadas::within((int)$local['codcoligada'],function()use($id,$scope,$requested,$management,&$configured){
+            if(!$management&&!SchoolSettings::current())return [];$configured=true;
+            $period=SchoolSettings::forViewer($management?$requested:null,$scope==='finance'?'finance':'academic');
+            return match($scope){'finance'=>$this->financeView($id,$period),'renew'=>$this->renewal->offers($id,$period),default=>$this->academicView($id,$period)};
+        });$out=array_merge($out,$rows);}
+        if(!$management&&!$configured&&$ids)throw new RuleViolation('A escola ainda não configurou o período letivo vigente.');
+        if($scope==='finance')usort($out,static fn($a,$b)=>strcmp($a['vencimento'],$b['vencimento'])?:((int)$a['idlancamento']<=>(int)$b['idlancamento']));
+        return $out;
     }
     public function academicView(int $student,int $period=0): array
     {

@@ -48,10 +48,18 @@ final class Access
         $field=$scope==='finance'?'responsavel_financeiro':($scope==='renew'?'pode_rematricular':'responsavel_academico');
         return (bool)$this->db->row("SELECT idvinculo FROM $v WHERE idaluno=%d AND codpessoa_responsavel=%d AND $field=1 AND inicio_vigencia<=UTC_TIMESTAMP() AND fim_vigencia IS NULL$lock",[$id,$person]);
     }
+    /** One family entry per shared person, with all authorized local student IDs. */
     public function students(): array
     {
-        $a=$this->db->table('alunos'); $p=$this->db->table('pessoas'); $v=$this->db->table('aluno_responsaveis');
-        $person=$this->person(); if (!$person) { return []; }
-        return $this->db->rows("SELECT a.idaluno,a.codcoligada,a.ra,p.nome,company.nome AS coligada FROM $a a JOIN {$this->db->table('coligadas')} company ON company.codcoligada=a.codcoligada JOIN $p p ON p.codpessoa=a.codpessoa WHERE a.codpessoa=%d OR EXISTS (SELECT 1 FROM $v v WHERE v.idaluno=a.idaluno AND v.codpessoa_responsavel=%d AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND (v.responsavel_academico=1 OR v.responsavel_financeiro=1 OR v.pode_rematricular=1)) ORDER BY p.nome",[$person,$person]);
+        $a=$this->db->table('alunos');$p=$this->db->table('pessoas');$v=$this->db->table('aluno_responsaveis');$m=$this->db->table('matriculas');$periods=$this->db->table('periodos_letivos');
+        $person=$this->person();if(!$person)return [];
+        $rows=$this->db->rows("SELECT a.idaluno,a.codpessoa,a.codcoligada,a.ra,p.nome,(SELECT MAX(pl.data_inicio) FROM $m m JOIN $periods pl ON pl.codperiodo=m.codperiodo WHERE m.idaluno=a.idaluno AND m.ativo_unico=1) AS ultimo_periodo FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa WHERE a.codpessoa=%d OR EXISTS (SELECT 1 FROM $v v WHERE v.idaluno=a.idaluno AND v.codpessoa_responsavel=%d AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND (v.responsavel_academico=1 OR v.responsavel_financeiro=1 OR v.pode_rematricular=1)) ORDER BY p.nome,ultimo_periodo DESC,a.idaluno DESC",[$person,$person]);
+        $out=[];foreach($rows as $row){$id=(string)$row['codpessoa'];if(!isset($out[$id])){unset($row['ultimo_periodo']);$out[$id]=$row;$out[$id]['idalunos']=[];}$out[$id]['idalunos'][]=(string)$row['idaluno'];}return array_values($out);
+    }
+    /** Scope checked for every local record; a link in one company grants no access to another. */
+    public function accessibleIds(int $student,string $scope):array
+    {
+        $a=$this->db->table('alunos');$row=$this->db->row("SELECT codpessoa FROM $a WHERE idaluno=%d",[$student]);if(!$row)return [];
+        $ids=[];foreach($this->db->rows("SELECT idaluno FROM $a WHERE codpessoa=%d ORDER BY idaluno",[$row['codpessoa']]) as $local)if($this->canStudent((int)$local['idaluno'],$scope))$ids[]=(int)$local['idaluno'];return $ids;
     }
 }

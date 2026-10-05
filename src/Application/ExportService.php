@@ -4,7 +4,8 @@ namespace EducacionalERP\Application;
 use EducacionalERP\Domain\Store;
 final class ExportService
 {
-    public function __construct(private Store $db) {}
+    private CompanyData $companies;
+    public function __construct(private Store $db) {$this->companies=new CompanyData($db);}
     public function student(int $id,int $period): array
     {
         return $this->db->atomic(fn()=>$this->build($id,$period));
@@ -47,12 +48,13 @@ final class ExportService
             $enrollment['movimentacoes']=$this->related('matricula_movimentacoes','idmatricula',(int)$enrollment['idmatricula'],'idmovimentacao');
             $contracts=$this->related('contratos','idmatricula',(int)$enrollment['idmatricula'],'idcontrato');
             foreach($contracts as &$contract) {
+                $contract=$this->companies->decorate($contract);
                 $contract['descontos']=$this->related('contrato_descontos','idcontrato',(int)$contract['idcontrato'],'iddesconto');
                 $parcels=$this->related('parcelas','idcontrato',(int)$contract['idcontrato'],'numero');
                 foreach($parcels as &$parcel) {
                     $title=$this->related('lancamentos','idparcela',(int)$parcel['idparcela'])[0]??null;
                     if($title) {
-                        $title=\EducacionalERP\Domain\FinancialStatus::present($title);
+                        $title=$this->companies->decorate(\EducacionalERP\Domain\FinancialStatus::present($title));
                         $payments=$this->related('baixas','idlancamento',(int)$title['idlancamento'],'idbaixa');
                         foreach($payments as &$payment) { $payment['estornos']=$this->related('baixa_estornos','idbaixa',(int)$payment['idbaixa'],'idestorno'); }
                         unset($payment);

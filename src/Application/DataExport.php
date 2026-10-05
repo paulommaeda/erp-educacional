@@ -22,7 +22,7 @@ final class DataExport
     public function __construct(private Database $db) {}
     public function catalog():array
     {
-        Access::requireAdmin();return ['categorias'=>self::GROUPS,'coligadas'=>$this->db->rows('SELECT codcoligada,nome,cnpj,ativo FROM '.$this->db->table('coligadas').' ORDER BY nome'),'coligada_atual'=>Coligadas::current(),'versao'=>defined('EDERP_VERSION')?EDERP_VERSION:'0.12.2'];
+        Access::requireAdmin();return ['categorias'=>self::GROUPS,'coligadas'=>$this->db->rows('SELECT codcoligada,nome,cnpj,ativo FROM '.$this->db->table('coligadas').' ORDER BY nome'),'coligada_atual'=>Coligadas::current(),'versao'=>defined('EDERP_VERSION')?EDERP_VERSION:'0.12.3'];
     }
     private function companies(array $d):array
     {
@@ -55,6 +55,7 @@ final class DataExport
         $limit=200;$rows=$this->db->rows('SELECT * FROM '.$this->db->table($source).($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY '.implode(',',$pk).' LIMIT '.($limit+1),$args);
         $more=count($rows)>$limit;if($more)array_pop($rows);$last=$rows?end($rows):null;$next=$more?array_map(fn($k)=>(string)$last[$k],$pk):null;
         if($table==='usuarios'){$users=[];foreach($rows as $link){$u=get_userdata((int)$link['wp_user_id']);if($u)$users[]=['ID'=>(int)$u->ID,'codpessoa'=>$link['codpessoa'],'user_login'=>$u->user_login,'display_name'=>$u->display_name,'user_email'=>$u->user_email,'roles'=>array_values($u->roles)];}$rows=$users;}
+        if(in_array($table,['contratos','lancamentos'],true)){$companiesData=new CompanyData($this->db);$rows=array_map(fn($r)=>$companiesData->decorate($r),$rows);}
         return ['tabela'=>$table,'registros'=>$rows,'proximo_cursor'=>$next,'compartilhada'=>!isset($schema['columns']['codcoligada'])];
     }
 }
