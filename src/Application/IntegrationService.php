@@ -19,6 +19,7 @@ final class IntegrationService
     private function student(int $id):array
     {
         $student=$this->db->get('alunos',$id);$student['coligada']=$this->db->get('coligadas',(int)$student['codcoligada']);$student['pessoa']=$this->person((int)$student['codpessoa']);
+        $student['historicos_anteriores']=(new PreviousHistory($this->db))->listing($id);
         $student['vinculos']=$this->related('aluno_responsaveis','idaluno',$id,'idvinculo');$student['pai']=[];$student['mae']=[];$student['outros']=[];
         foreach($student['vinculos'] as &$link){$link['pessoa']=$this->person((int)$link['codpessoa_responsavel']);$link['vigente']=$link['fim_vigencia']===null&&$link['inicio_vigencia']<=gmdate('Y-m-d H:i:s');
             if($link['vigente']){$group=match($link['parentesco']){'pai'=>'pai','mae'=>'mae',default=>'outros'};$student[$group][]=$link;}

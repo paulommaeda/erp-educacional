@@ -6,7 +6,7 @@ use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Infrastructure\WordPress\{Access,Accounts};
 final class DeletionService
 {
-    public const TYPES=['estados_civis','planos_pagamento','pessoas','alunos','periodos_letivos','cursos','turnos','turmas','matriculas','aluno_periodos','aluno_responsaveis'];
+    public const TYPES=['tipos_disciplina','estados_civis','planos_pagamento','pessoas','alunos','periodos_letivos','cursos','turnos','turmas','matriculas','aluno_periodos','aluno_responsaveis'];
     public function __construct(private Database $db,private Operations $ops) {}
     public function remove(string $type,int $id,array $data,string $key):array
     {

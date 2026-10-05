@@ -32,6 +32,7 @@ final class ExportService
     private function build(int $id,int $period): array
     {
         $student=$this->db->get('alunos',$id);$student['coligada']=$this->db->get('coligadas',(int)$student['codcoligada']);
+        $student['historicos_anteriores']=(new PreviousHistory($this->db))->listing($id);
         $student['pessoa']=$this->person((int)$student['codpessoa']);
         $links=$this->related('aluno_responsaveis','idaluno',$id,'inicio_vigencia,idvinculo');
         foreach($links as &$v) { $v['pessoa']=$this->person((int)$v['codpessoa_responsavel']); }

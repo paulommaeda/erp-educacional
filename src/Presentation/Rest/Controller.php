@@ -53,6 +53,12 @@ final class Controller
         $this->route('/exportacao/catalogo','GET',fn()=>Access::isAdmin(),fn()=>$dataExport->catalog());
         $this->route('/exportacao/dados','POST',fn()=>Access::isAdmin(),fn($r)=>$dataExport->page($this->payload($r)));
         $this->route('/exportacao/configuracoes','POST',fn()=>Access::isAdmin(),fn($r)=>$dataExport->settings($this->payload($r)));
+        $previous=new \EducacionalERP\Application\PreviousHistory($this->db);
+        $this->route('/tipos-disciplina','GET',fn()=>Access::isAdmin()||current_user_can('erp_gerenciar_pessoas')||current_user_can('erp_gerenciar_academico'),fn($r)=>$previous->types($r->get_param('idaluno')?(int)$this->db->get('alunos',Input::id($r->get_param('idaluno')))['codcoligada']:null));
+        $this->route('/tipos-disciplina','POST',fn()=>Access::isAdmin(),fn($r)=>$previous->typeSave($this->payload($r),$this->key($r)));
+        $this->route('/secretaria/alunos/'.$id.'/historicos-anteriores','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$previous->listing((int)$r['id']));
+        $this->route('/secretaria/alunos/'.$id.'/historicos-anteriores','POST',fn()=>Access::isAdmin(),fn($r)=>$previous->save((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/secretaria/alunos/'.$id.'/historicos-anteriores/(?P<historico>[1-9][0-9]{0,17})/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$previous->remove((int)$r['id'],(int)$r['historico'],$this->payload($r),$this->key($r)));
         $this->integrationRoutes();
         $discounts=new \EducacionalERP\Application\ContractDiscounts($this->db,new Operations($this->db));
         $this->route('/configuracoes/pontualidade','GET',fn()=>Access::isAdmin(),fn()=>$discounts->settings());

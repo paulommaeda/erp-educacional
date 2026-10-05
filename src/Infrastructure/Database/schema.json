@@ -2374,5 +2374,225 @@
         ]
       }
     ]
+  },
+  "tipos_disciplina": {
+    "pk": [
+      "idtipo_disciplina"
+    ],
+    "columns": {
+      "idtipo_disciplina": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "nome": "varchar(100) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idtipo_disciplina"
+      ],
+      [
+        "codcoligada",
+        "nome"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "historicos_anteriores": {
+    "pk": [
+      "idhistorico"
+    ],
+    "columns": {
+      "idhistorico": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "escola_nome": "varchar(200) NOT NULL",
+      "escola_cnpj": "varchar(14) DEFAULT NULL",
+      "rua": "varchar(200) DEFAULT NULL",
+      "numero": "varchar(200) DEFAULT NULL",
+      "complemento": "varchar(200) DEFAULT NULL",
+      "bairro": "varchar(200) DEFAULT NULL",
+      "cep": "varchar(200) DEFAULT NULL",
+      "cidade": "varchar(200) DEFAULT NULL",
+      "estado": "varchar(200) DEFAULT NULL",
+      "pais": "varchar(200) DEFAULT NULL",
+      "observacoes": "text DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idhistorico"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ],
+      [
+        "idaluno"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "historico_anos": {
+    "pk": [
+      "idano"
+    ],
+    "columns": {
+      "idano": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idhistorico": "bigint(20) unsigned NOT NULL",
+      "periodo_letivo": "varchar(80) NOT NULL",
+      "ano_letivo": "varchar(20) NOT NULL",
+      "serie": "varchar(80) NOT NULL",
+      "curso": "varchar(120) NOT NULL",
+      "resultado": "varchar(80) DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idano"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ],
+      [
+        "idhistorico"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idhistorico"
+        ],
+        "target": "historicos_anteriores",
+        "references": [
+          "codcoligada",
+          "idhistorico"
+        ]
+      }
+    ]
+  },
+  "historico_disciplinas": {
+    "pk": [
+      "idregistro_disciplina"
+    ],
+    "columns": {
+      "idregistro_disciplina": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idano": "bigint(20) unsigned NOT NULL",
+      "nome": "varchar(160) NOT NULL",
+      "nota_final": "varchar(30) NOT NULL",
+      "idtipo_disciplina": "bigint(20) unsigned NOT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idregistro_disciplina"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ],
+      [
+        "idano"
+      ],
+      [
+        "idtipo_disciplina"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idano"
+        ],
+        "target": "historico_anos",
+        "references": [
+          "codcoligada",
+          "idano"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ],
+        "target": "tipos_disciplina",
+        "references": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ]
+      }
+    ]
   }
 }

@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.1
+Stable tag: 0.12.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.12.2 =
+Históricos escolares anteriores na ficha do aluno: escola, endereço, anos, séries, cursos, disciplinas, tipos e notas finais. Tipos nas Configurações. Modais, auditoria, exportação e FKs. Migração 15.
 
 = 0.12.1 =
 Exportação seletiva por tabela e coligada, incluindo identidade visual, cores e configurações. JSON paginado, acesso exclusivo ao administrador, sem senhas ou tokens.
