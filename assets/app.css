@@ -113,3 +113,5 @@
 .erp-finance-selectors{display:grid;gap:12px;grid-column:1/-1}.erp-finance-selectors label{display:grid;gap:6px}.erp-finance-selectors select{width:100%;min-width:0;min-height:44px}.erp-finance-selectors button{justify-self:start}
 
 .erp-finance-summary .erp-finance-overdue strong{color:#b42318}@media(min-width:701px) and (max-width:1000px){.erp-finance-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.erp-finance-fixed-info{grid-column:1/-1;padding:12px 16px;background:var(--j-soft,#f4f8e0);border-radius:12px}.erp-finance-fixed-info p{margin:4px 0}.erp-finance-operations form [hidden]{display:none!important}
