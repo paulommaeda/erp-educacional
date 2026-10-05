@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.5
+Stable tag: 0.12.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.12.6 =
+* Operações financeiras com seleção de aluno, contrato, parcela, baixa e responsável, sem digitação de IDs.
 
 = 0.12.5 =
 Gestão financeira organizada em consultas, resumo de valores, operações em modais e cartões mobile. Detalhes e baixa no próprio lançamento, com datas e moeda brasileiras.

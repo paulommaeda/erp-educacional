@@ -90,6 +90,7 @@ final class Controller
         $this->route('/me/perfil','POST',fn()=>true,fn($r)=>$this->catalog->updateOwn($this->payload($r),$this->key($r)));
         $this->route('/me/foto','POST',fn()=>$this->access->person()!==null,fn($r)=>$this->uploadPhoto($r));
         $this->route('/financeiro/alunos','GET',fn()=>current_user_can('erp_consultar_financeiro') && MenuPolicy::can('financeiro'),fn($r)=>$this->studentDirectory($r));
+        $this->route('/financeiro/alunos/(?P<id>\\d+)/opcoes','GET',fn()=>current_user_can('erp_consultar_financeiro') && MenuPolicy::can('financeiro'),fn($r)=>$this->financialOptions((int)$r['id']));
         $this->route('/painel','GET',fn()=>true,fn($r)=>$this->dashboard(\EducacionalERP\Application\Coligadas::management()?SchoolSettings::forViewer($r->get_param('codperiodo')):0));
         $this->route('/perfis','GET',fn()=>Access::isAdmin(),fn()=>MenuPolicy::describe());
         $this->route('/perfis','POST',fn()=>Access::isAdmin(),fn($r)=>$this->policyChange('criar',$this->payload($r),$this->key($r)));
@@ -161,6 +162,15 @@ final class Controller
         $search=trim((string)$r->get_param('search'));if($search!==''){$join.=' AND (p.nome LIKE %s OR a.ra LIKE %s)';$term='%'.$this->db->wp->esc_like($search).'%';$args[]=$term;$args[]=$term;}
         $page=max(1,(int)$r->get_param('page'));$total=(int)$this->db->row('SELECT COUNT(*) AS n'.$join,$args)['n'];
         return ['items'=>$this->db->rows('SELECT c.idcontrato,c.numero,a.ra,p.nome AS aluno,t.nome AS turma,pl.codigo AS periodo,c.plano_nome_snapshot AS plano,c.valor_original_total,c.valor_liquido_total,c.quantidade_parcelas,c.primeiro_vencimento'.$join.' ORDER BY c.idcontrato LIMIT 20 OFFSET %d',[...$args,($page-1)*20]),'total'=>$total,'page'=>$page];
+    }
+    public function financialOptions(int $student): array
+    {
+        $a=$this->db->get('alunos',$student);
+        if((int)$a['codcoligada']!==\EducacionalERP\Application\Coligadas::current())throw new RuleViolation('Aluno não pertence à coligada de trabalho.');
+        $c=$this->db->table('contratos');$m=$this->db->table('matriculas');$b=$this->db->table('baixas');$e=$this->db->table('baixa_estornos');$l=$this->db->table('lancamentos');$p=$this->db->table('parcelas');
+        $contracts=$this->db->rows("SELECT c.idcontrato,c.numero FROM $c c JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d ORDER BY c.idcontrato DESC",[$student]);
+        $payments=$this->db->rows("SELECT b.idbaixa,b.idlancamento,b.data_pagamento,b.valor_pago FROM $b b JOIN $l l ON l.idlancamento=b.idlancamento JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND NOT EXISTS (SELECT 1 FROM $e e WHERE e.idbaixa=b.idbaixa) ORDER BY b.idbaixa DESC",[$student]);
+        return ['contratos'=>$contracts,'lancamentos'=>$this->financeView($student),'baixas'=>$payments,'responsaveis'=>$this->guardianView($student)];
     }
     public function studentDirectory(\WP_REST_Request $r): array
     {
