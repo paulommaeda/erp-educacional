@@ -19,13 +19,15 @@
     const parent=document.querySelector('.journey-content')||document.querySelector('.ederp');if(parent){const bar=el('div',undefined,'erp-coligada-bar'),label=el('label','Coligada de trabalho'),select=el('select');label.append(select);bar.append(label);parent.prepend(bar);api('coligadas').then(d=>{EDERP.coligada=d.codcoligada;d.items.filter(c=>Number(c.ativo)).forEach(c=>select.append(new Option(c.nome+' · '+(c.cnpj||'CNPJ não informado'),c.codcoligada)));select.value=String(d.codcoligada);select.onchange=async()=>{select.disabled=true;try{await api('coligadas/selecionar',{codcoligada:select.value},uuid());const u=new URL(location.href);for(const key of ['erp_periodo','aluno','vinculo','aba'])u.searchParams.delete(key);location.href=u.href;}catch(e){select.disabled=false;bar.append(el('p',e.message));}};}).catch(()=>bar.remove());}
   }
   const labels={idaluno:'ID aluno',codpessoa:'Pessoa',ra:'RA',nome:'Nome',cpf:'CPF',idmatricula:'Matrícula',idturma:'Turma',codperiodo:'Período',idcurso:'Curso',idturno:'Turno',codigo:'Código',descricao:'Descrição',status:'Situação',vencimento:'Vencimento',valor_baixa:'Pago',saldo_aberto:'Saldo contábil',saldo_a_pagar:'Saldo a pagar',desconto_condicional:'Desconto condicional',desconto_incondicional:'Desconto incondicional',valor_original:'Valor original',valor_liquido:'Valor líquido',idlancamento:'Lançamento',idcontrato:'Contrato'};
-  function table(rows, onSelect) {
+  const dateBR=value=>{const match=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})/);return match?match[3]+'/'+match[2]+'/'+match[1]:'—';};
+  Object.assign(labels,{data_matricula:'Data da matrícula',contratos:'Contratos',periodo:'Período',curso:'Curso',turma:'Turma',turno:'Turno'});
+  function table(rows, onSelect, columns=null) {
     const wrap=el('div',undefined,'ederp-table-wrap');
     if(!rows.length){wrap.append(el('p','Nenhum registro encontrado.'));return wrap;}
-    const keys=Object.keys(rows[0]).filter(k=>!['criado_em','atualizado_em','versao','termo_snapshot','ativo_unico','idmatricula_origem'].includes(k)&&typeof rows[0][k]!=='object');
+    const keys=columns?columns.filter(k=>k in rows[0]):Object.keys(rows[0]).filter(k=>!['criado_em','atualizado_em','versao','termo_snapshot','ativo_unico','idmatricula_origem'].includes(k)&&typeof rows[0][k]!=='object');
     const t=el('table',undefined,'journey-cards'), head=el('tr'); keys.forEach(k=>head.append(el('th',labels[k]||k.replaceAll('_',' ')))); if(onSelect)head.append(el('th','Ficha'));
     const thead=el('thead');thead.append(head);t.append(thead);const body=el('tbody');
-    rows.forEach(row=>{const tr=el('tr');keys.forEach(k=>{const td=el('td',k==='status'?({em_aberto:'Em aberto',vencido:'Vencido',baixado:'Baixado',cancelado:'Cancelado',reservado:'Reservado',cursando:'Cursando',transferencia_externa:'Transferência externa',aprovado:'Aprovado',reprovado:'Reprovado',cancelada:'Cancelada'}[row[k]]||row[k]||''):(row[k]??''));td.dataset.label=labels[k]||k.replaceAll('_',' ');tr.append(td);});if(onSelect){const cell=el('td'),b=el('button','Abrir');b.type='button';b.onclick=()=>onSelect(row);cell.append(b);tr.append(cell);}body.append(tr);});
+    rows.forEach(row=>{const tr=el('tr');keys.forEach(k=>{const td=el('td',k==='data_matricula'?dateBR(row[k]):k==='status'?({em_aberto:'Em aberto',vencido:'Vencido',baixado:'Baixado',cancelado:'Cancelado',reservado:'Reservado',cursando:'Cursando',transferencia_externa:'Transferência externa',aprovado:'Aprovado',reprovado:'Reprovado',cancelada:'Cancelada'}[row[k]]||row[k]||''):(row[k]??''));td.dataset.label=labels[k]||k.replaceAll('_',' ');tr.append(td);});if(onSelect){const cell=el('td'),b=el('button','Abrir');b.type='button';b.onclick=()=>onSelect(row);cell.append(b);tr.append(cell);}body.append(tr);});
     t.append(body);wrap.append(t);return wrap;
   }
   function field(name,label,type='text',required=true){const l=el('label',label),i=el(type==='textarea'?'textarea':'input');i.name=name;if(type!=='textarea')i.type=type;i.required=required;l.append(i);return l;}
@@ -97,7 +99,7 @@
           try{if(section==='renew'){box.classList.add('erp-renewal-section');const offers=await api('alunos/'+id+'/ofertas-rematricula?codperiodo='+encodeURIComponent(EDERP.currentPeriod||''));if(current!==generation)return;box.append(el('h3','Rematrícula'));if(!offers.length)box.append(el('p','Nenhuma oferta disponível neste momento.'));
             offers.forEach(o=>{
               const card=el('section',undefined,'ederp-card erp-renewal-flow'),target=o.turmas[0];box.append(card);
-              card.append(el('h3','Rematrícula · '+(target?.nome||'Próximo período')));
+              card.append(el('h3','Rematrícula · '+(o.periodo_destino?.codigo||'Próximo período')),el('p','Disponível de '+dateBR(o.abertura_em)+' até '+dateBR(o.encerramento_em)));
               const start=el('button','Iniciar rematrícula');start.type='button';card.append(start);
               start.onclick=()=>{
                 if(o.indisponivel){const warning=el('div',undefined,'erp-renewal-danger');warning.setAttribute('role','alert');warning.append(el('h4','Rematrícula indisponível'),el('p',o.mensagem_indisponivel));card.replaceChildren(warning);return;}
@@ -115,7 +117,7 @@
                 back.onclick=()=>{step--;paint();};next.onclick=()=>{if(o.manual_aluno&&step===2&&!manualAccepted)return;step++;paint();};paint();
               };
             });
-          }else{const rows=await api('alunos/'+id+'/'+(section==='finance'?'financeiro':'matriculas')+'?codperiodo='+encodeURIComponent(EDERP.currentPeriod||''));if(current!==generation)return;box.append(el('h3',section==='finance'?'Financeiro':'Matrículas'),table(rows));}}
+          }else{const rows=await api('alunos/'+id+'/'+(section==='finance'?'financeiro':'matriculas')+'?codperiodo='+encodeURIComponent(EDERP.currentPeriod||''));if(current!==generation)return;box.append(el('h3',section==='finance'?'Financeiro':'Matrículas'),table(rows,undefined,section==='academic'?['status','data_matricula','contratos','periodo','curso','turma','turno']:null));}}
           catch(e){box.append(el('p',e.message));}
         }
       }
