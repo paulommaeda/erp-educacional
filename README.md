@@ -374,3 +374,7 @@ Validação: PHP-WASM/SQLite para migração lógica e autorização; JSDOM para
 Os botões Excluir em Configurações removem campos e grupos, exclusivamente para administradores. A exclusão de campo exige confirmação em modal e remove seus valores nas pessoas na mesma transação, com auditoria e idempotência. Grupos com campos vinculados não podem ser excluídos: transfira ou exclua seus campos primeiro. Nomes de campos e grupos preservam a capitalização digitada; valores pessoais continuam seguindo sua normalização. Não há conversão automática de nomes antigos, que podem ser corrigidos via Editar.
 
 A ficha mostra Dados do aluno → Pais e responsáveis → Matrículas e turmas → Financeiro → Histórico escolar anterior → grupos adicionais (por ordem configurada), respeitando permissões e mantendo os nomes próprios dos grupos.
+
+
+### Ajustes de configurações (0.12.16)
+Corrigida a definição do identificador antes do registro das rotas de exclusão. Teste de registro verifica correspondência de URLs numéricas e permissões. Tipos de disciplina recebem linhas com espaçamento, nome à esquerda e ações alinhadas; no mobile as ações ficam abaixo do nome. O desconto por pontualidade mostra o valor cadastrado por parcela fora do modal e atualiza após salvar. Removido o link do personalizador WordPress da tela do colégio; personalização interna permanece.

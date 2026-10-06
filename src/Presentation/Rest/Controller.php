@@ -41,6 +41,7 @@ final class Controller
     private function key(\WP_REST_Request $r): string { return Input::key($r->get_header('Idempotency-Key')); }
     public function register(): void
     {
+        $id='(?P<id>[1-9][0-9]{0,17})';
         $extra=new \EducacionalERP\Application\AdditionalFields($this->db);
         $this->route('/grupos-campos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('grupos_campos',(int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/campos-adicionais/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('campos_adicionais',(int)$r['id'],$this->payload($r),$this->key($r)));
@@ -49,7 +50,6 @@ final class Controller
         $this->route('/campos-adicionais','GET',fn()=>Access::isAdmin()||current_user_can('erp_gerenciar_pessoas')||current_user_can('erp_gerenciar_academico'),fn()=>$extra->all());
         $this->route('/campos-adicionais','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->save($this->payload($r),$this->key($r)));
         $cap=static fn(string $c)=>static fn()=>current_user_can($c);
-        $id='(?P<id>[1-9][0-9]{0,17})';
         $companies=new \EducacionalERP\Application\Coligadas($this->db);
         $this->route('/coligadas','GET',fn()=>\EducacionalERP\Application\Coligadas::management(),fn()=>$companies->listing());
         $this->route('/coligadas','POST',fn()=>Access::isAdmin(),fn($r)=>$companies->save($this->payload($r),$this->key($r)));

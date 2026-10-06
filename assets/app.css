@@ -127,3 +127,9 @@
 .erp-person-fields>p,.erp-person-fields>button,.erp-person-fields>.erp-feedback,.erp-person-fields>.erp-person-steps,.erp-person-fields>.erp-person-step,.erp-person-fields>.erp-person-nav,.erp-person-dialog .erp-person-step>p{grid-column:1/-1}
 .erp-person-fields [hidden]{display:none!important}.erp-extra-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.erp-extra-values dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
 .erp-person-fields fieldset>p:empty{display:none!important}.erp-person-fields fieldset>p{grid-column:1/-1}.erp-person-fields label:has(input[type=hidden]){display:none!important}
+
+/* Settings lists: consistent spacing, aligned actions and narrow-screen wrapping. */
+.erp-discipline-type-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--j-line,#ddd)}
+.erp-discipline-type-row:last-child{border-bottom:0}.erp-discipline-type-row>span{min-width:0;overflow-wrap:anywhere}.erp-discipline-type-row button{margin:0!important;min-height:44px}
+.erp-discount-current{margin:16px 0!important;padding:14px 16px;border-radius:10px;background:var(--j-soft,#e6f6ef);font-weight:600}
+@media(max-width:480px){.erp-discipline-type-row{grid-template-columns:1fr 1fr;gap:8px}.erp-discipline-type-row>span{grid-column:1/-1}.erp-discipline-type-row button{width:100%}}
