@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.13
+Stable tag: 0.12.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -16,13 +16,19 @@ Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar.
 
 == Changelog ==
 
-= 0.12.13 =
+= 0.12.14 =
+* Grupos de campos adicionais com botões próprios na ficha do aluno.
+* Permissões por perfil aplicadas também aos dados retornados pelas APIs.
+* Migração dos campos existentes para Dados complementares, preservando valores.
+
+
+= 0.12.14 =
 * Campos adicionais configuráveis e compartilhados: tipos, chave da API, seção, visibilidade, ordem e inativação.
 * Valores na ficha do aluno e APIs de pessoas, com edição em modal e normalização.
 * Cadastro de pessoas sempre com dois campos por linha.
 
 
-= 0.12.13 =
+= 0.12.14 =
 * Paginação financeira bloqueia requisições simultâneas e páginas inexistentes; controles ocultos com página única. Inicialização do app protegida contra execução duplicada.
 
 = 0.12.11 =

@@ -358,3 +358,13 @@ Em Configurações → Campos adicionais, cadastrar nome, chave imutável, tipo,
 As rotas existentes POST /integracao/pessoas e PATCH /integracao/pessoas/{id} aceitam `campos_adicionais` como objeto de chave/valor, por exemplo `{"campos_adicionais":{"nacionalidade":"BRASILEIRA"}}`. Datas usam AAAA-MM-DD, números ponto decimal e listas valores exatos cadastrados. Omitir uma chave preserva seu valor; string vazia limpa o valor. Os payloads de pessoas/alunos incluem esse objeto. A conexão e conferência dos requerimentos do Fluent Forms será uma etapa posterior.
 
 Validado com PHP-WASM/SQLite e JSDOM; migração dbDelta/foreign keys não executada em um MySQL de produção.
+
+
+### Grupos de campos (0.12.14)
+Configurações → Grupos de campos permite criar/editar nome, ordem e situação. Cada campo adicional deve pertencer a um grupo. Na ficha do aluno, cada grupo ativo com campos ativos aparece como aba usando seu nome. Edição dos valores continua exclusiva do administrador.
+
+Em Perfis e acessos, marque os grupos autorizados na seção Grupos na ficha do aluno. Autorizações de múltiplos perfis se somam. O acesso ao grupo não libera sozinho a tela geral de alunos; a área Alunos precisa estar liberada também. Novos grupos ficam exclusivos do administrador até concessão explícita. Dados retornados em pessoas/alunos e definições de campos respeitam as permissões, evitando acesso por chamada direta de API. Grupos inativos não exibem dados e preservam seus valores. Não são novos itens no menu principal: são botões dentro da ficha.
+
+Migração 18 cria o grupo inicial Dados complementares para os campos existentes, sem alterar suas chaves ou valores. Definições e grupos são compartilhados entre coligadas. Exportações incluem grupos e permissões. As rotas /grupos-campos (GET/POST) consultam/configuram grupos; /campos-adicionais passa a receber idgrupo.
+
+Validação: PHP-WASM/SQLite para migração lógica e autorização; JSDOM para abas por grupo e modais de perfis. dbDelta em MySQL e aparência no WordPress precisam de validação no ambiente da escola.

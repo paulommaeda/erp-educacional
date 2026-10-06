@@ -59,8 +59,8 @@ final class MenuPolicy
     public static function describe():array
     {
         Access::requireAdmin();$data=get_option('ederp_menu_policy',[]);$rows=[];
-        foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'user_permissions'=>UserPermissions::forRole($slug),'custom'=>str_starts_with($slug,'erp_custom_')];
-        return ['user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','exportacao','importacao','perfis','configuracoes']))];
+        foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'field_groups'=>get_option('ederp_field_group_policy',[])[$slug]??[],'user_permissions'=>UserPermissions::forRole($slug),'custom'=>str_starts_with($slug,'erp_custom_')];
+        return ['field_groups'=>(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups(),'user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','exportacao','importacao','perfis','configuracoes']))];
     }
     public static function save(array $data):array
     {
@@ -69,10 +69,17 @@ final class MenuPolicy
         $menus=$data['menus']??[];
         if(!is_array($menus)||count($menus)>count(self::MENUS))throw new RuleViolation('Menus inválidos.');
         foreach($menus as $menu)if(!is_string($menu)||!isset(self::MENUS[$menu])||in_array($menu,self::ADMIN,true))throw new RuleViolation('Menu reservado ou inválido.');
+        if(isset($data['field_groups'])){
+            $ids=$data['field_groups'];if(!is_array($ids)||count($ids)>500)throw new RuleViolation('Grupos inválidos.');
+            $known=array_column((new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups(),null,'idgrupo');
+            $valid=[];foreach($ids as $id){$id=\EducacionalERP\Domain\Input::id($id);if(!isset($known[$id]))throw new RuleViolation('Grupo não encontrado.');$valid[]=(string)$id;}
+            $groups=get_option('ederp_field_group_policy',[]);$groups[$role]=array_values(array_unique($valid));
+        }
         if(isset($data['user_permissions'])){if(!is_array($data['user_permissions']))throw new RuleViolation('Permissões inválidas.');UserPermissions::save($role,$data['user_permissions']);}
         $menus=array_values(array_unique($menus));$all=get_option('ederp_menu_policy',[]);$all[$role]=$menus;
         foreach(array_unique(array_values(self::CAPS)) as $cap){$grant=false;foreach(self::CAPS as $menu=>$c)if($cap===$c&&in_array($menu,$menus,true))$grant=true;if($grant)$r->add_cap($cap);else $r->remove_cap($cap);}
         if(in_array('matriculas',$menus,true))$r->add_cap('erp_gerenciar_pessoas');
+        if(isset($groups))update_option('ederp_field_group_policy',$groups,false);
         update_option('ederp_menu_policy',$all,false);return ['salvo'=>true];
     }
     public static function create(array $data):array
