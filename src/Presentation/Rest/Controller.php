@@ -41,6 +41,9 @@ final class Controller
     private function key(\WP_REST_Request $r): string { return Input::key($r->get_header('Idempotency-Key')); }
     public function register(): void
     {
+        $extra=new \EducacionalERP\Application\AdditionalFields($this->db);
+        $this->route('/campos-adicionais','GET',fn()=>Access::isAdmin()||current_user_can('erp_gerenciar_pessoas')||current_user_can('erp_gerenciar_academico'),fn()=>$extra->all());
+        $this->route('/campos-adicionais','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->save($this->payload($r),$this->key($r)));
         $cap=static fn(string $c)=>static fn()=>current_user_can($c);
         $id='(?P<id>[1-9][0-9]{0,17})';
         $companies=new \EducacionalERP\Application\Coligadas($this->db);

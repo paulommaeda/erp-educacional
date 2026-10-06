@@ -10,7 +10,7 @@ final class CivilStatus
     public function decorate(array $person):array
     {
         if(!empty($person['idestado_civil']))$person['estado_civil']=$this->db->get('estados_civis',(int)$person['idestado_civil'])['nome'];
-        return $person;
+        return (new AdditionalFields($this->db))->decorate($person);
     }
     public function resolve(mixed $value):array
     {

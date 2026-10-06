@@ -350,3 +350,11 @@ Atualização das mensagens a cada 7 segundos com o portal aberto; sem integraç
 Validação: SQLite com stubs WordPress para autorização entre famílias, canais e coligadas, supervisão, histórico, idempotência e anexos privados; JSDOM para fluxo; Chromium 390px/desktop para layout. Migração dbDelta/MySQL, autenticação e limites do servidor devem ser homologados na instalação real.
 
 Exportação seletiva inclui categoria Chat com canais, membros, conversas, mensagens, anexos privados em base64 e leituras. A exportação de anexos pode produzir arquivos grandes e é exclusiva do administrador.
+
+
+### Campos adicionais (0.12.13)
+Em Configurações → Campos adicionais, cadastrar nome, chave imutável, tipo, opções, ordem e visibilidade. Os campos são globais, pois Pessoas são compartilhadas entre coligadas. Não exibidos no cadastro permanecem na aba Campos adicionais da ficha do aluno. Apenas administradores configuram campos e editam valores na ficha. O perfil pessoal não permite editar os campos adicionais nesta versão. Inativação preserva os valores armazenados.
+
+As rotas existentes POST /integracao/pessoas e PATCH /integracao/pessoas/{id} aceitam `campos_adicionais` como objeto de chave/valor, por exemplo `{"campos_adicionais":{"nacionalidade":"BRASILEIRA"}}`. Datas usam AAAA-MM-DD, números ponto decimal e listas valores exatos cadastrados. Omitir uma chave preserva seu valor; string vazia limpa o valor. Os payloads de pessoas/alunos incluem esse objeto. A conexão e conferência dos requerimentos do Fluent Forms será uma etapa posterior.
+
+Validado com PHP-WASM/SQLite e JSDOM; migração dbDelta/foreign keys não executada em um MySQL de produção.

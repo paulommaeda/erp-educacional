@@ -6,7 +6,18 @@ document.addEventListener('change',e=>{const i=e.target;if(i.matches('input,text
 const node=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=text;return x;};
 function field(parent,name,title,value='',type='text'){const label=node('label',title),i=node('input');i.name=name;i.type=type;i.value=value??'';label.append(i);parent.append(label);return i;}
 function choice(parent,name,title,options,value){const label=node('label',title),s=node('select');s.name=name;for(const [v,t] of options){const o=node('option',t);o.value=v;s.append(o);}s.value=value??'';label.append(s);parent.append(label);return s;}
-window.EDERPFields={attach(f,p){
+function extras(f,p,all=false){
+ const defs=(EDERP.additionalFields||[]).filter(d=>Number(d.ativo)&&(all||Number(d.exibir_pessoa)));
+ const groups={};for(const d of defs){let target;if(all){target=f;}else if(d.secao==='identificacao'){target=f;}else if(d.secao==='pessoais'){target=f.querySelector('[name=rg]').closest('fieldset');}else if(d.secao==='endereco'){target=f.querySelector('[name=rua]').closest('fieldset');}else{groups.outros??=node('fieldset');groups.outros.dataset.section='outros';if(!groups.outros.parentNode){groups.outros.append(node('legend','Outros'));f.append(groups.outros);}target=groups.outros;}
+ let i;const value=p.campos_adicionais?.[d.chave]??'';
+ if(d.tipo==='selecao')i=choice(target,'extra__'+d.chave,d.nome,[['','Não informado'],...d.opcoes.split(/\r?\n/).filter(x=>x.trim()).map(x=>[x.trim(),x.trim()])],value);
+ else if(d.tipo==='texto_longo'){const l=node('label',d.nome);i=node('textarea');i.name='extra__'+d.chave;i.value=value;l.append(i);target.append(l);}
+ else{i=field(target,'extra__'+d.chave,d.nome,value,({numero:'number',data:'date',email:'email'})[d.tipo]||'text');if(d.tipo==='numero')i.step='any';}
+ if(['texto','texto_longo'].includes(d.tipo))i.addEventListener('change',()=>i.value=i.value.toUpperCase());
+ }
+}
+window.EDERPFields={extras,attach(f,p){
+ f.classList.add('erp-person-fields');
  const box=node('fieldset'),legend=node('legend','Documentos e informações pessoais');box.append(legend);f.append(box);
  for(const [name,title] of [['rg','RG']])field(box,name,title,p[name]);
  choice(box,'sexo','Sexo',[['','Não informado'],['MASCULINO','MASCULINO'],['FEMININO','FEMININO']],p.sexo?.toUpperCase());
@@ -37,6 +48,7 @@ window.EDERPFields={attach(f,p){
  select.onclick=()=>{if(!window.wp?.media)return;const frame=wp.media({title:'Foto da pessoa',multiple:false,library:{type:'image'},button:{text:'Usar foto'}});frame.on('select',()=>{const a=frame.state().get('selection').first().toJSON();id.value=a.id;show(a.sizes?.thumbnail?.url||a.url);});const dialog=f.closest('dialog');if(dialog?.open){dialog.dataset.media='open';dialog.close();frame.on('close',()=>{dialog.showModal();delete dialog.dataset.media;});}frame.open();};
  if(!window.wp?.media){select.disabled=true;photo.append(node('p','O envio de fotos exige acesso à biblioteca de mídia do WordPress.'));}
  if(id.value&&window.wp?.media){const a=wp.media.attachment(id.value);a.fetch().then(()=>show(a.get('sizes')?.thumbnail?.url||a.get('url')));}
+ if(!f.dataset.skipExtras)extras(f,p);
  remove.onclick=()=>{id.value='';img.hidden=true;};f.addEventListener('reset',()=>{id.value='';img.hidden=true;});
 }};
 })();

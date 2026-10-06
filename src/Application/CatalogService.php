@@ -44,7 +44,7 @@ final class CatalogService
             if($table!=='pessoas')$data['codcoligada']=Input::id($d['codcoligada']??Coligadas::current());
             $id=$this->db->insert($table,$data);
             $account=[];
-            if($table==='pessoas') { $account=$this->accounts->ensure($id,$d['user_login']??null); }
+            if($table==='pessoas') { $account=$this->accounts->ensure($id,$d['user_login']??null); (new AdditionalFields($this->db))->write($id,$d['campos_adicionais']??null,$key); }
             if($table==='alunos') { $this->accounts->ensure((int)$data['codpessoa']); }
             $this->db->audit($table,$id,'criar',null,$data,$key);
             return ['id'=>(string)$id]+$account;
@@ -108,6 +108,7 @@ final class CatalogService
             if(array_key_exists('estado_civil',$data)&&!array_key_exists('idestado_civil',$data))$data['idestado_civil']=$data['estado_civil'];
             $valid=$this->personData(array_merge($before,$data));
             if(isset($data['ativo'])) { if(!in_array($data['ativo'],[0,1,'0','1',true,false],true)) { throw new RuleViolation('Situação inválida.'); } $valid['ativo']=(int)$data['ativo']; }
+            (new AdditionalFields($this->db))->write($id,$data['campos_adicionais']??null,$key);
             $valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);
             $account=$this->accounts->ensure($id,$data['user_login']??null);
             $this->db->audit('pessoas',$id,'editar',$before,$valid,$key);
@@ -127,7 +128,8 @@ final class CatalogService
             if(!isset($data['versao'])||(string)$data['versao']!==$before['versao'])throw new RuleViolation('Seus dados mudaram. Recarregue o perfil antes de salvar.');
             if(!empty($data['foto_attachment_id'])&&(int)$data['foto_attachment_id']!==(int)$before['foto_attachment_id']&&!\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()&&(int)get_post_field('post_author',(int)$data['foto_attachment_id'])!==$user)throw new RuleViolation('Use uma foto enviada pela sua própria conta.');
             if(array_key_exists('estado_civil',$data)&&!array_key_exists('idestado_civil',$data))$data['idestado_civil']=$data['estado_civil'];
-            $valid=$this->personData(array_merge($before,$data));$valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);$this->accounts->sync($id);
+            $valid=$this->personData(array_merge($before,$data));
+            $valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);$this->accounts->sync($id);
             $this->db->audit('pessoas',$id,'editar_proprio_perfil',$before,$valid,$key);
             return ['salvo'=>true,'versao'=>(string)((int)$before['versao']+1)];
         }));
