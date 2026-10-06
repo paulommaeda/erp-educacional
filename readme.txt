@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.13.1
+Stable tag: 0.13.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.13.2 =
+* Conferência por CPF sem comparação de datas vazias.
+* CPF identifica requerimentos e aproveita pessoas existentes sem sobrescrever dados.
+* Configurações em dez seções carregadas sob demanda e mantidas em memória.
+
 
 = 0.13.1 =
 * Estilização completa e responsiva dos modais de integração e mapeamento da API.

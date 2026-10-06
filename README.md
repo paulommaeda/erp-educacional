@@ -394,3 +394,11 @@ A senha é criptografada AES-GCM com chave derivada do salt WordPress e jamais d
 REST: /api-pessoas/configuracao GET/POST, /testar POST, /buscar POST (pagina), /requerimentos GET, /requerimentos/{id} GET, /requerimentos/{id}/confirmar POST. Escritas de configuração, busca e confirmação usam Idempotency-Key; permissões e nonce seguem o ERP. A fila é global porque os cadastros de pessoas são compartilhados entre coligadas. Exportação de Pessoas inclui a fila; credenciais não são exportadas.
 
 Validado com resposta HTTP simulada, PHP-WASM/SQLite e JSDOM: criptografia/autenticação, descoberta, conversões, fila sem criar pessoas, duplicidade, confirmação idempotente e rollback, além de registro de rotas existente. Não foi validada conexão real com o CRM nem migração dbDelta em MySQL.
+
+
+### CPF e configurações sob demanda (0.13.2)
+Esta versão substitui o ID externo pelo CPF da pessoa principal para identificar requerimentos. Mapear CPF no bloco Aluno (ou na pessoa principal quando não houver bloco Aluno) é obrigatório para buscar; documento normalizado em 11 dígitos. campo_id é mantido apenas para compatibilidade e deixa de ser necessário. A tabela da fila ganha cpf_origem com unicidade. Migração associa CPF aos registros anteriores quando disponível; registros antigos sem CPF continuam conferíveis. Não converte CODPESSOA em CPF: a PK interna permanece intacta.
+
+Conferência sugere somente cadastros pelo CPF, evitando consultas por nascimento ausente. Na criação, um CPF já cadastrado reaproveita a pessoa sem atualizar dados. Novas pessoas continuam submetidas à validação existente de CPF e demais campos.
+
+Configurações agora possuem dez abas: período/rematrícula, colégio/cores, coligadas, pontualidade, numeração, estados civis, tipos de disciplina, grupos, campos e API. Somente a aba inicial busca dados no carregamento; as demais carregam ao abrir. Conteúdos são mantidos enquanto a página está aberta e atualizados após salvar. Testes comprovam uma consulta inicial e ausência de novas chamadas ao revisitar abas já carregadas.

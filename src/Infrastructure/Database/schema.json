@@ -3010,7 +3010,8 @@
       "conferido_por": "bigint(20) unsigned NULL",
       "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
       "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
-      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "cpf_origem": "varchar(11) NULL"
     },
     "pk": [
       "idrequerimento"
@@ -3018,6 +3019,9 @@
     "unique": [
       [
         "chave_origem"
+      ],
+      [
+        "cpf_origem"
       ]
     ],
     "indexes": [
