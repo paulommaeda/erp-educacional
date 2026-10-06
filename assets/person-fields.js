@@ -2,7 +2,7 @@
 'use strict';
 let datasets;
 const uppercaseFields=new Set(['nome','codigo','descricao','codpessoa_origem','ra','rg','rua','numero','complemento','bairro','cep','cidade','estado','profissao','religiao','igreja']);
-document.addEventListener('change',e=>{const i=e.target;if(i.matches('input,textarea')&&uppercaseFields.has(i.name))i.value=i.value.toUpperCase();});
+document.addEventListener('change',e=>{const i=e.target;if(i.matches('input,textarea')&&uppercaseFields.has(i.name)&&i.dataset.preserveCase!=='1')i.value=i.value.toUpperCase();});
 const node=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=text;return x;};
 function field(parent,name,title,value='',type='text'){const label=node('label',title),i=node('input');i.name=name;i.type=type;i.value=value??'';label.append(i);parent.append(label);return i;}
 function choice(parent,name,title,options,value){const label=node('label',title),s=node('select');s.name=name;for(const [v,t] of options){const o=node('option',t);o.value=v;s.append(o);}s.value=value??'';label.append(s);parent.append(label);return s;}

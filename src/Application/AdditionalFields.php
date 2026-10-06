@@ -52,6 +52,23 @@ final class AdditionalFields
             $this->db->audit('campos_adicionais',$id,$before?'editar':'criar',$before,$row,$key);return $this->db->get('campos_adicionais',$id);
         });
     }
+    public function remove(string $type,int $id,array $d,string $key):array
+    {
+        Access::requireAdmin();if(!in_array($type,['campos_adicionais','grupos_campos'],true))throw new RuleViolation('Exclusão inválida.');
+        return $this->db->atomic(fn()=>(new Operations($this->db))->run($key,'excluir_'.$type,['id'=>$id]+$d,function()use($type,$id,$d,$key){
+            $before=$this->db->get($type,$id,true);if((string)($d['versao']??'')!==(string)$before['versao'])throw new RuleViolation('Cadastro alterado. Recarregue antes de excluir.');
+            $count=0;
+            if($type==='grupos_campos'){
+                if($this->db->row('SELECT idcampo FROM '.$this->db->table('campos_adicionais').' WHERE idgrupo=%d LIMIT 1',[$id]))throw new RuleViolation('Este grupo possui campos vinculados. Transfira ou exclua os campos antes de excluir o grupo.');
+            }else{
+                $t=$this->db->table('pessoa_campos_adicionais');$count=(int)$this->db->row("SELECT COUNT(*) AS n FROM $t WHERE idcampo=%d",[$id])['n'];
+                if(($d['confirmar_exclusao']??null)!==true)throw new RuleViolation('Confirme a exclusão do campo e dos valores cadastrados.');
+                $this->db->query("DELETE FROM $t WHERE idcampo=%d",[$id]);
+            }
+            $pk=$type==='grupos_campos'?'idgrupo':'idcampo';$this->db->query('DELETE FROM '.$this->db->table($type)." WHERE $pk=%d",[$id]);
+            $this->db->audit($type,$id,'excluir',$before,['valores_excluidos'=>$count],$key);return ['excluido'=>true,'valores_excluidos'=>$count];
+        }));
+    }
     public function decorate(array $p):array
     {
         $values=$this->db->rows('SELECT c.chave,v.valor FROM '.$this->db->table('pessoa_campos_adicionais').' v JOIN '.$this->db->table('campos_adicionais').' c ON c.idcampo=v.idcampo WHERE v.codpessoa=%d AND c.ativo=1',[(int)$p['codpessoa']]);

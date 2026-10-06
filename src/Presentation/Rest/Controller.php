@@ -42,6 +42,8 @@ final class Controller
     public function register(): void
     {
         $extra=new \EducacionalERP\Application\AdditionalFields($this->db);
+        $this->route('/grupos-campos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('grupos_campos',(int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/campos-adicionais/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('campos_adicionais',(int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/grupos-campos','GET',fn()=>Access::isAdmin()||current_user_can('erp_gerenciar_pessoas')||current_user_can('erp_gerenciar_academico'),fn()=>$extra->groups());
         $this->route('/grupos-campos','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->saveGroup($this->payload($r),$this->key($r)));
         $this->route('/campos-adicionais','GET',fn()=>Access::isAdmin()||current_user_can('erp_gerenciar_pessoas')||current_user_can('erp_gerenciar_academico'),fn()=>$extra->all());

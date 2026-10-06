@@ -368,3 +368,9 @@ Em Perfis e acessos, marque os grupos autorizados na seção Grupos na ficha do 
 Migração 18 cria o grupo inicial Dados complementares para os campos existentes, sem alterar suas chaves ou valores. Definições e grupos são compartilhados entre coligadas. Exportações incluem grupos e permissões. As rotas /grupos-campos (GET/POST) consultam/configuram grupos; /campos-adicionais passa a receber idgrupo.
 
 Validação: PHP-WASM/SQLite para migração lógica e autorização; JSDOM para abas por grupo e modais de perfis. dbDelta em MySQL e aparência no WordPress precisam de validação no ambiente da escola.
+
+
+### Exclusão e labels (0.12.15)
+Os botões Excluir em Configurações removem campos e grupos, exclusivamente para administradores. A exclusão de campo exige confirmação em modal e remove seus valores nas pessoas na mesma transação, com auditoria e idempotência. Grupos com campos vinculados não podem ser excluídos: transfira ou exclua seus campos primeiro. Nomes de campos e grupos preservam a capitalização digitada; valores pessoais continuam seguindo sua normalização. Não há conversão automática de nomes antigos, que podem ser corrigidos via Editar.
+
+A ficha mostra Dados do aluno → Pais e responsáveis → Matrículas e turmas → Financeiro → Histórico escolar anterior → grupos adicionais (por ordem configurada), respeitando permissões e mantendo os nomes próprios dos grupos.

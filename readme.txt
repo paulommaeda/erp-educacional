@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.14
+Stable tag: 0.12.15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.12.15 =
+* Exclusão de campos com confirmação e remoção dos respectivos valores; grupos com campos são protegidos.
+* Nomes de campos e grupos preservam capitalização.
+* Ordem da ficha: dados, responsáveis, matrículas, financeiro, histórico e grupos adicionais.
+
 
 = 0.12.14 =
 * Grupos de campos adicionais com botões próprios na ficha do aluno.
