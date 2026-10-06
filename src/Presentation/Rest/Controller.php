@@ -42,6 +42,15 @@ final class Controller
     public function register(): void
     {
         $id='(?P<id>[1-9][0-9]{0,17})';
+        $external=new \EducacionalERP\Application\ExternalPeopleApi($this->db,$this->catalog);
+        $this->route('/api-pessoas/configuracao','GET',fn()=>Access::isAdmin(),fn()=>$external->settings());
+        $this->route('/api-pessoas/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>$external->save($this->payload($r),$this->key($r)));
+        $this->route('/api-pessoas/testar','POST',fn()=>Access::isAdmin(),fn()=>$external->test());
+        $this->route('/api-pessoas/buscar','POST',fn()=>Access::isAdmin(),fn($r)=>$external->sync((int)($this->payload($r)['pagina']??1),$this->key($r)));
+        $review=fn()=>Access::isAdmin()||(MenuPolicy::can('requerimentos')&&current_user_can('erp_gerenciar_pessoas'));
+        $this->route('/api-pessoas/requerimentos','GET',$review,fn($r)=>$external->listing((int)($r->get_param('page')??1)));
+        $this->route('/api-pessoas/requerimentos/'.$id,'GET',$review,fn($r)=>$external->detail((int)$r['id']));
+        $this->route('/api-pessoas/requerimentos/'.$id.'/confirmar','POST',$review,fn($r)=>$external->confirm((int)$r['id'],$this->payload($r),$this->key($r)));
         $extra=new \EducacionalERP\Application\AdditionalFields($this->db);
         $this->route('/grupos-campos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('grupos_campos',(int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/campos-adicionais/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('campos_adicionais',(int)$r['id'],$this->payload($r),$this->key($r)));

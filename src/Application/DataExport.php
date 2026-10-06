@@ -8,7 +8,7 @@ use EducacionalERP\Domain\RuleViolation;
 final class DataExport
 {
     public const GROUPS=[
-        'pessoas'=>['nome'=>'Pessoas e endereços','tabelas'=>['pessoas','pessoa_enderecos','estados_civis','numeracao_pessoas','grupos_campos','campos_adicionais','pessoa_campos_adicionais']],
+        'pessoas'=>['nome'=>'Pessoas e endereços','tabelas'=>['pessoas','pessoa_enderecos','estados_civis','numeracao_pessoas','api_requerimentos','grupos_campos','campos_adicionais','pessoa_campos_adicionais']],
         'usuarios'=>['nome'=>'Usuários vinculados (sem senhas)','tabelas'=>['pessoa_usuarios','usuarios']],
         'alunos'=>['nome'=>'Alunos e responsáveis','tabelas'=>['alunos','aluno_responsaveis']],
         'academico'=>['nome'=>'Estrutura acadêmica e planos','tabelas'=>['coligadas','periodos_letivos','cursos','turnos','planos_pagamento','turmas']],
@@ -23,7 +23,7 @@ final class DataExport
     public function __construct(private Database $db) {}
     public function catalog():array
     {
-        Access::requireAdmin();return ['categorias'=>self::GROUPS,'coligadas'=>$this->db->rows('SELECT codcoligada,nome,cnpj,ativo FROM '.$this->db->table('coligadas').' ORDER BY nome'),'coligada_atual'=>Coligadas::current(),'versao'=>defined('EDERP_VERSION')?EDERP_VERSION:'0.12.16'];
+        Access::requireAdmin();return ['categorias'=>self::GROUPS,'coligadas'=>$this->db->rows('SELECT codcoligada,nome,cnpj,ativo FROM '.$this->db->table('coligadas').' ORDER BY nome'),'coligada_atual'=>Coligadas::current(),'versao'=>defined('EDERP_VERSION')?EDERP_VERSION:'0.13.0'];
     }
     private function companies(array $d):array
     {

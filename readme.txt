@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.12.16
+Stable tag: 0.13.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.13.0 =
+* Conexão HTTPS com autenticação Basic para importar pessoas via API.
+* Teste de conexão, descoberta de campos e mapeamento por bloco de pessoa, incluindo campos adicionais.
+* Requerimentos pendentes para conferência, aproveitamento de cadastros e criação transacional de pessoas.
+* Busca manual por página, senha criptografada e prevenção de importações repetidas.
+
 
 = 0.12.16 =
 * Corrige rotas de exclusão de grupos e campos.
