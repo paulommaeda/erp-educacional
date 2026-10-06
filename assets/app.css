@@ -134,3 +134,25 @@
 .erp-discount-current{margin:16px 0!important;padding:14px 16px;border-radius:10px;background:var(--j-soft,#e6f6ef);font-weight:600}
 @media(max-width:480px){.erp-discipline-type-row{grid-template-columns:1fr 1fr;gap:8px}.erp-discipline-type-row>span{grid-column:1/-1}.erp-discipline-type-row button{width:100%}}
 .erp-external-dialog{width:min(1050px,calc(100vw - 24px));max-width:1050px}.erp-external-dialog fieldset{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;grid-column:1/-1;min-width:0}.erp-external-dialog label{min-width:0}.erp-api-map-rows{grid-column:1/-1;display:grid;gap:16px}.erp-api-map-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:16px;border:1px solid var(--j-line,#ddd);border-radius:10px}.erp-api-preview{grid-column:1/-1;max-height:350px;overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}.erp-external-dialog [hidden]{display:none!important}@media(max-width:650px){.erp-api-map-row,.erp-external-dialog fieldset{grid-template-columns:1fr}.erp-external-settings .ederp-tools{display:flex;flex-wrap:wrap;gap:10px}.erp-external-settings .ederp-tools button{flex:1 1 180px}}
+
+/* API dialogs live under body and therefore need their own component styling. */
+dialog.erp-external-dialog{border:1px solid var(--j-line,#d6e1dd);border-radius:20px;padding:0;background:#fff;color:var(--j-ink,#183d37);font-family:Inter,system-ui,sans-serif;font-size:15px;line-height:1.5;width:min(1060px,calc(100vw - 32px));max-width:1060px;max-height:calc(100dvh - 32px);overflow:auto;box-sizing:border-box;box-shadow:0 24px 80px #102d3440}
+dialog.erp-external-dialog::backdrop{background:#102d346b;backdrop-filter:blur(3px)}
+dialog.erp-external-dialog .erp-modal-header{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px;margin:0;border-bottom:1px solid var(--j-line,#d6e1dd);background:#fff;position:sticky;top:0;z-index:2}
+dialog.erp-external-dialog .erp-modal-header h2{margin:0;font:700 22px/1.3 Inter,system-ui,sans-serif;overflow-wrap:anywhere}
+dialog.erp-external-dialog .ederp-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;margin:0;padding:24px;align-items:start}
+dialog.erp-external-dialog label{display:grid;gap:7px;min-width:0;font-weight:600;font-size:14px}
+dialog.erp-external-dialog input,dialog.erp-external-dialog select,dialog.erp-external-dialog textarea{display:block;width:100%;min-width:0;box-sizing:border-box;border:1px solid var(--j-line,#becfc8);border-radius:10px;background:#fff;color:inherit;padding:11px 12px;font:400 15px/1.4 Inter,system-ui,sans-serif;min-height:46px;margin:0}
+dialog.erp-external-dialog textarea{min-height:100px;resize:vertical}
+dialog.erp-external-dialog :is(input,select,textarea,button):focus-visible{outline:3px solid #58bcae;outline-offset:2px}
+dialog.erp-external-dialog button{display:inline-flex;align-items:center;justify-content:center;min-height:46px;border:1px solid var(--j-line,#becfc8);border-radius:10px;padding:11px 16px;background:#fff;color:var(--j-ink,#183d37);font:600 14px/1.4 Inter,system-ui,sans-serif;cursor:pointer;margin:0;white-space:normal}
+dialog.erp-external-dialog button:hover{background:#f1f7f4}dialog.erp-external-dialog button:disabled{opacity:.55;cursor:wait}
+dialog.erp-external-dialog button[type=submit]{grid-column:1/-1;justify-self:end;min-width:190px;background:var(--j-primary,#087f69);border-color:transparent;color:#fff}
+dialog.erp-external-dialog .ederp-form>p{grid-column:1/-1;margin:0;padding:14px 16px;background:#f1f7f4;border-radius:10px;font-size:14px}
+dialog.erp-external-dialog .erp-api-map-row{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:20px;background:#f8fbfa;border:1px solid var(--j-line,#d6e1dd);border-radius:14px;align-items:start}
+dialog.erp-external-dialog .erp-api-map-row>button{align-self:end;border-color:#e5baba;color:#a12828;background:#fff;min-height:46px}
+dialog.erp-external-dialog .erp-api-preview:empty{display:none}
+dialog.erp-external-dialog .erp-api-preview{margin:0;padding:16px;background:#f1f5f3;border-radius:12px;font:13px/1.6 ui-monospace,monospace}
+dialog.erp-external-dialog>.erp-feedback{margin:0 24px 24px;padding:12px 16px;border-radius:10px}dialog.erp-external-dialog>.erp-feedback:empty{display:none}
+dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;border:1px solid #f3c6c3}
+@media(max-width:700px){dialog.erp-external-dialog{width:calc(100vw - 16px);max-height:calc(100dvh - 16px);border-radius:14px}dialog.erp-external-dialog .erp-modal-header{padding:16px;gap:10px}dialog.erp-external-dialog .erp-modal-header h2{font-size:19px}dialog.erp-external-dialog .ederp-form{grid-template-columns:1fr;padding:16px;gap:14px}dialog.erp-external-dialog .erp-api-map-row{grid-template-columns:1fr;padding:14px;gap:14px}dialog.erp-external-dialog button[type=submit]{justify-self:stretch;width:100%}dialog.erp-external-dialog>.erp-feedback{margin:0 16px 16px}}
