@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '20';
+    public const VERSION = '21';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -37,13 +37,15 @@ final class Installer
                     $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index)if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$keys[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];
                     foreach($keys as $key=>$cols){ksort($cols);$cols=array_values($cols);if(!in_array('codcoligada',$cols,true)&&!in_array($cols,$meta['unique'],true))$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
                 }
+                if($name==='api_requerimentos'){
+                    $obsolete=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index)if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$obsolete[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];
+                    foreach($obsolete as $key=>$cols){ksort($cols);if(array_values($cols)===['cpf_origem'])$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
+                }
                 SchemaIndexes::ensure($this->db,$table,$meta);
                 $columns = $this->db->rows("SHOW COLUMNS FROM $table");
                 if (count($columns) !== count($meta['columns'])) { throw new \RuntimeException('Estrutura divergente em ' . $name); }
             }
             (new \EducacionalERP\Application\AdditionalFields($this->db))->migrateGroups();
-            $requests=$this->db->table('api_requerimentos');foreach($this->db->rows("SELECT idrequerimento,pessoas_json FROM $requests WHERE cpf_origem IS NULL ORDER BY idrequerimento") as $record){$people=json_decode($record['pessoas_json'],true);if(!is_array($people)||!$people)continue;$main=$people['aluno']??reset($people);$cpf=preg_replace('/\D/','',(string)($main['cpf']??''));if(strlen($cpf)===11&&!$this->db->row("SELECT idrequerimento FROM $requests WHERE cpf_origem=%s",[$cpf]))$this->db->update('api_requerimentos',(int)$record['idrequerimento'],['cpf_origem'=>$cpf]);}
-
             if(version_compare((string)get_option('ederp_schema_version','0'),'8','<')){
                 $plans=$this->db->table('planos_pagamento');$classes=$this->db->table('turmas');
                 foreach($this->db->rows("SELECT idplano,MIN(codperiodo) AS codperiodo FROM $classes WHERE idplano IS NOT NULL GROUP BY idplano HAVING COUNT(DISTINCT codperiodo)=1") as $row)

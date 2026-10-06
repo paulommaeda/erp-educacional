@@ -50,15 +50,25 @@ final class ExternalPeopleApi
         $out=[];foreach($this->config()['mapeamento']??[] as $m){$v=empty($m['origem'])?null:self::value($row,$m['origem']);if($v===null||$v==='')$v=$m['padrao']??'';if(is_array($v))$v=implode(', ',array_map(fn($x)=>is_scalar($x)?(string)$x:'', $v));if(!is_scalar($v)&&$v!==null)throw new RuleViolation('Campo de origem inválido.');$v=(string)$v;if(isset($m['traducao'][$v]))$v=(string)$m['traducao'][$v];$target=$m['destino'];if($target==='data_nascimento'&&preg_match('/^(\d{2})\/(\d{2})\/(\d{4})$/D',$v,$match))$v="$match[3]-$match[2]-$match[1]";if($target==='sexo')$v=['M'=>'MASCULINO','F'=>'FEMININO'][strtoupper($v)]??strtoupper($v);$person=$m['pessoa'];if(str_starts_with($target,'extra:'))$out[$person]['campos_adicionais'][substr($target,6)]=$v;else $out[$person][$target]=$v;}
         return array_filter($out,fn($p)=>!empty($p['nome']));
     }
+    private static function signature(array $value):string
+    {
+        $sort=function(array $a)use(&$sort):array{if(!array_is_list($a))ksort($a);foreach($a as &$v)if(is_array($v))$v=$sort($v);return $a;};return hash('sha256',wp_json_encode($sort($value)));
+    }
     public function sync(int $page,string $key):array
     {
         Access::requireAdmin();if($page<1||$page>100000)throw new RuleViolation('Página inválida.');$c=$this->config();$response=$this->fetch($page);$counts=['novos'=>0,'existentes'=>0,'sem_pessoas'=>0];$t=$this->db->table('api_requerimentos');
-        foreach($response['rows'] as $row){$people=$this->map($row);if(!$people){$counts['sem_pessoas']++;continue;}$main=$people['aluno']??reset($people);$cpf=preg_replace('/\D/','',(string)($main['cpf']??''));if(!preg_match('/^\d{11}$/D',$cpf))throw new RuleViolation('Mapeie o CPF da pessoa principal: ele é obrigatório e deve ter 11 dígitos.');$external=$cpf;$source=hash('sha256','cpf|'.$cpf);$created=$this->db->atomic(function()use($t,$source,$external,$people,$key,$cpf){if($this->db->row("SELECT idrequerimento FROM $t WHERE chave_origem=%s OR cpf_origem=%s FOR UPDATE",[$source,$cpf]))return false;$id=$this->db->insert('api_requerimentos',['cpf_origem'=>$cpf,'chave_origem'=>$source,'identificador'=>$external,'pessoas_json'=>wp_json_encode($people),'status'=>'pendente']);$this->db->audit('api_requerimentos',$id,'buscar_api',null,['identificador'=>$external],$key);return true;});$counts[$created?'novos':'existentes']++;}
+        foreach($response['rows'] as $row){$people=$this->map($row);if(!$people){$counts['sem_pessoas']++;continue;}$external=null;$path=$c['campo_id']??'';if($path!==''&&!str_contains(strtolower($path),'cpf'))$external=self::value($row,$path);
+            if(!is_scalar($external)||trim((string)$external)===''){$external=null;foreach(['entry_id','submission_id','id'] as $candidate){$value=self::value($row,$candidate);if(is_scalar($value)&&trim((string)$value)!==''){$external=$value;break;}}}
+            $fingerprint=self::signature($row);$source=hash('sha256',strtolower((string)parse_url($c['url'],PHP_URL_HOST)).'|'.parse_url($c['url'],PHP_URL_PATH).'|'.($external!==null?'id|'.(string)$external:'json|'.$fingerprint));$display=$external!==null?Input::text((string)$external,191):'REGISTRO-'.substr($fingerprint,0,16);
+            $created=$this->db->atomic(function()use($t,$source,$display,$external,$people,$key){if($this->db->row("SELECT idrequerimento FROM $t WHERE chave_origem=%s FOR UPDATE",[$source]))return false;
+                // Legacy requests had no record identity; reconcile identical mapped snapshots once.
+                foreach($this->db->rows("SELECT * FROM $t WHERE identidade_registro=0 FOR UPDATE") as $old){$snapshot=json_decode($old['pessoas_json'],true);if(is_array($snapshot)&&self::signature($snapshot)===self::signature($people)){$this->db->update('api_requerimentos',(int)$old['idrequerimento'],['chave_origem'=>$source,'identificador'=>$display,'identidade_registro'=>1,'id_externo'=>$external===null?null:(string)$external]);return false;}}
+                $id=$this->db->insert('api_requerimentos',['identidade_registro'=>1,'id_externo'=>$external===null?null:(string)$external,'chave_origem'=>$source,'identificador'=>$display,'pessoas_json'=>wp_json_encode($people),'status'=>'pendente']);$this->db->audit('api_requerimentos',$id,'buscar_api',null,['identificador'=>$display],$key);return true;});$counts[$created?'novos':'existentes']++;}
         return $counts+['pagina'=>$page,'meta'=>$response['meta'],'recebidos'=>count($response['rows'])];
     }
     public function listing(int $page):array
     {
-        $page=max(1,$page);$t=$this->db->table('api_requerimentos');$rows=$this->db->rows("SELECT * FROM $t ORDER BY idrequerimento DESC LIMIT 20 OFFSET %d",[($page-1)*20]);foreach($rows as &$row){$p=json_decode($row['pessoas_json'],true);$row['nome']=$p['aluno']['nome']??reset($p)['nome']??'Pessoa';unset($row['pessoas_json']);}return ['items'=>$rows,'total'=>(int)$this->db->row("SELECT COUNT(*) AS n FROM $t")['n'],'page'=>$page];
+        $page=max(1,$page);$t=$this->db->table('api_requerimentos');$rows=$this->db->rows("SELECT * FROM $t WHERE status='pendente' ORDER BY idrequerimento DESC LIMIT 20 OFFSET %d",[($page-1)*20]);foreach($rows as &$row){$p=json_decode($row['pessoas_json'],true);$row['nome']=$p['aluno']['nome']??reset($p)['nome']??'Pessoa';unset($row['pessoas_json']);}return ['items'=>$rows,'total'=>(int)$this->db->row("SELECT COUNT(*) AS n FROM $t WHERE status='pendente'")['n'],'page'=>$page];
     }
     public function detail(int $id):array
     {
