@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.13.8
+Stable tag: 0.13.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,10 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.13.9 =
+* CSV continua após linhas inválidas ou duplicadas, com total de sucessos e erros.
+* Log em tela e download das linhas puladas com número físico da linha, dados e motivo.
 
 = 0.13.8 =
 * Listas aninhadas da API preservam todos os valores, um por linha.
