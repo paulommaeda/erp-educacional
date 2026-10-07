@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.13.9
+Stable tag: 0.13.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.13.10 =
+* CSV de vínculos aluno-responsáveis e matrículas, com modelos e mapeamento de colunas.
+* Validação de códigos por coligada, parentescos, atribuições e duplicados; log por linha.
+* Importação acadêmica preserva data e situação, sem gerar contratos ou parcelas.
 
 = 0.13.9 =
 * CSV continua após linhas inválidas ou duplicadas, com total de sucessos e erros.

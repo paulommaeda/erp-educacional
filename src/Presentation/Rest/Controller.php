@@ -104,7 +104,7 @@ final class Controller
             'turmas'=>$this->db->rows('SELECT idturma,codperiodo,idcurso,idturno,nome FROM '.$this->db->table('turmas').' WHERE codcoligada=%d ORDER BY nome',[\EducacionalERP\Application\Coligadas::current()]),
             'cursos'=>$this->db->rows('SELECT idcurso,nome FROM '.$this->db->table('cursos').' WHERE codcoligada=%d ORDER BY nome',[\EducacionalERP\Application\Coligadas::current()]),
             'turnos'=>$this->db->rows('SELECT idturno,nome FROM '.$this->db->table('turnos').' WHERE codcoligada=%d ORDER BY nome',[\EducacionalERP\Application\Coligadas::current()])]);
-        $this->route('/importacao/(?P<tipo>pessoas|alunos|turmas)','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\ImportService($this->db,$this->catalog))->row($r['tipo'],$this->payload($r),$this->key($r)));
+        $this->route('/importacao/(?P<tipo>pessoas|alunos|turmas|vinculos|matriculas)','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\ImportService($this->db,$this->catalog))->row($r['tipo'],$this->payload($r),$this->key($r)));
         $this->route('/me/perfil','GET',fn()=>true,fn()=>$this->ownProfile());
         $this->route('/me/perfil','POST',fn()=>true,fn($r)=>$this->catalog->updateOwn($this->payload($r),$this->key($r)));
         $this->route('/me/foto','POST',fn()=>$this->access->person()!==null,fn($r)=>$this->uploadPhoto($r));
