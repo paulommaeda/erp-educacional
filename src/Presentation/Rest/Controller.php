@@ -50,8 +50,9 @@ final class Controller
         $review=fn()=>Access::isAdmin()||(MenuPolicy::can('requerimentos')&&current_user_can('erp_gerenciar_pessoas'));
         $this->route('/api-pessoas/importacoes','GET',$review,fn($r)=>$external->importLog((int)($r->get_param('page')??1)));
         $this->route('/api-pessoas/importacoes/'.$id,'GET',$review,fn($r)=>$external->importLogDetail((int)$r['id']));
-        $this->route('/api-pessoas/requerimentos','GET',$review,fn($r)=>$external->listing((int)($r->get_param('page')??1)));
+        $this->route('/api-pessoas/requerimentos','GET',$review,fn($r)=>$external->listing((int)($r->get_param('page')??1),(string)($r->get_param('status')??'pendente')));
         $this->route('/api-pessoas/requerimentos/'.$id,'GET',$review,fn($r)=>$external->detail((int)$r['id']));
+        $this->route('/api-pessoas/requerimentos/'.$id.'/visibilidade','POST',$review,fn($r)=>$external->visibility((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/api-pessoas/requerimentos/'.$id.'/confirmar','POST',$review,fn($r)=>$external->confirm((int)$r['id'],$this->payload($r),$this->key($r)));
         $extra=new \EducacionalERP\Application\AdditionalFields($this->db);
         $this->route('/grupos-campos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('grupos_campos',(int)$r['id'],$this->payload($r),$this->key($r)));

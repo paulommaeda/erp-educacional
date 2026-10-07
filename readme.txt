@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.13.7
+Stable tag: 0.13.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.13.8 =
+* Listas aninhadas da API preservam todos os valores, um por linha.
+* Ocultar e restaurar requerimentos na conferência, com auditoria e proteção contra reimportação.
+* Conversão de pessoa em aluno usa automaticamente seu código como RA; importações legadas preservam RA informado.
 
 = 0.13.7 =
 * Listas retornadas pela API são reunidas no mesmo campo, um valor por linha.
