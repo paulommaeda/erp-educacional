@@ -86,7 +86,7 @@ final class ExternalPeopleApi
     }
     public function detail(int $id):array
     {
-        $row=$this->db->get('api_requerimentos',$id);$people=json_decode($row['pessoas_json'],true);$service=new AdditionalFields($this->db);$active=array_column(array_filter($service->groups(),fn($g)=>(int)$g['ativo']),null,'idgrupo');$permitted=array_column(array_filter($service->all(),fn($f)=>(int)$f['ativo']&&isset($active[$f['idgrupo']])),null,'chave');
+        $row=$this->db->get('api_requerimentos',$id);$people=json_decode($row['pessoas_json'],true);$service=new AdditionalFields($this->db);$active=array_column(array_filter($service->groups(),fn($g)=>(int)$g['ativo']),null,'idgrupo');$permitted=array_column(array_filter($service->all(),fn($f)=>(int)$f['ativo']&&(empty($f['idgrupo'])||isset($active[$f['idgrupo']]))),null,'chave');
         foreach($people as &$p){foreach(array_keys($p['campos_adicionais']??[]) as $k)if(!isset($permitted[$k]))throw new RuleViolation('Há campos de grupos sem acesso para seu perfil. Solicite autorização ao administrador.');$cpf=preg_replace('/\D/','',(string)($p['cpf']??''));$p['sugestoes']=$cpf!==''?$this->db->rows('SELECT codpessoa,nome,cpf,data_nascimento FROM '.$this->db->table('pessoas').' WHERE cpf=%s',[$cpf]):[];}unset($p);unset($row['pessoas_json']);$ordered=[];foreach(['aluno','pai','mae','outro','financeiro'] as $slot)if(isset($people[$slot]))$ordered[$slot]=$people[$slot];return $row+['pessoas'=>$ordered];
     }
     public function confirm(int $id,array $d,string $key):array

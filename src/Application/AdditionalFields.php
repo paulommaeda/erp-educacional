@@ -16,7 +16,7 @@ final class AdditionalFields
     public function all():array
     {
         $rows=$this->definitions();if(Access::isAdmin())return $rows;$groups=array_column($this->groups(),null,'idgrupo');
-        return array_values(array_filter($rows,fn($d)=>(int)$d['ativo']&&isset($groups[$d['idgrupo']])));
+        return array_values(array_filter($rows,fn($d)=>(int)$d['ativo']&&(empty($d['idgrupo'])||isset($groups[$d['idgrupo']]))));
     }
     public function migrateGroups():void
     {
@@ -46,10 +46,11 @@ final class AdditionalFields
             $section=$d['secao']??'outros';if(!in_array($section,['identificacao','pessoais','endereco','outros'],true))throw new RuleViolation('Seção inválida.');
             $options=trim((string)($d['opcoes']??''));if(strlen($options)>10000)throw new RuleViolation('Lista de opções muito longa.');
             if($type==='selecao'&&!$options)throw new RuleViolation('Informe uma opção por linha.');
-            $group=Input::id($d['idgrupo']??($before['idgrupo']??null));$this->db->get('grupos_campos',$group,true);
+            $groupValue=array_key_exists('idgrupo',$d)?$d['idgrupo']:($before['idgrupo']??null);$group=empty($groupValue)?null:Input::id($groupValue);if($group)$this->db->get('grupos_campos',$group,true);
+            $area=$d['area_aluno']??($before['area_aluno']??'dados');if(!in_array($area,['dados','responsaveis','matriculas','financeiro','historico_anterior'],true))throw new RuleViolation('Área da ficha inválida.');
             $condition=$d['condicao_exibicao']??($before['condicao_exibicao']??'sempre');if(!in_array($condition,['sempre','preenchido','vazio','igual','diferente'],true))throw new RuleViolation('Condição de exibição inválida.');
             if(isset($d['resposta_exibicao'])&&!is_string($d['resposta_exibicao']))throw new RuleViolation('Resposta de exibição inválida.');$answer=trim((string)($d['resposta_exibicao']??($before['resposta_exibicao']??'')));if(strlen($answer)>1000)throw new RuleViolation('Resposta de exibição muito longa.');if(in_array($condition,['igual','diferente'],true)&&$answer==='')throw new RuleViolation('Informe a resposta para comparação.');
-            $row=['condicao_exibicao'=>$condition,'resposta_exibicao'=>$answer,'idgrupo'=>$group,'chave'=>$slug,'nome'=>Input::text($d['nome']??null,120),'tipo'=>$type,'secao'=>$section,'exibir_pessoa'=>empty($d['exibir_pessoa'])?0:1,'opcoes'=>$options,'ordem'=>max(0,min(9999,(int)($d['ordem']??0))),'ativo'=>array_key_exists('ativo',$d)&&empty($d['ativo'])?0:1];
+            $row=['area_aluno'=>$area,'exibir_aluno'=>empty($d['exibir_aluno']??($before['exibir_aluno']??1))?0:1,'condicao_exibicao'=>$condition,'resposta_exibicao'=>$answer,'idgrupo'=>$group,'chave'=>$slug,'nome'=>Input::text($d['nome']??null,120),'tipo'=>$type,'secao'=>$section,'exibir_pessoa'=>empty($d['exibir_pessoa']??($before['exibir_pessoa']??1))?0:1,'opcoes'=>$options,'ordem'=>max(0,min(9999,(int)($d['ordem']??0))),'ativo'=>array_key_exists('ativo',$d)&&empty($d['ativo'])?0:1];
             if($before){if((string)($d['versao']??'')!==(string)$before['versao'])throw new RuleViolation('Campo alterado. Recarregue a lista.');$this->db->update('campos_adicionais',$id,$row);}else $id=$this->db->insert('campos_adicionais',$row);
             $this->db->audit('campos_adicionais',$id,$before?'editar':'criar',$before,$row,$key);return $this->db->get('campos_adicionais',$id);
         });
@@ -75,14 +76,14 @@ final class AdditionalFields
     {
         $values=$this->db->rows('SELECT c.chave,v.valor FROM '.$this->db->table('pessoa_campos_adicionais').' v JOIN '.$this->db->table('campos_adicionais').' c ON c.idcampo=v.idcampo WHERE v.codpessoa=%d AND c.ativo=1',[(int)$p['codpessoa']]);
         $permitted=array_column($this->all(),null,'chave');$activeGroups=array_column(array_filter($this->groups(),fn($g)=>(int)$g['ativo']),null,'idgrupo');
-        $p['campos_adicionais']=[];foreach($values as $v)if(isset($permitted[$v['chave']])&&isset($activeGroups[$permitted[$v['chave']]['idgrupo']]))$p['campos_adicionais'][$v['chave']]=$v['valor'];return $p;
+        $p['campos_adicionais']=[];foreach($values as $v)if(isset($permitted[$v['chave']])&&(empty($permitted[$v['chave']]['idgrupo'])||isset($activeGroups[$permitted[$v['chave']]['idgrupo']])))$p['campos_adicionais'][$v['chave']]=$v['valor'];return $p;
     }
     public function write(int $person,mixed $values,string $key,bool $onlyVisible=false):void
     {
         if($values===null)return;if(!is_array($values)||count($values)>200)throw new RuleViolation('Campos adicionais inválidos.');
         $definitions=[];foreach($this->all() as $d)$definitions[$d['chave']]=$d;
         $this->db->get('pessoas',$person,true);
-        foreach($values as $slug=>$value){$d=$definitions[$slug]??null;if(!$d||!(int)$d['ativo']||!FieldGroupPolicy::can((int)$d['idgrupo'])||!(int)$this->db->get('grupos_campos',(int)$d['idgrupo'])['ativo']||($onlyVisible&&!(int)$d['exibir_pessoa']))throw new RuleViolation('Campo adicional não permitido: '.$slug);
+        foreach($values as $slug=>$value){$d=$definitions[$slug]??null;if(!$d||!(int)$d['ativo']||(!empty($d['idgrupo'])&&(!FieldGroupPolicy::can((int)$d['idgrupo'])||!(int)$this->db->get('grupos_campos',(int)$d['idgrupo'])['ativo']))||($onlyVisible&&!(int)$d['exibir_pessoa']))throw new RuleViolation('Campo adicional não permitido: '.$slug);
             if(!is_scalar($value)&&$value!==null)throw new RuleViolation('Valor inválido: '.$d['nome']);$v=trim((string)$value);if(strlen($v)>10000)throw new RuleViolation('Valor muito longo: '.$d['nome']);
             if($v!==''){switch($d['tipo']){case 'data':$v=Input::date($v);break;case 'numero':if(!preg_match('/^-?\d+(\.\d+)?$/D',$v))throw new RuleViolation('Número inválido: '.$d['nome']);break;case 'email':if(!is_email($v))throw new RuleViolation('E-mail inválido: '.$d['nome']);$v=strtolower($v);break;case 'selecao':if(!in_array($v,array_map('trim',preg_split('/\r?\n/',$d['opcoes'])),true))throw new RuleViolation('Opção inválida: '.$d['nome']);break;default:$v=CadastroText::upper($v);}}
             $t=$this->db->table('pessoa_campos_adicionais');$before=$this->db->row("SELECT * FROM $t WHERE codpessoa=%d AND idcampo=%d FOR UPDATE",[$person,(int)$d['idcampo']]);$row=['codpessoa'=>$person,'idcampo'=>(int)$d['idcampo'],'valor'=>$v];

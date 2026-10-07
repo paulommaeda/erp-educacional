@@ -2908,7 +2908,9 @@
       "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
       "idgrupo": "bigint(20) unsigned DEFAULT NULL",
       "condicao_exibicao": "varchar(20) NOT NULL DEFAULT 'sempre'",
-      "resposta_exibicao": "varchar(1000) NOT NULL DEFAULT ''"
+      "resposta_exibicao": "varchar(1000) NOT NULL DEFAULT ''",
+      "exibir_aluno": "tinyint(1) NOT NULL DEFAULT 1",
+      "area_aluno": "varchar(30) NOT NULL DEFAULT 'dados'"
     },
     "pk": [
       "idcampo"

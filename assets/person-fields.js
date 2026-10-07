@@ -6,8 +6,8 @@ document.addEventListener('change',e=>{const i=e.target;if(i.matches('input,text
 const node=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=text;return x;};
 function field(parent,name,title,value='',type='text'){const label=node('label',title),i=node('input');i.name=name;i.type=type;i.value=value??'';label.append(i);parent.append(label);return i;}
 function choice(parent,name,title,options,value){const label=node('label',title),s=node('select');s.name=name;for(const [v,t] of options){const o=node('option',t);o.value=v;s.append(o);}s.value=value??'';label.append(s);parent.append(label);return s;}
-function extras(f,p,all=false,group=null){
- const defs=(EDERP.additionalFields||[]).filter(d=>Number(d.ativo)&&(all||Number(d.exibir_pessoa))&&(group===null||String(d.idgrupo)===String(group))&&(!EDERP.fieldGroups||EDERP.fieldGroups.some(g=>Number(g.ativo)&&String(g.idgrupo)===String(d.idgrupo))));
+function extras(f,p,all=false,group=null,sheetArea=null){
+ const defs=(EDERP.additionalFields||[]).filter(d=>Number(d.ativo)&&(all||Number(d.exibir_pessoa))&&(group===null||String(d.idgrupo)===String(group))&&(!all||Number(d.exibir_aluno??1))&&(sheetArea===null||(!d.idgrupo&&(d.area_aluno||'dados')===sheetArea))&&(!d.idgrupo||!EDERP.fieldGroups||EDERP.fieldGroups.some(g=>Number(g.ativo)&&String(g.idgrupo)===String(d.idgrupo))));
  const groups={};for(const d of defs){let target;if(all){target=f;}else if(d.secao==='identificacao'){target=f;}else if(d.secao==='pessoais'){target=f.querySelector('[name=rg]').closest('fieldset');}else if(d.secao==='endereco'){target=f.querySelector('[name=rua]').closest('fieldset');}else{groups.outros??=node('fieldset');groups.outros.dataset.section='outros';if(!groups.outros.parentNode){groups.outros.append(node('legend','Outros'));f.append(groups.outros);}target=groups.outros;}
  let i;const value=p.campos_adicionais?.[d.chave]??'';
  if(d.tipo==='selecao')i=choice(target,'extra__'+d.chave,d.nome,[['','Não informado'],...d.opcoes.split(/\r?\n/).filter(x=>x.trim()).map(x=>[x.trim(),x.trim()])],value);
