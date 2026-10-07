@@ -48,6 +48,8 @@ final class Controller
         $this->route('/api-pessoas/testar','POST',fn()=>Access::isAdmin(),fn()=>$external->test());
         $this->route('/api-pessoas/buscar','POST',fn()=>Access::isAdmin(),fn($r)=>$external->sync((int)($this->payload($r)['pagina']??1),$this->key($r)));
         $review=fn()=>Access::isAdmin()||(MenuPolicy::can('requerimentos')&&current_user_can('erp_gerenciar_pessoas'));
+        $this->route('/api-pessoas/importacoes','GET',$review,fn($r)=>$external->importLog((int)($r->get_param('page')??1)));
+        $this->route('/api-pessoas/importacoes/'.$id,'GET',$review,fn($r)=>$external->importLogDetail((int)$r['id']));
         $this->route('/api-pessoas/requerimentos','GET',$review,fn($r)=>$external->listing((int)($r->get_param('page')??1)));
         $this->route('/api-pessoas/requerimentos/'.$id,'GET',$review,fn($r)=>$external->detail((int)$r['id']));
         $this->route('/api-pessoas/requerimentos/'.$id.'/confirmar','POST',$review,fn($r)=>$external->confirm((int)$r['id'],$this->payload($r),$this->key($r)));

@@ -47,7 +47,9 @@ final class AdditionalFields
             $options=trim((string)($d['opcoes']??''));if(strlen($options)>10000)throw new RuleViolation('Lista de opções muito longa.');
             if($type==='selecao'&&!$options)throw new RuleViolation('Informe uma opção por linha.');
             $group=Input::id($d['idgrupo']??($before['idgrupo']??null));$this->db->get('grupos_campos',$group,true);
-            $row=['idgrupo'=>$group,'chave'=>$slug,'nome'=>Input::text($d['nome']??null,120),'tipo'=>$type,'secao'=>$section,'exibir_pessoa'=>empty($d['exibir_pessoa'])?0:1,'opcoes'=>$options,'ordem'=>max(0,min(9999,(int)($d['ordem']??0))),'ativo'=>array_key_exists('ativo',$d)&&empty($d['ativo'])?0:1];
+            $condition=$d['condicao_exibicao']??($before['condicao_exibicao']??'sempre');if(!in_array($condition,['sempre','preenchido','vazio','igual','diferente'],true))throw new RuleViolation('Condição de exibição inválida.');
+            if(isset($d['resposta_exibicao'])&&!is_string($d['resposta_exibicao']))throw new RuleViolation('Resposta de exibição inválida.');$answer=trim((string)($d['resposta_exibicao']??($before['resposta_exibicao']??'')));if(strlen($answer)>1000)throw new RuleViolation('Resposta de exibição muito longa.');if(in_array($condition,['igual','diferente'],true)&&$answer==='')throw new RuleViolation('Informe a resposta para comparação.');
+            $row=['condicao_exibicao'=>$condition,'resposta_exibicao'=>$answer,'idgrupo'=>$group,'chave'=>$slug,'nome'=>Input::text($d['nome']??null,120),'tipo'=>$type,'secao'=>$section,'exibir_pessoa'=>empty($d['exibir_pessoa'])?0:1,'opcoes'=>$options,'ordem'=>max(0,min(9999,(int)($d['ordem']??0))),'ativo'=>array_key_exists('ativo',$d)&&empty($d['ativo'])?0:1];
             if($before){if((string)($d['versao']??'')!==(string)$before['versao'])throw new RuleViolation('Campo alterado. Recarregue a lista.');$this->db->update('campos_adicionais',$id,$row);}else $id=$this->db->insert('campos_adicionais',$row);
             $this->db->audit('campos_adicionais',$id,$before?'editar':'criar',$before,$row,$key);return $this->db->get('campos_adicionais',$id);
         });

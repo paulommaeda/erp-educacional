@@ -60,7 +60,7 @@ final class Portal
             (new Pages())->screen($view,MenuPolicy::MENUS[$view],$caps[$view]);
         }elseif(in_array($view,['meus_estudos','meu_financeiro','renovacao'],true))echo '<section data-ederp-portal="'.esc_attr(['meus_estudos'=>'academic','meu_financeiro'=>'finance','renovacao'=>'renew'][$view]).'"><p role="status">Carregando...</p></section>';
         else echo '<section data-journey-view="'.esc_attr($view).'"><p role="status">Carregando...</p></section>';
-        echo '</main><footer class="journey-footer">'.$schoolName.' · Portal educacional</footer></div><nav class="journey-bottom" aria-label="Navegação rápida"></nav><dialog class="journey-drawer"><div class="journey-drawer-head"><h2>Seu portal</h2><button type="button" data-close-menu aria-label="Fechar menu">Fechar</button></div>'.$this->nav().'<a class="journey-logout" href="'.esc_url(Authentication::logoutUrl()).'">Sair da conta</a></dialog></div>';
+        echo '</main><footer class="journey-footer">'.$schoolName.' · Portal educacional · Versão '.esc_html(EDERP_VERSION).'</footer></div><nav class="journey-bottom" aria-label="Navegação rápida"></nav><dialog class="journey-drawer"><div class="journey-drawer-head"><h2>Seu portal</h2><button type="button" data-close-menu aria-label="Fechar menu">Fechar</button></div>'.$this->nav().'<a class="journey-logout" href="'.esc_url(Authentication::logoutUrl()).'">Sair da conta</a></dialog></div>';
         return ob_get_clean();
     }
 }

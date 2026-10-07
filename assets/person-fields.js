@@ -16,7 +16,8 @@ function extras(f,p,all=false,group=null){
  if(['texto','texto_longo'].includes(d.tipo))i.addEventListener('change',()=>i.value=i.value.toUpperCase());
  }
 }
-window.EDERPFields={extras,attach(f,p){
+function visible(d,value){const v=String(value??'').trim(),answer=String(d.resposta_exibicao??'').trim();switch(d.condicao_exibicao){case 'preenchido':return v!=='';case 'vazio':return v==='';case 'igual':return v.toLocaleUpperCase('pt-BR')===answer.toLocaleUpperCase('pt-BR');case 'diferente':return v.toLocaleUpperCase('pt-BR')!==answer.toLocaleUpperCase('pt-BR');default:return true;}}
+window.EDERPFields={extras,visible,attach(f,p){
  f.classList.add('erp-person-fields');
  const box=node('fieldset'),legend=node('legend','Documentos e informações pessoais');box.append(legend);f.append(box);
  for(const [name,title] of [['rg','RG']])field(box,name,title,p[name]);
