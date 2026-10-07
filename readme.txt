@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.13.5
+Stable tag: 0.13.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.13.6 =
+* Requerimentos pendentes atualizados com o mapeamento vigente, sem duplicação.
+* Dados de origem preservados para reaplicar mapeamentos.
+* Campos adicionais ocultos continuam na conferência e importação, inclusive ao aproveitar pessoa existente.
 
 = 0.13.5 =
 * Grupo opcional nos campos adicionais; destino independente no cadastro da pessoa e na ficha do aluno.

@@ -3019,7 +3019,8 @@
       "identidade_registro": "tinyint(1) NOT NULL DEFAULT 0",
       "id_externo": "varchar(191) NULL",
       "dados_importados_json": "longtext NULL",
-      "importado_em": "datetime NULL"
+      "importado_em": "datetime NULL",
+      "origem_json": "longtext NULL"
     },
     "pk": [
       "idrequerimento"
