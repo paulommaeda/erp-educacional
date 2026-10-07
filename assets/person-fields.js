@@ -11,7 +11,7 @@ function extras(f,p,all=false,group=null,sheetArea=null){
  const groups={};for(const d of defs){let target;if(all){target=f;}else if(d.secao==='identificacao'){target=f;}else if(d.secao==='pessoais'){target=f.querySelector('[name=rg]').closest('fieldset');}else if(d.secao==='endereco'){target=f.querySelector('[name=rua]').closest('fieldset');}else{groups.outros??=node('fieldset');groups.outros.dataset.section='outros';if(!groups.outros.parentNode){groups.outros.append(node('legend','Outros'));f.append(groups.outros);}target=groups.outros;}
  let i;const value=p.campos_adicionais?.[d.chave]??'';
  if(d.tipo==='selecao')i=choice(target,'extra__'+d.chave,d.nome,[['','Não informado'],...d.opcoes.split(/\r?\n/).filter(x=>x.trim()).map(x=>[x.trim(),x.trim()])],value);
- else if(d.tipo==='texto_longo'){const l=node('label',d.nome);i=node('textarea');i.name='extra__'+d.chave;i.value=value;l.append(i);target.append(l);}
+ else if(d.tipo==='texto_longo'||(d.tipo==='texto'&&/[\r\n]/.test(String(value)))){const l=node('label',d.nome);i=node('textarea');i.name='extra__'+d.chave;i.value=value;l.append(i);target.append(l);}
  else{i=field(target,'extra__'+d.chave,d.nome,value,({numero:'number',data:'date',email:'email'})[d.tipo]||'text');if(d.tipo==='numero')i.step='any';}
  if(['texto','texto_longo'].includes(d.tipo))i.addEventListener('change',()=>i.value=i.value.toUpperCase());
  }
