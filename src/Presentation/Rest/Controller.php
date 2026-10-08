@@ -303,7 +303,7 @@ final class Controller
         if($name==='pessoas' && ($code=trim(sanitize_text_field((string)$r->get_param('codigo'))))!==''){
             $where.=($where?' AND ':' WHERE ').'codigo_pessoa=%s';$args[]=\EducacionalERP\Domain\CadastroText::upper($code);
         }
-        if($name==='turmas' && ($period=SchoolSettings::forViewer($r->get_param('codperiodo')))){$where.=($where?' AND ':' WHERE ').'codperiodo=%d';$args[]=$period;}
+        if(in_array($name,['turmas','planos_pagamento'],true) && ($period=SchoolSettings::forViewer($r->get_param('codperiodo')))){$where.=($where?' AND ':' WHERE ').'codperiodo=%d';$args[]=$period;}
         if($name==='turmas' && $r->get_param('idcurso')){$where.=($where?' AND ':' WHERE ').'idcurso=%d';$args[]=Input::id($r->get_param('idcurso'));}
         if($name!=='pessoas'){$where.=($where?' AND ':' WHERE ').'codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();}
         $order=$name==='turmas'?'nome ASC, codigo ASC, idturma ASC':"$pk DESC";

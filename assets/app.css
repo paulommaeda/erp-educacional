@@ -167,3 +167,12 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .ederp .erp-teacher-header h1{flex:1 1 100%;margin:0}
 .ederp .erp-teacher-header label{flex:1 1 220px}
 @media(max-width:600px){.ederp .erp-academic-actions>*{flex:1 1 180px}.ederp .erp-teacher-header label{flex-basis:100%}}
+
+.ederp .erp-teachers-table{width:100%;margin-top:20px;border-collapse:collapse;table-layout:auto}
+.ederp .erp-teachers-table th{text-align:left}
+.ederp .erp-teachers-table th:last-child{text-align:right}
+.ederp .erp-teacher-actions{display:flex;justify-content:flex-end;align-items:center;flex-wrap:wrap;gap:8px;margin:0}
+.ederp .erp-teacher-actions>button{margin:0;white-space:nowrap}
+.ederp .erp-teachers-table td:first-child{overflow-wrap:anywhere}
+.ederp .erp-teachers-table td:last-child{width:1%;white-space:nowrap}
+@media(max-width:700px){.ederp table.erp-teachers-table,.ederp .erp-teachers-table tbody,.ederp .erp-teachers-table tr{display:block;width:100%}.ederp .erp-teachers-table thead{display:none}.ederp .erp-teachers-table tr{margin-bottom:12px;padding:14px;border:1px solid var(--j-line,#d9e2e8);border-radius:14px;background:var(--j-surface,#fff)}.ederp .erp-teachers-table td,.ederp .erp-teachers-table td:last-child{display:flex;gap:12px;align-items:center;justify-content:space-between;width:auto;white-space:normal;padding:8px 0;border:0}.ederp .erp-teachers-table td:before{content:attr(data-label);font-size:13px;color:var(--j-muted,#61746e);flex-shrink:0}.ederp .erp-teachers-table td:last-child{display:block}.ederp .erp-teachers-table td:last-child:before{display:none}.ederp .erp-teacher-actions{justify-content:flex-end}.ederp .erp-teacher-actions>button{flex:1 1 auto;min-height:44px}}
