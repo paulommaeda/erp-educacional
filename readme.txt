@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.7
+Stable tag: 0.14.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.8 =
+* Dados do professor sem nome repetido e sem botões de editar; e-mail, nascimento e usuário.
+* Diretório de usuários exibe login e perfis; administrador inclui e remove perfis operacionais no modal.
+* Espaçamento entre pesquisa e lista de usuários.
+
 
 = 0.14.7 =
 * Situações financeiras com fundos pastéis: Pago verde, Vencido vermelho e Em aberto amarelo.

@@ -204,3 +204,9 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .ederp .erp-financial-badge.erp-status-vencido{background:#f9dfdf;color:#923737}
 .ederp .erp-financial-badge.erp-status-em_aberto{background:#fff1c9;color:#775b19}
 .ederp .erp-financial-badge.erp-status-cancelado{background:#edf0f2;color:#58636b}
+
+.ederp .erp-user-search{margin-bottom:22px}
+.ederp .erp-user-row{grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.2fr) auto}
+.ederp .erp-user-login,.ederp .erp-user-roles{overflow-wrap:anywhere;font-size:.9rem}
+.ederp .erp-user-role-editor{grid-column:1/-1;border:1px solid var(--j-line,#ddd);border-radius:12px;padding:16px;display:grid;gap:12px}
+@media(max-width:800px){.ederp .erp-user-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px}.ederp .erp-user-row>strong,.ederp .erp-user-row>span{grid-column:1}.ederp .erp-user-row>button{grid-column:2;grid-row:1/5}}
