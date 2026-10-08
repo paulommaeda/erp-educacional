@@ -5,7 +5,7 @@ use EducacionalERP\Domain\{Store,Input,RuleViolation,Usernames,UsernameRequired}
 /** WordPress accounts share the ERP connection/transaction; account tables must be InnoDB. */
 final class Accounts
 {
-    public const MANAGED=['erp_pessoa','erp_aluno','erp_responsavel_academico','erp_responsavel_financeiro','erp_responsavel'];
+    public const MANAGED=['erp_professor','erp_pessoa','erp_aluno','erp_responsavel_academico','erp_responsavel_financeiro','erp_responsavel'];
     private bool $locked=false;
     public function __construct(private Store $db) {}
     private function lock(): void
@@ -72,6 +72,7 @@ final class Accounts
         if((int)$person['ativo']) {
             $a=$this->db->table('alunos');$v=$this->db->table('aluno_responsaveis');
             if($this->db->row("SELECT idaluno FROM $a WHERE codpessoa=%d AND ativo=1 FOR UPDATE",[$personId])) { $roles[]='erp_aluno'; }
+            if($this->db->row('SELECT idprofessor FROM '.$this->db->table('professores').' WHERE codpessoa=%d AND ativo=1 FOR UPDATE',[$personId]))$roles[]='erp_professor';
             $links=$this->db->rows("SELECT responsavel_academico,responsavel_financeiro FROM $v WHERE codpessoa_responsavel=%d AND fim_vigencia IS NULL AND inicio_vigencia<=UTC_TIMESTAMP() FOR UPDATE",[$personId]);
             foreach($links as $r) {
                 if((int)$r['responsavel_academico']) { $roles[]='erp_responsavel_academico'; }

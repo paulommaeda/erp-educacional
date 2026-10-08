@@ -204,6 +204,7 @@ final class CatalogService
                     $changes[$field]=Input::id($d[$field]);
                     if(($used||$history) && $changes[$field]!== (int)$before[$field]) { throw new RuleViolation('Turma com histórico: mantenha período, curso e turno. Cadastre a nova turma e transfira os alunos.'); }
                 }
+                $gradeLink=$this->db->row('SELECT g.idcurso FROM '.$this->db->table('turma_grades').' t JOIN '.$this->db->table('grades_curriculares').' g ON g.idgrade=t.idgrade WHERE t.idturma=%d FOR UPDATE',[$id]);if($gradeLink&&(int)$gradeLink['idcurso']!==$changes['idcurso'])throw new RuleViolation('A turma possui grade de outro curso. Ajuste a grade antes de alterar o curso.');if($changes['codperiodo']!==(int)$before['codperiodo']&&$this->db->row('SELECT idatribuicao FROM '.$this->db->table('professor_turmas').' WHERE idturma=%d FOR UPDATE',[$id]))throw new RuleViolation('A turma possui professores no período atual. Remova as atribuições antes de mudar o período.');
                 $this->validateClassPlan($changes);$changes['idturma_proxima']=$this->nextClass($d,$changes['codperiodo'],$id);
                 if($changes['codperiodo']!==(int)$before['codperiodo']||$changes['idcurso']!==(int)$before['idcurso']){
                     $t=$this->db->table('turmas');if($this->db->row("SELECT idturma FROM $t WHERE idturma_proxima=%d LIMIT 1 FOR UPDATE",[$id]))throw new RuleViolation('Esta turma é destino de rematrícula. Remova o vínculo de origem antes de alterar curso ou período.');

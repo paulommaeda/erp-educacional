@@ -9,7 +9,7 @@ final class Access
     public static function install(): void
     {
         $roles=['erp_supervisao'=>['Supervisão',['erp_chat_supervisao']], 'erp_coordenacao'=>['Coordenação',['erp_chat_atender']], 'erp_orientacao'=>['Orientação',['erp_chat_atender']], 'erp_financeiro'=>['Financeiro',['erp_consultar_financeiro','erp_gerar_parcelas']], 'erp_secretaria'=>['Secretaria',['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_chat_atender']],
-            'erp_pessoa'=>['Pessoa',[]],'erp_responsavel_academico'=>['Responsável acadêmico',[]],'erp_responsavel_financeiro'=>['Responsável financeiro',[]],'erp_aluno'=>['Aluno',[]],'erp_responsavel'=>['Responsável',[]]];
+            'erp_professor'=>['Professor',[]],'erp_pessoa'=>['Pessoa',[]],'erp_responsavel_academico'=>['Responsável acadêmico',[]],'erp_responsavel_financeiro'=>['Responsável financeiro',[]],'erp_aluno'=>['Aluno',[]],'erp_responsavel'=>['Responsável',[]]];
         foreach ($roles as $slug=>[$label,$caps]) {
             add_role($slug,$label,['read'=>true]);
             $role=get_role($slug);

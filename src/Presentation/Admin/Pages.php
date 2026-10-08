@@ -23,6 +23,7 @@ final class Pages
         wp_enqueue_script('ederp-history',plugins_url('assets/history.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-export',plugins_url('assets/export.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-external-api',plugins_url('assets/external-api.js',EDERP_FILE),['ederp','ederp-person-fields'],EDERP_VERSION,true);
+        wp_enqueue_script('ederp-curriculum',plugins_url('assets/curriculum.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-import',plugins_url('assets/import.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_style('ederp-fonts','https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',[],'1');
         wp_enqueue_style('ederp',plugins_url('assets/app.css',EDERP_FILE),['ederp-fonts'],EDERP_VERSION);
@@ -30,10 +31,10 @@ final class Pages
         wp_enqueue_script('ederp-modals',plugins_url('assets/modals.js',EDERP_FILE),[],EDERP_VERSION,true);
         wp_enqueue_script('ederp',plugins_url('assets/app.js',EDERP_FILE),['ederp-modals'],EDERP_VERSION,true);
         wp_localize_script('ederp','EDERP',['root'=>esc_url_raw(rest_url('erp-educacional/v1/')),'nonce'=>wp_create_nonce('wp_rest'),'assets'=>plugins_url('assets/',EDERP_FILE),'parentescos'=>\EducacionalERP\Domain\Relationships::LABELS,
-            'fieldGroups'=>get_option('ederp_schema_version')==='24'?(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups():[],
-            'additionalFields'=>get_option('ederp_schema_version')==='24'?(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->all():[],
+            'fieldGroups'=>get_option('ederp_schema_version')==='25'?(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups():[],
+            'additionalFields'=>get_option('ederp_schema_version')==='25'?(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->all():[],
             'coligada'=>\EducacionalERP\Application\Coligadas::current(),'currentPeriod'=>\EducacionalERP\Application\SchoolSettings::current(),'period'=>sanitize_text_field((string)($_GET['erp_periodo']??(\EducacionalERP\Application\SchoolSettings::current()?:'todos'))),'front'=>!is_admin(),'portal'=>\EducacionalERP\Presentation\Portal\Portal::url(),'allowed'=>array_keys(\EducacionalERP\Infrastructure\WordPress\MenuPolicy::available()),'admin'=>admin_url('admin.php'),'caps'=>['editFinance'=>current_user_can('erp_ajustar_lancamentos'),'generate'=>\EducacionalERP\Infrastructure\WordPress\Access::canGenerate(),'periods'=>\EducacionalERP\Application\SchoolSettings::canChoose()||\EducacionalERP\Application\SchoolSettings::canChoose('finance'),'people'=>current_user_can('erp_gerenciar_pessoas'),'academic'=>current_user_can('erp_gerenciar_academico'),'finance'=>current_user_can('erp_consultar_financeiro'),'settle'=>current_user_can('erp_baixar_lancamentos'),'adjust'=>current_user_can('erp_ajustar_lancamentos'),'reverse'=>current_user_can('erp_estornar_baixas'),'changeGuardian'=>current_user_can('erp_trocar_responsavel_financeiro'),'admin'=>\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()]]);
-        { wp_enqueue_script('ederp-workflow',plugins_url('assets/workflow.js',EDERP_FILE),['ederp','ederp-person-fields','ederp-history','ederp-external-api'],EDERP_VERSION,true); }
+        { wp_enqueue_script('ederp-workflow',plugins_url('assets/workflow.js',EDERP_FILE),['ederp','ederp-person-fields','ederp-history','ederp-external-api','ederp-curriculum'],EDERP_VERSION,true); }
     }
     public function home(): void
     {

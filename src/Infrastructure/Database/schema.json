@@ -3036,5 +3036,484 @@
       ]
     ],
     "fks": []
+  },
+  "disciplinas": {
+    "columns": {
+      "iddisciplina": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(120) NOT NULL",
+      "idtipo_disciplina": "bigint(20) unsigned NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "iddisciplina"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "iddisciplina"
+      ],
+      [
+        "codcoligada",
+        "codigo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ],
+        "target": "tipos_disciplina",
+        "references": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ]
+      }
+    ]
+  },
+  "grades_curriculares": {
+    "columns": {
+      "idgrade": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idcurso": "bigint(20) unsigned NOT NULL",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(120) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "idgrade"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idgrade"
+      ],
+      [
+        "codcoligada",
+        "codigo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcurso"
+        ],
+        "target": "cursos",
+        "references": [
+          "codcoligada",
+          "idcurso"
+        ]
+      }
+    ]
+  },
+  "grade_disciplinas": {
+    "columns": {
+      "iditem": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idgrade": "bigint(20) unsigned NOT NULL",
+      "iddisciplina": "bigint(20) unsigned NOT NULL",
+      "carga_horaria": "decimal(12,2) NOT NULL DEFAULT 0",
+      "ordem": "int unsigned NOT NULL DEFAULT 0"
+    },
+    "pk": [
+      "iditem"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "iditem"
+      ],
+      [
+        "codcoligada",
+        "idgrade",
+        "iddisciplina"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idgrade"
+        ],
+        "target": "grades_curriculares",
+        "references": [
+          "codcoligada",
+          "idgrade"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddisciplina"
+        ],
+        "target": "disciplinas",
+        "references": [
+          "codcoligada",
+          "iddisciplina"
+        ]
+      }
+    ]
+  },
+  "turma_grades": {
+    "columns": {
+      "idvinculo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idturma": "bigint(20) unsigned NOT NULL",
+      "idgrade": "bigint(20) unsigned NOT NULL"
+    },
+    "pk": [
+      "idvinculo"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idvinculo"
+      ],
+      [
+        "codcoligada",
+        "idturma"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturma"
+        ],
+        "target": "turmas",
+        "references": [
+          "codcoligada",
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idgrade"
+        ],
+        "target": "grades_curriculares",
+        "references": [
+          "codcoligada",
+          "idgrade"
+        ]
+      }
+    ]
+  },
+  "professores": {
+    "columns": {
+      "idprofessor": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "idprofessor"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idprofessor"
+      ],
+      [
+        "codcoligada",
+        "codpessoa"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "professor_disciplinas": {
+    "columns": {
+      "idvinculo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idprofessor": "bigint(20) unsigned NOT NULL",
+      "iddisciplina": "bigint(20) unsigned NOT NULL"
+    },
+    "pk": [
+      "idvinculo"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idvinculo"
+      ],
+      [
+        "codcoligada",
+        "idprofessor",
+        "iddisciplina"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idprofessor"
+        ],
+        "target": "professores",
+        "references": [
+          "codcoligada",
+          "idprofessor"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddisciplina"
+        ],
+        "target": "disciplinas",
+        "references": [
+          "codcoligada",
+          "iddisciplina"
+        ]
+      }
+    ]
+  },
+  "professor_valores_hora": {
+    "columns": {
+      "idvalor": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idprofessor": "bigint(20) unsigned NOT NULL",
+      "iddisciplina": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NOT NULL",
+      "valor_hora": "decimal(12,2) NOT NULL DEFAULT 0"
+    },
+    "pk": [
+      "idvalor"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idvalor"
+      ],
+      [
+        "codcoligada",
+        "idprofessor",
+        "iddisciplina",
+        "codperiodo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idprofessor"
+        ],
+        "target": "professores",
+        "references": [
+          "codcoligada",
+          "idprofessor"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddisciplina"
+        ],
+        "target": "disciplinas",
+        "references": [
+          "codcoligada",
+          "iddisciplina"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      }
+    ]
+  },
+  "professor_turmas": {
+    "columns": {
+      "idatribuicao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idprofessor": "bigint(20) unsigned NOT NULL",
+      "iddisciplina": "bigint(20) unsigned NOT NULL",
+      "idturma": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NOT NULL"
+    },
+    "pk": [
+      "idatribuicao"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idatribuicao"
+      ],
+      [
+        "codcoligada",
+        "idprofessor",
+        "iddisciplina",
+        "idturma",
+        "codperiodo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idprofessor"
+        ],
+        "target": "professores",
+        "references": [
+          "codcoligada",
+          "idprofessor"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddisciplina"
+        ],
+        "target": "disciplinas",
+        "references": [
+          "codcoligada",
+          "iddisciplina"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturma"
+        ],
+        "target": "turmas",
+        "references": [
+          "codcoligada",
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      }
+    ]
   }
 }

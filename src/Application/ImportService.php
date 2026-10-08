@@ -31,7 +31,7 @@ final class ImportService
                 throw new RuleViolation('Conflito: pessoa já possui outro RA ou este RA pertence a outra pessoa. Nenhum vínculo foi alterado.');
             }
             if(!(int)$person['ativo'])throw new RuleViolation('Pessoa inativa.');
-            return ['status'=>'criado']+$this->catalog->createInside('alunos',['codpessoa'=>$person['codpessoa'],'ra'=>$ra,'tipo_aluno'=>$data['tipo_aluno']??'Regular'],$key);
+            $result=$this->catalog->createInside('alunos',['codpessoa'=>$person['codpessoa'],'ra'=>$ra,'tipo_aluno'=>$data['tipo_aluno']??'Regular'],$key);(new AdditionalFields($this->db))->write((int)$person['codpessoa'],$data['campos_adicionais']??null,$key);return ['status'=>'criado']+$result;
         });
     }
     private function schoolRow(string $type,array $d,string $key):array
