@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.4
+Stable tag: 0.14.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.5 =
+* Período da consulta de professores ao lado da coligada, preservando a ficha aberta ao trocar período.
+* Seta discreta e acessível de voltar nas fichas do professor, aluno e matrícula.
+
 
 = 0.14.4 =
 * Ações dos professores alinhadas na mesma linha no desktop.

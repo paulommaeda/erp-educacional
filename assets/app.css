@@ -188,3 +188,7 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .ederp .erp-tab-menu{position:absolute;right:0;top:calc(100% + 8px);z-index:30;display:flex;flex-direction:column;gap:6px;padding:10px;background:var(--j-surface,#fff);border:1px solid var(--j-line,#d9e2e8);border-radius:14px;box-shadow:0 8px 24px #0002;width:max-content;min-width:220px;max-width:min(360px,calc(100vw - 40px))}
 .ederp .erp-tab-menu>button{width:100%;margin:0;text-align:left;white-space:normal;min-height:44px}
 @media(max-width:700px){.ederp .erp-teachers-table td:last-child{width:auto}.ederp .erp-teachers-table .erp-teacher-actions{width:100%;flex-wrap:wrap}.ederp .erp-responsive-tabs>button{min-width:0!important;width:auto;flex:0 0 auto!important}.ederp .erp-tab-menu>button{flex:none!important}}
+
+.ederp a.erp-back-arrow,.ederp button.erp-back-arrow{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;padding:0;margin:0 0 12px;background:transparent;color:var(--j-action,var(--erp-accent));border:0;border-radius:8px;font-size:24px;font-weight:400;line-height:1;text-decoration:none;box-shadow:none}
+.ederp .erp-back-arrow:hover{background:var(--j-soft,#eaf8f2)}
+.ederp .erp-back-arrow[hidden]{display:none!important}
