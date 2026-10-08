@@ -198,3 +198,9 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .erp-context-selectors{align-items:stretch}
 .ederp .erp-student-header>div:not(.erp-avatar){min-width:0;flex:1}
 .ederp .erp-student-header h1{overflow-wrap:anywhere}
+
+.ederp .erp-financial-badge{display:inline-flex;align-items:center;justify-content:center;min-height:28px;padding:4px 12px;border-radius:8px;font-size:13px;font-weight:600;line-height:1.3;white-space:nowrap}
+.ederp .erp-financial-badge.erp-status-baixado{background:#dff3e5;color:#225e39}
+.ederp .erp-financial-badge.erp-status-vencido{background:#f9dfdf;color:#923737}
+.ederp .erp-financial-badge.erp-status-em_aberto{background:#fff1c9;color:#775b19}
+.ederp .erp-financial-badge.erp-status-cancelado{background:#edf0f2;color:#58636b}
