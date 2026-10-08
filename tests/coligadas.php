@@ -21,7 +21,7 @@ $titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->t
 $oldContract=$db->get('contratos',$ct);wp_set_current_user($rfUser);$offers=$renew->offers($student);$selected=array_values(array_filter($offers,fn($v)=>(int)$v['idoferta']===(int)$o['idoferta']));testP(count($selected)===1&&$selected[0]['muda_coligada']===true,'responsável recebe oferta com CNPJ de destino');
 $body=['idoferta'=>$o['idoferta'],'idmatricula_origem'=>$initial['idmatricula'],'idturma'=>$destClass,'aceite'=>true,'versao_termo'=>'1'];$key=keyP();$result=$renew->renew($body,$key);testP($renew->renew($body,$key)===$result,'rematrícula entre coligadas é idempotente');
 $newStudent=$db->get('alunos',(int)$result['idaluno']);$newEnrollment=$db->get('matriculas',(int)$result['idmatricula']);$newContract=$db->get('contratos',(int)$result['idcontrato']);
-testP((int)$newStudent['codcoligada']===$second&&(int)$newStudent['codpessoa']===(int)$a['codpessoa']&&$newStudent['ra']==='00077','destino tem ficha própria, mesma pessoa e mesmo RA');
+testP((int)$newStudent['codcoligada']===$second&&(int)$newStudent['codpessoa']===(int)$a['codpessoa']&&$newStudent['ra']===$db->get('alunos',$student)['ra'],'destino tem ficha própria, mesma pessoa e mesmo RA');
 testP((int)$newEnrollment['codcoligada']===$second&&(int)$newEnrollment['idmatricula_origem']===(int)$initial['idmatricula'],'nova matrícula mantém referência à origem');
 testP((int)$newContract['codcoligada']===$second&&$newContract['valor_original_total']==='2400.00'&&parcelsP((int)$result['idcontrato'])===[],'contrato pertence ao destino e aguarda geração financeira');
 testP($db->get('contratos',$ct)===$oldContract,'contrato de origem preservado integralmente');

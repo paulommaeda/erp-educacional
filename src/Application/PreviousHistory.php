@@ -7,7 +7,7 @@ use EducacionalERP\Domain\{Input,RuleViolation,CadastroText};
 final class PreviousHistory
 {
     public function __construct(private Database $db) {}
-    public function types(?int $company=null):array {return $this->db->rows('SELECT * FROM '.$this->db->table('tipos_disciplina').' WHERE codcoligada=%d ORDER BY nome',[$company??Coligadas::current()]);}
+    public function types(?int $company=null):array {$company=$company??Coligadas::current();$rows=$this->db->rows('SELECT * FROM '.$this->db->table('tipos_disciplina').' WHERE codcoligada=%d ORDER BY nome',[$company]);foreach($rows as &$r)$r['subtipos']=$this->db->rows('SELECT * FROM '.$this->db->table('subtipos_disciplina').' WHERE codcoligada=%d AND idtipo_disciplina=%d ORDER BY nome',[$company,(int)$r['idtipo_disciplina']]);return $rows;}
     public function typeSave(array $d,string $key):array
     {
         Access::requireAdmin();return $this->db->atomic(fn()=>(new Operations($this->db))->run($key,'tipo_disciplina',$d,function()use($d,$key){
@@ -24,7 +24,7 @@ final class PreviousHistory
     public function listing(int $student):array
     {
         $this->db->get('alunos',$student);$rows=$this->db->rows('SELECT * FROM '.$this->db->table('historicos_anteriores').' WHERE idaluno=%d ORDER BY idhistorico',[$student]);
-        foreach($rows as &$row){$row['anos']=$this->db->rows('SELECT * FROM '.$this->db->table('historico_anos').' WHERE idhistorico=%d ORDER BY ano_letivo,periodo_letivo,idano',[$row['idhistorico']]);foreach($row['anos'] as &$year)$year['disciplinas']=$this->db->rows('SELECT d.*,t.nome AS tipo_nome FROM '.$this->db->table('historico_disciplinas').' d JOIN '.$this->db->table('tipos_disciplina').' t ON t.idtipo_disciplina=d.idtipo_disciplina WHERE d.idano=%d ORDER BY d.nome,d.idregistro_disciplina',[$year['idano']]);unset($year);}unset($row);return $rows;
+        foreach($rows as &$row){$row['anos']=$this->db->rows('SELECT * FROM '.$this->db->table('historico_anos').' WHERE idhistorico=%d ORDER BY ano_letivo,periodo_letivo,idano',[$row['idhistorico']]);foreach($row['anos'] as &$year)$year['disciplinas']=$this->db->rows('SELECT d.*,t.nome AS tipo_nome,s.nome AS subtipo_nome FROM '.$this->db->table('historico_disciplinas').' d JOIN '.$this->db->table('tipos_disciplina').' t ON t.idtipo_disciplina=d.idtipo_disciplina LEFT JOIN '.$this->db->table('subtipos_disciplina').' s ON s.idsubtipo_disciplina=d.idsubtipo_disciplina WHERE d.idano=%d ORDER BY d.nome,d.idregistro_disciplina',[$year['idano']]);unset($year);}unset($row);return $rows;
     }
     public function save(int $student,array $d,string $key):array
     {
@@ -44,7 +44,7 @@ final class PreviousHistory
                 foreach($disciplines as $disc){if(!is_array($disc))throw new RuleViolation('Disciplina inválida.');$discId=empty($disc['idregistro_disciplina'])?0:Input::id($disc['idregistro_disciplina']);if($discId&&in_array($discId,$kept,true))throw new RuleViolation('Disciplina duplicada.');if($discId&&(int)$this->db->get('historico_disciplinas',$discId,true)['idano']!==$yearId)throw new RuleViolation('Disciplina pertence a outro ano.');
                     $type=Input::id($disc['idtipo_disciplina']??null);$tr=$this->db->get('tipos_disciplina',$type,true);if((int)$tr['codcoligada']!==Coligadas::current())throw new RuleViolation('Tipo pertence a outra coligada.');
                     $existing=$discId?$this->db->get('historico_disciplinas',$discId):null;if(!(int)$tr['ativo']&&(!$existing||(int)$existing['idtipo_disciplina']!==$type))throw new RuleViolation('Selecione um tipo de disciplina ativo.');
-                    $dd=['idano'=>$yearId,'nome'=>$this->text($disc,'nome',160),'nota_final'=>$this->text($disc,'nota_final',30),'idtipo_disciplina'=>$type];if($discId)$this->db->update('historico_disciplinas',$discId,$dd);else $discId=$this->db->insert('historico_disciplinas',$dd);$kept[]=$discId;
+                    $sub=empty($disc['idsubtipo_disciplina'])?null:Input::id($disc['idsubtipo_disciplina']);if($sub){$sr=$this->db->get('subtipos_disciplina',$sub,true);if((int)$sr['codcoligada']!==Coligadas::current()||(int)$sr['idtipo_disciplina']!==$type||(!(int)$sr['ativo']&&(!$existing||(int)$existing['idsubtipo_disciplina']!==$sub)))throw new RuleViolation('Subtipo inválido para o tipo selecionado.');}$dd=['idsubtipo_disciplina'=>$sub,'idano'=>$yearId,'nome'=>$this->text($disc,'nome',160),'nota_final'=>$this->text($disc,'nota_final',30),'idtipo_disciplina'=>$type];if($discId)$this->db->update('historico_disciplinas',$discId,$dd);else $discId=$this->db->insert('historico_disciplinas',$dd);$kept[]=$discId;
                 }
                 foreach($this->db->rows('SELECT idregistro_disciplina FROM '.$this->db->table('historico_disciplinas').' WHERE idano=%d',[$yearId]) as $r)if(!in_array((int)$r['idregistro_disciplina'],$kept,true))$this->db->query('DELETE FROM '.$this->db->table('historico_disciplinas').' WHERE idregistro_disciplina=%d',[$r['idregistro_disciplina']]);
             }

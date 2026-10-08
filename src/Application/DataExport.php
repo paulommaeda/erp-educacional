@@ -11,7 +11,7 @@ final class DataExport
         'pessoas'=>['nome'=>'Pessoas e endereços','tabelas'=>['pessoas','pessoa_enderecos','estados_civis','numeracao_pessoas','api_requerimentos','grupos_campos','campos_adicionais','pessoa_campos_adicionais']],
         'usuarios'=>['nome'=>'Usuários vinculados (sem senhas)','tabelas'=>['pessoa_usuarios','usuarios']],
         'alunos'=>['nome'=>'Alunos e responsáveis','tabelas'=>['alunos','aluno_responsaveis']],
-        'academico'=>['nome'=>'Estrutura acadêmica e planos','tabelas'=>['coligadas','periodos_letivos','cursos','turnos','planos_pagamento','turmas','disciplinas','grades_curriculares','grade_disciplinas','turma_grades','professores','professor_disciplinas','professor_turmas','professor_valores_hora']],
+        'academico'=>['nome'=>'Estrutura acadêmica e planos','tabelas'=>['coligadas','periodos_letivos','cursos','turnos','planos_pagamento','turmas','subtipos_disciplina','disciplinas','grades_curriculares','grade_disciplinas','turma_grades','professores','professor_disciplinas','professor_turmas','professor_valores_hora']],
         'matriculas'=>['nome'=>'Matrículas e rematrículas','tabelas'=>['aluno_periodos','matriculas','matricula_movimentacoes','ofertas_rematricula','oferta_turmas','rematriculas']],
         'financeiro'=>['nome'=>'Contratos, parcelas e financeiro','tabelas'=>['contratos','parcelas','lancamentos','baixas','baixa_estornos','lancamento_ajustes','trocas_responsavel','troca_contratos','troca_lancamentos','contrato_descontos','desconto_lancamentos']],
         'chat'=>['nome'=>'Chat, canais e anexos privados','tabelas'=>['chat_canais','chat_membros','chat_conversas','chat_mensagens','chat_anexos','chat_leituras']],
@@ -23,7 +23,7 @@ final class DataExport
     public function __construct(private Database $db) {}
     public function catalog():array
     {
-        Access::requireAdmin();return ['categorias'=>self::GROUPS,'coligadas'=>$this->db->rows('SELECT codcoligada,nome,cnpj,ativo FROM '.$this->db->table('coligadas').' ORDER BY nome'),'coligada_atual'=>Coligadas::current(),'versao'=>defined('EDERP_VERSION')?EDERP_VERSION:'0.14.0'];
+        Access::requireAdmin();return ['categorias'=>self::GROUPS,'coligadas'=>$this->db->rows('SELECT codcoligada,nome,cnpj,ativo FROM '.$this->db->table('coligadas').' ORDER BY nome'),'coligada_atual'=>Coligadas::current(),'versao'=>defined('EDERP_VERSION')?EDERP_VERSION:'0.14.1'];
     }
     private function companies(array $d):array
     {

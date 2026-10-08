@@ -56,8 +56,8 @@ final class Controller
         $this->route('/api-pessoas/requerimentos/'.$id.'/confirmar','POST',$review,fn($r)=>$external->confirm((int)$r['id'],$this->payload($r),$this->key($r)));
         $curriculum=new \EducacionalERP\Application\Curriculum($this->db);
         $this->route('/curriculo','GET',fn()=>Access::isAdmin()||current_user_can('erp_gerenciar_academico'),fn()=>$curriculum->listing());
-        $this->route('/curriculo/(?P<tipo>disciplinas|grades_curriculares|grade_disciplinas|turma_grades|professores|professor_disciplinas|professor_turmas|professor_valores_hora)','POST',fn()=>Access::isAdmin(),fn($r)=>$curriculum->save($r['tipo'],$this->payload($r),$this->key($r)));
-        $this->route('/curriculo/(?P<tipo>disciplinas|grades_curriculares|grade_disciplinas|turma_grades|professores|professor_disciplinas|professor_turmas|professor_valores_hora)/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$curriculum->remove($r['tipo'],(int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/curriculo/(?P<tipo>subtipos_disciplina|disciplinas|grades_curriculares|grade_disciplinas|turma_grades|professores|professor_disciplinas|professor_turmas|professor_valores_hora)','POST',fn()=>Access::isAdmin(),fn($r)=>$curriculum->save($r['tipo'],$this->payload($r),$this->key($r)));
+        $this->route('/curriculo/(?P<tipo>subtipos_disciplina|disciplinas|grades_curriculares|grade_disciplinas|turma_grades|professores|professor_disciplinas|professor_turmas|professor_valores_hora)/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$curriculum->remove($r['tipo'],(int)$r['id'],$this->payload($r),$this->key($r)));
         $extra=new \EducacionalERP\Application\AdditionalFields($this->db);
         $this->route('/grupos-campos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('grupos_campos',(int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/campos-adicionais/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$extra->remove('campos_adicionais',(int)$r['id'],$this->payload($r),$this->key($r)));
