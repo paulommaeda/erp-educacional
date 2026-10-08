@@ -117,11 +117,35 @@
   }
   function enrollmentActions(actions){
     const menu=h('details',undefined,'erp-enrollment-actions'),toggle=h('summary','☰'),items=h('div',undefined,'erp-enrollment-action-items');
-    toggle.setAttribute('aria-label','Ações da matrícula');toggle.title='Ações da matrícula';
-    items.append(...actions);menu.append(toggle,items);
-    menu.addEventListener('toggle',()=>{if(menu.open)root.querySelectorAll('.erp-enrollment-actions[open]').forEach(other=>{if(other!==menu)other.open=false;});});
-    menu.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();menu.open=false;toggle.focus();}});
-    items.addEventListener('click',e=>{if(e.target.closest('button,a'))menu.open=false;});
+    toggle.setAttribute('aria-label','Ações da matrícula');toggle.title='Ações da matrícula';toggle.setAttribute('aria-expanded','false');
+    items.setAttribute('popover','auto');items.append(...actions);menu.append(toggle,items);
+    let listeners=null,observer=null;
+    const stop=()=>{listeners?.abort();listeners=null;observer?.disconnect();observer=null;};
+    const close=()=>{menu.open=false;toggle.setAttribute('aria-expanded','false');if(items.hidePopover&&items.matches(':popover-open'))items.hidePopover();stop();};
+    const position=()=>{
+      const rect=toggle.getBoundingClientRect(),width=Math.min(280,window.innerWidth-24);
+      items.style.width=width+'px';items.style.maxHeight=Math.max(44,window.innerHeight-24)+'px';
+      const height=items.getBoundingClientRect().height;
+      const below=window.innerHeight-rect.bottom-12,above=rect.top-12;
+      const top=below>=height||below>=above?rect.bottom+6:rect.top-height-6;
+      items.style.left=Math.max(12,Math.min(rect.right-width,window.innerWidth-width-12))+'px';
+      items.style.top=Math.max(12,Math.min(top,window.innerHeight-height-12))+'px';
+    };
+    menu.addEventListener('toggle',()=>{
+      toggle.setAttribute('aria-expanded',String(menu.open));
+      if(!menu.open){close();return;}
+      root.querySelectorAll('.erp-enrollment-actions[open]').forEach(other=>{if(other!==menu)other.open=false;});
+      if(items.showPopover&&!items.matches(':popover-open'))items.showPopover();
+      position();stop();listeners=new AbortController();const opts={signal:listeners.signal};
+      document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))close();},opts);
+      document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();toggle.focus();}},opts);
+      window.addEventListener('resize',position,opts);
+      document.addEventListener('scroll',position,{...opts,capture:true});
+      observer=new MutationObserver(()=>{if(!menu.isConnected)close();});observer.observe(root,{childList:true,subtree:true});
+    });
+    items.addEventListener('toggle',e=>{if(e.newState==='closed'&&menu.open)close();});
+    menu.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();toggle.focus();}});
+    items.addEventListener('click',e=>{if(e.target.closest('button,a'))close();});
     return menu;
   }
   function enrollmentSummary(out,d){if(d.periodos_pendentes.length){out.append(h('h2','Períodos aguardando turma'));d.periodos_pendentes.filter(v=>!Number(EDERP.period)||String(v.codperiodo)===String(EDERP.period)).forEach(v=>{const c=card(v.codigo+' — '+v.descricao);c.append(h('span','Aguardando turma','erp-badge warning'),link('Selecionar turma','matriculas',{aluno:d.aluno.idaluno,vinculo:v.idvinculoperiodo}));if(caps.admin)c.append(removeButton('aluno_periodos',v,()=>sheet()));out.append(c);});}

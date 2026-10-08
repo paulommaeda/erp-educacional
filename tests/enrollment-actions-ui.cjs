@@ -10,4 +10,9 @@ assert.equal(menu.open,false);assert.equal(menu.querySelectorAll('button').lengt
 menu.open=true;actions[5].click();assert.equal(called,1);assert.equal(menu.open,false);
 menu.open=true;menu.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(menu.open,false);assert.equal(w.document.activeElement,menu.querySelector('summary'));
 assert.ok(source.slice(end,source.indexOf('\n  function ',end+5)).includes('return [enrollmentActions(actions)]'));
+const css=fs.readFileSync(path.join(__dirname,'../assets/app.css'),'utf8');
+assert.match(css,/\.ederp \.erp-enrollment-action-items\{position:fixed;/);
+assert.ok(source.includes("items.setAttribute('popover','auto')"));
+assert.ok(source.includes("window.addEventListener('resize',position,opts)"));
+assert.ok(source.includes("listeners?.abort()"));
 dom.window.close();console.log('PASS: todas as ações preservadas, menu fechado inicialmente, callbacks e Escape.');

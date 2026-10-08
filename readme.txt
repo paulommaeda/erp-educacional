@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.9
+Stable tag: 0.14.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.10 =
+* Menu de ações das matrículas sobreposto à tabela, sem alterar a altura das linhas.
 
 = 0.14.9 =
 * Ações das matrículas na ficha do aluno reunidas em menu hambúrguer, no desktop e mobile.

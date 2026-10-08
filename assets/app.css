@@ -211,12 +211,12 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .ederp .erp-user-role-editor{grid-column:1/-1;border:1px solid var(--j-line,#ddd);border-radius:12px;padding:16px;display:grid;gap:12px}
 @media(max-width:800px){.ederp .erp-user-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px}.ederp .erp-user-row>strong,.ederp .erp-user-row>span{grid-column:1}.ederp .erp-user-row>button{grid-column:2;grid-row:1/5}}
 
-/* Enrollment row actions expand within the cell, without clipped dropdowns. */
+/* Floating enrollment actions: no table row reflow. */
 .ederp .erp-enrollment-actions{display:block;max-width:280px;margin-left:auto}
 .ederp .erp-enrollment-actions>summary{display:flex;align-items:center;justify-content:center;list-style:none;cursor:pointer;width:44px;min-height:44px;margin-left:auto;border:1px solid var(--j-line,#d9e2e8);border-radius:10px;background:var(--j-surface,#fff);color:var(--j-ink,#342760);font-size:22px}
 .ederp .erp-enrollment-actions>summary::-webkit-details-marker{display:none}
 .ederp .erp-enrollment-actions>summary:focus-visible{outline:2px solid var(--j-action,#342760);outline-offset:3px}
-.ederp .erp-enrollment-action-items{display:flex;flex-direction:column;gap:6px;margin-top:8px;padding:8px;border:1px solid var(--j-line,#d9e2e8);border-radius:12px;background:var(--j-surface,#fff)}
+.ederp .erp-enrollment-action-items{position:fixed;inset:auto;z-index:10000;box-sizing:border-box;overflow:auto;box-shadow:0 8px 24px #0002;display:flex;flex-direction:column;gap:6px;margin:0;padding:8px;border:1px solid var(--j-line,#d9e2e8);border-radius:12px;background:var(--j-surface,#fff)}
 .ederp .erp-enrollment-action-items>button,.ederp .erp-enrollment-action-items>a{width:100%;margin:0;text-align:left;min-height:44px;white-space:normal}
 .ederp .erp-enrollment-actions:not([open])>.erp-enrollment-action-items{display:none}
 @media(max-width:700px){.ederp .erp-enrollment-actions{max-width:none;width:100%}}
