@@ -12,6 +12,7 @@
   window.EDERPPeriodQuery=periodQuery;
   const scopeHost=document.querySelector('.journey-content')||document.querySelector('.erp-workflow')?.parentElement;
   const scopeView=document.querySelector('[data-journey-screen]')?.dataset.journeyScreen||new URLSearchParams(location.search).get('erp_tela')||document.querySelector('[data-erp-screen]')?.dataset.erpScreen||document.querySelector('[data-journey-view]')?.dataset.journeyView;
+  window.EDERPBack={place(arrow){if(!scopeHost||!arrow)return;let slot=scopeHost.querySelector(':scope > .erp-record-back');if(!slot){slot=el('div',undefined,'ederp erp-record-back');}slot.replaceChildren(arrow);scopeHost.prepend(slot);}};
   function context(parent){let box=parent.querySelector(':scope > .erp-context-selectors');if(!box){box=el('div',undefined,'erp-context-selectors');parent.prepend(box);}return box;}
   if(scopeHost&&EDERP.caps?.periods&&['inicio','academico','financeiro','alunos','professores'].includes(scopeView)){
     const bar=el('div',undefined,'erp-period-bar'),label=el('label','Período da consulta'),choice=el('select');label.append(choice);bar.append(label);if(document.querySelector('.journey-content'))context(scopeHost).append(bar);else context(scopeHost).append(bar);

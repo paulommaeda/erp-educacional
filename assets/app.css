@@ -192,3 +192,9 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .ederp a.erp-back-arrow,.ederp button.erp-back-arrow{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;min-height:44px;padding:0;margin:0 0 12px;background:transparent;color:var(--j-action,var(--erp-accent));border:0;border-radius:8px;font-size:24px;font-weight:400;line-height:1;text-decoration:none;box-shadow:none}
 .ederp .erp-back-arrow:hover{background:var(--j-soft,#eaf8f2)}
 .ederp .erp-back-arrow[hidden]{display:none!important}
+
+.ederp.erp-record-back{margin:0;padding:0;max-width:none}
+.erp-record-back:has(>.erp-back-arrow[hidden]){display:none}
+.erp-context-selectors{align-items:stretch}
+.ederp .erp-student-header>div:not(.erp-avatar){min-width:0;flex:1}
+.ederp .erp-student-header h1{overflow-wrap:anywhere}
