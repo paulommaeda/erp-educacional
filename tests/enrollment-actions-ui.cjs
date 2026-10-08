@@ -1,0 +1,13 @@
+const {JSDOM}=require('jsdom'),fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
+const dom=new JSDOM('<main></main>',{runScripts:'dangerously'}),w=dom.window;
+const source=fs.readFileSync(path.join(__dirname,'../assets/workflow.js'),'utf8');
+const start=source.indexOf('  function enrollmentActions('),end=source.indexOf('  function enrollmentSummary(',start);
+w.eval("const root=document.querySelector('main');const h=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};"+source.slice(start,end)+"window.make=enrollmentActions;");
+const actions=['Excluir','Trocar turma','Transferência externa','Cancelar rematrícula','Resultado do período','Histórico','Configurar contrato'].map(label=>{const b=w.document.createElement('button');b.textContent=label;return b;});
+let called=0;actions[5].addEventListener('click',()=>called++);
+const menu=w.make(actions);w.document.querySelector('main').append(menu);
+assert.equal(menu.open,false);assert.equal(menu.querySelectorAll('button').length,7);
+menu.open=true;actions[5].click();assert.equal(called,1);assert.equal(menu.open,false);
+menu.open=true;menu.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bubbles:true}));assert.equal(menu.open,false);assert.equal(w.document.activeElement,menu.querySelector('summary'));
+assert.ok(source.slice(end,source.indexOf('\n  function ',end+5)).includes('return [enrollmentActions(actions)]'));
+dom.window.close();console.log('PASS: todas as ações preservadas, menu fechado inicialmente, callbacks e Escape.');
