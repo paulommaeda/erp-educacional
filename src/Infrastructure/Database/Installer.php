@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '26';
+    public const VERSION = '27';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -37,6 +37,10 @@ final class Installer
                     $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index)if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$keys[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];
                     foreach($keys as $key=>$cols){ksort($cols);$cols=array_values($cols);if(!in_array('codcoligada',$cols,true)&&!in_array($cols,$meta['unique'],true))$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
                 }
+                if($name==='professor_disciplinas'){
+                    $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $idx)if((int)$idx['Non_unique']===0&&$idx['Key_name']!=='PRIMARY')$keys[$idx['Key_name']][(int)$idx['Seq_in_index']]=$idx['Column_name'];
+                    foreach($keys as $key=>$cols){ksort($cols);if(array_values($cols)===['codcoligada','idprofessor','iddisciplina'])$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
+                }
                 if($name==='api_requerimentos'){
                     $obsolete=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index)if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$obsolete[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];
                     foreach($obsolete as $key=>$cols){ksort($cols);if(array_values($cols)===['cpf_origem'])$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
@@ -44,6 +48,16 @@ final class Installer
                 SchemaIndexes::ensure($this->db,$table,$meta);
                 $columns = $this->db->rows("SHOW COLUMNS FROM $table");
                 if (count($columns) !== count($meta['columns'])) { throw new \RuntimeException('Estrutura divergente em ' . $name); }
+            }
+            if((int)get_option('ederp_schema_version',0)<27){
+                $this->db->atomic(function(){
+                    $q=$this->db->table('professor_disciplinas');$p=$this->db->table('periodos_letivos');
+                    foreach($this->db->rows("SELECT * FROM $q WHERE codperiodo IS NULL FOR UPDATE") as $old){
+                        $periods=$this->db->rows("SELECT codperiodo FROM $p WHERE codcoligada=%d",[(int)$old['codcoligada']]);
+                        foreach($periods as $period){if(!$this->db->row("SELECT idvinculo FROM $q WHERE idprofessor=%d AND iddisciplina=%d AND codperiodo=%d",[(int)$old['idprofessor'],(int)$old['iddisciplina'],(int)$period['codperiodo']]))$this->db->insert('professor_disciplinas',['codcoligada'=>$old['codcoligada'],'idprofessor'=>$old['idprofessor'],'iddisciplina'=>$old['iddisciplina'],'codperiodo'=>$period['codperiodo']]);}
+                        if($periods){$this->db->query("DELETE FROM $q WHERE idvinculo=%d",[(int)$old['idvinculo']]);$this->db->audit('professor_disciplinas',(int)$old['idvinculo'],'migrar_periodos',$old,['periodos'=>array_column($periods,'codperiodo')],'schema-27');}
+                    }
+                });
             }
             if((int)get_option('ederp_schema_version',0)<18)(new \EducacionalERP\Application\AdditionalFields($this->db))->migrateGroups();
             if(version_compare((string)get_option('ederp_schema_version','0'),'8','<')){

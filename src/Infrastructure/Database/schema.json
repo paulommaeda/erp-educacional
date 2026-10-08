@@ -3331,7 +3331,8 @@
       "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
       "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
       "idprofessor": "bigint(20) unsigned NOT NULL",
-      "iddisciplina": "bigint(20) unsigned NOT NULL"
+      "iddisciplina": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NULL"
     },
     "pk": [
       "idvinculo"
@@ -3344,7 +3345,8 @@
       [
         "codcoligada",
         "idprofessor",
-        "iddisciplina"
+        "iddisciplina",
+        "codperiodo"
       ]
     ],
     "indexes": [],
@@ -3378,6 +3380,17 @@
         "references": [
           "codcoligada",
           "iddisciplina"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
         ]
       }
     ]

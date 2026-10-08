@@ -4,15 +4,15 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\RuleViolation;
 final class MenuPolicy
 {
-    public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','pessoas'=>'Pessoas','alunos'=>'Alunos','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Gestão financeira','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
+    public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','pessoas'=>'Pessoas','alunos'=>'Alunos','professores'=>'Professores','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Gestão financeira','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
     private const ADMIN=['exportacao','importacao','perfis','configuracoes'];
-    private const CAPS=['requerimentos'=>'erp_gerenciar_pessoas','pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','rematriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro'];
+    private const CAPS=['requerimentos'=>'erp_gerenciar_pessoas','pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','professores'=>'erp_gerenciar_academico','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','rematriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro'];
     public static function defaults(string $role):array
     {
         return match($role){
             'erp_financeiro'=>['financeiro'],
             'erp_supervisao','erp_coordenacao','erp_orientacao'=>['chat'],
-            'erp_secretaria'=>['requerimentos','chat','usuarios','pessoas','alunos','academico','matriculas','financeiro','rematriculas'],
+            'erp_secretaria'=>['requerimentos','chat','usuarios','pessoas','alunos','professores','academico','matriculas','financeiro','rematriculas'],
             'erp_aluno'=>['meus_estudos'],
             'erp_responsavel_academico'=>['chat','meus_estudos','renovacao'],
             'erp_responsavel_financeiro'=>['chat','meu_financeiro','renovacao'],
@@ -43,7 +43,8 @@ final class MenuPolicy
         if(str_starts_with($path,'/contratos/')||str_starts_with($path,'/financeiro/pendentes'))return self::can('financeiro');
         if(str_starts_with($path,'/turmas/')&&str_ends_with($path,'/plano'))return self::any(['matriculas','alunos','academico']);
         if(str_starts_with($path,'/cadastros/'))return self::can(str_contains($path,'/pessoas')?'pessoas':(str_contains($path,'/alunos')?'alunos':'academico'));
-        if(str_starts_with($path,'/opcoes/pessoas'))return self::any(['pessoas','alunos','matriculas','financeiro']);
+        if(str_starts_with($path,'/curriculo'))return self::any(['academico','professores','configuracoes']);
+        if(str_starts_with($path,'/opcoes/pessoas'))return self::any(['pessoas','alunos','professores','matriculas','financeiro']);
         if(str_starts_with($path,'/opcoes/'))return self::any(['academico','matriculas','alunos','rematriculas']);
         if(str_starts_with($path,'/secretaria/alunos'))return self::any(['alunos','matriculas']);
         if(str_starts_with($path,'/financeiro/alunos'))return self::can('financeiro');

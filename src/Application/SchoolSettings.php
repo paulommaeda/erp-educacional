@@ -19,7 +19,7 @@ final class SchoolSettings
     public static function resolve(mixed $value):int { return $value===null||$value===''?self::current():($value==='todos'?0:Input::id($value)); }
     public static function canChoose(string $scope='academic'):bool
     {
-        return Access::isAdmin() || ($scope==='finance' ? (current_user_can('erp_consultar_financeiro') && \EducacionalERP\Infrastructure\WordPress\MenuPolicy::can('financeiro')) : (current_user_can('erp_gerenciar_academico') && \EducacionalERP\Infrastructure\WordPress\MenuPolicy::any(['academico','matriculas','alunos','rematriculas'])));
+        return Access::isAdmin() || ($scope==='finance' ? (current_user_can('erp_consultar_financeiro') && \EducacionalERP\Infrastructure\WordPress\MenuPolicy::can('financeiro')) : (current_user_can('erp_gerenciar_academico') && \EducacionalERP\Infrastructure\WordPress\MenuPolicy::any(['academico','professores','matriculas','alunos','rematriculas'])));
     }
     public static function forViewer(mixed $value,string $scope='academic'):int
     {

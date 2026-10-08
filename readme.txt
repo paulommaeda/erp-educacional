@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.1
+Stable tag: 0.14.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.2 =
+* Professores em menu próprio, ficha com disciplinas, turmas e valor da hora por período letivo.
+* Reorganização da estrutura acadêmica e alinhamento das ações de copiar e importar turmas.
+
 
 = 0.14.1 =
 * Tipos de disciplina com subtipos opcionais na estrutura acadêmica e histórico escolar anterior.
