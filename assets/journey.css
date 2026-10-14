@@ -26,3 +26,12 @@ body.journey-portal-page{margin:0;background:var(--j-paper);color:var(--j-ink);f
 .journey-content .erp-context-selectors select{width:100%;min-width:0;max-width:100%}
 .journey-content .journey-hero{margin-bottom:16px}
 @media(max-width:380px){.journey-content .erp-context-selectors{gap:8px}.journey-content .erp-context-selectors>div{padding:10px}.journey-content .erp-context-selectors label{font-size:12px}}
+
+/* Login appearance is independent from portal colors. */
+.erp-login-screen{box-sizing:border-box;min-height:100dvh;width:100%;display:flex;align-items:center;justify-content:center;padding:24px 16px;background:var(--erp-login-bg,var(--j-paper));}
+.erp-login-screen .journey-login.ederp{box-sizing:border-box;width:100%;max-width:var(--erp-login-width,460px)!important;margin:0!important;border-radius:var(--erp-login-radius,24px);background:var(--login-form-fundo,#fff);color:var(--login-texto,#193d38);--j-ink:var(--login-texto);--j-action:var(--login-botao);--j-onaction:var(--login-botao-texto);}
+.erp-login-screen .journey-login h1,.erp-login-screen .journey-login label{color:var(--login-texto);}
+.erp-login-screen .journey-login input:not([type=checkbox]){box-sizing:border-box;background:var(--login-campo-fundo);border-color:var(--login-campo-borda);color:var(--login-texto);}
+.erp-login-screen .journey-login button[type=submit]{background:var(--login-botao);color:var(--login-botao-texto);width:100%;min-height:48px;border:0;border-radius:10px;}
+.erp-login-screen .journey-login>img{display:block;margin:0 auto;object-fit:contain;}
+@media(max-width:599px){.erp-login-screen{padding:20px 14px;}.erp-login-screen .journey-login.ederp{padding:24px!important;}}

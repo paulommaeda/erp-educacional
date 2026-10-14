@@ -220,3 +220,5 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .ederp .erp-enrollment-action-items>button,.ederp .erp-enrollment-action-items>a{width:100%;margin:0;text-align:left;min-height:44px;white-space:normal}
 .ederp .erp-enrollment-actions:not([open])>.erp-enrollment-action-items{display:none}
 @media(max-width:700px){.ederp .erp-enrollment-actions{max-width:none;width:100%}}
+
+.erp-login-preview{grid-column:1/-1;display:flex;align-items:center;justify-content:center;padding:24px;min-height:280px;border-radius:12px;max-width:100%;box-sizing:border-box}

@@ -259,11 +259,37 @@
     const logo=input('logo_id','Logo','hidden',data.data.logo_id,false),preview=h('img');preview.alt='Logo do colégio';preview.style.maxWidth='220px';preview.style.maxHeight='100px';preview.hidden=!data.logo_url;if(data.logo_url)preview.src=data.logo_url;
     f.append(logo.node,preview,button('Selecionar / enviar logo',()=>{
       if(!window.wp?.media){alert('A biblioteca de mídia não foi carregada. Recarregue a página.');return;}
-      const dialog=f.closest('dialog'),frame=wp.media({title:'Logo do colégio',multiple:false,library:{type:'image'},button:{text:'Usar logo'}});frame.on('select',()=>{const a=frame.state().get('selection').first().toJSON();logo.input.value=a.id;preview.src=a.url;preview.hidden=false;});
+      const dialog=f.closest('dialog'),frame=wp.media({title:'Logo do colégio',multiple:false,library:{type:'image'},button:{text:'Usar logo'}});frame.on('select',()=>{const a=frame.state().get('selection').first().toJSON();logo.input.value=a.id;preview.src=a.url;preview.hidden=false;paintLogin();});
       if(dialog?.open){dialog.dataset.media='open';dialog.close();frame.on('close',()=>{if(dialog.isConnected)dialog.showModal();delete dialog.dataset.media;});}frame.open();
     },true),button('Remover logo',()=>{logo.input.value='0';preview.hidden=true;},true));
     const palette=h('fieldset');palette.append(h('legend','Cores do portal'));for(const [name,label]of Object.entries(data.colors))palette.append(input(name,label,'color',data.data[name]).node);f.append(palette);
     const swatch=h('section',undefined,'ederp-card');swatch.append(h('h3','Prévia das cores'),h('p','Identidade da sua escola'),h('span','Botão de exemplo'));const paint=()=>{swatch.style.background=f.querySelector('[name=cor_superficie]').value;swatch.style.color=f.querySelector('[name=cor_texto]').value;swatch.style.borderColor=f.querySelector('[name=cor_destaque]').value;const b=swatch.querySelector('span');b.style.cssText='display:inline-block;padding:12px;border-radius:10px';b.style.background=f.querySelector('[name=cor_primaria]').value;};palette.addEventListener('input',paint);paint();f.append(swatch);
+    const loginSettings=h('fieldset');loginSettings.append(h('legend','Tela de login'),h('p','O login utiliza a mesma logo do colégio selecionada acima.'));
+    const mode=select('login_tipo','Tipo de fundo',[['solida','Cor sólida'],['degrade','Degradê'],['imagem','Imagem']],data.data.login_tipo);
+    loginSettings.append(mode.node);
+    for(const [name,label]of Object.entries(data.login_colors||{}))loginSettings.append(input(name,label,'color',data.data[name]).node);
+    for(const [name,label,min,max]of [['login_angulo','Ângulo do degradê',0,360],['login_largura','Largura do formulário (px)',320,640],['login_raio','Arredondamento do formulário (px)',0,48]]){const field=input(name,label,'number',data.data[name]);field.input.min=min;field.input.max=max;loginSettings.append(field.node);}
+    const bg=input('login_imagem_id','Imagem de fundo','hidden',data.data.login_imagem_id,false),bgPreview=h('img');bgPreview.alt='Imagem de fundo do login';bgPreview.style.cssText='max-width:100%;max-height:160px;object-fit:contain';bgPreview.hidden=!data.login_image_url;if(data.login_image_url)bgPreview.src=data.login_image_url;loginSettings.append(bg.node,bgPreview);
+    loginSettings.append(button('Selecionar / enviar imagem de fundo',()=>{
+      if(!window.wp?.media){alert('Recarregue a página para carregar a biblioteca de mídia.');return;}
+      const dialog=f.closest('dialog'),frame=wp.media({title:'Fundo do login',multiple:false,library:{type:'image'},button:{text:'Usar imagem'}});
+      frame.on('select',()=>{const image=frame.state().get('selection').first().toJSON();bg.input.value=image.id;bgPreview.src=image.url;bgPreview.hidden=false;paintLogin();});
+      if(dialog?.open){dialog.dataset.media='open';dialog.close();frame.on('close',()=>{if(dialog.isConnected)dialog.showModal();delete dialog.dataset.media;});}frame.open();
+    },true),button('Remover imagem de fundo',()=>{bg.input.value='0';bgPreview.hidden=true;paintLogin();},true));
+    const loginPreview=h('section',undefined,'erp-login-preview'),previewForm=h('div'),previewLogo=h('img'),previewTitle=h('h3','Acesse seu portal'),previewInput=h('div','Usuário ou e-mail'),previewButton=h('span','Entrar');previewLogo.alt='Logo do colégio';previewForm.append(previewLogo,previewTitle,previewInput,previewButton);loginPreview.append(previewForm);loginSettings.append(loginPreview);
+    function paintLogin(){
+      const value=name=>f.querySelector('[name='+name+']').value;
+      loginPreview.style.background=value('login_tipo')==='degrade'?'linear-gradient('+value('login_angulo')+'deg,'+value('login_fundo')+','+value('login_fundo_final')+')':value('login_fundo');
+      if(value('login_tipo')==='imagem'&&!bgPreview.hidden){loginPreview.style.backgroundImage='url('+JSON.stringify(bgPreview.src)+')';loginPreview.style.backgroundSize='cover';loginPreview.style.backgroundPosition='center';}
+      previewForm.style.cssText='width:100%;max-width:'+value('login_largura')+'px;padding:24px;box-sizing:border-box;border-radius:'+value('login_raio')+'px';
+      previewForm.style.background=value('login_form_fundo');previewForm.style.color=value('login_texto');previewTitle.style.color=value('login_texto');
+      previewLogo.hidden=preview.hidden;if(!preview.hidden)previewLogo.src=preview.src;previewLogo.style.cssText='max-width:180px;max-height:70px;object-fit:contain';
+      previewInput.style.cssText='padding:12px;border:1px solid;border-radius:10px;margin:16px 0';previewInput.style.background=value('login_campo_fundo');previewInput.style.borderColor=value('login_campo_borda');
+      previewButton.style.cssText='display:block;padding:12px;border-radius:10px;text-align:center';previewButton.style.background=value('login_botao');previewButton.style.color=value('login_botao_texto');
+      f.querySelector('[name=login_angulo]').parentElement.hidden=value('login_tipo')!=='degrade';
+      f.querySelector('[name=login_fundo_final]').parentElement.hidden=value('login_tipo')!=='degrade';
+    }
+    loginSettings.addEventListener('input',paintLogin);mode.input.addEventListener('change',paintLogin);f.addEventListener('click',()=>queueMicrotask(paintLogin));f.append(loginSettings);paintLogin();
     c.append(f);root.append(c);
     bind(f,'colegio',()=>({...dataOf(f),version:data.version}),()=>location.reload(),'Salvar identidade do colégio');
   }

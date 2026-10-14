@@ -78,9 +78,9 @@ final class Authentication
         $title=$reset?'Definir nova senha':($recover?'Recuperar senha':'Acesse seu portal');
         $notice=self::$message;if(isset($_GET['senha_alterada']))$notice='Senha alterada. Entre com sua nova senha.';
         $login=$reset?self::text('erp_login',$_GET):self::text('login',$_POST);$key=$reset?self::text('erp_key',$_GET):'';
-        $html='<div class="journey-login ederp">'.$logo.'<h1>'.esc_html($title).'</h1>';
+        $html='<section class="erp-login-screen" style="'.esc_attr(\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::loginStyle()).'"><div class="journey-login ederp">'.$logo.'<h1>'.esc_html($title).'</h1>';
         if($notice)$html.='<p role="alert" class="erp-feedback">'.esc_html($notice).'</p>';
-        if($reset&&is_wp_error(check_password_reset_key($key,$login)))return $html.'<p>Link inválido ou expirado.</p><a href="'.esc_url(Portal::url('recuperar_senha')).'">Solicitar outro link</a></div>';
+        if($reset&&is_wp_error(check_password_reset_key($key,$login)))return $html.'<p>Link inválido ou expirado.</p><a href="'.esc_url(Portal::url('recuperar_senha')).'">Solicitar outro link</a></div></section>';
         $url=$reset?add_query_arg(['erp_key'=>$key,'erp_login'=>$login],Portal::url($view)):Portal::url($recover?'recuperar_senha':'inicio');
         $html.='<form method="post" action="'.esc_url($url).'" class="ederp-form">'.wp_nonce_field('ederp_auth_'.$action,'_wpnonce',false,false).'<input type="hidden" name="erp_auth" value="'.$action.'">';
         if($reset)$html.='<input type="hidden" name="login" value="'.esc_attr($login).'"><input type="hidden" name="key" value="'.esc_attr($key).'">';
@@ -88,7 +88,7 @@ final class Authentication
         if(!$recover)$html.='<label>'.($reset?'Nova senha':'Senha').'<input type="password" name="password" autocomplete="'.($reset?'new-password':'current-password').'" '.($reset?'minlength="12" maxlength="4096"':'').' required></label>';
         if($reset)$html.='<label>Confirmar nova senha<input type="password" name="confirm" autocomplete="new-password" required></label>';
         if(!$reset&&!$recover)$html.='<label class="ederp-check"><input type="checkbox" name="remember" value="1"> Manter conectado</label>';
-        $html.='<button type="submit">'.($reset?'Salvar nova senha':($recover?'Enviar link':'Entrar')).'</button></form><a href="'.esc_url(Portal::url($reset||$recover?'inicio':'recuperar_senha')).'">'.($reset||$recover?'Voltar ao login':'Esqueci minha senha').'</a></div>';
+        $html.='<button type="submit">'.($reset?'Salvar nova senha':($recover?'Enviar link':'Entrar')).'</button></form><a href="'.esc_url(Portal::url($reset||$recover?'inicio':'recuperar_senha')).'">'.($reset||$recover?'Voltar ao login':'Esqueci minha senha').'</a></div></section>';
         return $html;
     }
 }
