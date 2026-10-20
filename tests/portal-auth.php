@@ -9,12 +9,12 @@ $GLOBALS['hooks']=[];$GLOBALS['rates']=[];$GLOBALS['signed']=null;$GLOBALS['rese
 function add_action($name,$call,$priority=10,$args=1){$GLOBALS['hooks'][$name]=$call;}
 function add_filter($name,$call,$priority=10,$args=1){$GLOBALS['hooks'][$name]=$call;}
 function do_action($name,...$args){}
-function get_option($name,$default=false){return $default;}
+function get_option($name,$default=false){return $GLOBALS['auth_options'][$name]??$default;}
 function home_url($path=''){return 'https://school.test'.$path;}
 function add_query_arg($arg,$value=null,$url=null){if(!is_array($arg)){$arg=[$arg=>$value];}else{$url=$value;}$url=$url??'https://school.test';return $url.(str_contains($url,'?')?'&':'?').http_build_query($arg);}
 function wp_unslash($s){return $s;}
 function wp_verify_nonce($value,$action){return $value==='nonce-'.$action;}
-function wp_nonce_field($action,$name,$referer,$echo){return '<input name="'.$name.'" value="nonce-'.$action.'">';}
+function wp_nonce_field($action,$name,$referer,$echo){return '<input type="hidden" name="'.$name.'" value="nonce-'.$action.'">';}
 function esc_url($v){return htmlspecialchars($v,ENT_QUOTES);}
 function esc_html($v){return htmlspecialchars($v,ENT_QUOTES);}
 function esc_attr($v){return htmlspecialchars($v,ENT_QUOTES);}
@@ -40,3 +40,13 @@ foreach(['https://school.test','https://SCHOOL.test:443','https://admin.school.t
 foreach(['null','https://evil.test','http://school.test','https://school.test:8443','https://school.test.evil.test'] as $origin){$_SERVER['HTTP_ORIGIN']=$origin;okA(str_contains(Authentication::process('entrar',$login),'Origem'),'origem não autorizada rejeitada: '.$origin);}
 unset($_SERVER['HTTP_ORIGIN']);
 okA(str_contains(file_get_contents(dirname(__DIR__).'/src/Presentation/Portal/Authentication.php'),"header('Referrer-Policy: same-origin')"),'página de login preserva origem nos formulários locais');
+
+$custom=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::defaults();$custom['nome']='Colégio Família & Escola';$custom['login_titulo_form']='Bem-vindo ao {colegio}';$custom['login_titulo_painel']="Família e escola.\nJuntos em cada conquista.";$custom['login_botao_rotulo']='Entrar no portal';$custom['login_rodape']='{colegio} · Sua família por perto';$GLOBALS['auth_options']['ederp_school_identity']=$custom;$_GET=[];$_POST=[];
+$html=Authentication::render('<img src="https://school.test/logo.png" alt="Logo">','inicio');
+okA(str_contains($html,'erp-login-story')&&str_contains($html,'erp-login-access')&&str_contains($html,'Bem-vindo ao Colégio Família &amp; Escola'),'login em duas áreas com textos personalizados e nome do colégio');
+okA(str_contains($html,'Entrar no portal')&&str_contains($html,'Sua família por perto')&&str_contains($html,"Família e escola.\nJuntos em cada conquista."),'botão, rodapé e quebras da apresentação personalizados');
+okA(str_contains($html,'data-login-toggle')&&str_contains($html,'autocomplete="current-password"')&&str_contains($html,'autocomplete="username"'),'login preserva preenchimento automático e oferece mostrar senha');
+$custom['login_titulo_form']='<script>alert(1)</script>';$GLOBALS['auth_options']['ederp_school_identity']=$custom;okA(!str_contains(Authentication::render('LOGO','inicio'),'<script>'),'textos de identidade são escapados na renderização');
+$_GET=['erp_key'=>'valid-key','erp_login'=>'family'];$html=Authentication::render('LOGO','redefinir_senha');okA(str_contains($html,'<h1>Definir nova senha</h1>')&&str_contains($html,'name="confirm"')&&str_contains($html,'minlength="12"'),'personalização mantém campos e instruções da nova senha');
+$_GET=['erp_key'=>'invalid','erp_login'=>'family'];$html=Authentication::render('LOGO','redefinir_senha');okA(!str_contains($html,'<form')&&str_contains($html,'Solicitar outro link')&&str_ends_with($html,'</div></div></section>'),'link expirado mostra retorno seguro dentro do mesmo layout');
+$_GET=[];$html=Authentication::render('LOGO','recuperar_senha');okA(str_contains($html,'<h1>Recuperar senha</h1>')&&!str_contains($html,'name="password"')&&!str_contains($html,'wp-login.php'),'recuperação permanece no portal com o novo layout');

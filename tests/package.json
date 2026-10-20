@@ -9,6 +9,7 @@
     "test:chat": "node chat-ui.cjs && node chat-student-ui.cjs && node chat-staff-ui.cjs",
     "test:student-record": "node student-record-ui.cjs && node student-record-permissions-ui.cjs",
     "test:communication": "node guardian-contact-ui.cjs && node chat-deep-link-ui.cjs",
-    "test:family": "node family-students-ui.cjs && node settings-lazy-ui.cjs"
+    "test:family": "node family-students-ui.cjs && node settings-lazy-ui.cjs",
+    "test:login": "node login-appearance-ui.cjs && node login-toggle-ui.cjs && node settings-lazy-ui.cjs"
   }
 }

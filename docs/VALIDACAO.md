@@ -1,5 +1,14 @@
 # Validação
 
+## 0.15.2
+
+- `tests/school-identity.php`: 34 verificações, incluindo textos, quebras de linha, cores herdadas, contraste, paleta própria preservada, compatibilidade das cores anteriores, validação, versão e permissões administrativas.
+- `tests/portal-auth.php`, `tests/portal-render.php` e `tests/portal-routing.php`: login, recuperação, redefinição, nonces, origem, limites de tentativas, mensagens, destinos do portal, escape dos textos e carregamento dos recursos do login antes do conteúdo. Os stubs de página e nonce acompanham os contratos reais do WordPress.
+- `npm run test:login`: prévia em duas áreas, paleta própria/herdada, fundos, logo, textos, token do nome do colégio, mostrar/ocultar senha sem envio e configurações sob demanda.
+- Chromium com HTML renderizado pelo PHP: 1920, 1440, 900, 768, 390 e 320 px. Verificados os painéis, cores, imagem, ausência de overflow e envio nativo dos dados ao portal. Recuperação/redefinição, link expirado e temas alternativos conferidos em desktop e celulares. Requisições interceptadas localmente, sem autenticar ou enviar e-mail real.
+- Configuração em modal validada em 1440, 390 e 320 px: logo visível, edição de cores/textos, prévia e payload de salvamento completo.
+- Sintaxe PHP 8.1/JavaScript validada. Sem alteração do schema 30 e sem acesso à instalação WordPress do colégio.
+
 ## 0.15.1
 
 - `tests/family-overview.php`: 14 verificações em PHP-WASM/SQLite, incluindo foto, ausência de turma, período vigente configurado, rematrícula futura, cancelamento, transferência externa, múltiplas coligadas e revogação do vínculo.

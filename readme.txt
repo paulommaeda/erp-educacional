@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.15.1
+Stable tag: 0.15.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.15.2 =
+* Novo login com apresentação institucional e formulário lado a lado; no mobile, apresentação compacta acima do acesso.
+* Textos editáveis, nome automático do colégio, logo do sistema e escolha entre cores herdadas ou paleta própria.
+* Mantidos fundo sólido, degradê, imagem, largura e arredondamento, com prévia reativa nas configurações.
+* Mostrar/ocultar senha acessível, recuperação e redefinição no próprio portal.
 
 = 0.15.1 =
 * Sua família na escola: foto, nome, RA, turma atual e período letivo alinhados à esquerda, com layout responsivo.

@@ -74,21 +74,35 @@ final class Authentication
     }
     public static function render(string $logo,string $view):string
     {
+        $identity=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read();
+        $copy=static fn(string $key):string=>str_replace('{colegio}',$identity['nome'],$identity[$key]);
         $reset=$view==='redefinir_senha';$recover=$view==='recuperar_senha';$action=$reset?'redefinir':($recover?'recuperar':'entrar');
-        $title=$reset?'Definir nova senha':($recover?'Recuperar senha':'Acesse seu portal');
+        $title=$reset?'Definir nova senha':($recover?'Recuperar senha':$copy('login_titulo_form'));
+        $description=$reset?'Escolha uma nova senha para acessar seu portal com segurança.':($recover?'Informe seu usuário ou e-mail. Enviaremos as orientações para recuperar seu acesso.':$copy('login_descricao_form'));
         $notice=self::$message;if(isset($_GET['senha_alterada']))$notice='Senha alterada. Entre com sua nova senha.';
         $login=$reset?self::text('erp_login',$_GET):self::text('login',$_POST);$key=$reset?self::text('erp_key',$_GET):'';
-        $html='<section class="erp-login-screen" style="'.esc_attr(\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::loginStyle()).'"><div class="journey-login ederp">'.$logo.'<h1>'.esc_html($title).'</h1>';
-        if($notice)$html.='<p role="alert" class="erp-feedback">'.esc_html($notice).'</p>';
-        if($reset&&is_wp_error(check_password_reset_key($key,$login)))return $html.'<p>Link inválido ou expirado.</p><a href="'.esc_url(Portal::url('recuperar_senha')).'">Solicitar outro link</a></div></section>';
+        $html='<section class="erp-login-screen" style="'.esc_attr(\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::loginStyle()).'">';
+        $html.='<aside class="erp-login-story" aria-label="'.esc_attr($identity['nome']).'"><div class="erp-login-story-inner"><div class="erp-login-brand"><div class="erp-login-brand-logo">'.$logo.'</div>';
+        if($copy('login_etiqueta')!=='')$html.='<span class="erp-login-tag">'.esc_html($copy('login_etiqueta')).'</span>';
+        $html.='</div><div class="erp-login-story-copy"><p class="erp-login-eyebrow">'.esc_html($copy('login_chamada_painel')).'</p><h2>'.esc_html($copy('login_titulo_painel')).'</h2><p class="erp-login-story-description">'.esc_html($copy('login_descricao_painel')).'</p></div><p class="erp-login-story-footer">'.esc_html($copy('login_rodape_painel')).'</p></div></aside>';
+        $html.='<div class="erp-login-access"><div class="journey-login ederp">';
+        if($reset||$recover)$html.='<a class="erp-login-back" href="'.esc_url(Portal::url()).'">← Voltar ao login</a>';
+        $html.='<header class="erp-login-intro"><p class="erp-login-eyebrow">'.esc_html($copy('login_boas_vindas')).'</p><h1>'.esc_html($title).'</h1><p>'.esc_html($description).'</p></header>';
+        if($notice)$html.='<p role="alert" class="erp-feedback erp-login-notice">'.esc_html($notice).'</p>';
+        $footer='<footer class="erp-login-footer">'.esc_html($copy('login_rodape'));
+        if(defined('EDERP_VERSION'))$footer.='<span class="erp-login-version">Versão '.esc_html(EDERP_VERSION).'</span>';
+        $footer.='</footer></div></div></section>';
+        if($reset&&is_wp_error(check_password_reset_key($key,$login)))return $html.'<p role="alert" class="erp-login-notice">Link inválido ou expirado.</p><a href="'.esc_url(Portal::url('recuperar_senha')).'">Solicitar outro link</a>'.$footer;
         $url=$reset?add_query_arg(['erp_key'=>$key,'erp_login'=>$login],Portal::url($view)):Portal::url($recover?'recuperar_senha':'inicio');
-        $html.='<form method="post" action="'.esc_url($url).'" class="ederp-form">'.wp_nonce_field('ederp_auth_'.$action,'_wpnonce',false,false).'<input type="hidden" name="erp_auth" value="'.$action.'">';
+        $html.='<form method="post" action="'.esc_url($url).'" class="erp-login-form">'.wp_nonce_field('ederp_auth_'.$action,'_wpnonce',false,false).'<input type="hidden" name="erp_auth" value="'.$action.'">';
         if($reset)$html.='<input type="hidden" name="login" value="'.esc_attr($login).'"><input type="hidden" name="key" value="'.esc_attr($key).'">';
-        else $html.='<label>Usuário ou e-mail<input name="login" autocomplete="username" value="'.esc_attr($login).'" required></label>';
-        if(!$recover)$html.='<label>'.($reset?'Nova senha':'Senha').'<input type="password" name="password" autocomplete="'.($reset?'new-password':'current-password').'" '.($reset?'minlength="12" maxlength="4096"':'').' required></label>';
-        if($reset)$html.='<label>Confirmar nova senha<input type="password" name="confirm" autocomplete="new-password" required></label>';
-        if(!$reset&&!$recover)$html.='<label class="ederp-check"><input type="checkbox" name="remember" value="1"> Manter conectado</label>';
-        $html.='<button type="submit">'.($reset?'Salvar nova senha':($recover?'Enviar link':'Entrar')).'</button></form><a href="'.esc_url(Portal::url($reset||$recover?'inicio':'recuperar_senha')).'">'.($reset||$recover?'Voltar ao login':'Esqueci minha senha').'</a></div></section>';
-        return $html;
+        else $html.='<label for="erp-login-user">E-mail ou usuário</label><input id="erp-login-user" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" value="'.esc_attr($login).'" required>';
+        if(!$recover){
+            $fields=$reset?['password'=>'Nova senha','confirm'=>'Confirmar nova senha']:['password'=>'Senha'];
+            foreach($fields as $name=>$label){$id='erp-login-'.$name;$html.='<label for="'.$id.'">'.$label.'</label><div class="erp-login-password"><input id="'.$id.'" type="password" name="'.$name.'" autocomplete="'.($reset?'new-password':'current-password').'" '.($reset?'minlength="12" maxlength="4096"':'').' required><button type="button" class="erp-login-toggle" data-login-toggle aria-controls="'.$id.'" aria-pressed="false" aria-label="Mostrar '.esc_attr(strtolower($label)).'">Mostrar</button></div>';}
+        }
+        if(!$reset&&!$recover)$html.='<div class="erp-login-options"><label class="erp-login-remember"><input type="checkbox" name="remember" value="1"> Manter conectado</label><a href="'.esc_url(Portal::url('recuperar_senha')).'">Esqueci minha senha</a></div>';
+        $html.='<button type="submit">'.esc_html($reset?'Salvar nova senha':($recover?'Enviar link':$copy('login_botao_rotulo'))).'</button></form>';
+        return $html.$footer;
     }
 }

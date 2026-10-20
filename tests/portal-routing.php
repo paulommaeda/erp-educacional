@@ -14,6 +14,8 @@ function home_url($p=''){return 'https://test.example'.$p;}
 function get_permalink($id){return 'https://test.example/portal-journey/';}
 function add_query_arg($key,$value,$url){return $url.'?'.$key.'='.$value;}
 function wp_insert_post($p,$error){$GLOBALS['posts_created']++;return 321;}
+function get_post_type($id){return $id===321?'page':false;}
+function get_post_status($id){return $id===321?'publish':false;}
 function okR(bool $v,string $m){if(!$v)throw new RuntimeException($m);echo "PASS: $m\n";}
 (new Portal())->register();Portal::setup();Portal::setup();okR($GLOBALS['posts_created']===1&&get_option('ederp_portal_page')===321,'configuração cria uma única página do portal');
 $uid=wp_insert_user(['user_login'=>'visitante','role'=>'erp_pessoa']);wp_set_current_user($uid);$block=$GLOBALS['actions']['admin_init'][1][0];

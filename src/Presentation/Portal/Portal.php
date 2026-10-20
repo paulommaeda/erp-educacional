@@ -17,10 +17,15 @@ final class Portal
         $id=wp_insert_post(['post_type'=>'page','post_status'=>'publish','post_title'=>'Portal escolar','post_name'=>'portal-journey','post_content'=>'[erp_app]'],true);
         if(!is_wp_error($id))update_option('ederp_portal_page',(int)$id,false);
     }
+    private static function loginAssets():void
+    {
+        wp_enqueue_style('ederp-login',plugins_url('assets/login.css',EDERP_FILE),['journey-ui'],EDERP_VERSION);
+        wp_enqueue_script('ederp-login',plugins_url('assets/login.js',EDERP_FILE),[],EDERP_VERSION,true);
+    }
     public function register():void
     {
         Authentication::register();
-        add_action('wp_enqueue_scripts',static function(){global $post;if($post instanceof \WP_Post && str_contains($post->post_content,'[erp_')){Pages::assets();wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);}});
+        add_action('wp_enqueue_scripts',static function(){global $post;if($post instanceof \WP_Post && str_contains($post->post_content,'[erp_')){Pages::assets();wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);if(!is_user_logged_in()||in_array($_GET['erp_tela']??'',['recuperar_senha','redefinir_senha'],true))self::loginAssets();}});
         add_action('admin_init',[self::class,'setup'],20);
         add_action('admin_init',static function(){if(is_user_logged_in()&&!Access::isAdmin()&&!wp_doing_ajax()){wp_safe_redirect(self::url());exit;}},1);
         add_filter('show_admin_bar',static fn($show)=>Access::isAdmin()?$show:false);
@@ -51,7 +56,7 @@ final class Portal
         wp_localize_script('journey-portal','JOURNEY',['view'=>$view,'menus'=>MenuPolicy::available(),'url'=>self::url(),'logout'=>Authentication::logoutUrl(),'school'=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read()['nome'],'logo'=>\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::logo(),'name'=>wp_get_current_user()->display_name??'','admin'=>Access::isAdmin()]);
         $identity=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read();$schoolName=esc_html($identity['nome']);$logoUrl=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::logo();
         $logo=$logoUrl?'<img src="'.esc_url($logoUrl).'" alt="'.$schoolName.'" width="245" height="56">':'<span class="erp-school-name">'.$schoolName.'</span>';
-        if(!is_user_logged_in()||in_array($view,['recuperar_senha','redefinir_senha'],true))return Authentication::render($logo,$view);
+        if(!is_user_logged_in()||in_array($view,['recuperar_senha','redefinir_senha'],true)){self::loginAssets();return Authentication::render($logo,$view);}
         $firstName=(preg_split('/\s+/u',trim((string)wp_get_current_user()->display_name))[0]??'')?:'Minha conta';
         $account='<details class="journey-account-menu"><summary class="journey-account" aria-controls="journey-account-submenu" aria-expanded="false">'.get_avatar(get_current_user_id(),40).'<span class="journey-account-name">'.esc_html($firstName).'</span></summary><nav id="journey-account-submenu" class="journey-account-submenu" aria-label="Minha conta"><a href="'.esc_url(self::url('perfil')).'">Meu perfil</a><a class="journey-account-logout" href="'.esc_url(Authentication::logoutUrl()).'">Sair</a></nav></details>';
         ob_start();echo '<div class="journey-app ederp"><a class="journey-skip" href="#journey-content">Ir para o conteúdo</a><aside class="journey-sidebar"><a class="journey-brand" href="'.esc_url(self::url()).'">'.$logo.'</a>'.$this->nav().'<p class="journey-sidebar-note">Gestão escolar<br>'.$schoolName.'</p></aside><div class="journey-body"><header class="journey-header"><a href="'.esc_url(self::url()).'">'.$logo.'</a><span>Portal educacional</span>'.$account.'</header><main id="journey-content" class="journey-content" data-journey-screen="'.esc_attr($view).'" tabindex="-1">';
