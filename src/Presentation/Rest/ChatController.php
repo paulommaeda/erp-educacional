@@ -11,6 +11,7 @@ final class ChatController
     public function register():void
     {
         $this->route('/canais','GET',fn($r)=>$this->chat->channels((bool)$r->get_param('gestao')));
+        $this->route('/contato','GET',fn($r)=>$this->chat->contactChannels(Input::id($r->get_param('idaluno')),Input::id($r->get_param('codpessoa'))));
         $this->route('/atendentes','GET',fn($r)=>$this->chat->staff((string)$r->get_param('search')));
         $this->route('/canais','POST',fn($r)=>$this->chat->saveChannel($this->data($r),$this->key($r)));
         $this->route('/canais/(?P<id>\d+)/responsaveis','GET',fn($r)=>$this->chat->recipients((int)$r['id'],(string)$r->get_param('search'),(int)$r->get_param('page')));

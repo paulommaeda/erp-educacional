@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.14
+Stable tag: 0.14.15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.15 =
+* Ações de lançamentos financeiros reunidas em menu flutuante, sem alterar a altura da linha.
+* Dados pessoais do aluno passam a exigir liberação em Perfis e acessos; a API omite documentos, contatos, endereço e conta quando não autorizados.
+* Margens dos botões de vínculo ajustadas e atalho Conversar abre o responsável/aluno no canal do atendente.
+* E-mail do responsável abre modal com assunto e corpo; wp_mail utiliza a conta autenticada em From/Reply-To e destinatário conferido no vínculo.
+* Envios reservados antes de wp_mail impedem cópias em tentativas concorrentes; resultados são registrados na auditoria.
+
 
 = 0.14.14 =
 * Dados pessoais do aluno apresentados como ficha com identificação, contatos e endereço.

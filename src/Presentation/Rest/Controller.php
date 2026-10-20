@@ -140,6 +140,10 @@ final class Controller
         $this->route('/secretaria/alunos','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentDirectory($r));
         $this->route('/secretaria/alunos','POST',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->workflow->createStudent($this->payload($r),$this->key($r)));
         $this->route('/secretaria/alunos/'.$id,'GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentSheet((int)$r['id']));
+        $mail=new \EducacionalERP\Application\GuardianMail($this->db);
+        $this->route('/secretaria/alunos/'.$id.'/responsaveis/(?P<vinculo>[1-9][0-9]{0,17})/email','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$mail->context((int)$r['id'],(int)$r['vinculo']));
+        $this->route('/secretaria/alunos/'.$id.'/responsaveis/(?P<vinculo>[1-9][0-9]{0,17})/email','POST',$cap('erp_gerenciar_pessoas'),fn($r)=>$mail->send((int)$r['id'],(int)$r['vinculo'],$this->payload($r),$this->key($r)));
+
         $this->route('/pessoas/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->updatePerson((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/alunos/'.$id.'/periodos','POST',$cap('erp_gerenciar_academico'),fn($r)=>$this->workflow->period((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/alunos/'.$id.'/periodos/(?P<link>[1-9][0-9]{0,17})/turma','POST',$cap('erp_gerenciar_academico'),fn($r)=>$this->workflow->assign((int)$r['id'],(int)$r['link'],$this->payload($r),$this->key($r)));
@@ -256,6 +260,12 @@ final class Controller
             $result['matriculas']=$this->academicView($id);
             $v=$this->db->table('aluno_periodos'); $periods=$this->db->table('periodos_letivos');
             $result['periodos_pendentes']=$this->db->rows("SELECT v.idvinculoperiodo,v.codperiodo,v.status,v.versao,p.codigo,p.descricao FROM $v v JOIN $periods p ON p.codperiodo=v.codperiodo WHERE v.idaluno=%d AND v.status='aguardando_turma' ORDER BY p.data_inicio DESC",[$id]);
+        }
+        $result['dados_pessoais_permitidos']=\EducacionalERP\Infrastructure\WordPress\StudentRecordPolicy::can('dados_pessoais');
+        if(!$result['dados_pessoais_permitidos']){
+            $visible=[];foreach((new \EducacionalERP\Application\AdditionalFields($this->db))->all() as $field)if($field['secao_protegida']||!empty($field['idgrupo'])||($field['area_aluno']??'dados')!=='dados')$visible[$field['chave']]=true;
+            $result['pessoa']=array_intersect_key($p,array_flip(['codpessoa','nome','foto_url','versao']));
+            $result['pessoa']['campos_adicionais']=array_intersect_key($p['campos_adicionais']??[],$visible);$result['conta']=null;
         }
         return $result;
     }

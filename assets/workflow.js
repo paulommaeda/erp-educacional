@@ -96,22 +96,26 @@
     return list;
   }
   function studentPersonal(out,d){
-    const p=d.pessoa,c=card('Dados pessoais');out.append(c);
+    const p=d.pessoa,personal=d.dados_pessoais_permitidos??(caps.admin||!!EDERP.studentSections?.dados_pessoais);
+    if(personal){const c=card('Dados pessoais');out.append(c);
     c.append(recordGrid([['Nome completo',p.nome,'',true],['E-mail',p.email,'email'],['Telefone',p.telefone,'tel'],['Data de nascimento',date(p.data_nascimento)],['CPF',p.cpf],['RG',p.rg],['Sexo',p.sexo],['Estado civil',p.estado_civil],['Profissão',p.profissao],['Religião',p.religiao],['Igreja',p.igreja]]));
     c.append(h('h3','Endereço'),recordGrid([['Rua',p.rua,'',true],['Número',p.numero],['Complemento',p.complemento],['Bairro',p.bairro],['CEP',p.cep],['Cidade',p.cidade],['Estado',p.estado],['País',p.pais==='BR'?'Brasil':p.pais]]));
     c.append(h('h3','Acesso ao portal'),recordGrid([['Usuário',d.conta?.user_login||'Conta pendente'],['Perfis',(d.conta?.roles||[]).map(roleLabel).join(', ')]]));
     if(caps.admin)c.append(button('Editar pessoa',()=>personModal(p,()=>sheet()),true));
+    }
     const sections=EDERP.studentSections||(caps.admin?{ficha_medica:'Ficha médica',dificuldades_aprendizagem:'Dificuldades de aprendizagem',laudos:'Laudos'}:{});
     for(const [section,label]of Object.entries(sections)){
+      if(section==='dados_pessoais')continue;
       const area=card(label),defs=(EDERP.additionalFields||[]).filter(x=>Number(x.ativo)&&Number(x.exibir_aluno??1)&&x.secao_protegida===section&&(!x.idgrupo||(EDERP.fieldGroups||[]).some(g=>Number(g.ativo)&&String(g.idgrupo)===String(x.idgrupo)))),values=p.campos_adicionais||{};
       const rows=defs.filter(x=>window.EDERPFields?.visible?.(x,values[x.chave])??true).map(x=>[x.nome,values[x.chave],'',true]);
       area.append(rows.length===1&&rows[0][0]===label?h('p',rows[0][1]||'Não informado','erp-record-note'):rows.length?recordGrid(rows):h('p','Nenhuma informação disponível para exibição.','erp-muted'));
       if(caps.admin&&defs.length){const f=h('form',undefined,'ederp-form erp-person-fields');window.EDERPFields.extras(f,p,true,null,null,section);f.dataset.modalTitle='Editar '+label;area.append(f);bind(f,'pessoas/'+p.codpessoa,()=>({...dataOf(f),versao:p.versao}),()=>sheet());}
       out.append(area);
     }
+    if(!out.children.length)out.append(message('Seu perfil não tem acesso aos dados desta ficha.'));
   }
   async function sheet(){const d=await api('secretaria/alunos/'+studentId),p=d.pessoa,a=d.aluno;root.replaceChildren(backLink('Voltar aos alunos','alunos'));window.EDERPBack?.place(root.firstChild);
-    const head=h('header',undefined,'erp-student-header'),avatar=h('div',p.nome.split(' ').map(x=>x[0]).slice(0,2).join(''),'erp-avatar'),title=h('div');title.append(h('h1',p.nome),h('p','RA '+a.ra+' · '+(a.tipo_aluno?.toUpperCase()||'REGULAR')+' · Nascimento '+date(p.data_nascimento)));if(p.foto_url){const img=h('img');img.src=p.foto_url;img.alt=p.nome;img.width=64;img.height=64;avatar.replaceChildren(img);}head.append(avatar,title);if(caps.academic)head.append(link('Matrícula / período','matriculas',{aluno:a.idaluno}));root.append(head);
+    const head=h('header',undefined,'erp-student-header'),avatar=h('div',p.nome.split(' ').map(x=>x[0]).slice(0,2).join(''),'erp-avatar'),title=h('div');title.append(h('h1',p.nome),h('p','RA '+a.ra+' · '+(a.tipo_aluno?.toUpperCase()||'REGULAR')+(p.data_nascimento&&(d.dados_pessoais_permitidos??(caps.admin||!!EDERP.studentSections?.dados_pessoais))?' · Nascimento '+date(p.data_nascimento):'')));if(p.foto_url){const img=h('img');img.src=p.foto_url;img.alt=p.nome;img.width=64;img.height=64;avatar.replaceChildren(img);}head.append(avatar,title);if(caps.academic)head.append(link('Matrícula / período','matriculas',{aluno:a.idaluno}));root.append(head);
     const tabs=h('nav',undefined,'erp-tabs'),out=h('div');root.append(tabs,out);let active=new URLSearchParams(location.search).get('aba')||'dados';const items=[['dados','Dados do aluno'],['responsaveis','Pais e responsáveis']];if(caps.academic)items.push(['matriculas','Matrículas e turmas']);if(caps.finance)items.push(['financeiro','Financeiro']);items.push(['historico_anterior','Histórico escolar anterior']);for(const group of EDERP.fieldGroups||[])if(Number(group.ativo)&&(EDERP.additionalFields||[]).some(x=>Number(x.ativo)&&!x.secao_protegida&&Number(x.exibir_aluno??1)&&String(x.idgrupo)===String(group.idgrupo)))items.push(['grupo_'+group.idgrupo,group.nome]);
     async function render(tab){active=tab;tabs.querySelectorAll('button[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);b.setAttribute('aria-pressed',String(b.dataset.tab===tab));});const u=new URL(location.href);u.searchParams.set('aba',tab);history.replaceState({},'',u);out.replaceChildren();
       if(tab==='dados'){studentPersonal(out,d);if(caps.admin){const edit=card('Cadastro do aluno'),f=h('form',undefined,'ederp-form');f.append(input('ra','RA','text',a.ra).node,select('tipo_aluno','Tipo de aluno',[['REGULAR','REGULAR'],['AEE','AEE']],a.tipo_aluno?.toUpperCase()||'REGULAR').node,select('ativo','Situação',[['1','Ativo'],['0','Inativo']],String(a.ativo)).node);f.dataset.modalTitle='Editar cadastro do aluno';edit.append(f);out.append(edit);bind(f,'cadastros/alunos/'+a.idaluno,()=>({...dataOf(f),versao:a.versao}),()=>sheet());}}
@@ -120,10 +124,41 @@
       else if(tab==='responsaveis')family(out,d);
       else if(tab==='matriculas')enrollmentSummary(out,d);
       else if(tab==='financeiro'){try{const rows=await api('alunos/'+a.idaluno+'/financeiro?codperiodo='+encodeURIComponent(EDERP.period||'todos'));if(caps.admin)out.append(button('Bolsas e descontos dos contratos',()=>discountContracts(a.idaluno),true));out.append(table(rows,[['contrato','Contrato'],['parcela','Parcela'],['vencimento','Vencimento',date],['valor_original','Valor original'],['desconto_condicional','Desconto condicional'],['desconto_incondicional','Desconto incondicional'],['valor_liquido','Valor líquido'],['valor_baixa','Pago'],['saldo_a_pagar','Saldo a pagar'],['status','Situação',statusLabel]]));}catch(e){out.append(message(e.message,true));}}
-      const extraDefs=(EDERP.additionalFields||[]).filter(x=>Number(x.ativo)&&!x.secao_protegida&&Number(x.exibir_aluno??1)&&!x.idgrupo&&(x.area_aluno||'dados')===tab);
-      if(extraDefs.length){const c=card('Informações complementares'),values=p.campos_adicionais||{},list=h('dl',undefined,'erp-extra-values');for(const x of extraDefs.filter(x=>window.EDERPFields.visible(x,values[x.chave])))list.append(h('dt',x.nome),h('dd',values[x.chave]??'—'));if(list.children.length)c.append(list);if(caps.admin){const f=h('form',undefined,'ederp-form erp-person-fields');window.EDERPFields.extras(f,p,true,null,tab);f.dataset.modalTitle='Editar informações complementares';c.append(f);bind(f,'pessoas/'+p.codpessoa,()=>({...dataOf(f),versao:p.versao}),()=>sheet());}if(c.children.length>1)out.append(c);}
+      const extraDefs=(EDERP.additionalFields||[]).filter(x=>Number(x.ativo)&&Number(x.exibir_aluno??1)&&((x.secao_protegida==='dados_pessoais'&&tab==='dados')||(!x.secao_protegida&&!x.idgrupo&&(x.area_aluno||'dados')===tab))&&(tab!=='dados'||(d.dados_pessoais_permitidos??(caps.admin||!!EDERP.studentSections?.dados_pessoais))));
+      if(extraDefs.length){const c=card('Informações complementares'),values=p.campos_adicionais||{},list=h('dl',undefined,'erp-extra-values');for(const x of extraDefs.filter(x=>window.EDERPFields.visible(x,values[x.chave])))list.append(h('dt',x.nome),h('dd',values[x.chave]??'—'));if(list.children.length)c.append(list);if(caps.admin){const f=h('form',undefined,'ederp-form erp-person-fields');window.EDERPFields.extras(f,p,true,null,tab);if(tab==='dados')window.EDERPFields.extras(f,p,true,null,null,'dados_pessoais');f.dataset.modalTitle='Editar informações complementares';c.append(f);bind(f,'pessoas/'+p.codpessoa,()=>({...dataOf(f),versao:p.versao}),()=>sheet());}if(c.children.length>1)out.append(c);}
     }
     items.forEach(([id,label])=>{const b=button(label,()=>render(id),true);b.dataset.tab=id;tabs.append(b);});window.EDERPResponsiveTabs?.mount(tabs);await render(items.some(x=>x[0]===active)?active:'dados');
+  }
+  function contactDialog(title){
+    const dialog=h('dialog',undefined,'journey-confirm ederp erp-contact-dialog'),head=h('header',undefined,'erp-contact-header'),heading=h('h2',title),close=button('Fechar',()=>dialog.close(),true),body=h('div'),opener=document.activeElement;
+    heading.id='erp-contact-'+key();dialog.setAttribute('aria-labelledby',heading.id);head.append(heading,close);dialog.append(head,body);root.append(dialog);
+    dialog.addEventListener('close',()=>{dialog.remove();if(opener?.isConnected)opener.focus();});dialog.showModal();return {dialog,body,close};
+  }
+  async function guardianConversation(student,guardian){
+    const {dialog,body,close}=contactDialog('Conversar com '+guardian.nome),note=message('Carregando canais de atendimento...');body.append(note);
+    try{
+      const context=await api('chat/contato?'+new URLSearchParams({idaluno:student.idaluno,codpessoa:guardian.codpessoa_responsavel}));if(!dialog.isConnected)return;
+      const open=async id=>{close.disabled=true;note.textContent='Abrindo conversa...';try{const result=await api('chat/conversas',{idcanal:id,idaluno:student.idaluno,codpessoa:guardian.codpessoa_responsavel},key());const target=new URL(EDERP.portal,location.href);target.searchParams.set('erp_tela','chat');target.searchParams.set('conversa',result.idconversa);location.href=target.href;}catch(error){note.textContent=error.message;close.disabled=false;}};
+      dialog.addEventListener('cancel',e=>{if(close.disabled)e.preventDefault();});
+      if(context.items.length===1){await open(context.items[0].idcanal);return;}
+      const f=h('form',undefined,'ederp-form'),channel=select('idcanal','Seu canal de atendimento',[['','Selecione...'],...context.items.map(c=>[c.idcanal,c.nome])]),submit=h('button','Abrir conversa');submit.type='submit';note.textContent='Escolha o canal em que você deseja atender este responsável.';f.append(channel.node,submit);body.prepend(f);
+      f.onsubmit=async e=>{e.preventDefault();if(!f.reportValidity())return;submit.disabled=true;await open(channel.input.value);submit.disabled=false;};
+    }catch(error){note.textContent=error.message;}
+  }
+  async function guardianEmail(student,guardian){
+    const {dialog,body,close}=contactDialog('Enviar e-mail ao responsável'),note=message('Carregando contato...');body.append(note);let busy=false;dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
+    const path='secretaria/alunos/'+student.idaluno+'/responsaveis/'+guardian.idvinculo+'/email';
+    try{
+      const context=await api(path);if(!dialog.isConnected)return;
+      const from=context.remetente,to=context.destinatario;body.prepend(recordGrid([['De',from.nome+' <'+from.email+'>','',true],['Para',to.nome+' <'+to.email+'>','',true],['Aluno',context.aluno.nome+' · RA '+context.aluno.ra,'',true]]));
+      const f=h('form',undefined,'ederp-form erp-contact-email-form'),subject=input('assunto','Assunto'),text=input('corpo','Corpo do e-mail','textarea'),submit=h('button','Enviar e-mail');subject.input.maxLength=250;text.input.maxLength=20000;text.input.rows=8;submit.type='submit';f.append(subject.node,text.node,submit);body.insertBefore(f,note);note.textContent='';let requestKey=key(),previous='';
+      f.onsubmit=async e=>{
+        e.preventDefault();if(busy||!f.reportValidity())return;const data={assunto:subject.input.value,corpo:text.input.value,versao:context.versao},signature=JSON.stringify(data);if(signature!==previous){requestKey=key();previous=signature;}busy=true;submit.disabled=close.disabled=subject.input.disabled=text.input.disabled=true;note.className='erp-feedback';note.textContent='Enviando e-mail...';
+        try{const result=await api(path,data,requestKey);note.textContent=result.mensagem;if(result.enviado){subject.input.disabled=text.input.disabled=true;submit.textContent='Encaminhado para envio';}else if(result.pode_tentar){requestKey=key();submit.disabled=subject.input.disabled=text.input.disabled=false;note.classList.add('error');}else{subject.input.disabled=text.input.disabled=true;submit.textContent='Envio solicitado';}}
+        catch(error){note.className='erp-feedback error';note.textContent=error.message;submit.disabled=subject.input.disabled=text.input.disabled=false;}
+        finally{busy=false;close.disabled=false;}
+      };
+    }catch(error){note.className='erp-feedback error';note.textContent=error.message;}
   }
   function family(out,d){out.append(steps(1));const current=d.responsaveis.filter(v=>!v.fim_vigencia),grid=h('div',undefined,'erp-family-grid'),editor=h('div');out.append(grid);
     current.forEach(v=>{
@@ -132,12 +167,13 @@
       if(Number(v.responsavel_academico))roles.append(h('span','Responsável acadêmico','erp-badge'));
       if(Number(v.responsavel_financeiro))roles.append(h('span','Responsável financeiro','erp-badge'));
       if(Number(v.pode_rematricular))roles.append(h('span','Pode rematricular','erp-badge'));
-      c.append(roles,recordGrid([['E-mail',v.email,'email'],['Telefone',v.telefone,'tel']]));
+      const contacts=recordGrid([['E-mail',v.email,'email'],['Telefone',v.telefone,'tel']]);const email=contacts.querySelector('a[href^="mailto:"]');if(email&&caps.sendGuardianEmail){email.href='#enviar-email';email.setAttribute('aria-haspopup','dialog');email.onclick=e=>{e.preventDefault();guardianEmail(d.aluno,v);};}c.append(roles,contacts);
+      if(caps.chat&&(Number(v.responsavel_academico)||Number(v.responsavel_financeiro)||Number(v.pode_rematricular)))actions.append(button('Conversar',()=>guardianConversation(d.aluno,v),true));
       if(caps.admin)actions.append(button('Editar atribuições',()=>edit(v),true),removeButton('aluno_responsaveis',v,()=>sheet()));
       if(actions.children.length)c.append(actions);grid.append(c);
     });
     if(!current.length)grid.append(message('Nenhum responsável vinculado. Selecione o pai, a mãe ou outra pessoa abaixo.'));
-    const actions=h('div',undefined,'ederp-tools');actions.append(button('Vincular pai',()=>edit(null,'pai')),button('Vincular mãe',()=>edit(null,'mae')),button('Outro responsável',()=>edit(null,'outro'),true));out.append(actions,editor);
+    const actions=h('div',undefined,'ederp-tools erp-family-link-actions');actions.append(button('Vincular pai',()=>edit(null,'pai')),button('Vincular mãe',()=>edit(null,'mae')),button('Outro responsável',()=>edit(null,'outro'),true));out.append(actions,editor);
     function edit(v=null,role='pai'){editor.replaceChildren();const c=card(v?'Editar vínculo de '+v.nome:'Selecionar responsável'),f=h('form',undefined,'ederp-form');const person=picker('codpessoa_responsavel','Pessoa cadastrada','pessoas',{},v?{id:v.codpessoa_responsavel,label:v.nome}:null);
       if(v){person.input.disabled=true;person.node.hidden=true;f.append(h('p',v.nome));}else f.append(person.node);
       const parent=select('parentesco','Vínculo com o aluno',Object.entries(EDERP.parentescos||{pai:'Pai',mae:'Mãe',outro:'Outro'}),v?.parentesco||role);
@@ -151,39 +187,7 @@
     const historic=d.responsaveis.filter(v=>v.fim_vigencia);if(historic.length){const details=h('details',undefined,'ederp-card');details.append(h('summary','Histórico dos vínculos'),table(historic,[['nome','Pessoa'],['parentesco','Vínculo'],['inicio_vigencia','Início',date],['fim_vigencia','Fim',date]]));out.append(details);}
     if(caps.academic)out.append(link('Continuar: vincular período letivo →','matriculas',{aluno:d.aluno.idaluno}));
   }
-  function enrollmentActions(actions){
-    const menu=h('details',undefined,'erp-enrollment-actions'),toggle=h('summary','☰'),items=h('div',undefined,'erp-enrollment-action-items');
-    toggle.setAttribute('aria-label','Ações da matrícula');toggle.title='Ações da matrícula';toggle.setAttribute('aria-expanded','false');
-    items.setAttribute('popover','auto');items.append(...actions);menu.append(toggle,items);
-    let listeners=null,observer=null;
-    const stop=()=>{listeners?.abort();listeners=null;observer?.disconnect();observer=null;};
-    const close=()=>{menu.open=false;toggle.setAttribute('aria-expanded','false');if(items.hidePopover&&items.matches(':popover-open'))items.hidePopover();stop();};
-    const position=()=>{
-      const rect=toggle.getBoundingClientRect(),width=Math.min(280,window.innerWidth-24);
-      items.style.width=width+'px';items.style.maxHeight=Math.max(44,window.innerHeight-24)+'px';
-      const height=items.getBoundingClientRect().height;
-      const below=window.innerHeight-rect.bottom-12,above=rect.top-12;
-      const top=below>=height||below>=above?rect.bottom+6:rect.top-height-6;
-      items.style.left=Math.max(12,Math.min(rect.right-width,window.innerWidth-width-12))+'px';
-      items.style.top=Math.max(12,Math.min(top,window.innerHeight-height-12))+'px';
-    };
-    menu.addEventListener('toggle',()=>{
-      toggle.setAttribute('aria-expanded',String(menu.open));
-      if(!menu.open){close();return;}
-      root.querySelectorAll('.erp-enrollment-actions[open]').forEach(other=>{if(other!==menu)other.open=false;});
-      if(items.showPopover&&!items.matches(':popover-open'))items.showPopover();
-      position();stop();listeners=new AbortController();const opts={signal:listeners.signal};
-      document.addEventListener('pointerdown',e=>{if(!menu.contains(e.target))close();},opts);
-      document.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();toggle.focus();}},opts);
-      window.addEventListener('resize',position,opts);
-      document.addEventListener('scroll',position,{...opts,capture:true});
-      observer=new MutationObserver(()=>{if(!menu.isConnected)close();});observer.observe(root,{childList:true,subtree:true});
-    });
-    items.addEventListener('toggle',e=>{if(e.newState==='closed'&&menu.open)close();});
-    menu.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();close();toggle.focus();}});
-    items.addEventListener('click',e=>{if(e.target.closest('button,a'))close();});
-    return menu;
-  }
+  function enrollmentActions(actions){return window.EDERPActionMenu.create(actions,root,'Ações da matrícula');}
   function enrollmentSummary(out,d){if(d.periodos_pendentes.length){out.append(h('h2','Períodos aguardando turma'));d.periodos_pendentes.filter(v=>!Number(EDERP.period)||String(v.codperiodo)===String(EDERP.period)).forEach(v=>{const c=card(v.codigo+' — '+v.descricao);c.append(h('span','Aguardando turma','erp-badge warning'),link('Selecionar turma','matriculas',{aluno:d.aluno.idaluno,vinculo:v.idvinculoperiodo}));if(caps.admin)c.append(removeButton('aluno_periodos',v,()=>sheet()));out.append(c);});}
     out.append(h('h2','Matrículas do período consultado'),h('p','Selecione Todos os períodos no filtro da página para consultar o histórico completo.'));const editor=h('div');out.append(table(d.matriculas.filter(m=>!Number(EDERP.period)||String(m.codperiodo)===String(EDERP.period)),[['periodo','Período'],['curso','Curso'],['turma','Turma'],['turno','Turno'],['status','Situação',statusLabel]],m=>{
       const actions=caps.admin?[removeButton('matriculas',m,()=>sheet())]:[];if(caps.admin&&['ativa','reservado','cursando'].includes(m.status)){actions.push(button('Trocar turma',()=>transfer(editor,m,d),true),button('Transferência externa',()=>externalTransfer(editor,m,d),true));actions.push(button(m.idmatricula_origem?'Cancelar rematrícula':'Cancelar matrícula',()=>cancelRenewal(editor,m),true));}if(caps.admin&&['ativa','reservado','cursando','aprovado','reprovado'].includes(m.status))actions.push(button('Resultado do período',()=>outcomeForm(editor,m),true));actions.push(button('Histórico',()=>enrollmentHistory(editor,m),true));if(['ativa','reservado','cursando'].includes(m.status)&&!Number(m.contratos))actions.push(button('Configurar contrato',()=>contract(editor,m,d),true));return [enrollmentActions(actions)];
@@ -344,7 +348,7 @@
     const defs=await api('campos-adicionais'),groups=await api('grupos-campos');EDERP.additionalFields=defs;EDERP.fieldGroups=groups;const c=card('Campos adicionais','Compartilhados entre coligadas. O grupo é opcional. Campos em Ficha médica, Dificuldades de aprendizagem e Laudos exigem liberação em Perfis e acessos, inclusive no cadastro de pessoas e na API.');root.append(c);
     function edit(row={}){const f=h('form',undefined,'ederp-form');f.dataset.modalAuto='1';f.dataset.modalTransient='1';f.dataset.modalTitle=row.idcampo?'Editar campo adicional':'Cadastrar campo adicional';
       f.append(select('idgrupo','Grupo (opcional)',[['','Sem grupo — usar uma área existente'],...groups.map(g=>[String(g.idgrupo),g.nome+(Number(g.ativo)?'':' (inativo)')])],String(row.idgrupo||'')).node,input('nome','Nome do campo','text',row.nome||'').node,input('chave','Chave da API (ex.: nacionalidade)','text',row.chave||'').node,select('tipo','Tipo',[['texto','Texto'],['texto_longo','Texto longo'],['numero','Número'],['data','Data'],['email','E-mail'],['selecao','Lista de opções']],row.tipo||'texto').node,select('exibir_pessoa','Exibir no cadastro de pessoas',[['1','Sim'],['0','Não']],String(row.exibir_pessoa??1)).node,select('secao','Seção do cadastro',[['identificacao','Identificação'],['pessoais','Informações pessoais'],['endereco','Endereço'],['outros','Outros']],row.secao||'outros').node,input('opcoes','Opções (uma por linha, para lista)','textarea',row.opcoes||'',false).node,input('ordem','Ordem','number',row.ordem||0,false).node,select('ativo','Situação',[['1','Ativo'],['0','Inativo — preservar valores']],String(row.ativo??1)).node);
-      f.append(select('exibir_aluno','Exibir na ficha do aluno',[['1','Sim'],['0','Não']],String(row.exibir_aluno??1)).node,select('area_aluno','Área da ficha / área protegida',[['dados','Dados do aluno'],['responsaveis','Pais e responsáveis'],['matriculas','Matrículas e turmas'],['financeiro','Financeiro'],['historico_anterior','Histórico escolar anterior'],['ficha_medica','Dados do aluno → Ficha médica (protegida)'],['dificuldades_aprendizagem','Dados do aluno → Dificuldades de aprendizagem (protegida)'],['laudos','Dados do aluno → Laudos (protegida)']],row.secao_protegida||row.area_aluno||'dados').node);
+      f.append(select('exibir_aluno','Exibir na ficha do aluno',[['1','Sim'],['0','Não']],String(row.exibir_aluno??1)).node,select('area_aluno','Área da ficha / área protegida',[['dados','Dados do aluno'],['responsaveis','Pais e responsáveis'],['matriculas','Matrículas e turmas'],['financeiro','Financeiro'],['historico_anterior','Histórico escolar anterior'],['dados_pessoais','Dados do aluno → Dados pessoais (protegidos)'],['ficha_medica','Dados do aluno → Ficha médica (protegida)'],['dificuldades_aprendizagem','Dados do aluno → Dificuldades de aprendizagem (protegida)'],['laudos','Dados do aluno → Laudos (protegida)']],row.secao_protegida||row.area_aluno||'dados').node);
       f.append(select('condicao_exibicao','Exibição na ficha do aluno',[['sempre','Sempre exibir'],['preenchido','Somente quando preenchido'],['vazio','Somente quando vazio / nulo'],['igual','Quando a resposta for igual a'],['diferente','Quando a resposta for diferente de']],row.condicao_exibicao||'sempre').node,input('resposta_exibicao','Resposta para comparação','text',row.resposta_exibicao||'',false).node,h('p','As condições controlam a ficha. O modal de edição mantém todos os campos disponíveis para corrigir os dados.'));const condition=f.querySelector('[name=condicao_exibicao]'),answer=f.querySelector('[name=resposta_exibicao]');answer.dataset.preserveCase='1';const conditional=()=>{const compare=['igual','diferente'].includes(condition.value);answer.parentElement.hidden=!compare;answer.required=compare;};condition.onchange=conditional;conditional();
       f.querySelector('[name=nome]').dataset.preserveCase='1';f.querySelector('[name=ordem]').min='0';if(row.idcampo){f.querySelector('[name=chave]').readOnly=true;f.querySelector('[name=tipo]').disabled=true;}
       const display=f.querySelector('[name=exibir_pessoa]'),section=f.querySelector('[name=secao]');const groupSelect=f.querySelector('[name=idgrupo]'),studentDisplay=f.querySelector('[name=exibir_aluno]'),area=f.querySelector('[name=area_aluno]');const toggle=()=>{section.parentElement.hidden=display.value==='0';area.parentElement.hidden=studentDisplay.value==='0';};display.onchange=groupSelect.onchange=studentDisplay.onchange=toggle;toggle();

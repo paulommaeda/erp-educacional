@@ -4,7 +4,7 @@ use EducacionalERP\Infrastructure\WordPress\{MenuPolicy,StudentRecordPolicy};
 $medical=$s->save(['nome'=>'Ficha médica','chave'=>'ficha_clinica_existente','tipo'=>'texto_longo','exibir_pessoa'=>1,'exibir_aluno'=>1],kk());
 $cat->updatePerson($p,['campos_adicionais'=>['ficha_clinica_existente'=>'Dados médicos anteriores']],kk());
 $s->ensureStudentSections();$s->ensureStudentSections();
-foreach(StudentRecordPolicy::SECTIONS as $section=>$label)check(count(array_filter($s->all(),fn($d)=>$d['secao_protegida']===$section))===1,'semente idempotente da área '.$section);
+foreach(array_diff_key(StudentRecordPolicy::SECTIONS,['dados_pessoais'=>true]) as $section=>$label)check(count(array_filter($s->all(),fn($d)=>$d['secao_protegida']===$section))===1,'semente idempotente da área '.$section);
 check($db->get('campos_adicionais',(int)$medical['idcampo'])['chave']==='ficha_clinica_existente','campo existente mantém chave e mapeamento');
 $cat->updatePerson($p,['campos_adicionais'=>['dificuldades_aprendizagem'=>'Dificuldade de leitura','laudos'=>'Laudo existente']],kk());
 $person=$db->get('pessoas',$p);$uid=(int)$db->row('SELECT wp_user_id FROM '.$db->table('pessoa_usuarios').' WHERE codpessoa=%d',[$p])['wp_user_id'];get_userdata($uid)->add_role('erp_secretaria');
@@ -22,7 +22,7 @@ wp_set_current_user($uid);check(count(StudentRecordPolicy::available())===2,'usu
 wp_set_current_user(1);MenuPolicy::save(['role'=>'erp_secretaria','menus'=>['alunos'],'student_sections'=>[]]);
 wp_set_current_user($uid);check(!isset($s->decorate($person)['campos_adicionais']['ficha_clinica_existente']),'revogação retira o dado da API imediatamente');
 wp_set_current_user(1);
-check(count(StudentRecordPolicy::available())===3,'administrador acessa todas as áreas');
+check(count(StudentRecordPolicy::available())===4,'administrador acessa todas as áreas');
 reject(fn()=>MenuPolicy::save(['role'=>'erp_secretaria','menus'=>['alunos'],'student_sections'=>['qualquer']]),'área de permissão desconhecida é rejeitada');
 $extra=$s->save(['nome'=>'Alergias','chave'=>'alergias','tipo'=>'texto','area_aluno'=>'ficha_medica','idgrupo'=>$group],kk());
 $cat->updatePerson($p,['campos_adicionais'=>['alergias'=>'amendoim']],kk());
@@ -50,3 +50,11 @@ $definition=array_values(array_filter($s->all(),fn($d)=>$d['chave']==='alergia_d
 check($definition['secao_protegida']==='ficha_medica','campos de grupo Ficha médica também pertencem à área protegida');
 MenuPolicy::save(['role'=>'erp_secretaria','menus'=>['alunos'],'student_sections'=>[],'field_groups'=>[(string)$medicalGroup['idgrupo']]]);
 wp_set_current_user($uid);check(!isset($controller->studentSheet($student)['pessoa']['campos_adicionais']['alergia_detalhada']),'permissão antiga de grupo não libera área médica sem autorização explícita');
+
+wp_set_current_user(1);$db->update('pessoas',$p,['email'=>'aluno@example.test','cpf'=>'12345678900']);
+wp_set_current_user($uid);$record=$controller->studentSheet($student);
+check($record['dados_pessoais_permitidos']===false&&!isset($record['pessoa']['email'])&&!isset($record['pessoa']['cpf'])&&!isset($record['pessoa']['data_nascimento'])&&$record['conta']===null,'documentos, contato, nascimento e conta não saem da ficha sem permissão');
+check($record['pessoa']['nome']!==''&&isset($record['aluno']['ra']),'identificação básica de nome e RA preservada para as demais áreas');
+wp_set_current_user(1);MenuPolicy::save(['role'=>'erp_secretaria','menus'=>['alunos'],'student_sections'=>['dados_pessoais']]);
+wp_set_current_user($uid);$record=$controller->studentSheet($student);
+check($record['dados_pessoais_permitidos']===true&&$record['pessoa']['email']==='aluno@example.test'&&!isset($record['pessoa']['campos_adicionais']['ficha_clinica_existente']),'permissão de dados pessoais restaura contato sem liberar a ficha médica');

@@ -59,6 +59,16 @@ final class ChatService
         if(!$staff&&((int)$c['codpessoa']!==$this->person()||!$this->linked($this->person(),(int)$c['codcoligada'],(int)($c['idaluno']??0))))throw new RuleViolation('Sem acesso a esta conversa.');
         if($write&&!(int)$channel['ativo'])throw new RuleViolation('Canal desativado. O histórico continua disponível.');$c['atendente']=$staff;return $c;
     }
+    public function contactChannels(int $student,int $guardian):array
+    {
+        $a=$this->db->get('alunos',$student);
+        if(!self::all()&&!self::eligible(wp_get_current_user()))throw new RuleViolation('Somente atendentes podem abrir o contato da família.');
+        $channels=$this->db->rows('SELECT idcanal,nome FROM '.$this->db->table('chat_canais').' WHERE codcoligada=%d AND ativo=1 ORDER BY nome,idcanal',[(int)$a['codcoligada']]);$items=[];
+        foreach($channels as $channel)if($this->member((int)$channel['idcanal']))$items[]=$channel;
+        if(!$items)throw new RuleViolation('Você não está vinculado a um canal de atendimento desta escola.');
+        if(!$this->linked($guardian,(int)$a['codcoligada'],$student))throw new RuleViolation('Responsável sem atribuição ativa de atendimento para este aluno.');
+        return ['items'=>$items,'idaluno'=>$student,'codpessoa'=>$guardian];
+    }
     public function recipients(int $channel,string $search,int $page):array
     {
         $c=$this->db->get('chat_canais',$channel);if(!$this->member($channel))throw new RuleViolation('Somente atendentes podem iniciar contato com uma família.');

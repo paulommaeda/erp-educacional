@@ -5,7 +5,7 @@ use EducacionalERP\Domain\RuleViolation;
 /** The same policy protects field definitions, stored values and write operations. */
 final class StudentRecordPolicy
 {
-    public const SECTIONS=['ficha_medica'=>'Ficha médica','dificuldades_aprendizagem'=>'Dificuldades de aprendizagem','laudos'=>'Laudos'];
+    public const SECTIONS=['dados_pessoais'=>'Dados pessoais','ficha_medica'=>'Ficha médica','dificuldades_aprendizagem'=>'Dificuldades de aprendizagem','laudos'=>'Laudos'];
     public const OPTION='ederp_student_record_policy';
     public static function section(array $field):?string
     {

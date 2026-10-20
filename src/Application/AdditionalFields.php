@@ -23,6 +23,7 @@ final class AdditionalFields
         $this->db->atomic(function(){
             $definitions=$this->definitions();
             foreach(StudentRecordPolicy::SECTIONS as $area=>$label){
+                if($area==='dados_pessoais')continue;
                 $existing=array_filter($definitions,fn($d)=>StudentRecordPolicy::section($d)===$area);
                 if($existing)continue; // Keep existing field IDs, conditions, mappings and values.
                 $this->db->insert('campos_adicionais',['chave'=>$area,'nome'=>$label,'tipo'=>'texto_longo','secao'=>'outros','exibir_pessoa'=>0,'exibir_aluno'=>1,'area_aluno'=>$area,'condicao_exibicao'=>'sempre','opcoes'=>'','ordem'=>0,'ativo'=>1]);

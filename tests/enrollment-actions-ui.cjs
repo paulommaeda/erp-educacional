@@ -2,6 +2,7 @@ const {JSDOM}=require('jsdom'),fs=require('fs'),path=require('path'),assert=requ
 const dom=new JSDOM('<main></main>',{runScripts:'dangerously'}),w=dom.window;
 const source=fs.readFileSync(path.join(__dirname,'../assets/workflow.js'),'utf8');
 const start=source.indexOf('  function enrollmentActions('),end=source.indexOf('  function enrollmentSummary(',start);
+w.eval(fs.readFileSync(path.join(__dirname,'../assets/action-menu.js'),'utf8'));
 w.eval("const root=document.querySelector('main');const h=(tag,text,cls)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;if(cls)e.className=cls;return e;};"+source.slice(start,end)+"window.make=enrollmentActions;");
 const actions=['Excluir','Trocar turma','Transferência externa','Cancelar rematrícula','Resultado do período','Histórico','Configurar contrato'].map(label=>{const b=w.document.createElement('button');b.textContent=label;return b;});
 let called=0;actions[5].addEventListener('click',()=>called++);
@@ -12,7 +13,8 @@ menu.open=true;menu.dispatchEvent(new w.KeyboardEvent('keydown',{key:'Escape',bu
 assert.ok(source.slice(end,source.indexOf('\n  function ',end+5)).includes('return [enrollmentActions(actions)]'));
 const css=fs.readFileSync(path.join(__dirname,'../assets/app.css'),'utf8');
 assert.match(css,/\.ederp \.erp-enrollment-action-items\{position:fixed;/);
-assert.ok(source.includes("items.setAttribute('popover','auto')"));
-assert.ok(source.includes("window.addEventListener('resize',position,opts)"));
-assert.ok(source.includes("listeners?.abort()"));
+const helper=fs.readFileSync(path.join(__dirname,'../assets/action-menu.js'),'utf8');
+assert.ok(helper.includes("items.setAttribute('popover','auto')"));
+assert.ok(helper.includes("window.addEventListener('resize',position,opts)"));
+assert.ok(helper.includes("listeners?.abort()"));
 dom.window.close();console.log('PASS: todas as ações preservadas, menu fechado inicialmente, callbacks e Escape.');
