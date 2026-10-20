@@ -16,6 +16,7 @@ final class Access
             if ($role) { foreach (array_merge(['read'],$caps) as $cap) { $role->add_cap($cap); } }
         }
         if(!get_option('ederp_chat_menus_installed')){$policy=get_option('ederp_menu_policy',[]);foreach(['erp_secretaria','erp_coordenacao','erp_orientacao','erp_supervisao','erp_responsavel','erp_responsavel_academico','erp_responsavel_financeiro'] as $slug)if(isset($policy[$slug]))$policy[$slug]=array_values(array_unique([...$policy[$slug],'chat']));foreach(wp_roles()->roles as $slug=>$meta)if(str_starts_with($slug,'erp_custom_')&&preg_match('/secret|coordena|orienta/iu',$meta['name']))$policy[$slug]=array_values(array_unique([...($policy[$slug]??[]),'chat']));update_option('ederp_menu_policy',$policy,false);update_option('ederp_chat_menus_installed',true,false);}
+        if(!get_option('ederp_document_menus_installed')){$policy=get_option('ederp_menu_policy',[]);if(isset($policy['erp_secretaria']))$policy['erp_secretaria']=array_values(array_unique([...$policy['erp_secretaria'],'documentos']));update_option('ederp_menu_policy',$policy,false);update_option('ederp_document_menus_installed',true,false);}
         $admin=get_role('administrator');
         if ($admin) { foreach (self::CAPS as $cap) { $admin->add_cap($cap); } }
     }

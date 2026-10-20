@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.17
+Stable tag: 0.15.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.15.0 =
+* Responsável abre os contatos do aluno clicando no nome em Sua família na escola. Edição de e-mail, telefone e endereço em modal, com sincronização da conta e auditoria.
+* Documentos solicitados configuráveis por colégio: nome, orientações, obrigatoriedade, ordem e situação.
+* Upload privado de PDF/JPG/PNG/WebP, até 5 MB; aprovação com OK ou rejeição com motivo, exclusão do arquivo e liberação para novo envio.
+* Secretaria recebe fila com filtros e conferência em modal; documentos também aparecem na ficha do aluno conforme permissões.
+* Schema 30 adiciona tipos de documentos e histórico de envios, com FKs por coligada. Metadados disponíveis na exportação seletiva.
 
 = 0.14.17 =
 * Foto da pessoa volta a ser aplicada como avatar do usuário WordPress: verificação do banco acompanha a versão atual, inclusive para fotos já cadastradas.

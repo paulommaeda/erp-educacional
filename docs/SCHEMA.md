@@ -581,3 +581,60 @@ PK: `idvinculoperiodo`
 - FK: `idaluno` → `alunos(idaluno)`
 - FK: `codperiodo` → `periodos_letivos(codperiodo)`
 - FK: `idmatricula` → `matriculas(idmatricula)`
+
+
+## Adição no schema 30 — documentos dos alunos
+
+### tipos_documento_aluno
+
+| Campo | Definição |
+| --- | --- |
+| `idtipo_documento` | `bigint(20) unsigned NOT NULL AUTO_INCREMENT` |
+| `nome` | `varchar(120) NOT NULL` |
+| `orientacoes` | `varchar(1000) DEFAULT NULL` |
+| `obrigatorio` | `tinyint(1) NOT NULL DEFAULT 0` |
+| `ativo` | `tinyint(1) NOT NULL DEFAULT 1` |
+| `ordem` | `int unsigned NOT NULL DEFAULT 0` |
+| `codcoligada` | `bigint(20) unsigned NOT NULL` |
+| `criado_em` | `datetime NOT NULL DEFAULT CURRENT_TIMESTAMP` |
+| `atualizado_em` | `datetime NOT NULL DEFAULT CURRENT_TIMESTAMP` |
+| `versao` | `bigint(20) unsigned NOT NULL DEFAULT 1` |
+
+PK: `idtipo_documento`.
+
+- UNIQUE: `codcoligada,idtipo_documento`.
+- UNIQUE: `codcoligada,nome`.
+- FK: `codcoligada` → `coligadas(codcoligada)`, RESTRICT.
+
+### aluno_documentos
+
+| Campo | Definição |
+| --- | --- |
+| `iddocumento` | `bigint(20) unsigned NOT NULL AUTO_INCREMENT` |
+| `idaluno` | `bigint(20) unsigned NOT NULL` |
+| `idtipo_documento` | `bigint(20) unsigned NOT NULL` |
+| `ativo_unico` | `tinyint(1) DEFAULT 1` |
+| `status` | `varchar(20) NOT NULL DEFAULT 'pendente'` |
+| `arquivo_token` | `varchar(64) DEFAULT NULL` |
+| `arquivo_nome` | `varchar(191) NOT NULL` |
+| `arquivo_mime` | `varchar(60) NOT NULL` |
+| `tamanho` | `int unsigned NOT NULL` |
+| `sha256` | `varchar(64) NOT NULL` |
+| `enviado_por_wp_user_id` | `bigint(20) unsigned NOT NULL` |
+| `enviado_em` | `datetime NOT NULL DEFAULT CURRENT_TIMESTAMP` |
+| `revisado_por_wp_user_id` | `bigint(20) unsigned DEFAULT NULL` |
+| `revisado_em` | `datetime DEFAULT NULL` |
+| `motivo` | `varchar(1000) DEFAULT NULL` |
+| `codcoligada` | `bigint(20) unsigned NOT NULL` |
+| `criado_em` | `datetime NOT NULL DEFAULT CURRENT_TIMESTAMP` |
+| `atualizado_em` | `datetime NOT NULL DEFAULT CURRENT_TIMESTAMP` |
+| `versao` | `bigint(20) unsigned NOT NULL DEFAULT 1` |
+
+PK: `iddocumento`.
+
+- UNIQUE: `codcoligada,idaluno,idtipo_documento,ativo_unico`.
+- FK: `codcoligada` → `coligadas(codcoligada)`, RESTRICT.
+- FK: `codcoligada,idaluno` → `alunos(codcoligada,idaluno)`, RESTRICT.
+- FK: `codcoligada,idtipo_documento` → `tipos_documento_aluno(codcoligada,idtipo_documento)`, RESTRICT.
+
+`ativo_unico=1` mantém somente um envio pendente/aprovado por aluno e tipo. Na rejeição, torna-se NULL para preservar o registro e liberar novo envio. O arquivo rejeitado é excluído; nome, decisão, motivo, autor e datas permanecem para auditoria.

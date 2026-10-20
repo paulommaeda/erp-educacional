@@ -16,6 +16,7 @@ final class Bootstrap
         finally { $wpdb->suppress_errors($previous); }
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::setup(true);
     }
+    public static function deactivate():void {wp_clear_scheduled_hook('ederp_cleanup_student_documents');}
     public function boot(): void
     {
         global $wpdb;
@@ -27,6 +28,8 @@ final class Bootstrap
         add_action('rest_api_init',[$controller,'register']);
         $chat=new \EducacionalERP\Presentation\Rest\ChatController(new \EducacionalERP\Application\ChatService($db));add_action('rest_api_init',[$chat,'register']);
         add_filter('get_avatar_data', [new \EducacionalERP\Infrastructure\WordPress\Avatar($db),'filter'],10,2);
+        add_action('ederp_cleanup_student_documents',static function()use($db){if(get_option('ederp_schema_version')===Installer::VERSION&&!get_option('ederp_schema_error'))(new \EducacionalERP\Application\StudentDocuments($db))->cleanupRejected();});
+        add_action('admin_init',static function(){if(Access::isAdmin()&&!wp_next_scheduled('ederp_cleanup_student_documents'))wp_schedule_event(time()+300,'hourly','ederp_cleanup_student_documents');});
         $pages=new Pages(); add_action('admin_menu',[$pages,'register']);
         (new \EducacionalERP\Presentation\Portal\Portal())->register();
         // ZIP replacements do not run activation hooks. Apply pending additive migrations once.

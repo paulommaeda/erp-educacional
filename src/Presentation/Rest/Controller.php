@@ -42,6 +42,19 @@ final class Controller
     public function register(): void
     {
         $id='(?P<id>[1-9][0-9]{0,17})';
+        $family=new \EducacionalERP\Application\FamilyStudents($this->db);$documents=new \EducacionalERP\Application\StudentDocuments($this->db);
+        $this->route('/familia/alunos/'.$id.'/contato','GET',fn()=>true,fn($r)=>$family->detail((int)$r['id']));
+        $this->route('/familia/alunos/'.$id.'/contato','POST',fn()=>true,fn($r)=>$family->update((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/familia/alunos/'.$id.'/documentos','GET',fn()=>true,fn($r)=>$documents->listing((int)$r['id']));
+        $this->route('/familia/alunos/'.$id.'/documentos/(?P<tipo>[1-9][0-9]{0,17})','POST',fn()=>true,fn($r)=>$documents->upload((int)$r['id'],(int)$r['tipo'],$r->get_file_params()['documento']??[],$this->key($r)));
+        $this->route('/familia/documentos/'.$id.'/arquivo','GET',fn()=>true,fn($r)=>$documents->download((int)$r['id']));
+        $this->route('/configuracoes/documentos-alunos','GET',fn()=>Access::isAdmin(),fn()=>$documents->types());
+        $this->route('/configuracoes/documentos-alunos','POST',fn()=>Access::isAdmin(),fn($r)=>$documents->saveType($this->payload($r),$this->key($r)));
+        $this->route('/configuracoes/documentos-alunos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$documents->removeType((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/documentos-alunos','GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->queue((string)($r->get_param('status')?:'pendente'),(string)$r->get_param('search'),(int)($r->get_param('page')?:1),(int)$r->get_param('idtipo_documento')));
+        $this->route('/documentos-alunos/alunos/'.$id,'GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->listing((int)$r['id'],true));
+        $this->route('/documentos-alunos/'.$id.'/arquivo','GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->download((int)$r['id'],true));
+        $this->route('/documentos-alunos/'.$id.'/conferir','POST',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->review((int)$r['id'],$this->payload($r),$this->key($r)));
         $external=new \EducacionalERP\Application\ExternalPeopleApi($this->db,$this->catalog);
         $this->route('/api-pessoas/configuracao','GET',fn()=>Access::isAdmin(),fn()=>$external->settings());
         $this->route('/api-pessoas/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>$external->save($this->payload($r),$this->key($r)));
@@ -223,7 +236,8 @@ final class Controller
             $where=[];$args=[];if($table!=='pessoas'){$where[]='codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();}if($period&&in_array($table,['turmas','matriculas'],true)){$where[]='codperiodo=%d';$args[]=$period;}
             $cards[]=['menu'=>$menu,'titulo'=>$title,'total'=>(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table($table).($where?' WHERE '.implode(' AND ',$where):''),$args)['n']];
         }
-        return ['cards'=>$cards,'alunos'=>$this->access->students()];
+        $students=$this->access->students();$family=new \EducacionalERP\Infrastructure\WordPress\FamilyAccess($this->db);foreach($students as &$student)$student['pode_editar_contato']=$family->can((int)$student['idaluno']);unset($student);
+        return ['cards'=>$cards,'alunos'=>$students];
     }
     private function uploadPhoto(\WP_REST_Request $r):array
     {

@@ -1,5 +1,14 @@
 # Validação
 
+## 0.15.0
+
+- `tests/family-students.php`: contatos permitidos, normalização, sincronização do e-mail WordPress, versões, idempotência, vínculo vigente, isolamento por coligada, tipos, upload, pendência, aprovação, rejeição e reenvio. Histórico e auditoria preservados. Exclusão com falha de disco permanece registrada para nova tentativa.
+- `tests/student-document-files.php`: criptografia AES-GCM real, hash, exclusão física, limite real de 5 MB, extensão/MIME, conteúdo disfarçado, integridade e token seguro. A fronteira de upload HTTP é substituída no teste de arquivos; nenhuma chave de teste é usada em produção.
+- `tests/family-students-ui.cjs`: nome abre modal, formulário de contatos, campo de upload por tipo, pendência, motivo de rejeição/reenvio, OK e cadastro de tipos em modal.
+- Chromium em 1440, 390 e 320 px: formulários, upload com File/FormData do navegador, conferência, rejeição/reenvio, aprovação e configurações. Verificados layout e ausência de rolagem horizontal; API simulada.
+- Regressões de permissões, avatar, contatos, coligadas, exportação, índices, ficha do aluno, modais e carregamento sob demanda das configurações aprovadas.
+- Sintaxe PHP 8.1 e JavaScript aprovada. Schema 30 aditivo: duas tabelas com FKs e unicidade do envio ativo. Não houve instalação/migração em WordPress/MySQL real nem envio de documentos ao site do colégio.
+
 ## 0.14.17
 
 - PHP-WASM/SQLite: avatar no schema atual para ID, objeto de usuário, e-mail, autor de post e comentário. Fotos existentes, remoção, reaplicação, imagem indisponível, avatar padrão explícito e bloqueio durante erro de migração verificados.
