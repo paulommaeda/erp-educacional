@@ -326,7 +326,7 @@ final class Controller
     public function guardianView(int $student): array
     {
         $v=$this->db->table('aluno_responsaveis'); $p=$this->db->table('pessoas');
-        return $this->db->rows("SELECT v.versao,v.idvinculo,v.codpessoa_responsavel,p.nome,v.parentesco,v.responsavel_academico,v.responsavel_financeiro,v.pode_rematricular,v.inicio_vigencia,v.fim_vigencia FROM $v v JOIN $p p ON p.codpessoa=v.codpessoa_responsavel WHERE v.idaluno=%d ORDER BY v.idvinculo DESC",[$student]);
+        return $this->db->rows("SELECT v.versao,v.idvinculo,v.codpessoa_responsavel,p.nome,p.email,p.telefone,v.parentesco,v.responsavel_academico,v.responsavel_financeiro,v.pode_rematricular,v.inicio_vigencia,v.fim_vigencia FROM $v v JOIN $p p ON p.codpessoa=v.codpessoa_responsavel WHERE v.idaluno=%d ORDER BY v.idvinculo DESC",[$student]);
     }
     public function portalData(int $student,string $scope,mixed $requested=null):array
     {

@@ -2,12 +2,12 @@
 declare(strict_types=1);
 namespace EducacionalERP\Application;
 use EducacionalERP\Domain\{Store,Input,RuleViolation,CadastroText};
-use EducacionalERP\Infrastructure\WordPress\{Access,FieldGroupPolicy};
+use EducacionalERP\Infrastructure\WordPress\{Access,FieldGroupPolicy,StudentRecordPolicy};
 /** Definitions and values are shared, like people, across companies. */
 final class AdditionalFields
 {
     public function __construct(private Store $db){}
-    private function definitions():array{return $this->db->rows('SELECT * FROM '.$this->db->table('campos_adicionais').' ORDER BY ordem,idcampo');}
+    private function definitions():array{return $this->db->rows('SELECT c.*,g.nome AS grupo_nome FROM '.$this->db->table('campos_adicionais').' c LEFT JOIN '.$this->db->table('grupos_campos').' g ON g.idgrupo=c.idgrupo ORDER BY c.ordem,c.idcampo');}
     public function groups():array
     {
         $rows=$this->db->rows('SELECT * FROM '.$this->db->table('grupos_campos').' ORDER BY ordem,idgrupo');
@@ -15,8 +15,19 @@ final class AdditionalFields
     }
     public function all():array
     {
-        $rows=$this->definitions();if(Access::isAdmin())return $rows;$groups=array_column($this->groups(),null,'idgrupo');
-        return array_values(array_filter($rows,fn($d)=>(int)$d['ativo']&&(empty($d['idgrupo'])||isset($groups[$d['idgrupo']]))));
+        $rows=$this->definitions();foreach($rows as &$row)$row['secao_protegida']=StudentRecordPolicy::section($row);unset($row);if(Access::isAdmin())return $rows;$groups=array_column($this->groups(),null,'idgrupo');
+        return array_values(array_filter($rows,fn($d)=>(int)$d['ativo']&&(!$d['secao_protegida']||StudentRecordPolicy::can($d['secao_protegida']))&&(empty($d['idgrupo'])||isset($groups[$d['idgrupo']]))));
+    }
+    public function ensureStudentSections():void
+    {
+        $this->db->atomic(function(){
+            $definitions=$this->definitions();
+            foreach(StudentRecordPolicy::SECTIONS as $area=>$label){
+                $existing=array_filter($definitions,fn($d)=>StudentRecordPolicy::section($d)===$area);
+                if($existing)continue; // Keep existing field IDs, conditions, mappings and values.
+                $this->db->insert('campos_adicionais',['chave'=>$area,'nome'=>$label,'tipo'=>'texto_longo','secao'=>'outros','exibir_pessoa'=>0,'exibir_aluno'=>1,'area_aluno'=>$area,'condicao_exibicao'=>'sempre','opcoes'=>'','ordem'=>0,'ativo'=>1]);
+            }
+        });
     }
     public function migrateGroups():void
     {
@@ -47,7 +58,7 @@ final class AdditionalFields
             $options=trim((string)($d['opcoes']??''));if(strlen($options)>10000)throw new RuleViolation('Lista de opções muito longa.');
             if($type==='selecao'&&!$options)throw new RuleViolation('Informe uma opção por linha.');
             $groupValue=array_key_exists('idgrupo',$d)?$d['idgrupo']:($before['idgrupo']??null);$group=empty($groupValue)?null:Input::id($groupValue);if($group)$this->db->get('grupos_campos',$group,true);
-            $area=$d['area_aluno']??($before['area_aluno']??'dados');if(!in_array($area,['dados','responsaveis','matriculas','financeiro','historico_anterior'],true))throw new RuleViolation('Área da ficha inválida.');
+            $area=$d['area_aluno']??($before['area_aluno']??'dados');if(!in_array($area,['dados','responsaveis','matriculas','financeiro','historico_anterior',...array_keys(StudentRecordPolicy::SECTIONS)],true))throw new RuleViolation('Área da ficha inválida.');
             $condition=$d['condicao_exibicao']??($before['condicao_exibicao']??'sempre');if(!in_array($condition,['sempre','preenchido','vazio','igual','diferente'],true))throw new RuleViolation('Condição de exibição inválida.');
             if(isset($d['resposta_exibicao'])&&!is_string($d['resposta_exibicao']))throw new RuleViolation('Resposta de exibição inválida.');$answer=trim((string)($d['resposta_exibicao']??($before['resposta_exibicao']??'')));if(strlen($answer)>1000)throw new RuleViolation('Resposta de exibição muito longa.');if(in_array($condition,['igual','diferente'],true)&&$answer==='')throw new RuleViolation('Informe a resposta para comparação.');
             $row=['area_aluno'=>$area,'exibir_aluno'=>empty($d['exibir_aluno']??($before['exibir_aluno']??1))?0:1,'condicao_exibicao'=>$condition,'resposta_exibicao'=>$answer,'idgrupo'=>$group,'chave'=>$slug,'nome'=>Input::text($d['nome']??null,120),'tipo'=>$type,'secao'=>$section,'exibir_pessoa'=>empty($d['exibir_pessoa']??($before['exibir_pessoa']??1))?0:1,'opcoes'=>$options,'ordem'=>max(0,min(9999,(int)($d['ordem']??0))),'ativo'=>array_key_exists('ativo',$d)&&empty($d['ativo'])?0:1];

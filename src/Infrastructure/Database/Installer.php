@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '28';
+    public const VERSION = '29';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -115,6 +115,7 @@ final class Installer
             if(version_compare((string)get_option('ederp_schema_version','0'),'13','<')){
                 $this->db->atomic(function(){foreach($this->db->rows('SELECT * FROM '.$this->db->table('contratos')." WHERE numero LIKE 'CT-%' ORDER BY idcontrato FOR UPDATE") as $contract){$id=(int)$contract['idcontrato'];$number=\EducacionalERP\Application\ContractNumbers::forEnrollment($this->db,(int)$contract['idmatricula'],$id);$this->db->update('contratos',$id,['numero'=>$number]);$this->db->audit('contratos',$id,'padronizar_numero',$contract,['numero'=>$number],'migracao_13_contrato');}});
             }
+            if((int)get_option('ederp_schema_version',0)<29)(new \EducacionalERP\Application\AdditionalFields($this->db))->ensureStudentSections();
             update_option('ederp_schema_version', self::VERSION, false);
             delete_option('ederp_schema_error');
         } finally { $this->db->row('SELECT RELEASE_LOCK(%s) AS released', [$lock]); }

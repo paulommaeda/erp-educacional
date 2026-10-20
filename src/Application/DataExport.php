@@ -40,7 +40,7 @@ final class DataExport
         });
         if(in_array('configuracoes',$groups,true)){
             $roles=[];foreach(wp_roles()->roles as $slug=>$role)if(str_starts_with($slug,'erp_'))$roles[$slug]=$role;
-            $result['globais']=['grupos_campos'=>get_option('ederp_field_group_policy',[]),'menus'=>get_option('ederp_menu_policy',[]),'permissoes_usuarios'=>get_option('ederp_user_permissions',[]),'perfis'=>$roles];
+            $result['globais']=['ficha_aluno'=>get_option(\EducacionalERP\Infrastructure\WordPress\StudentRecordPolicy::OPTION,[]),'grupos_campos'=>get_option('ederp_field_group_policy',[]),'menus'=>get_option('ederp_menu_policy',[]),'permissoes_usuarios'=>get_option('ederp_user_permissions',[]),'perfis'=>$roles];
         }return $result;
     }
     public function page(array $d):array

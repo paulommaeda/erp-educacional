@@ -1,0 +1,139 @@
+{
+  "settings": {
+    "root": "https://example.test/api/",
+    "portal": "/portal",
+    "front": true,
+    "period": 1,
+    "caps": {
+      "admin": true,
+      "academic": false,
+      "finance": false
+    },
+    "parentescos": {
+      "mae": "Mãe",
+      "pai": "Pai"
+    },
+    "fieldGroups": [],
+    "studentSections": {
+      "ficha_medica": "Ficha médica",
+      "dificuldades_aprendizagem": "Dificuldades de aprendizagem",
+      "laudos": "Laudos"
+    },
+    "additionalFields": [
+      {
+        "idcampo": 1,
+        "chave": "ficha_medica",
+        "nome": "Ficha médica",
+        "tipo": "texto_longo",
+        "ativo": 1,
+        "idgrupo": null,
+        "exibir_pessoa": 0,
+        "exibir_aluno": 1,
+        "area_aluno": "ficha_medica",
+        "secao_protegida": "ficha_medica",
+        "condicao_exibicao": "sempre"
+      },
+      {
+        "idcampo": 2,
+        "chave": "dificuldades_aprendizagem",
+        "nome": "Dificuldades de aprendizagem",
+        "tipo": "texto_longo",
+        "ativo": 1,
+        "idgrupo": null,
+        "exibir_pessoa": 0,
+        "exibir_aluno": 1,
+        "area_aluno": "dificuldades_aprendizagem",
+        "secao_protegida": "dificuldades_aprendizagem",
+        "condicao_exibicao": "sempre"
+      },
+      {
+        "idcampo": 3,
+        "chave": "laudos",
+        "nome": "Laudos",
+        "tipo": "texto_longo",
+        "ativo": 1,
+        "idgrupo": null,
+        "exibir_pessoa": 0,
+        "exibir_aluno": 1,
+        "area_aluno": "laudos",
+        "secao_protegida": "laudos",
+        "condicao_exibicao": "sempre"
+      },
+      {
+        "chave": "medicacao_condicional",
+        "nome": "Medicação condicional",
+        "tipo": "texto",
+        "ativo": 1,
+        "exibir_aluno": 1,
+        "secao_protegida": "ficha_medica",
+        "area_aluno": "ficha_medica",
+        "condicao_exibicao": "igual",
+        "resposta_exibicao": "SIM"
+      }
+    ]
+  },
+  "sheet": {
+    "aluno": {
+      "idaluno": 1,
+      "ra": "123456",
+      "tipo_aluno": "Regular",
+      "ativo": 1,
+      "versao": 1
+    },
+    "pessoa": {
+      "codpessoa": 1,
+      "nome": "CARLOS EDUARDO DA SILVA",
+      "email": "carlos@example.test",
+      "telefone": "41999990001",
+      "data_nascimento": "2012-11-20",
+      "rua": "RUA DAS FLORES",
+      "numero": "123",
+      "bairro": "CENTRO",
+      "cep": "80000-000",
+      "cidade": "CURITIBA",
+      "estado": "PR",
+      "pais": "BR",
+      "versao": 1,
+      "campos_adicionais": {
+        "ficha_medica": "ALERGIA A AMENDOIM\nMEDICAÇÃO: NENHUMA",
+        "dificuldades_aprendizagem": "ACOMPANHAMENTO PEDAGÓGICO",
+        "laudos": "RELATÓRIO DE ACOMPANHAMENTO",
+        "medicacao_condicional": "NÃO"
+      }
+    },
+    "conta": {
+      "user_login": "carlos.silva",
+      "roles": [
+        "erp_aluno"
+      ]
+    },
+    "responsaveis": [
+      {
+        "idvinculo": 1,
+        "codpessoa_responsavel": 2,
+        "nome": "CAMILA HELENA DA SILVA",
+        "email": "camila@example.test",
+        "telefone": "41999990002",
+        "parentesco": "mae",
+        "responsavel_academico": 1,
+        "responsavel_financeiro": 0,
+        "pode_rematricular": 1,
+        "fim_vigencia": null
+      },
+      {
+        "idvinculo": 2,
+        "codpessoa_responsavel": 3,
+        "nome": "ALEXANDRE DA SILVA",
+        "email": "alexandre@example.test",
+        "telefone": "41999990003",
+        "parentesco": "pai",
+        "responsavel_academico": 0,
+        "responsavel_financeiro": 1,
+        "pode_rematricular": 1,
+        "fim_vigencia": null
+      }
+    ],
+    "matriculas": [],
+    "periodos_pendentes": []
+  }
+}

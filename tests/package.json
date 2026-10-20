@@ -6,6 +6,7 @@
   },
   "scripts": {
     "test": "node workflow-ui.cjs && node fields-ui.cjs && node portal-ui.cjs && node management-ui.cjs && node payment-ui.cjs",
-    "test:chat": "node chat-ui.cjs && node chat-student-ui.cjs && node chat-staff-ui.cjs"
+    "test:chat": "node chat-ui.cjs && node chat-student-ui.cjs && node chat-staff-ui.cjs",
+    "test:student-record": "node student-record-ui.cjs && node student-record-permissions-ui.cjs"
   }
 }

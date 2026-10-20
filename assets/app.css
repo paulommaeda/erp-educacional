@@ -222,3 +222,20 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 @media(max-width:700px){.ederp .erp-enrollment-actions{max-width:none;width:100%}}
 
 .erp-login-preview{grid-column:1/-1;display:flex;align-items:center;justify-content:center;padding:24px;min-height:280px;border-radius:12px;max-width:100%;box-sizing:border-box}
+
+/* Readable student record and guardian contact cards. */
+.ederp .erp-record-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 28px;margin:18px 0 24px}
+.ederp .erp-record-item{min-width:0;padding-bottom:12px;border-bottom:1px solid var(--j-line,#dce3e0)}
+.ederp .erp-record-item dt{font-size:12px;font-weight:600;color:var(--j-muted,#607582);margin:0 0 6px}
+.ederp .erp-record-item dd{font-size:15px;margin:0;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap}
+.ederp .erp-record-item a{overflow-wrap:anywhere}
+.ederp .erp-record-wide{grid-column:1/-1}
+.ederp .erp-family-grid>.erp-guardian-card{display:flex;flex-direction:column;min-width:0;margin:0}
+.ederp .erp-guardian-card>h2{overflow-wrap:anywhere;margin-bottom:16px}
+.ederp .erp-guardian-roles{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 6px}
+.ederp .erp-guardian-roles>.erp-badge{display:inline-flex;align-items:center;margin:0;padding:5px 10px;line-height:1.4}
+.ederp .erp-guardian-actions{display:flex;align-items:stretch;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:auto;padding-top:8px}
+.ederp .erp-family-grid .erp-guardian-actions>button{display:inline-flex;align-items:center;justify-content:center;margin:0;min-height:44px;width:auto;align-self:stretch;height:auto}
+@media(max-width:600px){.ederp .erp-record-grid{grid-template-columns:minmax(0,1fr);gap:14px;margin:16px 0 20px}.ederp .erp-guardian-actions{justify-content:flex-start}.ederp .erp-family-grid .erp-guardian-actions>button{flex:1}.ederp .erp-guardian-card .erp-record-grid{margin-bottom:14px}}
+
+.ederp .erp-record-note{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;margin:18px 0}

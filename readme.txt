@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.13
+Stable tag: 0.14.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.14 =
+* Dados pessoais do aluno apresentados como ficha com identificação, contatos e endereço.
+* Áreas Ficha médica, Dificuldades de aprendizagem e Laudos com liberação independente em Perfis e acessos, validada nos dados e definições da API.
+* Campos adicionais podem ser destinados às áreas protegidas; campos/grupos existentes com esses nomes mantêm valores e mapeamentos.
+* Cartões de pais e responsáveis exibem e-mail/telefone, atribuições espaçadas e ações alinhadas.
+* Corrige carregamento de campos adicionais após atualização do banco. Migração 29 disponibiliza as áreas padrão, exclusivas do administrador até sua liberação.
+
 
 = 0.14.13 =
 * Ícone da conta mostra apenas o primeiro nome e abre submenu com Meu perfil e Sair, por mouse, toque ou teclado.
