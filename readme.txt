@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.15.0
+Stable tag: 0.15.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.15.1 =
+* Sua família na escola: foto, nome, RA, turma atual e período letivo alinhados à esquerda, com layout responsivo.
+* Usa o período vigente de cada coligada autorizada, sem antecipar a turma da rematrícula.
+* Exibe iniciais quando não há foto e mantém o acesso ao modal de contatos e documentos pelo nome do aluno.
 
 = 0.15.0 =
 * Responsável abre os contatos do aluno clicando no nome em Sua família na escola. Edição de e-mail, telefone e endereço em modal, com sincronização da conta e auditoria.

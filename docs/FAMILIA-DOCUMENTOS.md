@@ -1,4 +1,4 @@
-# Contatos e documentos dos alunos — 0.15.0
+# Contatos e documentos dos alunos — 0.15.1
 
 Após atualizar, entre uma vez no WordPress como administrador para aplicar a migração automática do banco (schema 30). A atualização adiciona duas tabelas; cadastros e matrículas anteriores são preservados.
 
@@ -7,6 +7,8 @@ Após atualizar, entre uma vez no WordPress como administrador para aplicar a mi
 Em **Configurações → Documentos dos alunos**, cadastre os documentos solicitados: nome, orientações, obrigatório/opcional, ordem e ativo/inativo. Os tipos pertencem à coligada de trabalho. Um tipo sem envios pode ser excluído; quando já existe histórico, utilize Inativo.
 
 ## Portal do responsável
+
+O bloco **Sua família na escola** mostra foto (ou iniciais), nome, RA, turma atual e período letivo, alinhados à esquerda. O período vem da configuração vigente de cada coligada autorizada. Uma rematrícula para o próximo ano não substitui a turma atual. Sem matrícula vigente, aparece **Sem turma no período vigente**; sem configuração, **Período não configurado**. Matrículas canceladas e transferências externas não são apresentadas como turma atual. Os filhos continuam reunidos sem seleção de coligada.
 
 Clique no nome do aluno em **Sua família na escola**. O modal oferece:
 

@@ -1,5 +1,13 @@
 # Validação
 
+## 0.15.1
+
+- `tests/family-overview.php`: 14 verificações em PHP-WASM/SQLite, incluindo foto, ausência de turma, período vigente configurado, rematrícula futura, cancelamento, transferência externa, múltiplas coligadas e revogação do vínculo.
+- `tests/family-students-ui.cjs`: apresentação de RA/turma/período, iniciais, falha da imagem, períodos não configurados e manutenção dos modais de contatos/documentos.
+- Chromium em 1440, 768, 390 e 320 px, com API simulada: foto, alinhamento à esquerda, ausência de rolagem horizontal e abertura do modal pelo nome.
+- O teste legado `tests/portal-ui.cjs` falha também na versão anterior ao esperar três links no menu inferior: ainda conta Perfil, já removido dessa navegação. Essa expectativa não foi alterada neste ajuste.
+- Sintaxe PHP 8.1/JavaScript validada. Sem alteração do schema 30; não houve teste na instalação WordPress do colégio.
+
 ## 0.15.0
 
 - `tests/family-students.php`: contatos permitidos, normalização, sincronização do e-mail WordPress, versões, idempotência, vínculo vigente, isolamento por coligada, tipos, upload, pendência, aprovação, rejeição e reenvio. Histórico e auditoria preservados. Exclusão com falha de disco permanece registrada para nova tentativa.

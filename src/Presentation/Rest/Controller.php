@@ -236,7 +236,7 @@ final class Controller
             $where=[];$args=[];if($table!=='pessoas'){$where[]='codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();}if($period&&in_array($table,['turmas','matriculas'],true)){$where[]='codperiodo=%d';$args[]=$period;}
             $cards[]=['menu'=>$menu,'titulo'=>$title,'total'=>(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table($table).($where?' WHERE '.implode(' AND ',$where):''),$args)['n']];
         }
-        $students=$this->access->students();$family=new \EducacionalERP\Infrastructure\WordPress\FamilyAccess($this->db);foreach($students as &$student)$student['pode_editar_contato']=$family->can((int)$student['idaluno']);unset($student);
+        $students=(new \EducacionalERP\Application\FamilyOverview($this->db))->decorate($this->access->students());
         return ['cards'=>$cards,'alunos'=>$students];
     }
     private function uploadPhoto(\WP_REST_Request $r):array
