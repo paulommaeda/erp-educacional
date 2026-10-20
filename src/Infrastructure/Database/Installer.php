@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '27';
+    public const VERSION = '28';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -36,6 +36,12 @@ final class Installer
                 if(in_array($name,['alunos','periodos_letivos','cursos','turnos','planos_pagamento','contratos'],true)){
                     $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index)if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$keys[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];
                     foreach($keys as $key=>$cols){ksort($cols);$cols=array_values($cols);if(!in_array('codcoligada',$cols,true)&&!in_array($cols,$meta['unique'],true))$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
+                }
+                if($name==='chat_conversas'){
+                    $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $idx)if((int)$idx['Non_unique']===0&&$idx['Key_name']!=='PRIMARY')$keys[$idx['Key_name']][(int)$idx['Seq_in_index']]=$idx['Column_name'];
+                    // Drop the old family/channel key only after adding the student key.
+                    SchemaIndexes::ensure($this->db,$table,$meta);
+                    foreach($keys as $key=>$cols){ksort($cols);if(array_values($cols)===['idcanal','codpessoa'])$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
                 }
                 if($name==='professor_disciplinas'){
                     $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $idx)if((int)$idx['Non_unique']===0&&$idx['Key_name']!=='PRIMARY')$keys[$idx['Key_name']][(int)$idx['Seq_in_index']]=$idx['Column_name'];

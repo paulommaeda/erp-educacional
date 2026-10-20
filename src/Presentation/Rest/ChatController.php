@@ -14,6 +14,8 @@ final class ChatController
         $this->route('/atendentes','GET',fn($r)=>$this->chat->staff((string)$r->get_param('search')));
         $this->route('/canais','POST',fn($r)=>$this->chat->saveChannel($this->data($r),$this->key($r)));
         $this->route('/canais/(?P<id>\d+)/responsaveis','GET',fn($r)=>$this->chat->recipients((int)$r['id'],(string)$r->get_param('search'),(int)$r->get_param('page')));
+        $this->route('/canais/(?P<id>\d+)/alunos','GET',fn($r)=>$this->chat->students((int)$r['id'],(int)$r->get_param('codpessoa')));
+        $this->route('/conversas/(?P<id>\d+)/aluno','POST',fn($r)=>$this->chat->identifyStudent((int)$r['id'],$this->data($r),$this->key($r)));
         $this->route('/conversas','GET',fn($r)=>$this->chat->conversations((int)$r->get_param('before')));
         $this->route('/conversas/(?P<id>\d+)','GET',fn($r)=>$this->chat->detail((int)$r['id']));
         $this->route('/conversas','POST',fn($r)=>$this->chat->start($this->data($r),$this->key($r)));

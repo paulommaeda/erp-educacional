@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.11
+Stable tag: 0.14.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.12 =
+* Conversas por canal, responsável e aluno, com primeiro nome do responsável, primeiro nome do aluno e RA no cabeçalho e na lista.
+* Cabeçalho abre modal com nome completo, foto e turmas do período vigente.
+* Nova conversa exige escolha entre os alunos vinculados. Histórico antigo pode ser identificado sem perder mensagens; a identificação é necessária para continuar o envio.
+* Migração de banco 28: vínculo opcional de aluno para preservar conversas antigas, chave única por aluno e FK de coligada.
+
 
 = 0.14.11 =
 * Personalização do login: logo do sistema, fundo sólido, degradê ou imagem e cores, largura e arredondamento do formulário, com prévia.

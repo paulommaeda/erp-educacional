@@ -4,7 +4,7 @@ namespace EducacionalERP\Application;
 use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Infrastructure\WordPress\Access;
 use EducacionalERP\Domain\{Input,RuleViolation};
-/** Conversations always have a channel and a guardian person; there are no user-to-user recipients. */
+/** Conversations identify a channel, guardian and student; legacy history can be identified explicitly. */
 final class ChatService
 {
     public function __construct(private Database $db) {}
@@ -20,10 +20,10 @@ final class ChatService
         if(!self::eligible(wp_get_current_user()))return false;
         return (bool)$this->db->row('SELECT idmembro FROM '.$this->db->table('chat_membros').' WHERE idcanal=%d AND wp_user_id=%d',[$channel,get_current_user_id()]);
     }
-    private function linked(int $person,int $company):bool
+    private function linked(int $person,int $company,int $student=0):bool
     {
         $v=$this->db->table('aluno_responsaveis');
-        return (bool)$this->db->row("SELECT idvinculo FROM $v WHERE codpessoa_responsavel=%d AND codcoligada=%d AND inicio_vigencia<=UTC_TIMESTAMP() AND fim_vigencia IS NULL AND (responsavel_academico=1 OR responsavel_financeiro=1 OR pode_rematricular=1) LIMIT 1",[$person,$company]);
+        return (bool)$this->db->row("SELECT idvinculo FROM $v WHERE codpessoa_responsavel=%d AND codcoligada=%d AND inicio_vigencia<=UTC_TIMESTAMP() AND fim_vigencia IS NULL AND (responsavel_academico=1 OR responsavel_financeiro=1 OR pode_rematricular=1) AND (%d=0 OR idaluno=%d) LIMIT 1",[$person,$company,$student,$student]);
     }
     private function person():int {return (new Access($this->db))->person()??0;}
     public function channels(bool $admin=false):array
@@ -56,7 +56,7 @@ final class ChatService
     private function conversation(int $id,bool $write=false):array
     {
         $c=$this->db->get('chat_conversas',$id);$channel=$this->db->get('chat_canais',(int)$c['idcanal']);$staff=$this->member((int)$c['idcanal']);
-        if(!$staff&&((int)$c['codpessoa']!==$this->person()||!$this->linked($this->person(),(int)$c['codcoligada'])))throw new RuleViolation('Sem acesso a esta conversa.');
+        if(!$staff&&((int)$c['codpessoa']!==$this->person()||!$this->linked($this->person(),(int)$c['codcoligada'],(int)($c['idaluno']??0))))throw new RuleViolation('Sem acesso a esta conversa.');
         if($write&&!(int)$channel['ativo'])throw new RuleViolation('Canal desativado. O histórico continua disponível.');$c['atendente']=$staff;return $c;
     }
     public function recipients(int $channel,string $search,int $page):array
@@ -65,28 +65,68 @@ final class ChatService
         $p=$this->db->table('pessoas');$v=$this->db->table('aluno_responsaveis');$u=$this->db->table('pessoa_usuarios');$term='%'.$this->db->wp->esc_like($search).'%';$page=max(1,$page);
         $rows=$this->db->rows("SELECT p.codpessoa,p.nome FROM $p p JOIN $u u ON u.codpessoa=p.codpessoa WHERE p.ativo=1 AND p.nome LIKE %s AND EXISTS (SELECT 1 FROM $v v WHERE v.codpessoa_responsavel=p.codpessoa AND v.codcoligada=%d AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND (v.responsavel_academico=1 OR v.responsavel_financeiro=1 OR v.pode_rematricular=1)) ORDER BY p.nome,p.codpessoa LIMIT 21 OFFSET %d",[$term,(int)$c['codcoligada'],($page-1)*20]);return ['items'=>array_slice($rows,0,20),'more'=>count($rows)>20];
     }
+    /** Only an authorized channel attendee or the guardian can choose that guardian's children. */
+    public function students(int $channel,int $person=0):array
+    {
+        $ch=$this->db->get('chat_canais',$channel);$staff=$this->member($channel);$own=$this->person();
+        if(!$staff&&$person&&$person!==$own)throw new RuleViolation('Não é permitido consultar outra família.');
+        $person=$staff?Input::id($person):$own;
+        if(!$this->linked($person,(int)$ch['codcoligada']))throw new RuleViolation('Nenhum aluno disponível para esta família neste canal.');
+        $a=$this->db->table('alunos');$p=$this->db->table('pessoas');$v=$this->db->table('aluno_responsaveis');
+        $rows=$this->db->rows("SELECT a.idaluno,a.ra,p.nome FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa WHERE a.codcoligada=%d AND EXISTS (SELECT 1 FROM $v v WHERE v.idaluno=a.idaluno AND v.codcoligada=a.codcoligada AND v.codpessoa_responsavel=%d AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND (v.responsavel_academico=1 OR v.responsavel_financeiro=1 OR v.pode_rematricular=1)) ORDER BY p.nome,a.idaluno",[(int)$ch['codcoligada'],$person]);
+        return ['items'=>$rows];
+    }
     public function start(array $data,string $key):array
     {
         $id=Input::id($data['idcanal']??null);$channel=$this->db->get('chat_canais',$id);$staff=$this->member($id);$person=$staff?Input::id($data['codpessoa']??null):$this->person();
         if(!$staff&&isset($data['codpessoa'])&&(int)$data['codpessoa']!==$person)throw new RuleViolation('Não é permitido conversar como outra família.');
         if(!(int)$channel['ativo']||!$this->linked($person,(int)$channel['codcoligada']))throw new RuleViolation('Canal indisponível para esta família.');
+        $choices=$this->students($id,$person)['items'];
+        $student=isset($data['idaluno'])?Input::id($data['idaluno']):(count($choices)===1?(int)$choices[0]['idaluno']:0);
+        if(!$student||!in_array($student,array_map('intval',array_column($choices,'idaluno')),true))throw new RuleViolation('Selecione o aluno desta família sobre o qual deseja conversar.');
         if(!$this->db->row('SELECT wp_user_id FROM '.$this->db->table('pessoa_usuarios').' WHERE codpessoa=%d',[$person]))throw new RuleViolation('Responsável sem conta vinculada.');
-        return Coligadas::within((int)$channel['codcoligada'],fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'chat_iniciar',$data,function()use($id,$person){
-            $this->db->get('chat_canais',$id,true);$c=$this->db->row('SELECT idconversa FROM '.$this->db->table('chat_conversas').' WHERE idcanal=%d AND codpessoa=%d',[$id,$person]);return ['idconversa'=>$c?(int)$c['idconversa']:$this->db->insert('chat_conversas',['idcanal'=>$id,'codpessoa'=>$person])];
+        return Coligadas::within((int)$channel['codcoligada'],fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'chat_iniciar',$data,function()use($id,$person,$student){
+            $channel=$this->db->get('chat_canais',$id,true);
+            if(!(int)$channel['ativo']||!$this->linked($person,(int)$channel['codcoligada'],$student))throw new RuleViolation('Canal ou vínculo do aluno indisponível.');
+            $c=$this->db->row('SELECT idconversa FROM '.$this->db->table('chat_conversas').' WHERE idcanal=%d AND codpessoa=%d AND idaluno=%d',[$id,$person,$student]);
+            return ['idconversa'=>$c?(int)$c['idconversa']:$this->db->insert('chat_conversas',['idcanal'=>$id,'codpessoa'=>$person,'idaluno'=>$student])];
+        })));
+    }
+    public function identifyStudent(int $id,array $data,string $key):array
+    {
+        $c=$this->conversation($id);$student=Input::id($data['idaluno']??null);
+        return Coligadas::within((int)$c['codcoligada'],fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'chat_identificar_aluno',['idconversa'=>$id]+$data,function()use($id,$data,$student,$key,$c){
+            $this->db->get('chat_canais',(int)$c['idcanal'],true);$old=$this->db->get('chat_conversas',$id,true);$this->conversation($id);
+            if(!empty($old['idaluno']))throw new RuleViolation('Esta conversa já está vinculada a um aluno. Inicie outra conversa para outro aluno.');
+            if((int)$old['versao']!==Input::id($data['versao']??null))throw new RuleViolation('Conversa alterada. Reabra a identificação.');
+            if(!$this->linked((int)$old['codpessoa'],(int)$old['codcoligada'],$student))throw new RuleViolation('Selecione um aluno vinculado a este responsável e canal.');
+            if($this->db->row('SELECT idconversa FROM '.$this->db->table('chat_conversas').' WHERE idcanal=%d AND codpessoa=%d AND idaluno=%d',[(int)$old['idcanal'],(int)$old['codpessoa'],$student]))throw new RuleViolation('Já existe uma conversa deste aluno neste canal. Abra essa conversa para continuar.');
+            $this->db->update('chat_conversas',$id,['idaluno'=>$student]);$this->db->audit('chat_conversas',$id,'identificar_aluno',$old,['idaluno'=>$student],$key);
+            return ['idconversa'=>$id,'idaluno'=>$student];
         })));
     }
     public function conversations(int $before=0):array
     {
         $c=$this->db->table('chat_conversas');$ch=$this->db->table('chat_canais');$p=$this->db->table('pessoas');$members=$this->db->table('chat_membros');$v=$this->db->table('aluno_responsaveis');$reads=$this->db->table('chat_leituras');$m=$this->db->table('chat_mensagens');$uid=get_current_user_id();$person=$this->person();
-        $where='1=1';$args=[$uid];if(!self::all()){$where="((c.codpessoa=%d AND EXISTS (SELECT 1 FROM $v v WHERE v.codpessoa_responsavel=c.codpessoa AND v.codcoligada=c.codcoligada AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND (v.responsavel_academico=1 OR v.responsavel_financeiro=1 OR v.pode_rematricular=1)))";$args[]=$person;if(self::eligible(wp_get_current_user())){$where.=" OR EXISTS (SELECT 1 FROM $members mb WHERE mb.idcanal=c.idcanal AND mb.wp_user_id=%d)";$args[]=$uid;}$where.=')';}
+        $a=$this->db->table('alunos');$where='1=1';$args=[$uid];if(!self::all()){$where="((c.codpessoa=%d AND EXISTS (SELECT 1 FROM $v v WHERE v.codpessoa_responsavel=c.codpessoa AND v.codcoligada=c.codcoligada AND (c.idaluno IS NULL OR v.idaluno=c.idaluno) AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND (v.responsavel_academico=1 OR v.responsavel_financeiro=1 OR v.pode_rematricular=1)))";$args[]=$person;if(self::eligible(wp_get_current_user())){$where.=" OR EXISTS (SELECT 1 FROM $members mb WHERE mb.idcanal=c.idcanal AND mb.wp_user_id=%d)";$args[]=$uid;}$where.=')';}
         // Recent conversations first; cursor is the last conversation in the loaded page.
         if($before){$cursor=$this->conversation($before);$where.=' AND (c.ultima_mensagem_id<%d OR (c.ultima_mensagem_id=%d AND c.idconversa<%d))';$args[]=(int)$cursor['ultima_mensagem_id'];$args[]=(int)$cursor['ultima_mensagem_id'];$args[]=$before;}
-        $rows=$this->db->rows("SELECT c.idconversa,c.idcanal,c.codpessoa,c.codcoligada,c.ultima_mensagem_id,ch.nome AS canal,ch.ativo,p.nome AS responsavel,(SELECT COUNT(*) FROM $m mm WHERE mm.idconversa=c.idconversa AND mm.idmensagem>COALESCE(r.ultima_mensagem_id,0) AND mm.autor_wp_user_id<>%d) AS nao_lidas FROM $c c JOIN $ch ch ON ch.idcanal=c.idcanal JOIN $p p ON p.codpessoa=c.codpessoa LEFT JOIN $reads r ON r.idconversa=c.idconversa AND r.wp_user_id=$uid WHERE $where ORDER BY c.ultima_mensagem_id DESC,c.idconversa DESC LIMIT 51",$args);
+        $rows=$this->db->rows("SELECT c.idconversa,c.idcanal,c.codpessoa,c.codcoligada,c.idaluno,ap.nome AS aluno_nome,a.ra,c.ultima_mensagem_id,ch.nome AS canal,ch.ativo,p.nome AS responsavel,(SELECT COUNT(*) FROM $m mm WHERE mm.idconversa=c.idconversa AND mm.idmensagem>COALESCE(r.ultima_mensagem_id,0) AND mm.autor_wp_user_id<>%d) AS nao_lidas FROM $c c JOIN $ch ch ON ch.idcanal=c.idcanal JOIN $p p ON p.codpessoa=c.codpessoa LEFT JOIN $a a ON a.idaluno=c.idaluno AND a.codcoligada=c.codcoligada LEFT JOIN $p ap ON ap.codpessoa=a.codpessoa LEFT JOIN $reads r ON r.idconversa=c.idconversa AND r.wp_user_id=$uid WHERE $where ORDER BY c.ultima_mensagem_id DESC,c.idconversa DESC LIMIT 51",$args);
         return ['items'=>array_slice($rows,0,50),'more'=>count($rows)>50];
     }
     public function detail(int $id):array
     {
-        $c=$this->conversation($id);$ch=$this->db->get('chat_canais',(int)$c['idcanal']);$p=$this->db->get('pessoas',(int)$c['codpessoa']);return ['idconversa'=>$id,'idcanal'=>$c['idcanal'],'codpessoa'=>$c['codpessoa'],'canal'=>$ch['nome'],'responsavel'=>$p['nome'],'ativo'=>$ch['ativo'],'ultima_mensagem_id'=>$c['ultima_mensagem_id']];
+        $c=$this->conversation($id);$ch=$this->db->get('chat_canais',(int)$c['idcanal']);$p=$this->db->get('pessoas',(int)$c['codpessoa']);
+        $student=null;
+        if(!empty($c['idaluno'])){
+            $a=$this->db->get('alunos',(int)$c['idaluno']);$person=$this->db->get('pessoas',(int)$a['codpessoa']);
+            $period=Coligadas::within((int)$c['codcoligada'],fn()=>SchoolSettings::current());
+            $m=$this->db->table('matriculas');$t=$this->db->table('turmas');
+            $classes=$this->db->rows("SELECT DISTINCT t.idturma,t.nome,t.codigo FROM $m m JOIN $t t ON t.idturma=m.idturma_atual AND t.codcoligada=m.codcoligada WHERE m.idaluno=%d AND m.codcoligada=%d AND m.codperiodo=%d AND m.status<>'cancelada' ORDER BY t.nome,t.idturma",[(int)$a['idaluno'],(int)$c['codcoligada'],$period]);
+            $photo=(int)($person['foto_attachment_id']??0);
+            $student=['idaluno'=>$a['idaluno'],'nome'=>$person['nome'],'ra'=>$a['ra'],'foto_url'=>$photo?(string)(wp_get_attachment_image_url($photo,'medium')?:''):'','turmas'=>$classes,'codperiodo'=>$period];
+        }
+        return ['idconversa'=>$id,'idcanal'=>$c['idcanal'],'codpessoa'=>$c['codpessoa'],'codcoligada'=>$c['codcoligada'],'canal'=>$ch['nome'],'responsavel'=>$p['nome'],'ativo'=>$ch['ativo'],'ultima_mensagem_id'=>$c['ultima_mensagem_id'],'versao'=>$c['versao'],'idaluno'=>$c['idaluno']??null,'aluno_nome'=>$student['nome']??null,'ra'=>$student['ra']??null,'aluno'=>$student];
     }
     public function messages(int $id,int $after=0,int $before=0):array
     {
@@ -105,7 +145,7 @@ final class ChatService
     }
     public function send(int $id,array $data,string $key):array
     {
-        $c=$this->conversation($id,true);$text=trim(sanitize_textarea_field((string)($data['texto']??'')));if(strlen($text)>10000)throw new RuleViolation('Mensagem acima do limite de 10.000 bytes.');$files=$this->attachments($data['anexos']??[]);if($text===''&&!$files)throw new RuleViolation('Escreva uma mensagem ou anexe um arquivo.');
+        $c=$this->conversation($id,true);if(empty($c['idaluno']))throw new RuleViolation('Identifique o aluno no cabeçalho antes de continuar esta conversa.');$text=trim(sanitize_textarea_field((string)($data['texto']??'')));if(strlen($text)>10000)throw new RuleViolation('Mensagem acima do limite de 10.000 bytes.');$files=$this->attachments($data['anexos']??[]);if($text===''&&!$files)throw new RuleViolation('Escreva uma mensagem ou anexe um arquivo.');
         return Coligadas::within((int)$c['codcoligada'],fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'chat_mensagem',['idconversa'=>$id]+$data,function()use($id,$text,$files){
             $c=$this->conversation($id,true);$this->db->get('chat_canais',(int)$c['idcanal'],true);$c=$this->conversation($id,true);$this->db->get('chat_conversas',$id,true);$recent=$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table('chat_mensagens').' WHERE autor_wp_user_id=%d AND criado_em>=%s',[get_current_user_id(),gmdate('Y-m-d H:i:s',time()-60)]);if((int)$recent['n']>=60)throw new RuleViolation('Muitas mensagens em sequência. Aguarde um minuto para continuar.');$mid=$this->db->insert('chat_mensagens',['idconversa'=>$id,'autor_wp_user_id'=>get_current_user_id(),'autor_nome'=>wp_get_current_user()->display_name,'origem'=>$c['atendente']?'escola':'responsavel','texto'=>$text]);foreach($files as $file)$this->db->insert('chat_anexos',['idmensagem'=>$mid]+$file);$this->db->update('chat_conversas',$id,['ultima_mensagem_id'=>$mid]);return ['idmensagem'=>$mid];
         })));
