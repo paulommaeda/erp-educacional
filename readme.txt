@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.16
+Stable tag: 0.14.17
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.17 =
+* Foto da pessoa volta a ser aplicada como avatar do usuário WordPress: verificação do banco acompanha a versão atual, inclusive para fotos já cadastradas.
+* Salvar ou remover a foto no perfil atualiza o avatar do cabeçalho imediatamente, sem manter o srcset do avatar anterior.
+* Remove a setinha ao lado do primeiro nome, mantendo o submenu Meu perfil / Sair por mouse, toque e teclado.
 
 = 0.14.16 =
 * E-mail ao responsável preserva nome e e-mail da conta autenticada no FluentSMTP/Brevo, inclusive com remetente forçado na conexão.

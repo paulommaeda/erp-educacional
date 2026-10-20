@@ -1,5 +1,13 @@
 # Validação
 
+## 0.14.17
+
+- PHP-WASM/SQLite: avatar no schema atual para ID, objeto de usuário, e-mail, autor de post e comentário. Fotos existentes, remoção, reaplicação, imagem indisponível, avatar padrão explícito e bloqueio durante erro de migração verificados.
+- Testes de contas e edição do próprio perfil aprovados; sincronização e permissões preservadas.
+- JSDOM: salvar/remover foto atualiza o cabeçalho com a URL retornada pelo WordPress e elimina o srcset antigo; menu mantém primeiro nome, hover, toque, teclado e saída. Renderização PHP sem a setinha.
+- Chromium em 1440, 390 e 320 px: avatar e primeiro nome visíveis, marcador removido, submenu por mouse/toque e teclado, sem rolagem horizontal.
+- Sintaxe PHP 8.1 e JavaScript aprovada. Sem alteração do schema 29. Não houve acesso à instalação WordPress do colégio.
+
 ## 0.14.16
 
 - `tests/guardian-mail.php`: remetente autenticado, destinatário conferido, idempotência, concorrência, falhas e autorização; execução em PHP-WASM/SQLite com fronteira WordPress simulada.

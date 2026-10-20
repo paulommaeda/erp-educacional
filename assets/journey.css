@@ -42,8 +42,6 @@ body.journey-portal-page{margin:0;background:var(--j-paper);color:var(--j-ink);f
 .journey-account-menu>.journey-account::-webkit-details-marker{display:none}
 .journey-account-menu .journey-account img{flex-shrink:0}
 .journey-app .journey-account>.journey-account-name{display:block;min-width:0;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
-.journey-app .journey-account>.journey-account-chevron{display:block;flex-shrink:0;line-height:1;font-size:16px;transition:transform .15s}
-.journey-account-menu[open] .journey-account-chevron{transform:rotate(180deg)}
 .journey-account-submenu{position:absolute;inset-inline-end:0;top:calc(100% + 6px);min-width:180px;max-width:min(260px,calc(100vw - 32px));padding:8px;display:grid;gap:4px;background:var(--j-surface,#fff);border:1px solid var(--j-line,#dce3e0);border-radius:12px;box-shadow:0 8px 24px #0002}
 .journey-account-submenu::before{content:"";position:absolute;top:-8px;left:0;right:0;height:8px}
 .journey-account-menu:not([open])>.journey-account-submenu{display:none}

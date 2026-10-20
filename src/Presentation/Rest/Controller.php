@@ -110,7 +110,7 @@ final class Controller
             'turnos'=>$this->db->rows('SELECT idturno,nome FROM '.$this->db->table('turnos').' WHERE codcoligada=%d ORDER BY nome',[\EducacionalERP\Application\Coligadas::current()])]);
         $this->route('/importacao/(?P<tipo>pessoas|alunos|turmas|vinculos|matriculas)','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\ImportService($this->db,$this->catalog))->row($r['tipo'],$this->payload($r),$this->key($r)));
         $this->route('/me/perfil','GET',fn()=>true,fn()=>$this->ownProfile());
-        $this->route('/me/perfil','POST',fn()=>true,fn($r)=>$this->catalog->updateOwn($this->payload($r),$this->key($r)));
+        $this->route('/me/perfil','POST',fn()=>true,fn($r)=>$this->catalog->updateOwn($this->payload($r),$this->key($r))+['avatar_url'=>get_avatar_url(get_current_user_id(),['size'=>80])]);
         $this->route('/me/foto','POST',fn()=>$this->access->person()!==null,fn($r)=>$this->uploadPhoto($r));
         $this->route('/financeiro/alunos','GET',fn()=>current_user_can('erp_consultar_financeiro') && MenuPolicy::can('financeiro'),fn($r)=>$this->studentDirectory($r));
         $this->route('/financeiro/alunos/(?P<id>\\d+)/opcoes','GET',fn()=>current_user_can('erp_consultar_financeiro') && MenuPolicy::can('financeiro'),fn($r)=>$this->financialOptions((int)$r['id']));

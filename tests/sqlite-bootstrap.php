@@ -70,7 +70,7 @@ class WP_User {
 }
 function get_userdata(int $id):WP_User|false{global $wpdb;$s=$wpdb->pdo->prepare('SELECT * FROM mock_users WHERE ID=?');$s->execute([$id]);$r=$s->fetch(PDO::FETCH_ASSOC);return $r?new WP_User($r):false;}
 function wp_get_current_user():object{return get_userdata(get_current_user_id())?: (object)['roles'=>[]];}
-function get_user_by(string $k,mixed $v):WP_User|false{return $k==='id'?get_userdata((int)$v):false;}
+function get_user_by(string $k,mixed $v):WP_User|false{if($k==='id')return get_userdata((int)$v);if($k==='email'){$q=$GLOBALS['wpdb']->pdo->prepare('SELECT * FROM mock_users WHERE user_email=?');$q->execute([$v]);$row=$q->fetch(PDO::FETCH_ASSOC);return $row?new WP_User($row):false;}return false;}
 function username_exists(string $v):int|false{global $wpdb;$s=$wpdb->pdo->prepare('SELECT ID FROM mock_users WHERE user_login=? COLLATE NOCASE');$s->execute([$v]);return ($id=$s->fetchColumn())?(int)$id:false;}
 function email_exists(string $v):int|false{global $wpdb;$s=$wpdb->pdo->prepare('SELECT ID FROM mock_users WHERE user_email=? COLLATE NOCASE');$s->execute([$v]);return ($id=$s->fetchColumn())?(int)$id:false;}
 function wp_insert_user(array $a):int|WP_Error{global $wpdb;if(empty($a['user_login']))return new WP_Error('empty_user_login','Cannot create a user with an empty login name.');$d=array_intersect_key($a,array_flip(['user_login','user_email','user_pass','display_name','first_name','last_name']));if(isset($a['role']))$d['roles']=json_encode([$a['role']]);if(isset($a['ID'])){$wpdb->update('mock_users',$d,['ID'=>$a['ID']]);return (int)$a['ID'];}$wpdb->insert('mock_users',$d);return $wpdb->insert_id;}

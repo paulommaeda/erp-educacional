@@ -2,12 +2,13 @@
 declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\Store;
+use EducacionalERP\Infrastructure\Database\Installer;
 final class Avatar
 {
     public function __construct(private Store $db) {}
     public function filter(array $args,mixed $who):array
     {
-        if(get_option('ederp_schema_version')!=='4'||get_option('ederp_schema_error'))return $args;
+        if(get_option('ederp_schema_version')!==Installer::VERSION||get_option('ederp_schema_error')||!empty($args['force_default']))return $args;
         $id=0;
         if(is_numeric($who))$id=(int)$who;
         elseif($who instanceof \WP_User)$id=(int)$who->ID;

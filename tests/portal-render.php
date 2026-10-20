@@ -26,5 +26,5 @@ $_SERVER=[];$_POST=[];$_GET=[];$portal=new Portal();
 set_error_handler(function($severity,$message){throw new RuntimeException($message);});
 $html=$portal->render('inicio');okA(str_contains($html,'method="post"')&&!str_contains($html,'wp-login.php'),'Portal renderiza login próprio');
 $_GET=['erp_tela'=>'recuperar_senha'];$html=$portal->render('inicio');okA(str_contains($html,'recuperar')&&!str_contains($html,'wp-login.php'),'Portal renderiza recuperação própria');
-$GLOBALS['logged']=true;$_GET=[];$html=$portal->render('inicio');okA(substr_count($html,'class="journey-menu"')===2&&str_contains($html,'Meu perfil'),'menus de desktop e mobile sem variáveis indefinidas');
+$GLOBALS['logged']=true;$_GET=[];$html=$portal->render('inicio');okA(substr_count($html,'class="journey-menu"')===2&&str_contains($html,'Meu perfil'),'menus de desktop e mobile sem variáveis indefinidas');okA(!str_contains($html,'journey-account-chevron')&&!str_contains($html,'⌄')&&str_contains($html,'aria-controls="journey-account-submenu"'),'menu da conta sem setinha mantém controle acessível do submenu');
 $_GET=['erp_tela'=>'redefinir_senha','erp_key'=>'valid-key','erp_login'=>'family'];$html=$portal->render('inicio');okA(str_contains($html,'Nova senha')&&!str_contains($html,'journey-sidebar'),'Portal renderiza redefinição mesmo com sessão aberta');restore_error_handler();
