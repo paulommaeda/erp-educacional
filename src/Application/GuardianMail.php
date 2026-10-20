@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Application;
 use EducacionalERP\Domain\{Input,RuleViolation};
 use EducacionalERP\Infrastructure\Database\Database;
-use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy};
+use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,UserMail};
 /** One verified guardian recipient; the authenticated WordPress account supplies From and Reply-To. */
 final class GuardianMail
 {
@@ -37,8 +37,7 @@ final class GuardianMail
         if($state['estado']==='falhou')return ['enviado'=>false,'pode_tentar'=>true,'mensagem'=>'O WordPress não conseguiu enviar. Você pode tentar novamente.'];
         if(!hash_equals($state['token'],$token))return ['enviado'=>false,'pendente'=>true,'mensagem'=>'Este envio já foi iniciado. Aguarde a confirmação antes de solicitar outro.'];
         $sender=$context['remetente'];$recipient=$context['destinatario'];
-        $headers=['From: '.$sender['nome'].' <'.$sender['email'].'>','Reply-To: '.$sender['nome'].' <'.$sender['email'].'>','Content-Type: text/plain; charset=UTF-8'];
-        try{$sent=(bool)wp_mail($recipient['email'],$subject,$body,$headers);}catch(\Throwable $e){$sent=false;}
+        try{$sent=(new UserMail())->send($sender,$recipient['email'],$subject,$body);}catch(\Throwable $e){$sent=false;}
         $this->db->atomic(function()use($key,$token,$sent,$link,$sender,$recipient,$subject){
             $row=$this->db->row('SELECT idoperacao FROM '.$this->db->table('operacoes').' WHERE chave=%s FOR UPDATE',[$key]);
             $this->db->update('operacoes',(int)$row['idoperacao'],['resposta_json'=>wp_json_encode(['estado'=>$sent?'enviado':'falhou','token'=>$token])]);

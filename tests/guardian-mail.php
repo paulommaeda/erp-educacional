@@ -1,5 +1,5 @@
 <?php
-require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';
+require __DIR__.'/sqlite-bootstrap.php';require __DIR__.'/mail-bootstrap.php';require dirname(__DIR__).'/autoload.php';
 use EducacionalERP\Application\{GuardianMail,ChatService};
 use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Infrastructure\WordPress\Access;
@@ -9,8 +9,6 @@ function sanitize_textarea_field($s){return strip_tags($s);}
 function keyM(){return bin2hex(random_bytes(20));}
 function okM($v,$m){if(!$v)throw new RuntimeException($m);echo "PASS: $m\n";}
 function denyM($f,$m){try{$f();}catch(RuleViolation $e){okM(true,$m);return;}throw new RuntimeException($m);}
-$GLOBALS['mail_sent']=[];$GLOBALS['mail_ok']=true;
-function wp_mail($to,$subject,$body,$headers){$GLOBALS['mail_sent'][]=compact('to','subject','body','headers');if(isset($GLOBALS['mail_callback'])){$callback=$GLOBALS['mail_callback'];unset($GLOBALS['mail_callback']);$callback();}return $GLOBALS['mail_ok'];}
 $db=new Database($wpdb);Access::install();
 $child=$db->insert('pessoas',['nome'=>'ALUNO TESTE','data_nascimento'=>'2012-01-01']);
 $student=$db->insert('alunos',['codpessoa'=>$child,'ra'=>'001']);
@@ -24,7 +22,8 @@ $data=['assunto'=>'Conversa sobre o aluno','corpo'=>"Olá, Maria.\nPodemos conve
 $key=keyM();$mail->send($student,$link,$data,$key);$mail->send($student,$link,$data,$key);
 okM(count($GLOBALS['mail_sent'])===1,'repetir uma solicitação aceita não duplica o e-mail');
 $sent=$GLOBALS['mail_sent'][0];okM($sent['to']==='familia@example.test','destinatário vem do vínculo, sem aceitar destinatário arbitrário');
-okM(in_array('From: Secretaria Teste <secretaria@example.test>',$sent['headers'],true)&&in_array('Reply-To: Secretaria Teste <secretaria@example.test>',$sent['headers'],true),'From e Reply-To usam a conta WordPress autenticada');
+okM($sent['mailer']->From==='secretaria@example.test'&&$sent['mailer']->FromName==='Secretaria Teste'&&$sent['mailer']->reply===['secretaria@example.test'=>['secretaria@example.test','Secretaria Teste']],'From e Reply-To usam a conta WordPress autenticada');
+okM($sent['mailer']->custom===[]&&mailHookCount()===0,'marcador privado e hook do remetente removidos após envio');
 okM($sent['body']===$data['corpo'],'corpo preserva as quebras de linha');
 denyM(fn()=>$mail->send($student,$link,array_merge($data,['corpo'=>'Diferente']),$key),'chave não pode ser reutilizada para conteúdo diferente');
 denyM(fn()=>$mail->send($student,$link,array_merge($data,['assunto'=>"Contato\r\nBcc: outro@example.test"]),keyM()),'assunto com injeção de cabeçalho é rejeitado');

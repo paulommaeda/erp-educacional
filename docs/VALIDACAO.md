@@ -1,4 +1,14 @@
-# Validação 0.8.0
+# Validação
+
+## 0.14.16
+
+- `tests/guardian-mail.php`: remetente autenticado, destinatário conferido, idempotência, concorrência, falhas e autorização; execução em PHP-WASM/SQLite com fronteira WordPress simulada.
+- `php tests/fluent-brevo.php /caminho/para/fluent-smtp`: integração com as classes originais do FluentSMTP (provedor Brevo, BaseHandler e FluentPHPMailer), substituindo apenas hooks/PHPMailer e HTTP por simuladores. Validado com FluentSMTP 2.4.1: reproduz a sobrescrita original e verifica o payload corrigido, Reply-To, isolamento de outra mensagem e restauração após sucesso, rejeição e exceção. Nenhum pedido é enviado ao Brevo.
+- `cd tests && npm run test:communication`: modal fecha somente após sucesso, exibe confirmação na ficha e preserva texto em falhas/pendências; atalho de conversa mantém aluno e responsável.
+- Chromium em 1440, 390 e 320 px: fechamento automático, retorno do foco ao e-mail, confirmação visível, mensagem preservada em falha e ausência de rolagem horizontal.
+- Sintaxe PHP 8.1/JavaScript aprovada. Sem alteração no schema 29. Não houve envio real pelo Brevo nem acesso à instalação WordPress do colégio nesta revisão.
+
+## 0.8.0
 
 - Sintaxe: 48 arquivos PHP no parser PHP 8.1; JavaScript validado.
 - PHP 8.5 WASM + SQLite: suites domain, accounts, avatar, import, student-workflow, portal-permissions, portal-routing, academic-management, payment-plans e civil-status passaram.

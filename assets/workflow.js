@@ -145,7 +145,7 @@
       f.onsubmit=async e=>{e.preventDefault();if(!f.reportValidity())return;submit.disabled=true;await open(channel.input.value);submit.disabled=false;};
     }catch(error){note.textContent=error.message;}
   }
-  async function guardianEmail(student,guardian){
+  async function guardianEmail(student,guardian,contactCard){
     const {dialog,body,close}=contactDialog('Enviar e-mail ao responsável'),note=message('Carregando contato...');body.append(note);let busy=false;dialog.addEventListener('cancel',e=>{if(busy)e.preventDefault();});
     const path='secretaria/alunos/'+student.idaluno+'/responsaveis/'+guardian.idvinculo+'/email';
     try{
@@ -154,7 +154,7 @@
       const f=h('form',undefined,'ederp-form erp-contact-email-form'),subject=input('assunto','Assunto'),text=input('corpo','Corpo do e-mail','textarea'),submit=h('button','Enviar e-mail');subject.input.maxLength=250;text.input.maxLength=20000;text.input.rows=8;submit.type='submit';f.append(subject.node,text.node,submit);body.insertBefore(f,note);note.textContent='';let requestKey=key(),previous='';
       f.onsubmit=async e=>{
         e.preventDefault();if(busy||!f.reportValidity())return;const data={assunto:subject.input.value,corpo:text.input.value,versao:context.versao},signature=JSON.stringify(data);if(signature!==previous){requestKey=key();previous=signature;}busy=true;submit.disabled=close.disabled=subject.input.disabled=text.input.disabled=true;note.className='erp-feedback';note.textContent='Enviando e-mail...';
-        try{const result=await api(path,data,requestKey);note.textContent=result.mensagem;if(result.enviado){subject.input.disabled=text.input.disabled=true;submit.textContent='Encaminhado para envio';}else if(result.pode_tentar){requestKey=key();submit.disabled=subject.input.disabled=text.input.disabled=false;note.classList.add('error');}else{subject.input.disabled=text.input.disabled=true;submit.textContent='Envio solicitado';}}
+        try{const result=await api(path,data,requestKey);note.textContent=result.mensagem;if(result.enviado){const target=contactCard?.isConnected?contactCard:root;target.querySelector('[data-email-feedback]')?.remove();const feedback=message(result.mensagem);feedback.dataset.emailFeedback='1';target.append(feedback);dialog.close();}else if(result.pode_tentar){requestKey=key();submit.disabled=subject.input.disabled=text.input.disabled=false;note.classList.add('error');}else{subject.input.disabled=text.input.disabled=true;submit.textContent='Envio solicitado';}}
         catch(error){note.className='erp-feedback error';note.textContent=error.message;submit.disabled=subject.input.disabled=text.input.disabled=false;}
         finally{busy=false;close.disabled=false;}
       };
@@ -167,7 +167,7 @@
       if(Number(v.responsavel_academico))roles.append(h('span','Responsável acadêmico','erp-badge'));
       if(Number(v.responsavel_financeiro))roles.append(h('span','Responsável financeiro','erp-badge'));
       if(Number(v.pode_rematricular))roles.append(h('span','Pode rematricular','erp-badge'));
-      const contacts=recordGrid([['E-mail',v.email,'email'],['Telefone',v.telefone,'tel']]);const email=contacts.querySelector('a[href^="mailto:"]');if(email&&caps.sendGuardianEmail){email.href='#enviar-email';email.setAttribute('aria-haspopup','dialog');email.onclick=e=>{e.preventDefault();guardianEmail(d.aluno,v);};}c.append(roles,contacts);
+      const contacts=recordGrid([['E-mail',v.email,'email'],['Telefone',v.telefone,'tel']]);const email=contacts.querySelector('a[href^="mailto:"]');if(email&&caps.sendGuardianEmail){email.href='#enviar-email';email.setAttribute('aria-haspopup','dialog');email.onclick=e=>{e.preventDefault();guardianEmail(d.aluno,v,c);};}c.append(roles,contacts);
       if(caps.chat&&(Number(v.responsavel_academico)||Number(v.responsavel_financeiro)||Number(v.pode_rematricular)))actions.append(button('Conversar',()=>guardianConversation(d.aluno,v),true));
       if(caps.admin)actions.append(button('Editar atribuições',()=>edit(v),true),removeButton('aluno_responsaveis',v,()=>sheet()));
       if(actions.children.length)c.append(actions);grid.append(c);

@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.14.15
+Stable tag: 0.14.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.14.16 =
+* E-mail ao responsável preserva nome e e-mail da conta autenticada no FluentSMTP/Brevo, inclusive com remetente forçado na conexão.
+* Ajuste limitado à mensagem do ERP, com restauração do provedor após sucesso ou falha.
+* Modal de e-mail fecha após confirmação do envio pelo WordPress; resultado aparece no cartão do responsável. Erros e pendências mantêm o modal aberto.
 
 = 0.14.15 =
 * Ações de lançamentos financeiros reunidas em menu flutuante, sem alterar a altura da linha.
