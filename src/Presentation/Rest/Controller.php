@@ -58,8 +58,8 @@ final class Controller
         $external=new \EducacionalERP\Application\ExternalPeopleApi($this->db,$this->catalog);
         $this->route('/api-pessoas/configuracao','GET',fn()=>Access::isAdmin(),fn()=>$external->settings());
         $this->route('/api-pessoas/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>$external->save($this->payload($r),$this->key($r)));
-        $this->route('/api-pessoas/testar','POST',fn()=>Access::isAdmin(),fn()=>$external->test());
-        $this->route('/api-pessoas/buscar','POST',fn()=>Access::isAdmin(),fn($r)=>$external->sync((int)($this->payload($r)['pagina']??1),$this->key($r)));
+        $this->route('/api-pessoas/testar','POST',fn()=>Access::isAdmin(),fn($r)=>$external->forConnection((string)($this->payload($r)['idconexao']??'principal'))->test());
+        $this->route('/api-pessoas/buscar','POST',fn()=>Access::isAdmin(),fn($r)=>$external->forConnection((string)($this->payload($r)['idconexao']??'principal'))->sync((int)($this->payload($r)['pagina']??1),$this->key($r)));
         $review=fn()=>Access::isAdmin()||(MenuPolicy::can('requerimentos')&&current_user_can('erp_gerenciar_pessoas'));
         $this->route('/api-pessoas/importacoes','GET',$review,fn($r)=>$external->importLog((int)($r->get_param('page')??1)));
         $this->route('/api-pessoas/importacoes/'.$id,'GET',$review,fn($r)=>$external->importLogDetail((int)$r['id']));

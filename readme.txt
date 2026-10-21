@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.15.2
+Stable tag: 0.15.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.15.3 =
+* Várias conexões de requerimentos, com nome, URL, autenticação, situação e mapeamento independentes.
+* Mapeamento por blocos de Aluno, Pai, Mãe, Responsável acadêmico, Responsável financeiro e Outro responsável; todos importados como pessoas após conferência.
+* Conexão de origem identificada na fila e no histórico. Preservadas configuração anterior, credenciais criptografadas e detecção de requerimentos já aceitos.
+* Schema 31 acrescenta a identificação da conexão e índice aos requerimentos existentes.
 
 = 0.15.2 =
 * Novo login com apresentação institucional e formulário lado a lado; no mobile, apresentação compacta acima do acesso.

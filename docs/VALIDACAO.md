@@ -1,5 +1,14 @@
 # Validação
 
+## 0.15.3
+
+- `tests/api-connections.php`: conexões independentes, criação idempotente, senhas criptografadas sem exposição, mesma URL/ID externo em origens distintas, conferência de pai/mãe/responsável acadêmico/financeiro, reaproveitamento de pessoa entre papéis, remapeamento restrito à origem, restauração de ocultados, campos adicionais ocultos/listas, retirada de blocos, histórico, configuração anterior, versão e permissão de administrador.
+- Regressões `external-people-api.php` e `mapped-hidden-import.php`: busca sem criar pessoas, confirmação atômica, idempotência, identificação do requerimento, campos mapeados ocultos, valores em listas e logs preservados.
+- `tests/external-api-ui.cjs`: lista de conexões, credenciais em branco ao editar, origem nos testes/buscas, blocos separados de pessoas, salvamento por conexão e conferência dos responsáveis. Configurações continuam carregando sob demanda.
+- Chromium em 1440, 390 e 320 px, com API simulada: conexão e cadastro em modal, blocos Pai/Mãe/Responsável, envio do mapeamento, conferência, reaproveitamento da mãe e ausência de rolagem horizontal. Capturas conferidas visualmente.
+- Exportação seletiva e planejador de índices aprovados. Sintaxe PHP 8.1 e JavaScript validada. Schema 31 adiciona coluna com padrão `principal` e índice por conexão/situação; credenciais anteriores continuam legíveis sem novo cadastro.
+- Serviços executados em PHP-WASM/SQLite com fronteiras WordPress simuladas. Não houve consulta à API real do colégio nem execução de dbDelta em WordPress/MySQL real.
+
 ## 0.15.2
 
 - `tests/school-identity.php`: 34 verificações, incluindo textos, quebras de linha, cores herdadas, contraste, paleta própria preservada, compatibilidade das cores anteriores, validação, versão e permissões administrativas.

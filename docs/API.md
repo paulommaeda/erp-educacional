@@ -325,3 +325,7 @@ GET `/financeiro/alunos`: diretório paginado por nome/RA para usuários autoriz
 - POST `/contratos/{id}/parcelas`: mesma autorização, Idempotency-Key obrigatório. Gera as condições já salvas no contrato. A mesma chave retorna a resposta anterior; nova chave em contrato já gerado retorna `ja_geradas=true`, sem duplicação.
 - Financeiro pessoal e vida acadêmica de usuários sem autorização institucional ignoram tentativas de escolher outros períodos; exigem período vigente configurado. GET configuracoes só retorna o período vigente para essas contas.
 - Exportação mantém os dados anteriores e inclui os campos de plano/snapshot/geração do contrato. `parcelas_geradas` é booleano; contrato pendente traz `parcelas: []`.
+
+## Requerimentos por múltiplas conexões — 0.15.3
+
+Veja [Requerimentos: pessoas e conexões](REQUERIMENTOS-CONEXOES.md) para configurar origens independentes, mapear os blocos de aluno e responsáveis e conferir todos como cadastros de pessoas.

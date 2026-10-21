@@ -3045,7 +3045,8 @@
       "id_externo": "varchar(191) NULL",
       "dados_importados_json": "longtext NULL",
       "importado_em": "datetime NULL",
-      "origem_json": "longtext NULL"
+      "origem_json": "longtext NULL",
+      "idconexao": "varchar(64) NOT NULL DEFAULT 'principal'"
     },
     "pk": [
       "idrequerimento"
@@ -3057,6 +3058,10 @@
     ],
     "indexes": [
       [
+        "status"
+      ],
+      [
+        "idconexao",
         "status"
       ]
     ],
