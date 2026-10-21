@@ -98,7 +98,7 @@
   function studentPersonal(out,d){
     const p=d.pessoa,personal=d.dados_pessoais_permitidos??(caps.admin||!!EDERP.studentSections?.dados_pessoais);
     if(personal){const c=card('Dados pessoais');out.append(c);
-    c.append(recordGrid([['Nome completo',p.nome,'',true],['E-mail',p.email,'email'],['Telefone',p.telefone,'tel'],['Data de nascimento',date(p.data_nascimento)],['CPF',p.cpf],['RG',p.rg],['Sexo',p.sexo],['Estado civil',p.estado_civil],['Profissão',p.profissao],['Religião',p.religiao],['Igreja',p.igreja]]));
+    c.append(recordGrid([['Nome completo',p.nome,'',true],['E-mail',p.email,'email'],['Telefone',p.telefone,'tel'],['Data de nascimento',date(p.data_nascimento)],['CPF',p.cpf],['RG',p.rg],['Local de Nascimento',p.local_nascimento],['UF Nascimento',p.uf_nascimento],['Raça/Etnia',p.raca_etnia],['Nacionalidade',p.nacionalidade],['Grau de Instrução',p.grau_instrucao],['Sexo',p.sexo],['Estado civil',p.estado_civil],['Profissão',p.profissao],['Religião',p.religiao],['Igreja',p.igreja]]));
     c.append(h('h3','Endereço'),recordGrid([['Rua',p.rua,'',true],['Número',p.numero],['Complemento',p.complemento],['Bairro',p.bairro],['CEP',p.cep],['Cidade',p.cidade],['Estado',p.estado],['País',p.pais==='BR'?'Brasil':p.pais]]));
     c.append(h('h3','Acesso ao portal'),recordGrid([['Usuário',d.conta?.user_login||'Conta pendente'],['Perfis',(d.conta?.roles||[]).map(roleLabel).join(', ')]]));
     if(caps.admin)c.append(button('Editar pessoa',()=>personModal(p,()=>sheet()),true));

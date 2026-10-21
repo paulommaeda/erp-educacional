@@ -9,7 +9,7 @@ final class ExternalPeopleApi
     private const OPTION='ederp_external_people_api';
     public const PEOPLE=['aluno'=>'Aluno','pai'=>'Pai','mae'=>'Mãe','academico'=>'Responsável acadêmico','financeiro'=>'Responsável financeiro','outro'=>'Outro responsável'];
     private string $connection='principal';
-    public const FIELDS=['nome','data_nascimento','cpf','rg','email','telefone','sexo','idestado_civil','profissao','religiao','igreja','rua','numero','complemento','bairro','cep','cidade','estado','pais'];
+    public const FIELDS=['nome','data_nascimento','cpf','rg','email','telefone','sexo','idestado_civil','local_nascimento','uf_nascimento','raca_etnia','nacionalidade','grau_instrucao','profissao','religiao','igreja','rua','numero','complemento','bairro','cep','cidade','estado','pais'];
     public function __construct(private Store $db,private CatalogService $catalog){}
     private function connections():array
     {

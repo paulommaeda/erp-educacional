@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.15.3
+Stable tag: 0.15.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.15.4 =
+* Documentos e informações pessoais: local e UF de nascimento, raça/etnia, nacionalidade e grau de instrução; profissão mantida na mesma seção.
+* Novos campos disponíveis no cadastro, edição, perfil pessoal, importação CSV, conferência da API e ficha do aluno com a proteção de acesso existente.
+* Schema 32 acrescenta colunas opcionais, preservando pessoas e campos adicionais já cadastrados.
 
 = 0.15.3 =
 * Várias conexões de requerimentos, com nome, URL, autenticação, situação e mapeamento independentes.

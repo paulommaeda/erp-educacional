@@ -51,10 +51,13 @@ check($definition['secao_protegida']==='ficha_medica','campos de grupo Ficha mé
 MenuPolicy::save(['role'=>'erp_secretaria','menus'=>['alunos'],'student_sections'=>[],'field_groups'=>[(string)$medicalGroup['idgrupo']]]);
 wp_set_current_user($uid);check(!isset($controller->studentSheet($student)['pessoa']['campos_adicionais']['alergia_detalhada']),'permissão antiga de grupo não libera área médica sem autorização explícita');
 
-wp_set_current_user(1);$db->update('pessoas',$p,['email'=>'aluno@example.test','cpf'=>'12345678900']);
+wp_set_current_user(1);$db->update('pessoas',$p,['email'=>'aluno@example.test','cpf'=>'12345678900','local_nascimento'=>'LONDRINA','uf_nascimento'=>'PR','raca_etnia'=>'PARDA','nacionalidade'=>'BRASILEIRA','grau_instrucao'=>'ENSINO BÁSICO','profissao'=>'ESTUDANTE']);
 wp_set_current_user($uid);$record=$controller->studentSheet($student);
 check($record['dados_pessoais_permitidos']===false&&!isset($record['pessoa']['email'])&&!isset($record['pessoa']['cpf'])&&!isset($record['pessoa']['data_nascimento'])&&$record['conta']===null,'documentos, contato, nascimento e conta não saem da ficha sem permissão');
+foreach(['local_nascimento','uf_nascimento','raca_etnia','nacionalidade','grau_instrucao','profissao'] as $key)check(!array_key_exists($key,$record['pessoa']),'Ficha sem permissão omite '.$key);
 check($record['pessoa']['nome']!==''&&isset($record['aluno']['ra']),'identificação básica de nome e RA preservada para as demais áreas');
 wp_set_current_user(1);MenuPolicy::save(['role'=>'erp_secretaria','menus'=>['alunos'],'student_sections'=>['dados_pessoais']]);
 wp_set_current_user($uid);$record=$controller->studentSheet($student);
 check($record['dados_pessoais_permitidos']===true&&$record['pessoa']['email']==='aluno@example.test'&&!isset($record['pessoa']['campos_adicionais']['ficha_clinica_existente']),'permissão de dados pessoais restaura contato sem liberar a ficha médica');
+
+check($record['pessoa']['local_nascimento']==='LONDRINA'&&$record['pessoa']['uf_nascimento']==='PR'&&$record['pessoa']['raca_etnia']==='PARDA'&&$record['pessoa']['nacionalidade']==='BRASILEIRA'&&$record['pessoa']['grau_instrucao']==='ENSINO BÁSICO','Permissão de dados pessoais libera os novos campos na ficha');

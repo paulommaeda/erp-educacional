@@ -1,11 +1,14 @@
 (() => {
 'use strict';
 let datasets;
-const uppercaseFields=new Set(['nome','codigo','descricao','codpessoa_origem','ra','rg','rua','numero','complemento','bairro','cep','cidade','estado','profissao','religiao','igreja']);
+const personalChoices={raca_etnia:['Branca','Preta','Parda','Amarela','Indígena','Não declarada'],grau_instrucao:['Ensino Básico','Ensino Médio','Graduação','Pós-graduação','Mestrado','Doutorado']};
+const personalValue=(key,value)=>{const upper=String(value??'').trim().toUpperCase(),fold=s=>s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');return personalChoices[key].map(x=>x.toUpperCase()).find(x=>fold(x)===fold(upper))??upper;};
+const personalOptions=key=>[['','Não informado'],...personalChoices[key].map(label=>[label.toUpperCase(),label])];
+const uppercaseFields=new Set(['nome','codigo','descricao','codpessoa_origem','ra','rg','rua','numero','complemento','bairro','cep','cidade','estado','local_nascimento','uf_nascimento','raca_etnia','nacionalidade','grau_instrucao','profissao','religiao','igreja']);
 document.addEventListener('change',e=>{const i=e.target;if(i.matches('input,textarea')&&uppercaseFields.has(i.name)&&i.dataset.preserveCase!=='1')i.value=i.value.toUpperCase();});
 const node=(tag,text)=>{const x=document.createElement(tag);if(text!==undefined)x.textContent=text;return x;};
-function field(parent,name,title,value='',type='text'){const label=node('label',title),i=node('input');i.name=name;i.type=type;i.value=value??'';label.append(i);parent.append(label);return i;}
-function choice(parent,name,title,options,value){const label=node('label',title),s=node('select');s.name=name;for(const [v,t] of options){const o=node('option',t);o.value=v;s.append(o);}s.value=value??'';label.append(s);parent.append(label);return s;}
+function field(parent,name,title,value='',type='text'){const label=node('label',title),i=node('input');i.name=name;i.setAttribute('aria-label',title);i.type=type;i.value=value??'';label.append(i);parent.append(label);return i;}
+function choice(parent,name,title,options,value){const label=node('label',title),s=node('select');s.name=name;s.setAttribute('aria-label',title);for(const [v,t] of options){const o=node('option',t);o.value=v;s.append(o);}s.value=value??'';label.append(s);parent.append(label);return s;}
 function extras(f,p,all=false,group=null,sheetArea=null,protectedSection=null){
  const defs=(EDERP.additionalFields||[]).filter(d=>Number(d.ativo)&&(protectedSection===null||d.secao_protegida===protectedSection)&&(all||Number(d.exibir_pessoa))&&(group===null||String(d.idgrupo)===String(group))&&(!all||Number(d.exibir_aluno??1))&&(sheetArea===null||(!d.idgrupo&&!d.secao_protegida&&(d.area_aluno||'dados')===sheetArea))&&(!d.idgrupo||!EDERP.fieldGroups||EDERP.fieldGroups.some(g=>Number(g.ativo)&&String(g.idgrupo)===String(d.idgrupo))));
  const groups={};for(const d of defs){let target;if(all){target=f;}else if(d.secao==='identificacao'){target=f;}else if(d.secao==='pessoais'){target=f.querySelector('[name=rg]').closest('fieldset');}else if(d.secao==='endereco'){target=f.querySelector('[name=rua]').closest('fieldset');}else{groups.outros??=node('fieldset');groups.outros.dataset.section='outros';if(!groups.outros.parentNode){groups.outros.append(node('legend','Outros'));f.append(groups.outros);}target=groups.outros;}
@@ -17,7 +20,7 @@ function extras(f,p,all=false,group=null,sheetArea=null,protectedSection=null){
  }
 }
 function visible(d,value){const v=String(value??'').trim(),answer=String(d.resposta_exibicao??'').trim();switch(d.condicao_exibicao){case 'preenchido':return v!=='';case 'vazio':return v==='';case 'igual':return v.toLocaleUpperCase('pt-BR')===answer.toLocaleUpperCase('pt-BR');case 'diferente':return v.toLocaleUpperCase('pt-BR')!==answer.toLocaleUpperCase('pt-BR');default:return true;}}
-window.EDERPFields={extras,visible,attach(f,p){
+window.EDERPFields={extras,visible,personalOptions,personalChoices,personalValue,attach(f,p){
  f.classList.add('erp-person-fields');
  const box=node('fieldset'),legend=node('legend','Documentos e informações pessoais');box.append(legend);f.append(box);
  for(const [name,title] of [['rg','RG']])field(box,name,title,p[name]);
@@ -26,6 +29,11 @@ window.EDERPFields={extras,visible,attach(f,p){
  const civilStatus=node('p','Carregando estados civis...');box.append(civilStatus);
  fetch(EDERP.root+'estados-civis',{credentials:'same-origin',cache:'no-store',headers:{'X-WP-Nonce':EDERP.nonce}}).then(r=>{if(!r.ok)throw Error('Não foi possível carregar os estados civis. Recarregue a página.');return r.json();}).then(rows=>{rows.forEach(r=>{const o=node('option',r.idestado_civil+' — '+r.nome);o.value=r.idestado_civil;civil.append(o);});civil.value=p.idestado_civil??'';civil.disabled=false;civilReady=true;civilStatus.textContent='';}).catch(e=>civilStatus.textContent=e.message);
  f.addEventListener('submit',e=>{if(!civilReady){e.preventDefault();e.stopImmediatePropagation();civilStatus.textContent='Aguarde carregar os estados civis ou recarregue a página.';}},true);
+ field(box,'local_nascimento','Local de Nascimento',p.local_nascimento);
+ const birthState=choice(box,'uf_nascimento','UF Nascimento',[['','Não informado']],p.uf_nascimento);birthState.disabled=true;
+ choice(box,'raca_etnia','Raça/Etnia',personalOptions('raca_etnia'),personalValue('raca_etnia',p.raca_etnia));
+ field(box,'nacionalidade','Nacionalidade',p.nacionalidade);
+ choice(box,'grau_instrucao','Grau de Instrução',personalOptions('grau_instrucao'),personalValue('grau_instrucao',p.grau_instrucao));
  for(const [name,title] of [['profissao','Profissão'],['religiao','Religião'],['igreja','Igreja']])field(box,name,title,p[name]);
  const address=node('fieldset');address.append(node('legend','Endereço'));f.append(address);
  for(const [name,title] of [['rua','Rua'],['numero','Número'],['complemento','Complemento'],['bairro','Bairro'],['cep','CEP']])field(address,name,title,p[name]);
@@ -37,6 +45,7 @@ window.EDERPFields={extras,visible,attach(f,p){
  datasets??=Promise.all(['paises','brasil'].map(x=>fetch(EDERP.assets+'localidades/'+x+'.json').then(r=>{if(!r.ok)throw Error('Não foi possível carregar as localidades. Recarregue a página.');return r.json();})));
  datasets.then(([countries,br])=>{
   const fill=(s,options,value)=>{s.replaceChildren();options.forEach(([v,t])=>{const o=node('option',t);o.value=v;s.append(o);});s.value=value||'';};
+  fill(birthState,[['','Não informado'],...Object.entries(br).map(([uf,v])=>[uf,uf+' — '+v.nome]).sort((a,b)=>a[1].localeCompare(b[1])),['EX','Exterior (EX)']],p.uf_nascimento?.toUpperCase());birthState.disabled=false;
   fill(country,Object.entries(countries).map(([k,v])=>[k,v.toUpperCase()]),p.pais||'BR');
   fill(region,[['','Selecione...'],...Object.entries(br).map(([uf,v])=>[uf,v.nome.toUpperCase()+' ('+uf+')']).sort((a,b)=>a[1].localeCompare(b[1]))],p.estado);
   const cities=(value='')=>fill(city,[['','Selecione...'],...(br[region.value]?.cidades||[]).map(c=>[c.nome.toUpperCase(),c.nome.toUpperCase()])],value);

@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "ERP Educacional — APIs de integração",
-    "version": "0.12.0",
+    "version": "0.15.4",
     "description": "Consultas e gravações autenticadas como administrador. Leia integracao-api.md. JSON monetário decimal string; autenticação nativa WordPress por senha de aplicativo sobre HTTPS."
   },
   "servers": [
@@ -1075,6 +1075,76 @@
                       }
                     ]
                   },
+                  "local_nascimento": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 191
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "uf_nascimento": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "pattern": "^(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO|EX)$"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ],
+                    "description": "UF de nascimento, independente do endereço atual. EX para exterior."
+                  },
+                  "raca_etnia": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "BRANCA",
+                          "PRETA",
+                          "PARDA",
+                          "AMARELA",
+                          "INDÍGENA",
+                          "NÃO DECLARADA"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "nacionalidade": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "maxLength": 100
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "grau_instrucao": {
+                    "anyOf": [
+                      {
+                        "type": "string",
+                        "enum": [
+                          "ENSINO BÁSICO",
+                          "ENSINO MÉDIO",
+                          "GRADUAÇÃO",
+                          "PÓS-GRADUAÇÃO",
+                          "MESTRADO",
+                          "DOUTORADO"
+                        ]
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
                   "profissao": {
                     "anyOf": [
                       {
@@ -2124,6 +2194,76 @@
             "anyOf": [
               {
                 "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "local_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 191
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "uf_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO|EX)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UF de nascimento, independente do endereço atual. EX para exterior."
+          },
+          "raca_etnia": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "BRANCA",
+                  "PRETA",
+                  "PARDA",
+                  "AMARELA",
+                  "INDÍGENA",
+                  "NÃO DECLARADA"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nacionalidade": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "grau_instrucao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ENSINO BÁSICO",
+                  "ENSINO MÉDIO",
+                  "GRADUAÇÃO",
+                  "PÓS-GRADUAÇÃO",
+                  "MESTRADO",
+                  "DOUTORADO"
+                ]
               },
               {
                 "type": "null"
@@ -4122,6 +4262,76 @@
             "anyOf": [
               {
                 "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "local_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 191
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "uf_nascimento": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO|EX)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "UF de nascimento, independente do endereço atual. EX para exterior."
+          },
+          "raca_etnia": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "BRANCA",
+                  "PRETA",
+                  "PARDA",
+                  "AMARELA",
+                  "INDÍGENA",
+                  "NÃO DECLARADA"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nacionalidade": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "grau_instrucao": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "ENSINO BÁSICO",
+                  "ENSINO MÉDIO",
+                  "GRADUAÇÃO",
+                  "PÓS-GRADUAÇÃO",
+                  "MESTRADO",
+                  "DOUTORADO"
+                ]
               },
               {
                 "type": "null"

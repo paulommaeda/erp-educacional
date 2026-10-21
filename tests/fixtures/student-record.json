@@ -99,7 +99,13 @@
         "dificuldades_aprendizagem": "ACOMPANHAMENTO PEDAGÓGICO",
         "laudos": "RELATÓRIO DE ACOMPANHAMENTO",
         "medicacao_condicional": "NÃO"
-      }
+      },
+      "local_nascimento": "LONDRINA",
+      "uf_nascimento": "PR",
+      "raca_etnia": "PARDA",
+      "nacionalidade": "BRASILEIRA",
+      "grau_instrucao": "ENSINO BÁSICO",
+      "profissao": "ESTUDANTE"
     },
     "conta": {
       "user_login": "carlos.silva",

@@ -117,7 +117,7 @@ final class CatalogService
     }
     public function updateOwn(array $data,string $key): array
     {
-        $allowed=['nome','cpf','data_nascimento','email','telefone','rg','rua','numero','complemento','bairro','cep','cidade','estado','pais','estado_civil','profissao','religiao','igreja','sexo','foto_attachment_id','idestado_civil','versao'];
+        $allowed=['nome','cpf','data_nascimento','email','telefone','rg','rua','numero','complemento','bairro','cep','cidade','estado','pais','estado_civil','local_nascimento','uf_nascimento','raca_etnia','nacionalidade','grau_instrucao','profissao','religiao','igreja','sexo','foto_attachment_id','idestado_civil','versao'];
         foreach(array_keys($data) as $field)if(!in_array($field,$allowed,true))throw new RuleViolation('Campo não permitido no perfil pessoal: '.$field);
         $user=get_current_user_id();if(!$user)throw new RuleViolation('Entre na sua conta.');
         return $this->db->atomic(fn()=>$this->ops->run($key,'editar_proprio_perfil',['usuario'=>$user]+$data,function()use($data,$key,$user){

@@ -329,3 +329,7 @@ GET `/financeiro/alunos`: diretório paginado por nome/RA para usuários autoriz
 ## Requerimentos por múltiplas conexões — 0.15.3
 
 Veja [Requerimentos: pessoas e conexões](REQUERIMENTOS-CONEXOES.md) para configurar origens independentes, mapear os blocos de aluno e responsáveis e conferir todos como cadastros de pessoas.
+
+## Pessoas — 0.15.4
+
+Local e UF de nascimento, raça/etnia, nacionalidade, grau de instrução e profissão são campos nativos de pessoa, disponíveis no CSV, mapeamento e conferência dos requerimentos, integrações e exportações. Consulte [campos pessoais e valores aceitos](PESSOAS-CAMPOS.md).
