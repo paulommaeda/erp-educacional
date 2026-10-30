@@ -55,6 +55,15 @@ final class Controller
         $this->route('/documentos-alunos/alunos/'.$id,'GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->listing((int)$r['id'],true));
         $this->route('/documentos-alunos/'.$id.'/arquivo','GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->download((int)$r['id'],true));
         $this->route('/documentos-alunos/'.$id.'/conferir','POST',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->review((int)$r['id'],$this->payload($r),$this->key($r)));
+        $educbank=new \EducacionalERP\Application\EducbankIntegration($this->db);
+        $this->route('/educbank/configuracao','GET',fn()=>Access::isAdmin(),fn()=>$educbank->settings());
+        $this->route('/educbank/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>$educbank->save($this->payload($r)));
+        $this->route('/educbank/mapeamentos','GET',fn()=>Access::isAdmin(),fn($r)=>$educbank->mappings((int)($r->get_param('codperiodo')??0)));
+        $this->route('/educbank/fila','GET',fn()=>Access::isAdmin(),fn($r)=>$educbank->listing((int)($r->get_param('page')?:1),(string)($r->get_param('status')??'')));
+        $this->route('/educbank/testar','POST',fn()=>Access::isAdmin(),fn()=>$educbank->test());
+        $this->route('/educbank/enfileirar','POST',fn()=>Access::isAdmin(),fn($r)=>$educbank->backlog($this->payload($r),$this->key($r)));
+        $this->route('/educbank/processar','POST',fn()=>Access::isAdmin(),fn()=>$educbank->process(\EducacionalERP\Application\Coligadas::current(),3));
+        $this->route('/educbank/fila/'.$id.'/reprocessar','POST',fn()=>Access::isAdmin(),fn($r)=>$educbank->retry((int)$r['id']));
         $external=new \EducacionalERP\Application\ExternalPeopleApi($this->db,$this->catalog);
         $this->route('/api-pessoas/configuracao','GET',fn()=>Access::isAdmin(),fn()=>$external->settings());
         $this->route('/api-pessoas/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>$external->save($this->payload($r),$this->key($r)));

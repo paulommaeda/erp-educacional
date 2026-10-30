@@ -1,17 +1,23 @@
-# ERP Educacional — 0.10.4
+# ERP Educacional — 0.16.0
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.8.2.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração adiciona o **schema 7**, sem excluir ou renumerar cadastros. O perfil interno **Financeiro** é criado nessa atualização. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.16.0.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 33**, acrescentando os vínculos e a fila Educbank, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
 6. Em **Perfis e acessos → Atribuir perfil**, selecione a pessoa que opera o financeiro e adicione **Financeiro**. Esse é um perfil de funcionário, separado de **Responsável financeiro**, que representa o responsável pelo aluno.
 
 As turmas antigas ficam inicialmente sem plano, para não inventar preços. Contratos e parcelas já existentes continuam com seus valores; a atualização não desfaz cobranças de rematrículas antigas. Não é preciso recriar matrículas ou contratos existentes.
+
+## Integração Educbank
+
+Em **Configurações → Educbank**, configure tenant/token por coligada e ambiente, plano contratado, período e série de cada turma. A integração começa desativada em sandbox. Cria a matrícula antes das faturas; preserva aluno, RA, responsável financeiro, CNPJ, bolsas e pontualidade. Há fila, retentativas e inclusão dos cadastros existentes por período.
+
+Esta primeira etapa faz o envio e a atualização. O retorno de pagamentos e a baixa automática ainda serão integrados. Consulte [o guia completo de configuração e homologação](docs/EDUCBANK.md).
 
 ## Fluxo da matrícula inicial
 

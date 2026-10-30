@@ -18,7 +18,7 @@ final class ContractDiscounts
     {
         Access::requireAdmin();$value=Money::cents($data['valor']??null);if($value<0)throw new RuleViolation('Desconto não pode ser negativo.');$name='ederp_pontualidade_'.substr(hash('sha256',$this->db->table('contratos')),0,20);
         if((int)($this->db->row('SELECT GET_LOCK(%s,5) AS acquired',[$name])['acquired']??0)!==1)throw new RuleViolation('Configuração em atualização.');
-        try{$before=get_option(Coligadas::option('ederp_pontualidade'),'0.00');$after=Money::format($value);$this->db->audit('configuracoes',0,'pontualidade',['valor'=>$before],['valor'=>$after],$key);update_option(Coligadas::option('ederp_pontualidade'),$after,false);return ['valor'=>$after];}finally{$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$name]);}
+        try{$before=get_option(Coligadas::option('ederp_pontualidade'),'0.00');$after=Money::format($value);$this->db->audit('configuracoes',0,'pontualidade',['valor'=>$before],['valor'=>$after],$key);update_option(Coligadas::option('ederp_pontualidade'),$after,false);if(get_option('ederp_schema_version')===\EducacionalERP\Infrastructure\Database\Installer::VERSION)EducbankOutbox::refresh($this->db,Coligadas::current());return ['valor'=>$after];}finally{$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$name]);}
     }
     private function lock(int $id):array
     {

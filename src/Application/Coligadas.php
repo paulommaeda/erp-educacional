@@ -59,7 +59,7 @@ final class Coligadas
         }
         return $target;
     }
-    private static function validCnpj(string $s):bool {
+    public static function validCnpj(string $s):bool {
         if(!preg_match('/^\d{14}$/D',$s)||preg_match('/^(\d)\1{13}$/D',$s))return false;
         foreach([[5,4,3,2,9,8,7,6,5,4,3,2],[6,5,4,3,2,9,8,7,6,5,4,3,2]] as $i=>$weights){$sum=0;foreach($weights as $j=>$w)$sum+=(int)$s[$j]*$w;$mod=$sum%11;if((int)$s[12+$i]!==($mod<2?0:11-$mod))return false;}return true;
     }

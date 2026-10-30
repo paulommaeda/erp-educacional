@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.15.4
+Stable tag: 0.16.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.16.0 =
+* Primeira etapa Educbank: matrícula e mensalidades enviadas em fila persistente, com credenciais por coligada e ambiente.
+* Configuração, mapeamento de ano/semestre e série por turma, teste de conexão, histórico, reprocessamento e inclusão dos cadastros existentes em lotes de 20.
+* Faturas com matrícula Educbank, aluno/RA, responsável financeiro atual, CNPJ, bolsa e pontualidade separados em centavos.
+* Atualiza turma, responsável, valores, descontos e vencimentos; comunica cancelamentos de faturas. Rematrícula só gera faturas após a geração financeira das parcelas.
+* Schema 33 acrescenta vínculos/fila com FKs; integração começa desativada. Baixa automática por retorno/webhook ainda não faz parte desta etapa.
 
 = 0.15.4 =
 * Documentos e informações pessoais: local e UF de nascimento, raça/etnia, nacionalidade e grau de instrução; profissão mantida na mesma seção.
