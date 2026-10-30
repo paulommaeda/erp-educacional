@@ -1,4 +1,4 @@
-# Integração Educbank — 0.17.1
+# Integração Educbank — 0.17.2
 
 ## Configurar
 
@@ -167,3 +167,21 @@ Rota `GET /wp-json/erp-educacional/v1/lancamentos/ID/recibo`, autenticada e suje
 O PDF fica em memória e no navegador durante a visualização; não é gravado em mídia pública nem inclui tokens Educbank. A biblioteca FPDF 1.9 e métricas de fontes estão incluídas com licença própria e namespace isolado, sem Composer ou download de dependências na instalação. Não altera o schema 33.
 
 Validação: pagamentos em mais de uma baixa, descontos concedidos, zero pago por desconto, estorno e pagamento posterior, identidade/logo configurada, coligadas, autorização e cache privado; PDF renderizado e texto conferido, incluindo paginação; interface e modal em desktop e mobile.
+
+## Bolsas após integração e plano da fatura — 0.17.2
+
+A inclusão de uma bolsa já altera os lançamentos abrangidos e registra a intenção de envio na mesma transação. O erro `Não é possível mudar o EbpayPlan da Fatura` ocorria porque o PUT reutilizava o plano das configurações, que podia diferir do plano confirmado pelo Educbank. A consulta somente de leitura ao sandbox encontrou faturas existentes em `ZeroDefault`.
+
+O PUT agora mantém o plano confirmado no GET da própria fatura/item e envia o desconto incondicional acumulado em `items[].fixedDiscountCents`, separado do valor original e da pontualidade. As demais informações seguem o `InvoiceUpdateDto` documentado. Não se omite o plano para deixar o servidor escolher um padrão, nem se envia ID de item, que não integra esse DTO.
+
+O plano das configurações permanece aplicável às novas criações. Alterá-lo não força a troca do plano das faturas já integradas. Quando faltar um plano reconhecido ou houver divergência entre fatura e item, a atualização fica para conferência; não usa a configuração como substituta.
+
+Bolsas acumulam por faixa de parcelas. A exclusão envia o desconto remanescente ou zero explicitamente nas parcelas futuras alteradas pelas regras do ERP. Parcelas pagas, canceladas e fora da faixa seguem preservadas. Bolsas que zeram o líquido conservam o fluxo de cancelamento de cobrança já existente.
+
+A comparação de conteúdo desconsidera o plano imutável para evitar reenvios apenas por mudança da configuração. Hashes das versões anteriores são reconhecidos quando o restante do conteúdo está inalterado. Não há nova migração: schema 34 mantido.
+
+Após atualizar, em **Configurações → Educbank → Fila e histórico de envios**, use **Reprocessar** nos registros com erro e depois **Processar fila**. A ação atualiza o mesmo UUID de fatura, sem recriar cobranças; a fila automática também tenta novamente os erros temporários elegíveis.
+
+Validação: 28 verificações específicas com HTTP simulado reproduzem o HTTP 400 e cobrem concessão de bolsa depois da integração, faixas, bolsas cumulativas, exclusão com zero explícito, preservação do plano real diferente da configuração, hashes anteriores, reprocessamento sem PUT duplicado, planos ausentes/divergentes e retorno de pagamento com recibo após bolsa. Regressões da integração, retorno, financeiro, descontos e recibos também passaram. Não foram feitas alterações nas faturas reais do colégio durante o diagnóstico.
+
+Referência oficial consultada: [Atualizar fatura / InvoiceUpdateDto](https://educbank.readme.io/reference/put_api-ebpay-invoice-id-1.md).

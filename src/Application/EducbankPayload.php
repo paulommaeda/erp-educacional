@@ -47,6 +47,29 @@ final class EducbankPayload
             'earlyPaymentDiscounts'=>$conditional>0?[['days'=>0,'valueCents'=>$conditional]]:[],
             'paymentFine'=>['overdueFine'=>Money::cents($settings['multa'])/10000,'dailyInterest'=>Money::cents($settings['juros_diarios'])/10000]];
     }
+    /** PUT cannot change the existing calculator plan; omitting it can select the provider's enum default. */
+    public static function invoiceUpdate(array $payload,array $remote):array
+    {
+        if(!is_array($remote['items']??null)||count($remote['items'])!==1||!is_array($payload['items']??null)||count($payload['items'])!==1)throw new RuleViolation('A atualização exige exatamente um item na fatura Educbank e no lançamento.');
+        $plans=[];
+        foreach([$remote['ebpayPlan']??null,$remote['items'][0]['ebpayPlan']??null] as $plan){
+            if($plan===null||$plan==='')continue;
+            if(!is_string($plan)||!in_array($plan,Settings::PLANS,true))throw new RuleViolation('O plano confirmado na fatura Educbank não foi reconhecido. Confira o vínculo antes de atualizar.');
+            $plans[$plan]=true;
+        }
+        if(count($plans)!==1)throw new RuleViolation('Educbank não confirmou um plano único entre a fatura e seu item. Confira o plano existente antes de atualizar.');
+        $update=array_intersect_key($payload,array_flip(['externalId','payerDocument','payer','dueDate','items','earlyPaymentDiscounts','paymentFine']));
+        $update['items'][0]['ebpayPlan']=array_key_first($plans);
+        $update['reason']='Atualização pelo ERP Educacional';
+        return $update;
+    }
+    /** The configured plan applies on creation; later synchronization tracks only mutable invoice content. */
+    public static function syncHash(string $type,array $payload):string
+    {
+        if($type==='fatura')foreach($payload['items'] as &$item)unset($item['ebpayPlan']);
+        unset($item);
+        return hash('sha256',wp_json_encode($payload));
+    }
     /** Ownership proof used only when recovering a lost POST response. */
     public static function identity(string $type,array $d):string
     {

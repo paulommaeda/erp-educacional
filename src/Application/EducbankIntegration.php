@@ -124,8 +124,9 @@ final class EducbankIntegration
         if($job['tipo']==='fatura'&&$job['idremoto']&&Money::cents($title['valor_baixa'])>0&&\EducacionalERP\Infrastructure\Educbank\ReturnSettings::read((int)$job['codcoligada'],$job['ambiente'])['ativo']){
             $known=$this->find($job,$client,null);if(($known['state']??'')==='Paid'){(new EducbankReturns($this->db))->consume($job,$known,'envio');$this->finish($job,'sincronizado',['status_remoto'=>'Paid']);return;}
         }
-        $context=$builder->context((int)$job['idmatricula'],$s);$payload=$job['tipo']==='matricula'?$builder->enrollment($context):$builder->invoice($context,$title,$enrollment['idremoto'],$s);$hash=hash('sha256',wp_json_encode($payload));
-        if($job['idremoto']&&$job['hash_sincronizado']===$hash){$this->finish($job,'sincronizado');return;}
+        $context=$builder->context((int)$job['idmatricula'],$s);$payload=$job['tipo']==='matricula'?$builder->enrollment($context):$builder->invoice($context,$title,$enrollment['idremoto'],$s);$hash=EducbankPayload::syncHash($job['tipo'],$payload);
+        // Accept previous hashes too, promoting them without another request for unchanged content.
+        if($job['idremoto']&&in_array($job['hash_sincronizado'],[$hash,hash('sha256',wp_json_encode($payload))],true)){$this->finish($job,'sincronizado',['hash_sincronizado'=>$hash]);return;}
         $remote=$this->find($job,$client,$payload);
         if($remote){
             $document=preg_replace('/\D/','',(string)($remote[$job['tipo']==='matricula'?'companyDocument':'companyCnpj']??''));
@@ -135,7 +136,7 @@ final class EducbankIntegration
             if($job['tipo']==='fatura'&&in_array($remote['state']??'',['Paid','Canceled'],true))throw new RuleViolation('Fatura paga ou cancelada no Educbank. Concilie antes de alterar.');
             if($job['tipo']==='matricula'&&in_array($remote['enrollmentStatus']??'',['Canceled','Evaded'],true))throw new RuleViolation('Matrícula cancelada/evadida no Educbank. Confira antes de alterar.');
             $update=$payload;if($job['tipo']==='matricula')$update=array_intersect_key($payload,array_flip(['student','academicClassName','academicProgram','guardians']));
-            else{unset($update['companyCnpj'],$update['closeInvoice'],$update['referenceDate']);$update['reason']='Atualização pelo ERP Educacional';}
+            else $update=EducbankPayload::invoiceUpdate($payload,$remote);
             $remote=$this->send($client,'PUT',$this->path($job).'/'.$job['idremoto'],$update,$context['rf'],$s['ambiente']);
         }else{
             // Persist before HTTP: a timeout or crash is recovered by GET externalId, never a blind POST.

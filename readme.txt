@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.17.1
+Stable tag: 0.17.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.17.2 =
+* Corrige envio de bolsas após integração: atualiza fixedDiscountCents somente nas parcelas afetadas e preserva o EbpayPlan confirmado na fatura Educbank.
+* Inclusão, soma e exclusão de bolsas sincronizam faturas existentes, incluindo desconto zero, sem duplicar cobranças ou alterar parcelas pagas.
+* O plano das configurações vale para criações; atualizações usam o plano existente. Plano ausente ou divergente exige conferência.
+* Normaliza o controle de conteúdo sem reenviar faturas apenas pela troca da configuração de plano; compatibilidade com hashes anteriores. Schema 34 mantido.
 
 = 0.17.1 =
 * Corrige conferência de studentExternalId quando o Educbank devolve o identificador externo da matrícula em vez do RA.
