@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.17.0
+Stable tag: 0.17.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.17.1 =
+* Corrige conferência de studentExternalId quando o Educbank devolve o identificador externo da matrícula em vez do RA.
+* Preserva validação de UUID, contrato, lançamento, CNPJ e responsável financeiro; mantém o RA e os dados recebidos intactos.
+* Aplica a mesma compatibilidade na recuperação de resposta perdida, sem criar outra fatura.
+* Diagnósticos específicos para divergência de matrícula, contrato e aluno. Schema 34 mantido.
 
 = 0.17.0 =
 * Retorno Educbank autenticado e persistente, com confirmação da fatura na API antes da baixa pelo valor efetivamente pago.

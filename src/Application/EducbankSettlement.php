@@ -67,8 +67,12 @@ final class EducbankSettlement
     private function identity(array $job,array $remote,array $title,array $contract):void
     {
         $m=$this->db->get('matriculas',(int)$contract['idmatricula']);$a=$this->db->get('alunos',(int)$m['idaluno']);$items=$remote['items']??[];$item=is_array($items)&&count($items)===1?$items[0]:[];
+        if((int)$job['idmatricula']!==(int)$m['idmatricula'])throw new RuleViolation('A matrícula da fila Educbank difere da matrícula do contrato do lançamento.');
+        if(!is_array($items)||count($items)!==1)throw new RuleViolation('A fatura Educbank deve conter exatamente um item vinculado à parcela.');
         $enrollment=$this->db->row('SELECT idremoto FROM '.$this->db->table('educbank_fila')." WHERE codcoligada=%d AND ambiente=%s AND tenant=%s AND tipo='matricula' AND idlocal=%d",[$job['codcoligada'],$job['ambiente'],$job['tenant'],$job['idmatricula']]);
-        if(!$enrollment||!$enrollment['idremoto']||strtolower((string)($item['enrollmentId']??''))!==$enrollment['idremoto']||(string)($item['externalOrderId']??'')!==(string)$contract['idcontrato']||(string)($item['studentExternalId']??'')!==$a['ra'])throw new RuleViolation('Matrícula, contrato ou RA da fatura não correspondem ao lançamento.');
+        if(!$enrollment||!$enrollment['idremoto']||strtolower((string)($item['enrollmentId']??''))!==$enrollment['idremoto'])throw new RuleViolation('O UUID da matrícula na fatura Educbank difere da matrícula vinculada ao lançamento.');
+        if((string)($item['externalOrderId']??'')!==(string)$contract['idcontrato'])throw new RuleViolation('O contrato (externalOrderId) da fatura Educbank difere do contrato do lançamento.');
+        if(!EducbankPayload::studentReference($item['studentExternalId']??null,(string)$a['ra'],(string)$m['idmatricula']))throw new RuleViolation('O identificador do aluno (studentExternalId) não corresponde ao RA nem ao identificador externo da matrícula vinculada.');
         $rf=$this->db->get('pessoas',(int)$title['codpessoa_rf_atual']);
         $cpf=preg_replace('/\D/','',(string)$rf['cpf']);
         if(strlen($cpf)!==11||preg_replace('/\D/','',(string)($remote['payer']['cpfCnpj']??''))!==$cpf)throw new RuleViolation('Responsável da fatura difere do responsável financeiro atual. Confira a troca antes da baixa.');

@@ -1,4 +1,4 @@
-# Integração Educbank — 0.17.0
+# Integração Educbank — 0.17.1
 
 ## Configurar
 
@@ -24,7 +24,7 @@ O CNPJ vem da coligada proprietária da matrícula. O nome, CPF válido, CEP bra
 | Período e turma mapeados | `academicYear`, `term`, `academicProgram`, `academicClassName` |
 | `idlancamento` de cada parcela | `Invoice.externalId`, como string |
 | UUID da matrícula retornado pelo parceiro | `items[].enrollmentId` |
-| RA | `items[].studentExternalId`, preservando zeros |
+| RA | Enviado em `items[].studentExternalId`, preservando zeros; o retorno também pode usar `Enrollment.externalId`, conferido com UUID e contrato |
 | `idcontrato` | `items[].externalOrderId` |
 | Valor original | `items[].valueCents` inteiro |
 | Bolsa / desconto incondicional | `items[].fixedDiscountCents` inteiro |

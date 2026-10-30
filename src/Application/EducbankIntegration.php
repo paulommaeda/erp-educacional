@@ -100,7 +100,9 @@ final class EducbankIntegration
         if(!array_key_exists('items',$list)||!is_array($list['items'])||!isset($list['totalCount'])||(int)$list['totalCount']>100)throw new RuleViolation('Consulta Educbank incompleta. Não foi criada outra cobrança.');
         $matches=array_values(array_filter($list['items'],fn($r)=>(string)($r['externalId']??'')===$job['external_id']));
         if(!$matches)return null;if(count($matches)!==1)throw new RuleViolation('Mais de um registro Educbank usa este identificador externo. Confira os vínculos.');$found=$matches[0];
-        $expected=$job['identidade_hash']?:($payload?EducbankPayload::identity($job['tipo'],$payload):'');if($expected===''||!hash_equals($expected,EducbankPayload::identity($job['tipo'],$found)))throw new RuleViolation('Identificador externo já pertence a dados diferentes no Educbank. Vínculo não foi reaproveitado.');
+        $expected=$job['identidade_hash']?:($payload?EducbankPayload::identity($job['tipo'],$payload):'');$ra='';
+        if($job['tipo']==='fatura'){$m=$this->db->get('matriculas',(int)$job['idmatricula']);$ra=(string)$this->db->get('alunos',(int)$m['idaluno'])['ra'];}
+        if($expected===''||!EducbankPayload::matchesIdentity($job['tipo'],$expected,$found,$ra,(string)$job['idmatricula']))throw new RuleViolation('Identificador externo já pertence a dados diferentes no Educbank. Vínculo não foi reaproveitado.');
         $this->remember($job,$found['id']??'');return $found;
     }
     private function work(array $job,array $s):void

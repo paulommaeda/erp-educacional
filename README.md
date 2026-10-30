@@ -1,10 +1,10 @@
-# ERP Educacional — 0.17.0
+# ERP Educacional — 0.17.1
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.17.0.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.17.1.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 34**, acrescentando a caixa de retornos e os vínculos de recebimento Educbank, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -20,6 +20,8 @@ Em **Configurações → Educbank**, configure tenant/token por coligada e ambie
 Para receber pagamentos, abra **Retorno de pagamentos → Ativar retorno e configurar webhook** no ambiente correto. O ERP confirma cada pagamento pela API e registra uma baixa com valor efetivamente pago, data, forma, descontos e encargos. Reenvios não duplicam dinheiro; há consulta periódica de recuperação, histórico e reprocessamento. A primeira parcela paga promove a matrícula reservada para cursando e libera o recibo.
 
 O retorno começa desativado por ambiente e coligada: pagamentos de sandbox são simulações. Confira [o guia do retorno e baixa automática](docs/EDUCBANK-RETORNO.md) e [a configuração geral da integração](docs/EDUCBANK.md).
+
+Na versão 0.17.1, o retorno também reconhece `studentExternalId` com o identificador externo da matrícula, conforme observado no sandbox. O vínculo é conferido pelo UUID da matrícula, contrato, lançamento, CNPJ e responsável. Não altera o RA. Após atualizar, use **Reprocessar retorno** e **Processar avisos** para os retornos que ficaram em conferência por esse motivo.
 
 ## Fluxo da matrícula inicial
 

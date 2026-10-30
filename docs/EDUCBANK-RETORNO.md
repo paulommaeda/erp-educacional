@@ -1,4 +1,4 @@
-# Retorno de pagamentos Educbank — 0.17.0
+# Retorno de pagamentos Educbank — 0.17.1
 
 ## Ativar no colégio
 
@@ -18,7 +18,7 @@ A documentação Educbank consultada informa limitação de entrega por HTTP em 
 
 1. O callback autentica, verifica os dois identificadores (`InvoiceId` e `ExternalId`) no vínculo da coligada/ambiente/tenant e guarda um aviso durável. Só então responde sucesso. Não faz HTTP nem baixa dentro da requisição do aviso.
 2. O worker consulta a fatura conhecida na API autenticada Educbank. Os valores enviados no webhook não autorizam movimentação de dinheiro.
-3. A resposta deve corresponder ao CNPJ, matrícula Educbank, RA com seus zeros, contrato e CPF do responsável financeiro atual. O valor original e a bolsa também precisam coincidir com o lançamento.
+3. A resposta deve corresponder ao CNPJ, matrícula Educbank, contrato e CPF do responsável financeiro atual. O campo `studentExternalId` pode conter o RA com seus zeros ou o identificador externo da própria matrícula, mantendo o UUID da matrícula e o contrato exatos. O valor original e a bolsa também precisam coincidir com o lançamento.
 4. Para uma fatura `Paid` consistente, uma única transação registra a baixa e a auditoria, atualiza o valor recebido e zera o saldo. O autor é **sistema (0)**. O usuário que acionou o processamento conserva sua sessão.
 5. A primeira parcela quitada promove a matrícula de reservado para cursando pelas regras existentes. As telas passam a mostrar **Pago**, o botão **Pagar** é retirado e **Recibo** passa a usar a baixa efetiva.
 
@@ -83,3 +83,15 @@ Testes PHP/SQLite com HTTP simulado cobrem autenticação, ativação explícita
 A integração existente foi consultada em sandbox apenas em modo leitura; não houve simulação ou baixa real nas faturas do colégio. A entrega real do callback, migração MySQL e o ciclo de pagamento devem ser homologados na instalação após ativação.
 
 Referências oficiais consultadas em 30/10/2026: [Webhook](https://educbank.readme.io/reference/webhook.md), [Webhook de faturas](https://educbank.readme.io/reference/webhook-de-faturas.md), [Cadastro de webhook](https://educbank.readme.io/reference/post_api-ebpay-webhook.md), [Consulta de fatura](https://educbank.readme.io/reference/get_api-ebpay-invoice-id-1.md).
+
+## Correção da referência do aluno — 0.17.1
+
+Uma consulta somente de leitura ao sandbox identificou que a fatura devolvia `studentExternalId` igual a `Enrollment.externalId`, enquanto o RA exibido no ERP era diferente. A versão 0.17.0 comparava esse campo exclusivamente com o RA e rejeitava a baixa com a mensagem genérica “Matrícula, contrato ou RA da fatura não correspondem ao lançamento”.
+
+A conferência aceita as duas representações estritamente: RA exato, preservando zeros, ou ID externo da matrícula local que corresponde ao UUID Educbank já vinculado. O contrato da parcela deve pertencer à mesma matrícula indicada na fila. InvoiceId, ExternalId do lançamento, CNPJ, UUID da matrícula, contrato e responsável financeiro continuam obrigatórios. Não se aceita um código arbitrário de pessoa/aluno ou um identificador aproximado.
+
+A recuperação de resposta perdida após criação usa a mesma compatibilidade: normaliza uma cópia apenas para comparar com a identidade originalmente enviada. Mantém a fatura recebida e o RA local intactos. Não cria uma cobrança substituta.
+
+Após instalar 0.17.1, clique em **Reprocessar retorno** e depois em **Processar avisos**. A consulta automática de recuperação também pode reencontrar a fatura paga. Outras divergências passam a ter mensagens específicas de matrícula, contrato e referência do aluno.
+
+Não exige nova migração: schema 34 mantido. Testes cobrem baixa com referência derivada, RA com zeros, bloqueio de contrato/matrícula/CNPJ/lançamento divergentes, ausência da referência, múltiplos itens e timeout após POST sem duplicação. A consulta ao sandbox não alterou dados nem efetuou baixas na instalação WordPress.

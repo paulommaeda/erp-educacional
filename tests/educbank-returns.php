@@ -4,7 +4,7 @@ require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php'
 use EducacionalERP\Infrastructure\Database\{Database,Installer};
 use EducacionalERP\Infrastructure\WordPress\Access;
 use EducacionalERP\Infrastructure\Educbank\{Settings,ReturnSettings,Webhook,Cron};
-use EducacionalERP\Application\{CatalogService,AcademicService,Operations,StudentWorkflow,EducbankIntegration,EducbankReturns,EducbankPayment,ContractDiscounts,FinanceService,PaymentReceipt,Coligadas};
+use EducacionalERP\Application\{CatalogService,AcademicService,Operations,StudentWorkflow,EducbankIntegration,EducbankReturns,EducbankPayment,EducbankPayload,ContractDiscounts,FinanceService,PaymentReceipt,Coligadas};
 use EducacionalERP\Domain\RuleViolation;
 $checks=0;
 function ck(bool $v,string $label):void{global $checks;if(!$v)throw new RuntimeException($label);$checks++;echo "PASS: $label\n";}
@@ -36,6 +36,16 @@ $config=['ativo'=>1,'ambiente'=>'sandbox','sandbox'=>['tenant'=>'school','token'
 $m=$flow->batch(['codperiodo'=>$period,'idturma'=>$class,'alunos'=>[$student],'quantidade_parcelas'=>6,'primeiro_vencimento'=>'2026-01-10'],keyid())['items'][0];(new ContractDiscounts($db,$ops))->add((int)$m['idcontrato'],['nome'=>'Bolsa','valor'=>'100.00','parcela_inicio'=>1,'parcela_fim'=>6],keyid());update_option('ederp_pontualidade','50.00');$integration->process(1,10);
 $jobs=$db->rows('SELECT * FROM '.$db->table('educbank_fila')." WHERE tipo='fatura' ORDER BY idintegracao");ck(count($jobs)===6,'Faturas sincronizadas para teste');
 $j=$jobs[0];$id=(int)$j['idlancamento'];$remote=invoice($j);
+$raRemote=$remote;$remote['items'][0]['studentExternalId']=(string)$m['idmatricula'];
+ck(EducbankPayload::studentReference($raRemote['items'][0]['studentExternalId'],'000123',(string)$m['idmatricula']),'Continua aceitando o RA exato, incluindo zeros à esquerda');
+ck(EducbankPayload::studentReference($remote['items'][0]['studentExternalId'],'000123',(string)$m['idmatricula']),'Aceita referência derivada da matrícula Educbank confirmada');
+$expected=EducbankPayload::identity('fatura',$raRemote);ck(EducbankPayload::matchesIdentity('fatura',$expected,$remote,'000123',(string)$m['idmatricula']),'Recuperação de POST aceita referência derivada sem mudar a fatura');
+ck($remote['items'][0]['studentExternalId']===(string)$m['idmatricula']&&$db->get('alunos',$student)['ra']==='000123','Normalização não altera retorno nem RA cadastrado');
+foreach(['studentExternalId'=>'123','enrollmentId'=>'00000000-0000-0000-0000-000000000999','externalOrderId'=>'999'] as $field=>$value){$foreign=$remote;$foreign['items'][0][$field]=$value;ck(!EducbankPayload::matchesIdentity('fatura',$expected,$foreign,'000123',(string)$m['idmatricula']),'Recuperação continua bloqueando divergência: '.$field);}
+$foreign=$remote;$foreign['companyCnpj']='11444777000161';ck(!EducbankPayload::matchesIdentity('fatura',$expected,$foreign,'000123',(string)$m['idmatricula']),'Referência derivada não permite recuperar fatura de outro CNPJ');
+$foreign=$remote;$foreign['externalId']='999';ck(!EducbankPayload::matchesIdentity('fatura',$expected,$foreign,'000123',(string)$m['idmatricula']),'Referência derivada não permite recuperar outro lançamento');
+$foreign=$remote;$foreign['items'][]=$foreign['items'][0];ck(!EducbankPayload::matchesIdentity('fatura',$expected,$foreign,'000123',(string)$m['idmatricula']),'Mais de um item não é aceito na recuperação');
+
 ck($returns->process(1)['desativado']===true&&$returns->reconcile(1)['desativado']===true,'Retorno começa desativado, inclusive em sandbox');
 rejects(fn()=>$returns->consume($j,$remote),'Pagamento sem ativação não baixa');ck((float)$db->get('lancamentos',$id)['valor_baixa']===0.0,'Ativação é obrigatória antes de movimentar dinheiro');
 $GLOBALS['post_timeout']=true;$active=$returns->configure(['ativo'=>1]);ck($active['retorno']['ativo']&&!$active['retorno']['webhook_confirmado']&&count($GLOBALS['provider_store']['webhook'])===1,'Timeout de cadastro preserva consulta ativa e webhook pendente');$active=$returns->configure(['ativo'=>1]);ck($active['retorno']['webhook_confirmado']&&count($GLOBALS['provider_store']['webhook'])===1,'Reconfiguração localiza webhook após timeout, sem duplicar');
@@ -62,6 +72,7 @@ foreach(['paidCents'=>null,'paidDate'=>'2099-01-01','paidMethod'=>'financial_agr
 $invalid=$shape;$invalid['paidCents']=85000.5;rejects(fn()=>EducbankPayment::parse($invalid,$title3),'Centavos com fração não entram no financeiro');$invalid=$shape;$invalid['totalDiscountCents']=6000;rejects(fn()=>EducbankPayment::parse($invalid,$title3),'Desconto divergente não entra no financeiro');
 foreach(['companyCnpj'=>'11444777000161','externalId'=>'foreign'] as $field=>$value){$invalid=invoice($j3);$invalid[$field]=$value;rejects(fn()=>$returns->consume($j3,$invalid),'Identidade divergente bloqueia retorno: '.$field);}
 foreach(['studentExternalId'=>'123','enrollmentId'=>'00000000-0000-0000-0000-000000000999','externalOrderId'=>'999'] as $field=>$value){$invalid=invoice($j3);$invalid['items'][0][$field]=$value;rejects(fn()=>$returns->consume($j3,$invalid),'Vínculo divergente bloqueia retorno: '.$field);}
+foreach(['enrollmentId'=>'00000000-0000-0000-0000-000000000999','externalOrderId'=>'999','studentExternalId'=>null] as $field=>$value){$invalid=invoice($j3);$invalid['items'][0]['studentExternalId']=(string)$m['idmatricula'];$invalid['items'][0][$field]=$value;rejects(fn()=>$returns->consume($j3,$invalid),'Retorno com referência derivada mantém proteção: '.$field);}
 $invalid=invoice($j3);$invalid['payer']['cpfCnpj']='11144477735';rejects(fn()=>$returns->consume($j3,$invalid),'Troca de responsável pendente exige conferência');ck((float)$db->get('lancamentos',(int)$j3['idlancamento'])['valor_baixa']===0.0,'Recusas fazem rollback sem baixa parcial');
 // Existing manual receipt: reconcile School only, never duplicate another payment.
 $manual=$finance->pay((int)$j3['idlancamento'],['valor_pago'=>'900.00','data_pagamento'=>'2026-03-15','forma_pagamento'=>'pix'],keyid());$school=invoice($j3,90000,10000);$school['paidDate']='2026-03-15T00:00:00Z';rejects(fn()=>$returns->consume($j3,$school),'Pagamento remoto com baixa local exige conferência para não duplicar');$school['paidMethod']='school';$before=count($db->rows('SELECT * FROM '.$db->table('baixas')));$result=$returns->consume($j3,$school);ck($result['acao']==='baixa_local_conciliada'&&count($db->rows('SELECT * FROM '.$db->table('baixas')))===$before,'Recebimento School exatamente igual concilia baixa manual sem duplicação');$school['state']='Pending';$school['statusReason']='Refund';rejects(fn()=>$returns->consume($j3,$school),'Estorno de baixa manual conciliada continua sendo decisão do financeiro');

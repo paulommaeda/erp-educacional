@@ -54,4 +54,19 @@ final class EducbankPayload
         else{$i=$d['items'][0]??[];$parts=[preg_replace('/\D/','',(string)($d['companyCnpj']??'')),(string)($d['externalId']??''),$i['enrollmentId']??'',$i['externalOrderId']??'',$i['studentExternalId']??''];}
         return hash('sha256',wp_json_encode($parts));
     }
+    /** Only after proving the invoice/enrollment/contract links: the provider can derive this field from Enrollment.externalId. */
+    public static function studentReference(mixed $value,string $ra,string $enrollmentExternalId):bool
+    {
+        return is_string($value)&&$value!==''&&($value===$ra||$value===$enrollmentExternalId);
+    }
+    /** Recover a lost POST without accepting an unrelated student, enrollment, contract or issuer. */
+    public static function matchesIdentity(string $type,string $expected,array $remote,string $ra='',string $enrollmentExternalId=''):bool
+    {
+        if($type==='fatura'&&(!is_array($remote['items']??null)||count($remote['items'])!==1))return false;
+        if(hash_equals($expected,self::identity($type,$remote)))return true;
+        if($type!=='fatura'||$ra===''||$enrollmentExternalId===''||($remote['items'][0]['studentExternalId']??null)!==$enrollmentExternalId)return false;
+        // Normalize a copy solely for comparison. Never overwrite the received invoice or the ERP's RA.
+        $remote['items'][0]['studentExternalId']=$ra;
+        return hash_equals($expected,self::identity($type,$remote));
+    }
 }
