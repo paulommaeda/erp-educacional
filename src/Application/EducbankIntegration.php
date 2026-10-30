@@ -2,10 +2,11 @@
 declare(strict_types=1);
 namespace EducacionalERP\Application;
 use EducacionalERP\Domain\{Store,Input,Money,RuleViolation};
-use EducacionalERP\Infrastructure\Educbank\{Settings,Client};
+use EducacionalERP\Infrastructure\Educbank\{Settings,Client,ResponseError};
 use EducacionalERP\Infrastructure\WordPress\Access;
 final class EducbankIntegration
 {
+    private const WAITING_ENROLLMENT='Aguardando a matrícula ser sincronizada no Educbank.';
     public function __construct(private Store $db){}
     public function settings():array{return ['configuracao'=>Settings::publicData(Coligadas::current()),'programas'=>Settings::PROGRAMS,'planos'=>Settings::PLANS];}
     public function save(array $d):array{$result=Settings::save($this->db,$d);EducbankOutbox::refresh($this->db,Coligadas::current());return $result;}
@@ -26,7 +27,9 @@ final class EducbankIntegration
     }
     public function test():array
     {
-        Access::requireAdmin();$s=Settings::read(Coligadas::current());(new Client($s))->request('GET','/enrollment',null,['maxResultCount'=>1]);return ['conectado'=>true,'ambiente'=>$s['ambiente']];
+        Access::requireAdmin();$s=Settings::read(Coligadas::current());$client=new Client($s);
+        foreach(['/enrollment'=>'showCanceledEnrollments','/invoice'=>'showCanceledInvoices'] as $path=>$flag){$result=$client->request('GET',$path,null,['maxResultCount'=>1,$flag=>true]);if(!array_key_exists('items',$result)||(!is_array($result['items'])&&$result['items']!==null)||!isset($result['totalCount']))throw new RuleViolation('Educbank não confirmou uma lista válida ao consultar '.($path==='/invoice'?'faturas':'matrículas').'.');}
+        return ['conectado'=>true,'ambiente'=>$s['ambiente'],'consultas'=>['matriculas'=>true,'faturas'=>true]];
     }
     public function backlog(array $d,string $key):array
     {
@@ -51,7 +54,7 @@ final class EducbankIntegration
             $rows=$this->db->rows("SELECT * FROM $q WHERE codcoligada=%d AND ambiente=%s AND tenant=%s AND status IN ('pendente','erro') AND (proxima_tentativa IS NULL OR proxima_tentativa<=%s) ORDER BY CASE WHEN tipo='matricula' THEN 0 ELSE 1 END,idintegracao LIMIT %d",$args);
             foreach($rows as $row){if($count&&microtime(true)-$start>20)break;$id=(int)$row['idintegracao'];$job=$this->db->get('educbank_fila',$id);$this->db->update('educbank_fila',$id,['tentativas'=>(int)$job['tentativas']+1]);
                 try{Coligadas::within($company,fn()=>$this->work($job,$s));}
-                catch(RuleViolation $e){$this->db->update('educbank_fila',$id,['status'=>(int)$job['tentativas']>=7?'revisao':'erro','erro'=>substr($e->getMessage(),0,500),'proxima_tentativa'=>gmdate('Y-m-d H:i:s',time()+min(3600,60*(2**min(6,(int)$job['tentativas']))))]);$this->preserveNewer($job);}
+                catch(RuleViolation $e){$this->db->update('educbank_fila',$id,['status'=>(int)$job['tentativas']>=7?'revisao':'erro','erro'=>ResponseError::clip($e->getMessage()),'proxima_tentativa'=>gmdate('Y-m-d H:i:s',time()+min(3600,60*(2**min(6,(int)$job['tentativas']))))]);$this->preserveNewer($job);}
                 catch(\Throwable $e){$this->db->update('educbank_fila',$id,['status'=>'revisao','erro'=>'Falha interna na integração. Nenhuma confirmação foi descartada; consulte o diagnóstico do ERP.']);$this->preserveNewer($job);}
                 $count++;
             }
@@ -66,6 +69,10 @@ final class EducbankIntegration
         $id=(int)$job['idintegracao'];$this->db->update('educbank_fila',$id,$extra+['erro'=>null,'proxima_tentativa'=>null,'sincronizado_em'=>gmdate('Y-m-d H:i:s')]);
         // A concurrent edit must remain pending, even when an older HTTP request succeeds.
         $this->db->query('UPDATE '.$this->db->table('educbank_fila')." SET status=CASE WHEN geracao=%d THEN %s ELSE 'pendente' END WHERE idintegracao=%d",[(int)$job['geracao'],$status,$id]);
+        if($status==='sincronizado'&&$job['tipo']==='matricula'&&$this->db->get('educbank_fila',$id)['status']==='sincronizado'){
+            // Dependency waits are not invoice failures. Resume only those exact waits.
+            $this->db->query('UPDATE '.$this->db->table('educbank_fila')." SET status='pendente',proxima_tentativa=NULL,erro=NULL,tentativas=0,geracao=geracao+1,versao=versao+1 WHERE codcoligada=%d AND ambiente=%s AND tenant=%s AND idmatricula=%d AND tipo='fatura' AND status IN ('erro','revisao') AND erro=%s",[$job['codcoligada'],$job['ambiente'],$job['tenant'],$job['idmatricula'],self::WAITING_ENROLLMENT]);
+        }
     }
     private function remember(array &$job,string $id):void{$job['idremoto']=Client::uuid($id);$this->db->update('educbank_fila',(int)$job['idintegracao'],['idremoto'=>$job['idremoto']]);}
     private function path(array $job):string{return $job['tipo']==='matricula'?'/enrollment':'/invoice';}
@@ -96,7 +103,7 @@ final class EducbankIntegration
             if(Money::cents($title['valor_baixa'])>0&&!$job['idremoto']&&!$job['identidade_hash']){$this->finish($job,$title['status']==='quitado'?'ignorado':'revisao',['erro'=>'Lançamento com baixa local. Não foi criada nova cobrança.']);return;}
             if(in_array($m['status'],['cancelada','transferencia_externa'],true)&&!$job['idremoto']&&!$job['identidade_hash']){$this->finish($job,'revisao',['erro'=>'Matrícula encerrada: confira os débitos anteriores antes de enviar novas faturas.']);return;}
             $enrollment=$this->db->row('SELECT * FROM '.$this->db->table('educbank_fila')." WHERE codcoligada=%d AND ambiente=%s AND tenant=%s AND tipo='matricula' AND idlocal=%d",[$job['codcoligada'],$job['ambiente'],$job['tenant'],$job['idmatricula']]);
-            if(!$enrollment||!$enrollment['idremoto']||$enrollment['status']!=='sincronizado')throw new RuleViolation('Aguardando a matrícula ser sincronizada no Educbank.');
+            if(!$enrollment||!$enrollment['idremoto']||$enrollment['status']!=='sincronizado')throw new RuleViolation(self::WAITING_ENROLLMENT);
         }
         $context=$builder->context((int)$job['idmatricula'],$s);$payload=$job['tipo']==='matricula'?$builder->enrollment($context):$builder->invoice($context,$title,$enrollment['idremoto'],$s);$hash=hash('sha256',wp_json_encode($payload));
         if($job['idremoto']&&$job['hash_sincronizado']===$hash){$this->finish($job,'sincronizado');return;}

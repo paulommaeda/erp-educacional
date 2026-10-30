@@ -1,4 +1,4 @@
-# Integração Educbank — 0.16.1, primeira etapa
+# Integração Educbank — 0.16.2, primeira etapa
 
 ## Configurar
 
@@ -8,7 +8,7 @@ No portal, como administrador WordPress, abra **Configurações → Educbank**. 
 2. Selecione o plano contratado (`ZeroDefault`, `Gateway`, `PreEnrollment` ou `EducbankGateway`) e o identificador do produto mensalidade cadastrado no parceiro. O identificador não é o nome do plano de pagamento do ERP.
 3. Configure multa e **juros diários** em percentual conforme o acordo. Os padrões são zero; o plugin não presume taxas. O desconto por pontualidade continua na configuração existente do ERP.
 4. Em **Mapear período e séries**, associe o período ao ano acadêmico e ciclo anual/semestral. Associe cada turma a `EI:1`–`EI:5`, `EF:1`–`EF:9`, `EM:1`–`EM:3` ou `Extras`. A série não é deduzida do nome ou do curso: turmas do mesmo curso podem ter séries diferentes.
-5. Use **Testar conexão**. Essa ação consulta uma matrícula, sem criar registros.
+5. Use **Testar conexão**. Essa ação consulta matrículas e faturas, sem criar registros. A autorização para criar/alterar e as regras dos cadastros são conferidas no processamento da fila.
 6. Ative a integração em sandbox e confira os envios. Para cadastros anteriores à ativação, selecione o período e use **Enfileirar até 20 matrículas**; novos lotes dependem de clique explícito. A ativação não faz exportação integral do histórico.
 
 O CNPJ vem da coligada proprietária da matrícula. O nome, CPF válido, CEP brasileiro e número do endereço do responsável financeiro precisam estar cadastrados. Falhas de cadastro e mapeamento aparecem na fila; não são preenchidas com dados inventados.
@@ -106,3 +106,15 @@ Consultar parcelas não envia cobranças nem consulta o Educbank: os indicadores
 Novas matrículas e parcelas são enfileiradas automaticamente quando a integração está ativa. O processamento agendado ocorre em lotes a cada cinco minutos, conforme a execução do cron do site; não é envio simultâneo à gravação. Cadastros anteriores à ativação precisam ser enfileirados pela tela Educbank. Na rematrícula, as faturas continuam aguardando a geração financeira definitiva das parcelas.
 
 Validação adicional: testes PHP/SQLite dos estados, isolamento de ambiente/tenant, proteção do portal familiar e preservação financeira; JSDOM da gestão e detalhes, incluindo integrado e não integrado para parcelas pagas e em aberto; conferência visual em desktop e mobile. Sem alteração do schema 33.
+
+## Erro 400 apesar de consulta confirmada — 0.16.2
+
+O teste original consultava somente matrículas, com `maxResultCount=1`. O processamento usava também `showCanceledEnrollments` e `showCanceledInvoices`: são booleanos nas definições oficiais do Educbank. O `http_build_query` do PHP convertia esses valores para `1`/`0`; agora eles são serializados como `true`/`false`. Valores numéricos e identificadores, inclusive zeros à esquerda, continuam preservados. O JSON do corpo mantém seus tipos originais.
+
+Essa falha de serialização pode produzir erro 400 na consulta de prevenção de duplicação, antes mesmo do POST de criação. Sem o corpo da resposta original do colégio, não se presume que seja a única causa. O teste agora exercita as duas consultas e seus filtros; não cria registros nem promete validar antecipadamente a emissão.
+
+A fila informa HTTP, operação e motivos de validação devolvidos pelo parceiro nos formatos ABP (`error.validationErrors`, `members`, `message`, `details`) e ValidationProblemDetails (`errors`, `title`). Exemplos: `ao consultar matrículas`, `guardians[0].address.zipCode: CEP obrigatório`. Credenciais, documentos e e-mails são ocultados; dados extras, stack trace e respostas HTML não são copiados. A mensagem é limitada ao tamanho da coluna, preservando UTF-8.
+
+Após atualizar, use **Reprocessar** no registro com erro e depois **Processar fila**. Preserve os cadastros e IDs existentes; não é necessário recriar matrícula ou parcelas. Ao confirmar a matrícula, faturas que estavam exclusivamente aguardando essa confirmação são liberadas automaticamente, inclusive se chegaram a Conferir por excesso de tentativas de espera. Outras falhas de fatura mantêm sua própria conferência. A fila usa lotes, portanto o restante pode seguir nos próximos processamentos.
+
+Validação: servidor simulado rejeita `1`/`0` para os filtros booleanos; testes cobrem consulta e envio com `true`/`false`, mensagens ABP/ProblemDetails, proteção de credenciais, truncamento com acentos, retorno seguro de HTML, retomada das dependências e preservação do controle de duplicação. Sem acesso ao tenant ou credenciais reais do colégio nesta alteração. Não muda o schema 33.
