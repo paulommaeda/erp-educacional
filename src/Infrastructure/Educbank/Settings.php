@@ -15,12 +15,16 @@ final class Settings
     public static function scope(array $s):array{return $s[$s['ambiente']];}
     public static function token(array $s):string
     {
-        $raw=base64_decode(self::scope($s)['token'],true);
+        return self::reveal(self::scope($s)['token']);
+    }
+    public static function reveal(string $encrypted):string
+    {
+        $raw=base64_decode($encrypted,true);
         if($raw===false||strlen($raw)<29)throw new RuleViolation('Configure o token Educbank deste ambiente.');
         $plain=openssl_decrypt(substr($raw,28),'aes-256-gcm',hash('sha256',wp_salt('auth'),true),OPENSSL_RAW_DATA,substr($raw,0,12),substr($raw,12,16));
         if($plain===false)throw new RuleViolation('Não foi possível ler o token Educbank. Cadastre-o novamente.');return $plain;
     }
-    private static function encrypt(string $value):string
+    public static function encrypt(string $value):string
     {
         $iv=random_bytes(12);$tag='';$cipher=openssl_encrypt($value,'aes-256-gcm',hash('sha256',wp_salt('auth'),true),OPENSSL_RAW_DATA,$iv,$tag);
         if($cipher===false)throw new RuleViolation('Não foi possível proteger o token.');return base64_encode($iv.$tag.$cipher);

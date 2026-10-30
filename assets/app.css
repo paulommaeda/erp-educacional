@@ -291,3 +291,11 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .erp-receipt-body iframe{width:100%;height:62dvh;min-height:280px;border:1px solid var(--j-line,#dce3e0);border-radius:8px;background:white}
 .erp-finance-dialog>.erp-receipt-button{margin:0 12px 12px 0}
 @media(max-width:600px){.erp-receipt-dialog{padding:16px}.erp-receipt-body iframe{height:60dvh}.erp-receipt-dialog .erp-modal-header h2{font-size:19px}}
+
+/* Payment returns: full-width controls and cards inside the integration dialog. */
+.erp-educbank-dialog .erp-return-tools,.erp-educbank-dialog .erp-return-results,.erp-educbank-dialog .ederp-form>h3,.erp-educbank-dialog .ederp-form>.ederp-tools{grid-column:1/-1;min-width:0}.erp-educbank-dialog .ederp-tools{display:flex;gap:10px;align-items:end;flex-wrap:wrap}.erp-return-tools>button{flex:1 1 200px}.erp-return-card{margin:12px 0;padding:16px;min-width:0}.erp-return-card p{margin:8px 0;overflow-wrap:anywhere}.erp-return-card .erp-page-heading{gap:8px;flex-wrap:wrap}.erp-educbank-dialog .erp-educbank-pagination{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:center}.erp-educbank-dialog [name=url_retorno]{font-size:12px}@media(max-width:599px){.erp-return-tools>button{width:100%;flex-basis:100%}.erp-educbank-dialog .ederp-tools>label{width:100%}}
+
+.erp-return-form>label{grid-column:1/-1}
+.ederp .erp-educbank-dialog .erp-return-tools>button{flex:1 1 200px;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
+
+.ederp .erp-educbank-dialog .erp-return-form>p{margin:0;overflow-wrap:anywhere}

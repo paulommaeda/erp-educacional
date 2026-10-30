@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.16.5
+Stable tag: 0.17.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.17.0 =
+* Retorno Educbank autenticado e persistente, com confirmação da fatura na API antes da baixa pelo valor efetivamente pago.
+* Data, forma, pontualidade concedida, bolsa, juros e multa preservados; recibo e situação cursando passam a refletir a baixa automática.
+* Proteção contra avisos repetidos, conciliação com baixas manuais e estorno confirmado de recebimentos da integração, com auditoria.
+* Retorno de pagamentos em Configurações > Educbank: ativação por ambiente/coligada, webhook, consulta de recuperação, histórico e reprocessamento em modal.
+* Schema 34 cria caixa de retornos e vínculos de recebimento. Retorno começa desativado; ative explicitamente no ambiente escolhido.
 
 = 0.16.5 =
 * Meu financeiro inclui número da parcela e vencimento em dd/mm/aaaa.

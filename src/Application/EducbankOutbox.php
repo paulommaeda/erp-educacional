@@ -6,9 +6,12 @@ use EducacionalERP\Infrastructure\Educbank\Settings;
 /** Durable intent in the same transaction as the ERP mutation. Never performs HTTP. */
 final class EducbankOutbox
 {
+    private static int $suspended=0;
     public function __construct(private Store $db){}
+    public static function without(callable $work):mixed {self::$suspended++;try{return $work();}finally{self::$suspended--;}}
     public static function changed(Store $db,string $table,int $id):void
     {
+        if(self::$suspended)return;
         if(!in_array($table,['matriculas','lancamentos','contratos','pessoas','aluno_responsaveis','turmas','periodos_letivos'],true))return;
         if(get_option('ederp_schema_version')!==\EducacionalERP\Infrastructure\Database\Installer::VERSION)return;
         $self=new self($db);

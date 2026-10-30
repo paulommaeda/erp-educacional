@@ -3782,6 +3782,10 @@
         "tenant",
         "tipo",
         "idremoto"
+      ],
+      [
+        "codcoligada",
+        "idintegracao"
       ]
     ],
     "indexes": [
@@ -3829,6 +3833,168 @@
         "references": [
           "codcoligada",
           "idlancamento"
+        ]
+      }
+    ]
+  },
+  "educbank_retornos": {
+    "pk": [
+      "idretorno"
+    ],
+    "columns": {
+      "idretorno": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "ambiente": "varchar(10) NOT NULL",
+      "tenant": "varchar(63) NOT NULL",
+      "idintegracao": "bigint(20) unsigned NOT NULL",
+      "idbaixa": "bigint(20) unsigned DEFAULT NULL",
+      "invoice_id": "varchar(36) NOT NULL",
+      "external_id": "varchar(80) NOT NULL",
+      "status_remoto": "varchar(40) NOT NULL",
+      "origem": "varchar(20) NOT NULL DEFAULT 'webhook'",
+      "hash_evento": "varchar(64) NOT NULL",
+      "payload_json": "text NOT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "tentativas": "int unsigned NOT NULL DEFAULT 0",
+      "erro": "varchar(500) DEFAULT NULL",
+      "proxima_tentativa": "datetime DEFAULT NULL",
+      "processado_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "resultado_json": "text DEFAULT NULL"
+    },
+    "unique": [
+      [
+        "hash_evento"
+      ],
+      [
+        "codcoligada",
+        "idretorno"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ambiente",
+        "tenant",
+        "status",
+        "proxima_tentativa"
+      ],
+      [
+        "idintegracao"
+      ],
+      [
+        "idbaixa"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idintegracao"
+        ],
+        "target": "educbank_fila",
+        "references": [
+          "codcoligada",
+          "idintegracao"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idbaixa"
+        ],
+        "target": "baixas",
+        "references": [
+          "codcoligada",
+          "idbaixa"
+        ]
+      }
+    ]
+  },
+  "educbank_recebimentos": {
+    "pk": [
+      "idrecebimento"
+    ],
+    "columns": {
+      "idrecebimento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "ambiente": "varchar(10) NOT NULL",
+      "tenant": "varchar(63) NOT NULL",
+      "idintegracao": "bigint(20) unsigned NOT NULL",
+      "idbaixa": "bigint(20) unsigned DEFAULT NULL",
+      "snapshot_hash": "varchar(64) DEFAULT NULL",
+      "snapshot_json": "text DEFAULT NULL",
+      "antes_json": "text DEFAULT NULL",
+      "depois_hash": "varchar(64) DEFAULT NULL",
+      "estado_remoto": "varchar(40) NOT NULL DEFAULT 'Pending'",
+      "conferido_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idintegracao"
+      ],
+      [
+        "idbaixa"
+      ],
+      [
+        "codcoligada",
+        "idrecebimento"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ambiente",
+        "tenant"
+      ],
+      [
+        "idbaixa"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idintegracao"
+        ],
+        "target": "educbank_fila",
+        "references": [
+          "codcoligada",
+          "idintegracao"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idbaixa"
+        ],
+        "target": "baixas",
+        "references": [
+          "codcoligada",
+          "idbaixa"
         ]
       }
     ]

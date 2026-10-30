@@ -8,7 +8,7 @@ final class EducbankIntegration
 {
     private const WAITING_ENROLLMENT='Aguardando a matrícula ser sincronizada no Educbank.';
     public function __construct(private Store $db){}
-    public function settings():array{return ['configuracao'=>Settings::publicData(Coligadas::current()),'programas'=>Settings::PROGRAMS,'planos'=>Settings::PLANS];}
+    public function settings():array{return ['configuracao'=>Settings::publicData(Coligadas::current()),'programas'=>Settings::PROGRAMS,'planos'=>Settings::PLANS,'retorno'=>\EducacionalERP\Infrastructure\Educbank\ReturnSettings::publicData(Coligadas::current(),Settings::read(Coligadas::current()))];}
     public function save(array $d):array{$result=Settings::save($this->db,$d);EducbankOutbox::refresh($this->db,Coligadas::current());return $result;}
     public function mappings(int $period):array
     {
@@ -119,6 +119,9 @@ final class EducbankIntegration
             $enrollment=$this->db->row('SELECT * FROM '.$this->db->table('educbank_fila')." WHERE codcoligada=%d AND ambiente=%s AND tenant=%s AND tipo='matricula' AND idlocal=%d",[$job['codcoligada'],$job['ambiente'],$job['tenant'],$job['idmatricula']]);
             if(!$enrollment||!$enrollment['idremoto']||$enrollment['status']!=='sincronizado')throw new RuleViolation(self::WAITING_ENROLLMENT);
         }
+        if($job['tipo']==='fatura'&&$job['idremoto']&&Money::cents($title['valor_baixa'])>0&&\EducacionalERP\Infrastructure\Educbank\ReturnSettings::read((int)$job['codcoligada'],$job['ambiente'])['ativo']){
+            $known=$this->find($job,$client,null);if(($known['state']??'')==='Paid'){(new EducbankReturns($this->db))->consume($job,$known,'envio');$this->finish($job,'sincronizado',['status_remoto'=>'Paid']);return;}
+        }
         $context=$builder->context((int)$job['idmatricula'],$s);$payload=$job['tipo']==='matricula'?$builder->enrollment($context):$builder->invoice($context,$title,$enrollment['idremoto'],$s);$hash=hash('sha256',wp_json_encode($payload));
         if($job['idremoto']&&$job['hash_sincronizado']===$hash){$this->finish($job,'sincronizado');return;}
         $remote=$this->find($job,$client,$payload);
@@ -126,6 +129,7 @@ final class EducbankIntegration
             $document=preg_replace('/\D/','',(string)($remote[$job['tipo']==='matricula'?'companyDocument':'companyCnpj']??''));
             if($document!==$context['cnpj'])throw new RuleViolation('CNPJ do vínculo Educbank difere da coligada. É necessária conferência antes de alterar.');
             if($job['tipo']==='matricula'&&((int)($remote['academicYear']??0)!==(int)$context['year']['ano']||(int)($remote['term']??1)!==(int)($context['year']['semestre']??1)))throw new RuleViolation('Ano/semestre diverge da matrícula já criada no Educbank. Confira o mapeamento; não foi criada outra matrícula.');
+            if($job['tipo']==='fatura'&&($remote['state']??'')==='Paid'&&\EducacionalERP\Infrastructure\Educbank\ReturnSettings::read((int)$job['codcoligada'],$job['ambiente'])['ativo']){(new EducbankReturns($this->db))->consume($job,$remote,'envio');$this->finish($job,'sincronizado',['status_remoto'=>'Paid']);return;}
             if($job['tipo']==='fatura'&&in_array($remote['state']??'',['Paid','Canceled'],true))throw new RuleViolation('Fatura paga ou cancelada no Educbank. Concilie antes de alterar.');
             if($job['tipo']==='matricula'&&in_array($remote['enrollmentStatus']??'',['Canceled','Evaded'],true))throw new RuleViolation('Matrícula cancelada/evadida no Educbank. Confira antes de alterar.');
             $update=$payload;if($job['tipo']==='matricula')$update=array_intersect_key($payload,array_flip(['student','academicClassName','academicProgram','guardians']));

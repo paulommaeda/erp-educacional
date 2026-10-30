@@ -57,6 +57,12 @@ final class Controller
         $this->route('/documentos-alunos/alunos/'.$id,'GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->listing((int)$r['id'],true));
         $this->route('/documentos-alunos/'.$id.'/arquivo','GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->download((int)$r['id'],true));
         $this->route('/documentos-alunos/'.$id.'/conferir','POST',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->review((int)$r['id'],$this->payload($r),$this->key($r)));
+        $returns=new \EducacionalERP\Application\EducbankReturns($this->db);
+        $this->route('/educbank/retorno/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>$returns->configure($this->payload($r)));
+        $this->route('/educbank/retorno/historico','GET',fn()=>Access::isAdmin(),fn($r)=>$returns->listing((int)($r->get_param('page')?:1),(string)($r->get_param('status')??'')));
+        $this->route('/educbank/retorno/processar','POST',fn()=>Access::isAdmin(),fn()=>$returns->process(\EducacionalERP\Application\Coligadas::current(),3));
+        $this->route('/educbank/retorno/consultar','POST',fn()=>Access::isAdmin(),fn()=>$returns->reconcile(\EducacionalERP\Application\Coligadas::current()));
+        $this->route('/educbank/retorno/'.$id.'/reprocessar','POST',fn()=>Access::isAdmin(),fn($r)=>$returns->retry((int)$r['id']));
         $educbank=new \EducacionalERP\Application\EducbankIntegration($this->db);
         $this->route('/educbank/configuracao','GET',fn()=>Access::isAdmin(),fn()=>$educbank->settings());
         $this->route('/educbank/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>$educbank->save($this->payload($r)));

@@ -11,6 +11,7 @@ function ek():string{return bin2hex(random_bytes(16));}
 function ec(bool $v,string $label):void{if(!$v)throw new RuntimeException($label);echo "PASS: $label\n";}
 function er(callable $f,string $label):void{try{$f();}catch(RuleViolation $e){ec(true,$label);return;}throw new RuntimeException($label);}
 function ea(string $type,array $data):int{global $cat;return (int)$cat->create($type,$data,ek())['id'];}
+function rest_url($p):string{return 'https://school.test/wp-json/'.$p;}
 function wp_salt($scope):string{return 'salt-for-educbank-tests';}
 $GLOBALS['eb_remote']=['enrollment'=>[],'invoice'=>[]];$GLOBALS['eb_requests']=[];$GLOBALS['eb_uuid']=1;
 function wp_remote_request($url,$args){global $wpdb,$db;

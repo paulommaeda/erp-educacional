@@ -8,7 +8,7 @@ final class FinanceService
 {
     public function __construct(private Store $db, private Operations $operations) {}
     /** Acquires the same hierarchy as enrollment and transfer: student -> contract -> title. */
-    private function lockTitle(int $id): array
+    public function lockTitle(int $id,bool $allowClosed=false): array
     {
         $l=$this->db->table('lancamentos'); $p=$this->db->table('parcelas'); $c=$this->db->table('contratos'); $m=$this->db->table('matriculas');
         $path=$this->db->row("SELECT m.idaluno,c.idcontrato FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE l.idlancamento=%d",[$id]);
@@ -16,7 +16,7 @@ final class FinanceService
         $this->db->get('alunos',(int)$path['idaluno'],true);
         $contract=$this->db->get('contratos',(int)$path['idcontrato'],true);
         $title=$this->db->get('lancamentos',$id,true);
-        if ($title['status']==='cancelado' || $contract['status']==='cancelado') { throw new RuleViolation('Título ou contrato cancelado.'); }
+        if (!$allowClosed && ($title['status']==='cancelado' || $contract['status']==='cancelado')) { throw new RuleViolation('Título ou contrato cancelado.'); }
         return [$title,$contract];
     }
     private function paidComponents(int $id): array
@@ -62,26 +62,44 @@ final class FinanceService
             return ['idbaixa'=>(string)$idbaixa,'saldo_aberto'=>$after['saldo_aberto'],'status'=>$after['status']];
         }));
     }
+    /** Caller holds the transaction and provides a payment verified against the provider invoice. */
+    public function receiveExternalInside(int $id,array $payment,string $key,string $reference):array
+    {
+        [$l,$contract]=$this->lockTitle($id);
+        $b=$this->db->table('baixas');$e=$this->db->table('baixa_estornos');
+        if(Money::cents($l['valor_baixa'])!==0||$this->db->row("SELECT idbaixa FROM $b b WHERE b.idlancamento=%d AND NOT EXISTS (SELECT 1 FROM $e e WHERE e.idbaixa=b.idbaixa) FOR UPDATE",[$id]))throw new RuleViolation('Já existe baixa local nesta parcela. Confira a conciliação para não duplicar o recebimento.');
+        $amount=Money::cents($payment['valor_pago']);$conditional=Money::cents($payment['desconto_condicional']);$interest=Money::cents($payment['juros']);$fine=Money::cents($payment['multa']);$net=Money::cents($l['valor_liquido']);
+        if(min($amount,$conditional,$interest,$fine)<0||$conditional>$net||$net-$conditional+$interest+$fine!==$amount)throw new RuleViolation('A composição do pagamento externo não fecha com a parcela.');
+        $date=Input::date($payment['data_pagamento']);if($date>Input::today())throw new RuleViolation('Pagamento externo em data futura.');
+        $idbaixa=$this->db->insert('baixas',['idlancamento'=>$id,'codpessoa_devedor'=>$l['codpessoa_rf_atual'],'data_pagamento'=>$date,'registrado_em'=>gmdate('Y-m-d H:i:s'),'valor_pago'=>Money::format($amount),'principal_liquidado'=>Money::format($net-$conditional),'juros_pagos'=>Money::format($interest),'multa_paga'=>Money::format($fine),'desconto_condicional_concedido'=>Money::format($conditional),'forma_pagamento'=>$payment['forma_pagamento'],'referencia_externa'=>$reference,'idempotencia'=>$key,'ator_wp_user_id'=>get_current_user_id()]);
+        $this->db->update('lancamentos',$id,['desconto_condicional_aplicado'=>Money::format($conditional),'juros_aplicados'=>Money::format($interest),'multa_aplicada'=>Money::format($fine),'valor_baixa'=>Money::format($amount),'saldo_aberto'=>'0.00','status'=>'quitado']);
+        $this->db->audit('lancamentos',$id,'baixa_educbank',$l,$this->db->get('lancamentos',$id),$key);
+        EnrollmentLifecycle::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);
+        return ['idbaixa'=>$idbaixa,'valor_pago'=>Money::format($amount)];
+    }
     public function reverse(int $id,array $data,string $key): array
     {
-        return $this->db->atomic(fn()=>$this->operations->run($key,'estornar',['idbaixa'=>$id]+$data,function() use($id,$data,$key){
-            $b=$this->db->get('baixas',$id);
-            [$l,$contract]=$this->lockTitle((int)$b['idlancamento']);
-            $b=$this->db->get('baixas',$id,true);
-            $e=$this->db->table('baixa_estornos');
-            if ($this->db->row("SELECT idestorno FROM $e WHERE idbaixa=%d FOR UPDATE",[$id])) { throw new RuleViolation('Baixa já estornada.'); }
-            // Version 0.1 supports full reversals only; partial reversal needs component allocation.
-            if (isset($data['valor']) && Money::cents($data['valor'])!==Money::cents($b['valor_pago'])) { throw new RuleViolation('Nesta versão o estorno deve ser integral.'); }
-            $amount=Money::cents($b['valor_pago']);
-            $estorno=$this->db->insert('baixa_estornos',['idbaixa'=>$id,'valor'=>$b['valor_pago'],'motivo'=>Input::text($data['motivo']??null,2000),
-                'efetivado_em'=>gmdate('Y-m-d H:i:s'),'ator_wp_user_id'=>get_current_user_id(),'idempotencia'=>$key]);
-            $paid=Money::cents($l['valor_baixa'])-$amount;
-            $this->db->update('lancamentos',(int)$l['idlancamento'],['valor_baixa'=>Money::format($paid),'saldo_aberto'=>Money::format(Money::cents($l['saldo_aberto'])+$amount+Money::cents($b['desconto_condicional_concedido'])),'desconto_condicional_aplicado'=>Money::format(Money::cents($l['desconto_condicional_aplicado'])-Money::cents($b['desconto_condicional_concedido'])),
-                'status'=>$paid>0?'parcial':'aberto','codpessoa_rf_atual'=>$contract['codpessoa_rf_atual']]);
-            $this->db->audit('lancamentos',(int)$l['idlancamento'],'estorno',$l,$this->db->get('lancamentos',(int)$l['idlancamento']),$key);
-            EnrollmentLifecycle::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);
-            return ['idestorno'=>(string)$estorno,'valor'=>$b['valor_pago']];
-        }));
+        return $this->db->atomic(fn()=>$this->operations->run($key,'estornar',['idbaixa'=>$id]+$data,fn()=>$this->reverseInside($id,$data,$key)));
+    }
+    /** Internal transaction boundary shared by manual reversals and verified integration returns. */
+    public function reverseInside(int $id,array $data,string $key):array
+    {
+        $b=$this->db->get('baixas',$id);
+        [$l,$contract]=$this->lockTitle((int)$b['idlancamento']);
+        $b=$this->db->get('baixas',$id,true);
+        $e=$this->db->table('baixa_estornos');
+        if ($this->db->row("SELECT idestorno FROM $e WHERE idbaixa=%d FOR UPDATE",[$id])) { throw new RuleViolation('Baixa já estornada.'); }
+        // Version 0.1 supports full reversals only; partial reversal needs component allocation.
+        if (isset($data['valor']) && Money::cents($data['valor'])!==Money::cents($b['valor_pago'])) { throw new RuleViolation('Nesta versão o estorno deve ser integral.'); }
+        $amount=Money::cents($b['valor_pago']);
+        $estorno=$this->db->insert('baixa_estornos',['idbaixa'=>$id,'valor'=>$b['valor_pago'],'motivo'=>Input::text($data['motivo']??null,2000),
+            'efetivado_em'=>gmdate('Y-m-d H:i:s'),'ator_wp_user_id'=>get_current_user_id(),'idempotencia'=>$key]);
+        $paid=Money::cents($l['valor_baixa'])-$amount;
+        $this->db->update('lancamentos',(int)$l['idlancamento'],['valor_baixa'=>Money::format($paid),'saldo_aberto'=>Money::format(Money::cents($l['saldo_aberto'])+$amount+Money::cents($b['desconto_condicional_concedido'])),'desconto_condicional_aplicado'=>Money::format(Money::cents($l['desconto_condicional_aplicado'])-Money::cents($b['desconto_condicional_concedido'])),
+            'status'=>$paid>0?'parcial':'aberto','codpessoa_rf_atual'=>$contract['codpessoa_rf_atual']]);
+        $this->db->audit('lancamentos',(int)$l['idlancamento'],'estorno',$l,$this->db->get('lancamentos',(int)$l['idlancamento']),$key);
+        EnrollmentLifecycle::syncFirstPayment($this->db,(int)$contract['idcontrato'],$key);
+        return ['idestorno'=>(string)$estorno,'valor'=>$b['valor_pago']];
     }
     public function adjust(int $id,array $data,string $key): array
     {

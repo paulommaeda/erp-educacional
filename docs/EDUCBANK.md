@@ -1,4 +1,4 @@
-# Integração Educbank — 0.16.5, primeira etapa
+# Integração Educbank — 0.17.0
 
 ## Configurar
 
@@ -50,17 +50,17 @@ Rematrícula continua criando contrato sem parcelas. A matrícula pode ser envia
 
 ## Limites desta etapa
 
-Esta versão implementa envio/criação e atualização, não baixa automática. O status exibido na fila corresponde à última resposta de sincronização. Pagamentos/estornos recebidos no Educbank e pagamentos feitos na secretaria precisam de conciliação: ainda não há webhook nem chamada automática de recebimento na escola. Lançamentos já pagos antes da integração não geram outra cobrança; lançamentos parcialmente pagos ou com encargos/baixa aplicados exigem conferência antes de envio.
+A versão 0.17.0 acrescenta [retorno autenticado, baixa automática e recuperação por consulta](EDUCBANK-RETORNO.md). Ative em Retorno de pagamentos por coligada e ambiente. O status exibido na fila corresponde à última resposta confirmada. Pagamentos manuais e acordos financeiros que não coincidirem com a conciliação automática exigem conferência. Esta etapa não envia ao parceiro pagamentos recebidos na secretaria. Lançamentos já pagos antes da integração não geram outra cobrança; lançamentos parcialmente pagos ou com encargos/baixa aplicados exigem conferência antes de envio.
 
 Encerrar a matrícula no ERP não exclui automaticamente a matrícula no Educbank. O endpoint de exclusão acadêmica possui efeitos próprios; a fila pede conferência desse vínculo e comunica separadamente os cancelamentos financeiros já definidos no ERP, preservando os débitos anteriores.
 
 CNPJ, ano e semestre de matrícula já criada são conferidos antes de atualizar. Divergências não são marcadas como sincronizadas por um PUT que não suporta alterar esses campos.
 
-WP-Cron executa pequenos lotes a cada cinco minutos, conforme a execução do cron do site. **Processar fila** executa até três registros. A fila só funciona após a migração 33; a atualização começa desativada, em sandbox. Para uso operacional contínuo, configure a execução regular do cron no servidor.
+WP-Cron executa pequenos lotes a cada cinco minutos, conforme a execução do cron do site. **Processar fila** executa até três registros. A fila só funciona após a migração 34; a atualização começa desativada, em sandbox. Para uso operacional contínuo, configure a execução regular do cron no servidor.
 
 ## Rotas do ERP
 
-Base: `/wp-json/erp-educacional/v1/educbank`. Todas autenticadas e exclusivas de administrador. POST usa JSON e nonce REST; o enfileiramento também exige `Idempotency-Key`.
+Base: `/wp-json/erp-educacional/v1/educbank`. As rotas desta tabela são autenticadas e exclusivas de administrador. O callback do retorno usa Basic próprio, conforme o guia do retorno. POST usa JSON e nonce REST; o enfileiramento também exige `Idempotency-Key`.
 
 | Método | Rota | Finalidade |
 |---|---|---|

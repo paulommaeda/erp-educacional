@@ -8,7 +8,7 @@ final class Client
     public function request(string $method,string $path,?array $body=null,array $query=[]):array
     {
         $scope=Settings::scope($this->settings);$tenant=$scope['tenant'];
-        if(!preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D',$tenant)||!preg_match('~^/(enrollment|invoice)(/[a-f0-9-]{36})?(/cancel)?$~D',$path))throw new RuleViolation('Destino Educbank inválido.');
+        if(!preg_match('/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/D',$tenant)||!preg_match('~^/(enrollment|invoice|webhook)(/[a-f0-9-]{36})?(/cancel)?$~D',$path))throw new RuleViolation('Destino Educbank inválido.');
         $env=$this->settings['ambiente']==='sandbox'?'api.sandbox':'api';$url='https://'.$tenant.'.'.$env.'.educbank.com.br/api/ebpay'.$path;
         // ASP.NET boolean query binders expect true/false, not PHP's default 1/0.
         array_walk_recursive($query,static function(&$value){if(is_bool($value))$value=$value?'true':'false';});

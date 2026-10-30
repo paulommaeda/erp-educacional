@@ -1,11 +1,11 @@
-# ERP Educacional — 0.16.5
+# ERP Educacional — 0.17.0
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.16.5.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 33**, acrescentando os vínculos e a fila Educbank, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.17.0.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 34**, acrescentando a caixa de retornos e os vínculos de recebimento Educbank, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -17,7 +17,9 @@ As turmas antigas ficam inicialmente sem plano, para não inventar preços. Cont
 
 Em **Configurações → Educbank**, configure tenant/token por coligada e ambiente, plano contratado, período e série de cada turma. A integração começa desativada em sandbox. Cria a matrícula antes das faturas; preserva aluno, RA, responsável financeiro, CNPJ, bolsas e pontualidade. Há fila, retentativas e inclusão dos cadastros existentes por período.
 
-Esta primeira etapa faz o envio e a atualização. O retorno de pagamentos e a baixa automática ainda serão integrados. Consulte [o guia completo de configuração e homologação](docs/EDUCBANK.md).
+Para receber pagamentos, abra **Retorno de pagamentos → Ativar retorno e configurar webhook** no ambiente correto. O ERP confirma cada pagamento pela API e registra uma baixa com valor efetivamente pago, data, forma, descontos e encargos. Reenvios não duplicam dinheiro; há consulta periódica de recuperação, histórico e reprocessamento. A primeira parcela paga promove a matrícula reservada para cursando e libera o recibo.
+
+O retorno começa desativado por ambiente e coligada: pagamentos de sandbox são simulações. Confira [o guia do retorno e baixa automática](docs/EDUCBANK-RETORNO.md) e [a configuração geral da integração](docs/EDUCBANK.md).
 
 ## Fluxo da matrícula inicial
 

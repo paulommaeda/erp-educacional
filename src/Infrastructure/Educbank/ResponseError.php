@@ -6,8 +6,8 @@ final class ResponseError
 {
     public static function message(int $code,string $method,string $path,mixed $data,string $token):string
     {
-        $invoice=str_starts_with($path,'/invoice');$resource=$invoice?'fatura':'matrícula';
-        $action=match($method){'POST'=>str_ends_with($path,'/cancel')?'cancelar '.$resource:'criar '.$resource,'PUT'=>'atualizar '.$resource,default=>'consultar '.($invoice?'faturas':'matrículas')};
+        $invoice=str_starts_with($path,'/invoice');$resource=str_starts_with($path,'/webhook')?'webhook':($invoice?'fatura':'matrícula');
+        $action=match($method){'POST'=>str_ends_with($path,'/cancel')?'cancelar '.$resource:'criar '.$resource,'PUT'=>'atualizar '.$resource,default=>'consultar '.($invoice?'faturas':($resource==='webhook'?'webhooks':'matrículas'))};
         $parts=[];$root=is_array($data)&&is_array($data['error']??null)?$data['error']:[];
         foreach([$root['validationErrors']??null,is_array($data)?($data['validationErrors']??null):null] as $validation){
             if(!is_array($validation))continue;
@@ -36,6 +36,7 @@ final class ResponseError
         $text=strip_tags(html_entity_decode($text,ENT_QUOTES|ENT_HTML5,'UTF-8'));
         $text=preg_replace('/[\x00-\x1F\x7F]+/u',' ',$text)??'';
         if($token!=='')$text=str_replace(array_unique([$token,rawurlencode($token),urlencode($token)]),'[credencial omitida]',$text);
+        $text=preg_replace('/\bBasic\s+[A-Za-z0-9+\/=]+/i','Basic [credencial omitida]',$text)??'';
         $text=preg_replace('/\bBearer\s+[A-Za-z0-9._~+\/=:-]+/i','Bearer [credencial omitida]',$text)??'';
         $text=preg_replace('/\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\b/','[credencial omitida]',$text)??'';
         $text=preg_replace('/\b(authorization|access[_-]?token|token|api[_-]?key|password|senha|secret)\s*[:=]\s*(?:"[^"]*"|\'[^\']*\'|[^\s,;]+)/i','$1: [credencial omitida]',$text)??'';

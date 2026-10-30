@@ -123,7 +123,7 @@ final class PaymentReceiptPdf extends \EducacionalERP\Vendor\Fpdf\FPDF
         $this->heading('Composição financeira');
         foreach(['Valor original'=>'valor_original','Desconto incondicional'=>'desconto_incondicional','Valor líquido contratual'=>'valor_liquido','Pontualidade concedida'=>'desconto_condicional','Juros'=>'juros','Multa'=>'multa','Valor pago'=>'valor_pago'] as $label=>$key)$this->field($label,self::money($d[$key]));
         $this->heading('Pagamentos registrados');$widths=[25,43,72,34];$this->row(['Data','Forma de pagamento','Pagador','Valor pago'],$widths,true);
-        $methods=['pix'=>'Pix','boleto'=>'Boleto','cartao'=>'Cartão','dinheiro'=>'Dinheiro','transferencia'=>'Transferência','outro'=>'Outro'];
+        $methods=['pix'=>'Pix','boleto'=>'Boleto','cartao'=>'Cartão','dinheiro'=>'Dinheiro','transferencia'=>'Transferência','outro'=>'Outro','deposito'=>'Depósito','escola'=>'Recebimento na escola','multiplo'=>'Múltiplas formas'];
         foreach($d['pagamentos'] as $payment){$payer=$payment['pagador'];if($payment['referencia_externa'])$payer.="\nReferência: ".$payment['referencia_externa'];$this->row([self::date($payment['data_pagamento']),$methods[$payment['forma_pagamento']]??($payment['forma_pagamento']?:'Não informado'),$payer,self::money($payment['valor_pago'])],$widths);}
         $this->Ln(7);$this->muted();$this->font('',8.5);$this->MultiCell(174,4.8,$this->enc('Este recibo refere-se exclusivamente à parcela identificada e aos pagamentos registrados que não foram estornados.'),0,'L');
     }
