@@ -76,6 +76,20 @@ final class EducbankIntegration
     }
     private function remember(array &$job,string $id):void{$job['idremoto']=Client::uuid($id);$this->db->update('educbank_fila',(int)$job['idintegracao'],['idremoto'=>$job['idremoto']]);}
     private function path(array $job):string{return $job['tipo']==='matricula'?'/enrollment':'/invoice';}
+    /** A postal lookup failure concerns the payer, not the student's address or API token. */
+    private function send(Client $client,string $method,string $path,array $payload,array $payer,string $environment):array
+    {
+        try{return $client->request($method,$path,$payload);}
+        catch(RuleViolation $e){
+            if(!preg_match('/\bCEP\b|\bzipCode\b/iu',$e->getMessage()))throw $e;
+            $code=ResponseError::clip(trim(strip_tags((string)($payer['codigo_pessoa']??''))),80);
+            $person=$code!==''?'código '.$code:'ID pessoa '.(int)$payer['codpessoa'];
+            $hint='Responsável financeiro: '.$person.'. Campo CEP em Pessoas > Endereço. Confira nos Correios; se correto, peça ao Educbank a revisão da base de CEPs em '.($environment==='sandbox'?'sandbox':'produção').'.';
+            $message=$e->getMessage();$limit=480-strlen($hint)-3;
+            if(strlen($message)>$limit)$message=ResponseError::clip($message,$limit-3).'...';
+            throw new RuleViolation($message.' | '.$hint,0,$e);
+        }
+    }
     private function find(array &$job,Client $client,?array $payload):?array
     {
         if($job['idremoto']){
@@ -116,11 +130,11 @@ final class EducbankIntegration
             if($job['tipo']==='matricula'&&in_array($remote['enrollmentStatus']??'',['Canceled','Evaded'],true))throw new RuleViolation('Matrícula cancelada/evadida no Educbank. Confira antes de alterar.');
             $update=$payload;if($job['tipo']==='matricula')$update=array_intersect_key($payload,array_flip(['student','academicClassName','academicProgram','guardians']));
             else{unset($update['companyCnpj'],$update['closeInvoice'],$update['referenceDate']);$update['reason']='Atualização pelo ERP Educacional';}
-            $remote=$client->request('PUT',$this->path($job).'/'.$job['idremoto'],$update);
+            $remote=$this->send($client,'PUT',$this->path($job).'/'.$job['idremoto'],$update,$context['rf'],$s['ambiente']);
         }else{
             // Persist before HTTP: a timeout or crash is recovered by GET externalId, never a blind POST.
             $identity=EducbankPayload::identity($job['tipo'],$payload);$this->db->update('educbank_fila',(int)$job['idintegracao'],['identidade_hash'=>$identity]);
-            $remote=$client->request('POST',$this->path($job),$payload);$this->remember($job,$remote['id']??'');
+            $remote=$this->send($client,'POST',$this->path($job),$payload,$context['rf'],$s['ambiente']);$this->remember($job,$remote['id']??'');
         }
         if(!empty($remote['errors']))throw new RuleViolation('Educbank criou o registro com pendências. Confira o produto e os dados na plataforma.');
         $url=$remote['url']??null;if(!is_string($url)||!preg_match('~^https://[^\s<>]+$~D',$url))$url=null;

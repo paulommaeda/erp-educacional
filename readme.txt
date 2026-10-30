@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.16.2
+Stable tag: 0.16.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.16.3 =
+* Falhas de CEP na criação/alteração de matrícula ou fatura identificam o código do responsável financeiro e o campo em Pessoas > Endereço.
+* Orientação para conferência nos Correios e revisão da base Educbank no ambiente selecionado, preservando o motivo original e os dados cadastrados.
+* Testes cobrem recusa 404, correção de CEP, liberação das faturas e reenvio sem duplicar registros.
 
 = 0.16.2 =
 * Corrige filtros booleanos das consultas Educbank: true/false em vez de 1/0, evitando erro de validação antes do envio.

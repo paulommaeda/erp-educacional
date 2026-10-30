@@ -1,4 +1,4 @@
-# Integração Educbank — 0.16.2, primeira etapa
+# Integração Educbank — 0.16.3, primeira etapa
 
 ## Configurar
 
@@ -118,3 +118,18 @@ A fila informa HTTP, operação e motivos de validação devolvidos pelo parceir
 Após atualizar, use **Reprocessar** no registro com erro e depois **Processar fila**. Preserve os cadastros e IDs existentes; não é necessário recriar matrícula ou parcelas. Ao confirmar a matrícula, faturas que estavam exclusivamente aguardando essa confirmação são liberadas automaticamente, inclusive se chegaram a Conferir por excesso de tentativas de espera. Outras falhas de fatura mantêm sua própria conferência. A fila usa lotes, portanto o restante pode seguir nos próximos processamentos.
 
 Validação: servidor simulado rejeita `1`/`0` para os filtros booleanos; testes cobrem consulta e envio com `true`/`false`, mensagens ABP/ProblemDetails, proteção de credenciais, truncamento com acentos, retorno seguro de HTML, retomada das dependências e preservação do controle de duplicação. Sem acesso ao tenant ou credenciais reais do colégio nesta alteração. Não muda o schema 33.
+
+
+## CEP não encontrado ao criar matrícula — 0.16.3
+
+Uma resposta como **HTTP 404 ao criar matrícula: CEP não encontrado** informa uma recusa do endereço pelo Educbank. O CEP enviado nessa operação é o do **responsável financeiro vigente**, em `guardians[0].address.zipCode`; na fatura, é `payer.address.zipCode`. A mensagem não indica falha de autenticação nem uma rota inexistente: o detalhe aponta para a consulta do CEP. O teste de conexão só realiza consultas, por isso pode passar mesmo com um endereço recusado no cadastro.
+
+1. Em **Pessoas**, localize o responsável financeiro indicado no erro, abra **Editar → Endereço** e confira o CEP do endereço real nos Correios.
+2. Se houver erro cadastral, corrija e salve. A edição reenfileira os registros vinculados enquanto a integração estiver ativa. Depois use **Processar fila**; se necessário, **Reprocessar** no registro.
+3. Se o CEP estiver correto e a recusa persistir, peça ao Educbank a conferência da base de CEPs no ambiente indicado (sandbox ou produção). Não substitua o CEP por outro apenas para passar na validação.
+
+O erro agora inclui o código da pessoa responsável e o caminho do campo, mantendo a resposta do parceiro, o ambiente e o limite seguro de 480 bytes com UTF-8 válido. Em cadastros sem código, identifica o ID interno da pessoa. O plugin continua enviando apenas os oito dígitos, sem máscara. Ele não presume a existência de um CEP só pelo formato, não troca o endereço automaticamente e não adiciona dependência de um serviço de CEP externo.
+
+Após a correção e confirmação da matrícula, as faturas aguardando esse vínculo podem seguir nos próximos lotes. Matrícula, contrato, parcelas e IDs existentes são preservados; não é necessário recriá-los. A atualização melhora o diagnóstico e não altera a base postal do Educbank.
+
+Validação com HTTP simulado: recusa 404 no POST de matrícula, espera das faturas, correção do cadastro, criação sem duplicação e recusa no PUT de fatura com mensagem longa e acentuada. Sem credenciais reais ou alterações em cadastros do colégio; schema 33 mantido.

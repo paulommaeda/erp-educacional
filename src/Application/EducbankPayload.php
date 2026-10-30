@@ -20,7 +20,7 @@ final class EducbankPayload
     }
     private function address(array $p):array
     {
-        $cep=preg_replace('/\D/','',(string)$p['cep']);if(($p['pais']??'BR')!=='BR'||strlen($cep)!==8||empty($p['numero']))throw new RuleViolation('Complete CEP brasileiro e número do endereço do responsável financeiro.');
+        $cep=preg_replace('/\D/','',(string)$p['cep']);if(($p['pais']??'BR')!=='BR'||strlen($cep)!==8||empty($p['numero']))throw new RuleViolation('Complete o país Brasil, CEP com 8 dígitos e número do responsável financeiro em Pessoas > Endereço (ID pessoa '.(int)$p['codpessoa'].').');
         return ['zipCode'=>$cep,'street'=>$p['rua'],'number'=>$p['numero'],'district'=>$p['bairro'],'city'=>$p['cidade'],'state'=>$p['estado'],'country'=>$p['pais'],'complement'=>$p['complemento']];
     }
     private function document(array $p):string
