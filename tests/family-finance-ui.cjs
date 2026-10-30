@@ -1,0 +1,27 @@
+const {JSDOM,VirtualConsole}=require('jsdom'),fs=require('fs'),path=require('path'),assert=require('node:assert/strict');
+const wait=()=>new Promise(resolve=>setTimeout(resolve,20));
+(async()=>{
+  const calls=[],vc=new VirtualConsole();vc.on('jsdomError',error=>{throw error;});
+  const dom=new JSDOM('<div class="ederp"><section data-ederp-portal="finance"></section></div>',{url:'https://school.test/portal?erp_tela=meu_financeiro',runScripts:'dangerously',virtualConsole:vc}),w=dom.window,d=w.document;
+  w.EDERP={root:'https://school.test/api/',nonce:'test',caps:{},currentPeriod:1};
+  const rows=['em_aberto','vencido','baixado','cancelado','em_aberto','em_aberto'].map((status,i)=>({idlancamento:i+1,contrato:'CT-TESTE',parcela:i+1,versao:3,codcoligada:1,vencimento:'2026-10-01',valor_original:'1000.00',desconto_condicional:'0.00',desconto_condicional_previsto:'50.00',desconto_incondicional:'100.00',valor_liquido:'900.00',valor_baixa:i===2?'900.00':'0.00',saldo_a_pagar:'850.00',status,url_fatura:i===4?null:i===5?'javascript:alert(1)':'https://school.educbank.com.br/invoice/'+(i+1)+'?key=teste'}));
+  w.fetch=async raw=>{const url=new URL(raw),route=url.pathname.slice(5);calls.push(route);const data=route==='me/alunos'?[{idaluno:1,nome:'ALUNO UM',ra:'001'},{idaluno:2,nome:'ALUNO DOIS',ra:'002'}]:route==='alunos/1/financeiro'?rows:[{...rows[0],contrato:'OUTRO-CONTRATO',url_fatura:'https://school.educbank.com.br/invoice/outro'}];return {ok:true,json:async()=>data};};
+  w.eval(fs.readFileSync(path.join(__dirname,'../assets/app.js'),'utf8'));await wait();await wait();
+  assert.deepEqual([...d.querySelectorAll('thead th')].map(x=>x.textContent),['Valor original','Desconto condicional','Desconto incondicional','Valor líquido','Status','Pagamento']);
+  assert.equal(d.querySelectorAll('tbody tr').length,6);assert.equal(d.querySelectorAll('tbody td').length,36);
+  const first=d.querySelector('tbody tr');assert.match(first.children[1].textContent,/50,00/);assert.match(first.children[3].textContent,/900,00/);
+  assert.equal(d.querySelectorAll('.erp-financial-indicators,.erp-educbank-integrated,.erp-educbank-not-integrated').length,0);
+  for(const status of ['em_aberto','vencido','baixado','cancelado'])assert.ok(d.querySelector('.erp-financial-badge.erp-status-'+status));
+  console.log('PASS: portal exibe somente os valores pedidos e status, mantendo o líquido sem antecipar pontualidade');
+  const links=[...d.querySelectorAll('tbody a.erp-invoice-link')];assert.equal(links.length,2);assert.ok(links.every(a=>a.textContent==='Pagar'&&a.target==='_blank'&&a.rel.includes('noopener')&&a.rel.includes('noreferrer')));
+  assert.equal(links[0].href,rows[0].url_fatura);assert.equal(links[1].href,rows[1].url_fatura);
+  assert.equal(d.querySelectorAll('tbody tr:nth-child(3) a,tbody tr:nth-child(4) a').length,0);assert.match(d.querySelector('tbody tr:nth-child(5)').textContent,/Aguardando fatura/);assert.match(d.querySelector('tbody tr:nth-child(6)').textContent,/Aguardando fatura/);
+  assert.deepEqual(calls,['me/alunos','alunos/1/financeiro']);
+  assert.equal(w.EDERPFinancialStatus.invoiceLink({url_fatura:'https://user:pass@example.test/invoice'}),null);
+  assert.equal(w.EDERPFinancialStatus.invoiceLink({url_fatura:'http://example.test/invoice'}),null);
+  console.log('PASS: pagar usa a URL salva em nova aba; pagos, cancelados e URLs ausentes ou inseguras não oferecem pagamento');
+  const select=d.querySelector('select');select.value='2';select.dispatchEvent(new w.Event('change'));await wait();
+  assert.equal(d.querySelectorAll('tbody tr').length,1);assert.equal(d.querySelector('tbody a').href,'https://school.educbank.com.br/invoice/outro');assert.ok(!d.body.innerHTML.includes('invoice/1?'));
+  console.log('PASS: trocar de aluno substitui os links, sem chamadas ao Educbank ou repetição de consultas');
+  dom.window.close();
+})().catch(error=>{console.error(error);process.exit(1);});

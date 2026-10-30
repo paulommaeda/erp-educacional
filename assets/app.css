@@ -269,3 +269,12 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 
 /* Financial management: payment state and Educbank confirmation remain independent. */
 .erp-financial-indicators{display:inline-flex;flex-wrap:wrap;align-items:center;gap:6px;max-width:100%}.ederp .erp-financial-badge.erp-educbank-integrated{background:#dff3e5;color:#225e39}.ederp .erp-financial-badge.erp-educbank-not-integrated{background:#f9dfdf;color:#923737}.erp-finance-detail-list{margin-top:16px}
+
+/* Family invoice list and the shared Educbank action. */
+.ederp a.erp-invoice-link{min-height:44px;margin:0;white-space:nowrap;align-self:center;flex:none}
+.ederp .erp-family-finance{max-width:100%;min-width:0}
+.ederp .erp-family-finance-table th{white-space:normal}
+.ederp .erp-family-finance-payment{vertical-align:middle}
+.ederp .erp-family-finance-payment>.erp-muted{display:inline-block;white-space:normal;max-width:140px;line-height:1.4}
+.ederp .erp-finance-detail-list~.erp-invoice-link{margin:0 12px 12px 0}
+@media(max-width:700px){.ederp .erp-family-finance table.erp-family-finance-table,.ederp .erp-family-finance table.erp-family-finance-table tbody,.ederp .erp-family-finance table.erp-family-finance-table tr{display:block}.ederp .erp-family-finance table.erp-family-finance-table thead{display:none}.ederp .erp-family-finance table.erp-family-finance-table{border:0;background:transparent}.ederp .erp-family-finance table.erp-family-finance-table tr{padding:12px;margin:0 0 14px;border:1px solid var(--j-line,#dce3e0);border-radius:14px;background:var(--j-surface,#fff)}.ederp .erp-family-finance table.erp-family-finance-table td{display:flex;align-items:center;justify-content:space-between;gap:12px;min-width:0;white-space:normal;border:0;padding:9px 0}.ederp .erp-family-finance table.erp-family-finance-table td:before{content:attr(data-label);flex:1 1 45%;max-width:55%;min-width:0;font-size:12px;color:var(--j-muted,#61746e)}.ederp .erp-family-finance table.erp-family-finance-table td.erp-family-finance-payment{flex-wrap:nowrap}.ederp .erp-family-finance td>.erp-finance-value,.ederp .erp-family-finance td>.erp-financial-badge{white-space:nowrap;flex:0 0 auto}.ederp .erp-family-finance-payment a.erp-invoice-link{min-width:96px}}

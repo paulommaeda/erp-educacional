@@ -12,6 +12,6 @@
     "test:family": "node family-students-ui.cjs && node settings-lazy-ui.cjs",
     "test:login": "node login-appearance-ui.cjs && node login-toggle-ui.cjs && node settings-lazy-ui.cjs",
     "test:api": "node external-api-ui.cjs && node settings-lazy-ui.cjs",
-    "test:educbank": "node educbank-ui.cjs && node settings-lazy-ui.cjs && node financial-ui.cjs"
+    "test:educbank": "node educbank-ui.cjs && node settings-lazy-ui.cjs && node financial-ui.cjs && node family-finance-ui.cjs"
   }
 }

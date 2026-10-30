@@ -1,4 +1,4 @@
-# Integração Educbank — 0.16.3, primeira etapa
+# Integração Educbank — 0.16.4, primeira etapa
 
 ## Configurar
 
@@ -133,3 +133,16 @@ O erro agora inclui o código da pessoa responsável e o caminho do campo, mante
 Após a correção e confirmação da matrícula, as faturas aguardando esse vínculo podem seguir nos próximos lotes. Matrícula, contrato, parcelas e IDs existentes são preservados; não é necessário recriá-los. A atualização melhora o diagnóstico e não altera a base postal do Educbank.
 
 Validação com HTTP simulado: recusa 404 no POST de matrícula, espera das faturas, correção do cadastro, criação sem duplicação e recusa no PUT de fatura com mensagem longa e acentuada. Sem credenciais reais ou alterações em cadastros do colégio; schema 33 mantido.
+
+
+## Link de pagamento e visão da família — 0.16.4
+
+**Meu financeiro** usa uma lista própria com somente seis colunas: Valor original, Desconto condicional, Desconto incondicional, Valor líquido, Status e Pagamento. O desconto condicional exibido é o previsto nas configurações da coligada (`desconto_condicional_previsto`), com fallback para o campo legado. Ele não é descontado antecipadamente do valor líquido contratual. Os estados mantêm as cores: Em aberto amarelo pastel, Vencido vermelho pastel, Pago verde pastel e Cancelado cinza. No mobile, cada lançamento vira um cartão com os mesmos campos.
+
+O botão **Pagar** abre em nova aba a URL da fatura salva na integração, para parcelas em aberto ou vencidas com vínculo e última sincronização confirmados. Faturas sem URL válida ou com atualização pendente exibem Aguardando fatura. Parcelas pagas/canceladas e faturas que o parceiro já informou como Paid/Canceled não oferecem novo pagamento ao responsável.
+
+Na **Gestão financeira**, o menu de ações de cada linha inclui **Abrir fatura**. O link também aparece nos detalhes do lançamento e na aba Financeiro da ficha do aluno. A gestão pode consultar o link já conhecido inclusive quando há uma atualização pendente ou o lançamento está encerrado, como na checagem da integração.
+
+O endpoint financeiro acrescenta `url_fatura` (HTTPS válido ou null) somente aos lançamentos que a autorização e o filtro do responsável já permitem consultar. O vínculo é buscado em lote, pela coligada proprietária, tenant e ambiente selecionados. O portal familiar continua sem o objeto técnico `educbank`, erros da fila ou UUID remoto. As leituras usam o banco local, sem requisições ao parceiro, criação de cobrança ou envio de credenciais ao navegador.
+
+Sem alteração do schema 33. Validação PHP/SQLite e HTTP simulado: autorização por pagador, escopo de coligada/tenant/ambiente, estados e URLs inválidas; JSDOM: colunas, valores, links, gestão e troca de aluno; Chromium em 1440, 390 e 320 px: status coloridos, alvo de toque, menu sem alteração da altura da linha e ausência de overflow. Não foram realizados pagamentos nem emissões reais para testar esta mudança.
