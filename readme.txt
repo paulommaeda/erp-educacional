@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.16.0
+Stable tag: 0.16.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.16.1 =
+* Indicador Educbank ao lado da situação de cada lançamento na gestão financeira, detalhes e ficha do aluno.
+* Integrado em verde somente com UUID e sincronização confirmada; não integrado em vermelho para envio ausente, pendente ou com erro.
+* Consulta em lote por coligada, tenant e ambiente, sem chamadas ao parceiro; preservados valores e situações de pagamento.
 
 = 0.16.0 =
 * Primeira etapa Educbank: matrícula e mensalidades enviadas em fila persistente, com credenciais por coligada e ambiente.

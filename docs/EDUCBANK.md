@@ -1,4 +1,4 @@
-# Integração Educbank — 0.16.0, primeira etapa
+# Integração Educbank — 0.16.1, primeira etapa
 
 ## Configurar
 
@@ -91,3 +91,18 @@ Lidas em 30/10/2026; DTOs completos obtidos nas versões Markdown/OpenAPI oficia
 Testes PHP-WASM/SQLite com HTTP simulado: ordem de envio; valores e descontos; RF; CNPJ; rematrícula diferida; timeouts de matrícula/fatura; concorrência; conflito de externalId; rollback; autorização; isolamento de ambiente/coligada; lotes idempotentes; ausência de mapeamento. Regressões de planos, bolsas, perfis, dados de pessoas, exportação e índices. JSDOM e Chromium em 1440/390/320 px: configuração, mapeamento, senhas vazias/ocultas, fila, paginação, reprocessamento e ausência de loops.
 
 Não foram usadas credenciais reais nem emitidas cobranças no Educbank. Migração dbDelta/InnoDB, concorrência entre processos MySQL e homologação com o tenant de sandbox precisam ser verificados na instalação. Durante a regressão foi atualizado um teste antigo que esperava RA informado na criação manual; o sistema vigente gera RA a partir do código da pessoa. A verificação de preservação dos zeros do RA importado continua coberta.
+
+## Indicador nas parcelas — 0.16.1
+
+Na Gestão financeira e na aba Financeiro da ficha do aluno, a situação de pagamento permanece acompanhada de um indicador separado:
+
+- **Integrado (verde):** existe um UUID da fatura e a última sincronização foi confirmada para a coligada, tenant e ambiente selecionados.
+- **Não integrado (vermelho):** não há envio neste ambiente, há erro/conferência, atualização pendente ou falta confirmação do UUID.
+
+O aviso também aparece nos detalhes da parcela. A descrição acessível/tooltip informa Sandbox ou Produção e o motivo resumido. Uma sincronização de sandbox não confirma integração em produção. Pausar os envios preserva as confirmações já concluídas; novas atualizações pendentes voltam ao vermelho até serem confirmadas.
+
+Consultar parcelas não envia cobranças nem consulta o Educbank: os indicadores vêm da fila local, em lote. Eles não alteram valores ou situações Em aberto/Vencido/Pago/Cancelado. Os dados técnicos de integração são omitidos da consulta do responsável sem perfil operacional financeiro.
+
+Novas matrículas e parcelas são enfileiradas automaticamente quando a integração está ativa. O processamento agendado ocorre em lotes a cada cinco minutos, conforme a execução do cron do site; não é envio simultâneo à gravação. Cadastros anteriores à ativação precisam ser enfileirados pela tela Educbank. Na rematrícula, as faturas continuam aguardando a geração financeira definitiva das parcelas.
+
+Validação adicional: testes PHP/SQLite dos estados, isolamento de ambiente/tenant, proteção do portal familiar e preservação financeira; JSDOM da gestão e detalhes, incluindo integrado e não integrado para parcelas pagas e em aberto; conferência visual em desktop e mobile. Sem alteração do schema 33.

@@ -418,6 +418,7 @@ final class Controller
         $l=$this->db->table('lancamentos'); $p=$this->db->table('parcelas'); $c=$this->db->table('contratos'); $m=$this->db->table('matriculas');
         $where=$period?' AND m.codperiodo=%d':''; $args=$period?[$student,$period]:[$student];
         if(!current_user_can('erp_consultar_financeiro')) { $where.=' AND l.codpessoa_rf_atual=%d'; $args[]=$this->access->person()??0; }
-        return array_map([\EducacionalERP\Domain\FinancialStatus::class,'present'], $this->db->rows("SELECT l.versao,l.codcoligada,l.valor_cancelado,l.cancelado_em,l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d$where ORDER BY l.vencimento,l.idlancamento",$args));
+        $rows=array_map([\EducacionalERP\Domain\FinancialStatus::class,'present'], $this->db->rows("SELECT l.versao,l.codcoligada,l.valor_cancelado,l.cancelado_em,l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d$where ORDER BY l.vencimento,l.idlancamento",$args));
+        return current_user_can('erp_consultar_financeiro')?(new \EducacionalERP\Application\EducbankInvoiceStatus($this->db))->decorate($rows):$rows;
     }
 }
