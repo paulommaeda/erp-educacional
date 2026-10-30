@@ -14,7 +14,7 @@ final class DataExport
         'alunos'=>['nome'=>'Alunos e responsáveis','tabelas'=>['alunos','aluno_responsaveis']],
         'academico'=>['nome'=>'Estrutura acadêmica e planos','tabelas'=>['coligadas','periodos_letivos','cursos','turnos','planos_pagamento','turmas','subtipos_disciplina','disciplinas','grades_curriculares','grade_disciplinas','turma_grades','professores','professor_disciplinas','professor_turmas','professor_valores_hora']],
         'matriculas'=>['nome'=>'Matrículas e rematrículas','tabelas'=>['aluno_periodos','matriculas','matricula_movimentacoes','ofertas_rematricula','oferta_turmas','rematriculas']],
-        'financeiro'=>['nome'=>'Contratos, parcelas e financeiro','tabelas'=>['educbank_fila','educbank_retornos','educbank_recebimentos','contratos','parcelas','lancamentos','baixas','baixa_estornos','lancamento_ajustes','trocas_responsavel','troca_contratos','troca_lancamentos','contrato_descontos','desconto_lancamentos']],
+        'financeiro'=>['nome'=>'Contratos, parcelas e financeiro','tabelas'=>['educbank_fila','educbank_retornos','educbank_recebimentos','contratos','parcelas','lancamentos','baixas','baixa_estornos','lancamento_ajustes','trocas_responsavel','troca_contratos','troca_lancamentos','contrato_descontos','desconto_lancamentos','desconto_recalculos','desconto_indicados']],
         'chat'=>['nome'=>'Chat, canais e anexos privados','tabelas'=>['chat_canais','chat_membros','chat_conversas','chat_mensagens','chat_anexos','chat_leituras']],
         'historico_escolar'=>['nome'=>'Históricos escolares anteriores','tabelas'=>['tipos_disciplina','historicos_anteriores','historico_anos','historico_disciplinas']],
         'historico'=>['nome'=>'Log de modificações','tabelas'=>['auditoria']],

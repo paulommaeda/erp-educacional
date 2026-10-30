@@ -121,6 +121,10 @@ final class Controller
         $this->route('/contratos/'.$id.'/descontos','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->add((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/integracao/contratos/'.$id.'/descontos','GET',fn()=>Access::isAdmin(),fn($r)=>$discounts->list((int)$r['id']));
         $this->route('/integracao/contratos/'.$id.'/descontos','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->add((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/contratos/'.$id.'/indicados','GET',fn()=>Access::isAdmin(),fn($r)=>$discounts->candidates((int)$r['id'],(string)($r->get_param('search')??''),(int)($r->get_param('page')?:1)));
+        $this->route('/descontos/'.$id.'/editar','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->edit((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/integracao/descontos/'.$id.'/editar','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->edit((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/contratos/'.$id.'/recalcular-indicacoes','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\ReferralDiscounts($this->db))->retry((int)$r['id']));
         $this->route('/integracao/descontos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/descontos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/turmas/'.$id.'/rematricula','POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->classRenewal((int)$r['id'],$this->payload($r),$this->key($r)));
@@ -427,6 +431,7 @@ final class Controller
         $where=$period?' AND m.codperiodo=%d':''; $args=$period?[$student,$period]:[$student];
         if(!current_user_can('erp_consultar_financeiro')) { $where.=' AND l.codpessoa_rf_atual=%d'; $args[]=$this->access->person()??0; }
         $rows=array_map([\EducacionalERP\Domain\FinancialStatus::class,'present'], $this->db->rows("SELECT l.versao,l.codcoligada,l.valor_cancelado,l.cancelado_em,l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d$where ORDER BY l.vencimento,l.idlancamento",$args));
+        $rows=(new \EducacionalERP\Application\ContractDiscounts($this->db,new Operations($this->db)))->decorate($rows);
         return (new \EducacionalERP\Application\EducbankInvoiceStatus($this->db))->decorate($rows,current_user_can('erp_consultar_financeiro'));
     }
 }

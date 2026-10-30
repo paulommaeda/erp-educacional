@@ -16,7 +16,7 @@ final class Bootstrap
         finally { $wpdb->suppress_errors($previous); }
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::setup(true);
     }
-    public static function deactivate():void {wp_clear_scheduled_hook('ederp_cleanup_student_documents');wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::RETURNS_HOOK);}
+    public static function deactivate():void {wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DiscountCron::HOOK);wp_clear_scheduled_hook('ederp_cleanup_student_documents');wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::RETURNS_HOOK);}
     public function boot(): void
     {
         global $wpdb;
@@ -24,6 +24,7 @@ final class Bootstrap
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::register();
         $db=new Database($wpdb); $ops=new Operations($db); $access=new Access($db); $academic=new AcademicService($db,$ops);
         \EducacionalERP\Infrastructure\Educbank\Cron::register($db);
+        \EducacionalERP\Infrastructure\WordPress\DiscountCron::register($db);
         \EducacionalERP\Infrastructure\Educbank\Webhook::register($db);
         $accounts=new Accounts($db);$catalog=new CatalogService($db,$ops,$accounts);
         $controller=new Controller($db,$access,$academic,$catalog,new FinanceService($db,$ops),new ExportService($db),new RenewalService($db,$ops,$academic,$access),new StudentWorkflow($db,$ops,$catalog,$academic));

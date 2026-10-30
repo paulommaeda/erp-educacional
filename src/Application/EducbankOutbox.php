@@ -9,6 +9,8 @@ final class EducbankOutbox
     private static int $suspended=0;
     public function __construct(private Store $db){}
     public static function without(callable $work):mixed {self::$suspended++;try{return $work();}finally{self::$suspended--;}}
+    /** Referral recalculations after an incoming settlement are new outbound changes, not payment echoes. */
+    public static function allow(callable $work):mixed {$before=self::$suspended;self::$suspended=0;try{return $work();}finally{self::$suspended=$before;}}
     public static function changed(Store $db,string $table,int $id):void
     {
         if(self::$suspended)return;

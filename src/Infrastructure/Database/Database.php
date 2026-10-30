@@ -43,7 +43,7 @@ final class Database implements \EducacionalERP\Domain\Store
         $data=Ownership::apply($this,$table,$data);
         $this->validateColumns($table, $data);
         if ($this->wp->insert($this->table($table), $data) === false) { throw new \RuntimeException('Não foi possível inserir o registro; verifique duplicidade e referências.'); }
-        $id=(int)$this->wp->insert_id;\EducacionalERP\Application\EducbankOutbox::changed($this,$table,$id);
+        $id=(int)$this->wp->insert_id;\EducacionalERP\Application\EducbankOutbox::changed($this,$table,$id);\EducacionalERP\Application\ReferralDiscounts::changed($this,$table,$id);
         return $id;
     }
     public function update(string $table, int $id, array $data): void
@@ -54,7 +54,7 @@ final class Database implements \EducacionalERP\Domain\Store
         $pk = $this->schema[$table]['pk'][0];
         if ($this->wp->update($this->table($table), $data, [$pk => $id]) === false) { throw new \RuntimeException('Não foi possível atualizar o registro.'); }
         $this->query('UPDATE ' . $this->table($table) . " SET versao = versao + 1 WHERE $pk = %d", [$id]);
-        \EducacionalERP\Application\EducbankOutbox::changed($this,$table,$id);
+        \EducacionalERP\Application\EducbankOutbox::changed($this,$table,$id);\EducacionalERP\Application\ReferralDiscounts::changed($this,$table,$id);
     }
     private function validateColumns(string $table, array $data): void
     {

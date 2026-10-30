@@ -26,6 +26,7 @@ final class wpdb
         $sql=str_replace('ON DUPLICATE KEY UPDATE chave=chave','ON CONFLICT(chave) DO NOTHING',$sql);
         $sql=str_replace("ON DUPLICATE KEY UPDATE geracao=geracao+1,status='pendente',proxima_tentativa=NULL,erro=NULL,versao=versao+1","ON CONFLICT(codcoligada,ambiente,tenant,tipo,idlocal) DO UPDATE SET geracao=geracao+1,status='pendente',proxima_tentativa=NULL,erro=NULL,versao=versao+1",$sql);
         $sql=str_replace('ON DUPLICATE KEY UPDATE hash_evento=hash_evento','ON CONFLICT(hash_evento) DO NOTHING',$sql);
+        $sql=str_replace("ON DUPLICATE KEY UPDATE geracao=geracao+1,status='pendente',proxima_tentativa=NULL,erro=NULL,tentativas=0,versao=versao+1","ON CONFLICT(idcontrato) DO UPDATE SET geracao=geracao+1,status='pendente',proxima_tentativa=NULL,erro=NULL,tentativas=0,versao=versao+1",$sql);
         if(str_starts_with($sql,'SET TRANSACTION'))return 'SELECT 1';
         if(str_starts_with($sql,'START TRANSACTION'))return 'BEGIN';
         return $sql;

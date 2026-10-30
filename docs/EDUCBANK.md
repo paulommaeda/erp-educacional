@@ -1,4 +1,4 @@
-# Integração Educbank — 0.17.2
+# Integração Educbank — 0.18.0
 
 ## Configurar
 
@@ -56,7 +56,7 @@ Encerrar a matrícula no ERP não exclui automaticamente a matrícula no Educban
 
 CNPJ, ano e semestre de matrícula já criada são conferidos antes de atualizar. Divergências não são marcadas como sincronizadas por um PUT que não suporta alterar esses campos.
 
-WP-Cron executa pequenos lotes a cada cinco minutos, conforme a execução do cron do site. **Processar fila** executa até três registros. A fila só funciona após a migração 34; a atualização começa desativada, em sandbox. Para uso operacional contínuo, configure a execução regular do cron no servidor.
+WP-Cron executa pequenos lotes a cada cinco minutos, conforme a execução do cron do site. **Processar fila** executa até três registros. A fila só funciona após a migração 35; a atualização começa desativada, em sandbox. Para uso operacional contínuo, configure a execução regular do cron no servidor.
 
 ## Rotas do ERP
 
@@ -185,3 +185,13 @@ Após atualizar, em **Configurações → Educbank → Fila e histórico de envi
 Validação: 28 verificações específicas com HTTP simulado reproduzem o HTTP 400 e cobrem concessão de bolsa depois da integração, faixas, bolsas cumulativas, exclusão com zero explícito, preservação do plano real diferente da configuração, hashes anteriores, reprocessamento sem PUT duplicado, planos ausentes/divergentes e retorno de pagamento com recibo após bolsa. Regressões da integração, retorno, financeiro, descontos e recibos também passaram. Não foram feitas alterações nas faturas reais do colégio durante o diagnóstico.
 
 Referência oficial consultada: [Atualizar fatura / InvoiceUpdateDto](https://educbank.readme.io/reference/put_api-ebpay-invoice-id-1.md).
+
+## Nomes e descrição dos descontos — 0.18.0
+
+Os nomes e descrições de cada desconto aplicado aparecem no ERP em **Ver descontos**, tanto para a família autorizada quanto para a gestão. Os dados do aluno indicado ficam apenas na gestão, sem inclusão automática de seu RA/nome na fatura de outra família.
+
+A API Educbank documenta um único valor `fixedDiscountCents` por item. Não oferece uma lista de descontos com legendas individuais para substituir o rótulo do bloco “Desconto fixo”. O ERP envia a discriminação em `customVariables`, variável `ERP_DESCONTOS_INCONDICIONAIS`, na criação de novas faturas. Em atualizações, usa `reason`, pois `InvoiceUpdateDto` não permite `customVariables`. O identificador de produto `itemName` permanece intacto.
+
+O texto enviado é limitado a aproximadamente 1.800 bytes em UTF-8, com indicação de truncamento quando necessário. O detalhamento completo fica no ERP. A apresentação dessas informações na página pública Educbank depende do modelo de fatura do parceiro; o plugin não consegue impor uma legenda não suportada pela API.
+
+A edição e os eventos de indicação colocam as parcelas efetivamente alteradas na fila existente. Soma, valor original, bolsa e pontualidade continuam separados; o plano confirmado da fatura é preservado. Consulte [regras de edição e indicação](DESCONTOS-INDICACAO.md).

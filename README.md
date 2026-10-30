@@ -1,11 +1,11 @@
-# ERP Educacional — 0.17.2
+# ERP Educacional — 0.18.0
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.17.2.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 34**, acrescentando a caixa de retornos e os vínculos de recebimento Educbank, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.18.0.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 35**, acrescentando descrições, histórico de regras por parcela e controle das indicações, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -24,6 +24,14 @@ O retorno começa desativado por ambiente e coligada: pagamentos de sandbox são
 Na versão 0.17.1, o retorno também reconhece `studentExternalId` com o identificador externo da matrícula, conforme observado no sandbox. O vínculo é conferido pelo UUID da matrícula, contrato, lançamento, CNPJ e responsável. Não altera o RA. Após atualizar, use **Reprocessar retorno** e **Processar avisos** para os retornos que ficaram em conferência por esse motivo.
 
 Na versão 0.17.2, incluir ou excluir bolsas em um contrato já integrado atualiza `fixedDiscountCents` nas faturas afetadas, preservando o plano confirmado no Educbank. O plano das configurações é usado na criação; faturas existentes conservam seu plano. Para os envios que falharam com a mensagem sobre EbpayPlan, use **Reprocessar** na fila de envios e depois **Processar fila**.
+
+## Bolsas, edição e indicação
+
+Na ficha do aluno → Financeiro → **Bolsas e descontos dos contratos**, cadastre nome, descrição, valor por parcela e faixa. Em **Editar**, informe a partir de qual parcela a nova regra vale. Para encerrar o benefício a partir da parcela 7, selecione **Suspenso** e aplique a partir da **7**. As anteriores mantêm suas regras; pagamentos integrais ou parciais são preservados.
+
+O tipo **Indicação** permite buscar e selecionar o RA de outro aluno da mesma coligada. A regra acompanha o estado **Cursando** no período do contrato. Mudanças de situação ativam/desativam o benefício nas parcelas não vencidas sem pagamentos, com auditoria, fila durável e recuperação automática. Trocar indicado ou valor a partir de uma parcela conserva as regras das anteriores.
+
+O financeiro do ERP oferece **Ver descontos**, com nomes, descrições e valores. O Educbank recebe o desconto fixo acumulado e informações descritivas pelos campos documentados; o texto exibido no bloco “Desconto fixo” depende do modelo deles. Veja [o guia de descontos e indicação](docs/DESCONTOS-INDICACAO.md).
 
 ## Fluxo da matrícula inicial
 

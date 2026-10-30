@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.17.2
+Stable tag: 0.18.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.18.0 =
+* Descontos com descrição, edição por parcela inicial, suspensão e histórico de regras; preserva parcelas anteriores e pagamentos.
+* Tipo Indicação com seleção do RA: ativa apenas com matrícula Cursando do indicado na coligada/período do contrato, desativando e reativando parcelas futuras automaticamente.
+* Recálculo após confirmação da operação, fila com retentativa e recuperação por cron, auditoria e controle de versões; falhas não desfazem pagamentos do indicado.
+* Detalhamento por nome, descrição e valor no financeiro do ERP, com modais e cartões responsivos; dados do indicado ficam restritos à gestão.
+* Educbank mantém desconto fixo acumulado e plano da fatura; nomes enviados em variável extra na criação e justificativa da atualização, conforme recursos da API.
+* Schema 35 acrescenta descrições, regras por parcela, snapshots e controle de indicações. Exibição do rótulo na página Educbank depende do modelo do parceiro.
 
 = 0.17.2 =
 * Corrige envio de bolsas após integração: atualiza fixedDiscountCents somente nas parcelas afetadas e preserva o EbpayPlan confirmado na fatura Educbank.

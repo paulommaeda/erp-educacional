@@ -41,11 +41,19 @@ final class EducbankPayload
         if($original-$discount!==$net||$discount<0||$net<=0)throw new RuleViolation('Valores do lançamento inconsistentes ou sem valor a cobrar.');
         if(Money::cents($title['valor_baixa'])>0||Money::cents($title['desconto_condicional_aplicado'])>0||Money::cents($title['juros_aplicados'])>0||Money::cents($title['multa_aplicada'])>0)throw new RuleViolation('Lançamento com baixa ou encargos aplicados exige conciliação antes do envio ao Educbank.');
         $conditional=min($net,Money::cents(Coligadas::within((int)$c['m']['codcoligada'],fn()=>get_option(Coligadas::option('ederp_pontualidade'),'0.00'))));
-        return ['externalId'=>(string)$title['idlancamento'],'companyCnpj'=>$c['cnpj'],'payerDocument'=>$this->document($rf),'payer'=>['name'=>$rf['nome'],'cpfCnpj'=>$this->document($rf),'address'=>$this->address($rf),'phone'=>$rf['telefone'],'email'=>$rf['email']],
+        $detail=$this->discountText($title);
+        $payload=['externalId'=>(string)$title['idlancamento'],'companyCnpj'=>$c['cnpj'],'payerDocument'=>$this->document($rf),'payer'=>['name'=>$rf['nome'],'cpfCnpj'=>$this->document($rf),'address'=>$this->address($rf),'phone'=>$rf['telefone'],'email'=>$rf['email']],
             'dueDate'=>Input::date($title['vencimento']),'referenceDate'=>substr($parcel['vencimento_original'],0,7),'closeInvoice'=>true,
             'items'=>[['itemName'=>$settings['item_nome'],'quantity'=>1,'valueCents'=>$original,'fixedDiscountCents'=>$discount,'installmentNumber'=>(int)$parcel['numero'],'totalInstallments'=>(int)$contract['quantidade_parcelas'],'enrollmentId'=>$enrollment,'externalOrderId'=>(string)$contract['idcontrato'],'studentExternalId'=>$c['student']['ra'],'studentName'=>$c['p']['nome'],'academicClassName'=>$c['class']['nome'],'academicClassYear'=>(int)$c['year']['ano'],'academicClassLevel'=>$c['program'],'ebpayPlan'=>$settings['plano']]],
             'earlyPaymentDiscounts'=>$conditional>0?[['days'=>0,'valueCents'=>$conditional]]:[],
             'paymentFine'=>['overdueFine'=>Money::cents($settings['multa'])/10000,'dailyInterest'=>Money::cents($settings['juros_diarios'])/10000]];
+        if($detail!=='')$payload['customVariables']=[['name'=>'ERP_DESCONTOS_INCONDICIONAIS','value'=>$detail]];
+        return $payload;
+    }
+    private function discountText(array $title):string
+    {
+        $parts=[];foreach((new ContractDiscounts($this->db,new Operations($this->db)))->breakdown($title) as $d)$parts[]=$d['nome'].' — R$ '.number_format(Money::cents($d['valor'])/100,2,',','.').($d['descricao']?' · '.$d['descricao']:'');
+        $text=implode("\n",$parts);return strlen($text)>1800?\EducacionalERP\Infrastructure\Educbank\ResponseError::clip($text,1770)."\n…":$text;
     }
     /** PUT cannot change the existing calculator plan; omitting it can select the provider's enum default. */
     public static function invoiceUpdate(array $payload,array $remote):array
@@ -60,7 +68,8 @@ final class EducbankPayload
         if(count($plans)!==1)throw new RuleViolation('Educbank não confirmou um plano único entre a fatura e seu item. Confira o plano existente antes de atualizar.');
         $update=array_intersect_key($payload,array_flip(['externalId','payerDocument','payer','dueDate','items','earlyPaymentDiscounts','paymentFine']));
         $update['items'][0]['ebpayPlan']=array_key_first($plans);
-        $update['reason']='Atualização pelo ERP Educacional';
+        $detail='';foreach($payload['customVariables']??[] as $v)if(($v['name']??'')==='ERP_DESCONTOS_INCONDICIONAIS')$detail=(string)$v['value'];
+        $update['reason']='Atualização pelo ERP Educacional. '.($detail!==''?'Descontos incondicionais: '.$detail:'Sem desconto incondicional.');
         return $update;
     }
     /** The configured plan applies on creation; later synchronization tracks only mutable invoice content. */
