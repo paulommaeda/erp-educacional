@@ -1,4 +1,4 @@
-# Integração Educbank — 0.16.4, primeira etapa
+# Integração Educbank — 0.16.5, primeira etapa
 
 ## Configurar
 
@@ -146,3 +146,24 @@ Na **Gestão financeira**, o menu de ações de cada linha inclui **Abrir fatura
 O endpoint financeiro acrescenta `url_fatura` (HTTPS válido ou null) somente aos lançamentos que a autorização e o filtro do responsável já permitem consultar. O vínculo é buscado em lote, pela coligada proprietária, tenant e ambiente selecionados. O portal familiar continua sem o objeto técnico `educbank`, erros da fila ou UUID remoto. As leituras usam o banco local, sem requisições ao parceiro, criação de cobrança ou envio de credenciais ao navegador.
 
 Sem alteração do schema 33. Validação PHP/SQLite e HTTP simulado: autorização por pagador, escopo de coligada/tenant/ambiente, estados e URLs inválidas; JSDOM: colunas, valores, links, gestão e troca de aluno; Chromium em 1440, 390 e 320 px: status coloridos, alvo de toque, menu sem alteração da altura da linha e ausência de overflow. Não foram realizados pagamentos nem emissões reais para testar esta mudança.
+
+
+## Parcelas, vencimento e recibos — 0.16.5
+
+Meu financeiro passa a mostrar **Parcela** e **Vencimento** (dd/mm/aaaa) antes das colunas de valores. Em aberto e Vencido continuam oferecendo Pagar pela URL da fatura Educbank. Para o estado **Pago**, a ação é **Recibo**. Cancelado permanece sem ação de pagamento ou recibo de quitação.
+
+Recibo abre um modal com o PDF e **Baixar PDF**, tanto no portal do responsável como na gestão financeira e na ficha do aluno. O arquivo é gerado pelo servidor a cada solicitação, com:
+
+- Logo e cores da identidade configurada para a coligada proprietária, nome do colégio, razão social e CNPJ da emitente, endereço e contatos quando preenchidos.
+- Número estável `REC-COLIGADA-LANCAMENTO`, aluno/RA, responsável financeiro/CPF, contrato, número da parcela e vencimento.
+- Texto de recebimento, valor original, bolsa, líquido contratual, pontualidade efetivamente concedida, juros/multa e valor efetivamente pago.
+- Cada baixa efetiva com data, forma de pagamento, pagador e valor; referência externa quando registrada. Pagador não informado usa o devedor da própria baixa.
+- Emissão no horário configurado no WordPress e páginas numeradas. Logo PNG/JPEG local é incorporada ao PDF; GIF/WebP usa o editor de imagens do WordPress para conversão local.
+
+**A fonte do recibo são as baixas do ERP.** A emissão exige parcela paga e soma dos pagamentos não estornados igual ao valor da baixa acumulada. Pagamentos parciais, cancelamentos, baixas estornadas ou marcação de Pago sem detalhes suficientes não produzem um recibo de quitação. O modal orienta a procurar o financeiro para conferir dados incompletos; não são inventados datas ou valores. Quitação integral por desconto tem texto específico e valor efetivamente pago zero. O retorno de pagamento do Educbank continua dependente da conciliação já descrita nos limites desta etapa.
+
+Rota `GET /wp-json/erp-educacional/v1/lancamentos/ID/recibo`, autenticada e sujeita ao sistema de menus. Retorna `{nome,mime,conteudo}` com PDF em base64 e `Cache-Control: private, no-store`. O responsável precisa ser o devedor da parcela e manter vínculo financeiro autorizado com o aluno; filiação/pagador avulso não concede acesso. Famílias obtêm recibos dos filhos em várias coligadas sem troca manual. A equipe consulta recibos da coligada selecionada.
+
+O PDF fica em memória e no navegador durante a visualização; não é gravado em mídia pública nem inclui tokens Educbank. A biblioteca FPDF 1.9 e métricas de fontes estão incluídas com licença própria e namespace isolado, sem Composer ou download de dependências na instalação. Não altera o schema 33.
+
+Validação: pagamentos em mais de uma baixa, descontos concedidos, zero pago por desconto, estorno e pagamento posterior, identidade/logo configurada, coligadas, autorização e cache privado; PDF renderizado e texto conferido, incluindo paginação; interface e modal em desktop e mobile.

@@ -53,6 +53,7 @@ final class MenuPolicy
         if(str_contains($path,'/ofertas-rematricula'))return self::can(str_starts_with($path,'/alunos/')?'renovacao':'rematriculas');
         if($path==='/rematriculas')return self::can('renovacao');
         if(str_ends_with($path,'/financeiro'))return self::any(['financeiro','meu_financeiro','alunos']);
+        if($method==='GET'&&str_starts_with($path,'/lancamentos/')&&str_ends_with($path,'/recibo'))return self::any(['financeiro','meu_financeiro','alunos']);
         if(str_contains($path,'/responsaveis'))return self::can('alunos');
         if(str_contains($path,'/periodos')||str_starts_with($path,'/matriculas'))return self::any(['matriculas','alunos']);
         if(str_ends_with($path,'/matriculas'))return self::any(['alunos','matriculas','meus_estudos']);

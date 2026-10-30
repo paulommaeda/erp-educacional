@@ -42,6 +42,8 @@ final class Controller
     public function register(): void
     {
         $id='(?P<id>[1-9][0-9]{0,17})';
+        $receipts=new \EducacionalERP\Application\PaymentReceipt($this->db,$this->access);
+        $this->route('/lancamentos/'.$id.'/recibo','GET',fn()=>MenuPolicy::any(['financeiro','meu_financeiro','alunos']),fn($r)=>$receipts->download((int)$r['id']));
         $family=new \EducacionalERP\Application\FamilyStudents($this->db);$documents=new \EducacionalERP\Application\StudentDocuments($this->db);
         $this->route('/familia/alunos/'.$id.'/contato','GET',fn()=>true,fn($r)=>$family->detail((int)$r['id']));
         $this->route('/familia/alunos/'.$id.'/contato','POST',fn()=>true,fn($r)=>$family->update((int)$r['id'],$this->payload($r),$this->key($r)));

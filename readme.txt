@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.16.4
+Stable tag: 0.16.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.16.5 =
+* Meu financeiro inclui número da parcela e vencimento em dd/mm/aaaa.
+* Parcelas pagas mostram Recibo, com visualização e download de PDF autenticado, logo da coligada, aluno, responsável, contrato, valores e pagamentos efetivos.
+* Recibos também disponíveis na gestão e na ficha do aluno; baixas estornadas são desconsideradas e dados sem comprovação exigem conferência.
+* Geração local sob demanda, sem acesso público ao arquivo, com identidade por coligada e biblioteca PDF isolada de outros plugins.
 
 = 0.16.4 =
 * Meu financeiro exibe valor original, desconto condicional previsto, desconto incondicional, valor líquido, status colorido e botão Pagar para a fatura Educbank.
