@@ -4,16 +4,35 @@
     "nome": "Curso pretendido",
     "area": "solicitacao",
     "tipo": "texto",
-    "opcoes": [],
-    "obrigatorio": false
+    "opcoes": [
+      "Ensino Fundamental I",
+      "Ensino Fundamental II",
+      "Ensino Médio"
+    ],
+    "obrigatorio": false,
+    "entrada": "selecao"
   },
   {
     "chave": "interesse_serie",
     "nome": "Ano/série pretendido",
     "area": "solicitacao",
     "tipo": "texto",
-    "opcoes": [],
-    "obrigatorio": false
+    "opcoes": [
+      "1º Ano",
+      "2º Ano",
+      "3º Ano",
+      "4º Ano",
+      "5º Ano",
+      "6º Ano",
+      "7º Ano",
+      "8º Ano",
+      "9º Ano",
+      "1ª Série",
+      "2ª Série",
+      "3ª Série"
+    ],
+    "obrigatorio": false,
+    "entrada": "selecao"
   },
   {
     "chave": "interesse_turno",

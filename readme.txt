@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.0
+Stable tag: 0.19.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.1 =
+* Nacionalidade no início e seleção de UF/cidade de nascimento para brasileiros.
+* Curso e ano/série por listas, com opções compatíveis e cursos ativos da coligada.
+* Corrige a opção duplicada de responsável no financeiro.
+* Autorizações de retirada por Pai, Mãe ou Outro; parentesco e dados dos pais são automáticos.
+* Preserva dados de requerimentos anteriores na conferência. Schema 36 mantido.
+
 
 = 0.19.0 =
 * Requerimento público nativo, sem login, com formulário em etapas e conferência antes de criar pessoas e usuários.

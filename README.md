@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.0
+# ERP Educacional — 0.19.1
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.0.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.1.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -428,3 +428,7 @@ Configurações agora possuem dez abas: período/rematrícula, colégio/cores, c
 A página **Requerimento de matrícula** é criada automaticamente ao abrir o painel WordPress após atualizar. Em **Configurações → Requerimento público**, copie o endereço da coligada e personalize os textos ou encerre o recebimento. Também é possível usar `[erp_requerimento coligada="1"]` em outra página.
 
 Os envios entram em **Requerimentos → Formulário público**. Pessoas, contas WordPress, aluno e vínculos só são criados após conferência e aprovação. A matrícula e a cobrança continuam no fluxo próprio da secretaria. Consulte [o guia](docs/REQUERIMENTO-PUBLICO.md) para permissões, campos, documentos e PDF.
+
+### Ajustes do requerimento (0.19.1)
+
+Nacionalidade aparece primeiro nos dados de cada pessoa. Para brasileiros, a UF de nascimento filtra as cidades. Outra nacionalidade permite informar a nacionalidade e o local de nascimento. Curso pretendido e ano/série são listas, com faixas do Fundamental I, Fundamental II e Ensino Médio; cursos ativos vêm da coligada do requerimento. O responsável financeiro oferece Pai, Mãe ou Outro. Nas autorizações de retirada, Pai/Mãe reaproveitam os dados informados e Outro abre o cadastro. A versão mantém o schema 36 e preserva os valores de requerimentos anteriores durante a conferência.

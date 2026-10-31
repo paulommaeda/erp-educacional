@@ -1,6 +1,6 @@
 # Requerimento público de matrícula
 
-Versão 0.19.0 • Migração 36.
+Versão 0.19.1 • Migração 36.
 
 O formulário nativo foi construído a partir do JSON do Fluent Forms e do modelo HTML do PDF fornecidos. Não depende desses plugins para funcionar. Não importa submissões antigas automaticamente; a integração de requerimentos por API permanece em uma aba separada.
 
@@ -33,6 +33,18 @@ A página pública recebe as cores e a logo configuradas no colégio. Não carre
 São criados **78 campos adicionais** (77 definições do catálogo, incluindo empresa, mais contatos de emergência), preservando definições e valores já existentes com as mesmas chaves. Os novos campos do aluno ficam inicialmente fora do formulário genérico de Pessoas para manter o cadastro simples; podem ser reorganizados nas configurações de campos adicionais. Empresa aparece em Informações pessoais.
 
 Cada opção múltipla é gravada no mesmo campo, uma resposta por linha. Respostas dependentes de uma condição desativada não são importadas. Labels mantêm capitalização normal; os valores seguem a normalização do ERP, preservando e-mails em minúsculas.
+
+## Seleções do formulário
+
+A nacionalidade vem primeiro em cada bloco de pessoa. Para **Brasileira**, a seleção da UF de nascimento preenche a lista de cidades; mudar a UF limpa a cidade anteriormente selecionada. A opção **Exterior (EX)** permite informar o local por texto. Em **Outra nacionalidade**, preencha a nacionalidade e a cidade/local de nascimento. As cidades brasileiras são conferidas também no servidor.
+
+**Curso pretendido** utiliza os cursos ativos da coligada. Quando ainda não há cursos cadastrados, são mantidas as três opções do formulário de origem: Ensino Fundamental I, Ensino Fundamental II e Ensino Médio. **Ano/série pretendido** acompanha o curso: 1º–5º ano no Fundamental I, 6º–9º no Fundamental II, 1ª–3ª série no Ensino Médio. Para cursos sem essa classificação no nome, a lista contém os anos/séries do catálogo original. Mudar o curso limpa a série anterior. Essas seleções são informações de interesse e não criam matrícula.
+
+Os seletores de responsável acadêmico e financeiro mostram **Pai, Mãe e Outro**, conforme a filiação informada. Requerimentos antigos que apontavam o financeiro diretamente para outro responsável acadêmico conservam a referência durante a conferência.
+
+Em **Pessoas autorizadas a retirar o aluno**, escolha **Pai**, **Mãe** ou **Outro**. Pai/Mãe usam automaticamente nome, documentos, contato e parentesco do bloco da pessoa; nenhum campo adicional é exigido. Outro abre nome, telefone, parentesco, CPF, RG e observações. Apenas os pais efetivamente informados são oferecidos para seleção.
+
+Valores anteriores que não correspondem às novas listas aparecem identificados na conferência e podem ser preservados sem apagar informações históricas. Alterar o curso exige uma nova série compatível.
 
 ## Conferência
 
