@@ -46,6 +46,7 @@ final class Bootstrap
                 finally { $db->wp->suppress_errors($previous); }
             }
         });
+        add_action('admin_init',static function()use($db,$catalog){if(!Access::isAdmin()||get_option('ederp_schema_version')!==Installer::VERSION||get_option('ederp_schema_error'))return;try{(new \EducacionalERP\Application\ExternalPeopleApi($db,$catalog))->installAdmissionTemplates();delete_option('ederp_api_template_error');}catch(\Throwable $e){update_option('ederp_api_template_error','Não foi possível preparar o mapeamento do requerimento. Confira os campos adicionais ativos e a configuração da conexão.',false);}},30);
         // Existing records are reconciled in bounded batches; missing dates/logins remain visible as pending.
         add_action('admin_init',static function()use($db,$accounts){
             if(!Access::isAdmin() || get_option('ederp_schema_version')!==Installer::VERSION || get_option('ederp_schema_error')) { return; }

@@ -46,14 +46,14 @@ final class AdmissionForm
         $v=trim(strip_tags((string)$v));if(strlen($v)>$limit)throw new RuleViolation('Texto acima do limite de '.$limit.' caracteres.');
         if($required&&$v==='')throw new RuleViolation('Preencha o campo obrigatório.');return $v;
     }
-    public static function validate(array $d,bool $review=false,?array $catalog=null,?array $original=null):array
+    public static function validate(array $d,bool $review=false,?array $catalog=null,?array $original=null,bool $api=false):array
     {
         $catalog??=self::fields();
         if(array_diff(array_keys($d),['pessoas','campos','contatos_emergencia','retiradas','responsavel_academico','responsavel_financeiro','declaracao','declaracao_nome','declaracao_versao']))throw new RuleViolation('Há campos desconhecidos no requerimento.');
-        $people=$d['pessoas']??[];if(!is_array($people)||array_diff(array_keys($people),array_keys(self::PEOPLE))||!isset($people['aluno']))throw new RuleViolation('Informe os dados do aluno.');
+        $people=$d['pessoas']??[];if(!is_array($people)||array_diff(array_keys($people),array_keys($api?self::PEOPLE+['outro'=>'Outro responsável']:self::PEOPLE))||!isset($people['aluno']))throw new RuleViolation('Informe os dados do aluno.');
         $out=['pessoas'=>[],'campos'=>[],'contatos_emergencia'=>[],'retiradas'=>[]];
         foreach($people as $slot=>$p){
-            if(!is_array($p)||array_diff(array_keys($p),[...\EducacionalERP\Application\ExternalPeopleApi::FIELDS,'empresa','parentesco']))throw new RuleViolation('Dados de pessoa inválidos.');
+            if(!is_array($p)||array_diff(array_keys($p),[...\EducacionalERP\Application\ExternalPeopleApi::FIELDS,'empresa','parentesco',...($api?['campos_adicionais']:[])]))throw new RuleViolation('Dados de pessoa inválidos.');
             try{
                 $valid=['nome'=>CadastroText::upper(self::text($p['nome']??'',191,true)),'data_nascimento'=>Input::date($p['data_nascimento']??null)];
                 if($valid['data_nascimento']>Input::today())throw new RuleViolation('Nascimento não pode estar no futuro.');
@@ -63,14 +63,14 @@ final class AdmissionForm
                 $valid+=PersonFields::validate($p);unset($valid['codpessoa_origem'],$valid['foto_attachment_id']);
                 // Civil status stays a selected system ID; no Fluent single-letter codes.
                 $valid['idestado_civil']=empty($p['idestado_civil'])?'':(string)Input::id($p['idestado_civil']);
-                $valid['empresa']=CadastroText::upper(self::text($p['empresa']??'',191));if(in_array($slot,['academico','financeiro'],true)){$parentesco=strtolower((string)($p['parentesco']??'outro'));if(!isset(Relationships::LABELS[$parentesco]))throw new RuleViolation('Parentesco inválido.');$valid['parentesco']=$parentesco;}
+                $valid['empresa']=CadastroText::upper(self::text($p['empresa']??'',191));if(in_array($slot,['academico','financeiro','outro'],true)){$parentesco=strtolower((string)($p['parentesco']??'outro'));if(!isset(Relationships::LABELS[$parentesco]))throw new RuleViolation('Parentesco inválido.');$valid['parentesco']=$parentesco;}
                 $nationality=self::fold((string)$valid['nacionalidade']);$uf=(string)$valid['uf_nascimento'];$city=(string)$valid['local_nascimento'];
                 if(preg_match('/^(?:BR|BRA|BRASIL|BRASILEIR[OA](?:\(A\))?)$/',$nationality)&&$uf!==''&&$uf!=='EX'&&$city!==''){
                     $br=json_decode(file_get_contents(dirname(__DIR__,2).'/assets/localidades/brasil.json'),true);$match=null;foreach($br[$uf]['cidades'] as $c)if(self::fold($c['nome'])===self::fold($city)){$match=$c['nome'];break;}
                     if($match===null&&!($review&&isset($original['pessoas'][$slot])&&self::fold((string)($original['pessoas'][$slot]['local_nascimento']??''))===self::fold($city)&&(string)($original['pessoas'][$slot]['uf_nascimento']??'')===$uf))throw new RuleViolation('Cidade de nascimento não pertence à UF selecionada.');if($match!==null)$valid['local_nascimento']=$match;
                 }
-                $out['pessoas'][$slot]=CadastroText::normalize($valid);if(isset($valid['parentesco']))$out['pessoas'][$slot]['parentesco']=$valid['parentesco'];
-            }catch(RuleViolation $e){throw new RuleViolation(self::PEOPLE[$slot].': '.$e->getMessage());}
+                $out['pessoas'][$slot]=CadastroText::normalize($valid);if($api&&isset($p['campos_adicionais'])){if(!is_array($p['campos_adicionais'])||count($p['campos_adicionais'])>200)throw new RuleViolation('Campos adicionais inválidos.');$out['pessoas'][$slot]['campos_adicionais']=$p['campos_adicionais'];}if(isset($valid['parentesco']))$out['pessoas'][$slot]['parentesco']=$valid['parentesco'];
+            }catch(RuleViolation $e){throw new RuleViolation((self::PEOPLE[$slot]??'Outro responsável').': '.$e->getMessage());}
         }
         foreach(['responsavel_academico','responsavel_financeiro'] as $f){$slot=$d[$f]??'';if(!is_string($slot)||$slot==='aluno'||!isset($out['pessoas'][$slot]))throw new RuleViolation('Selecione o '.str_replace('_',' ',$f).' informado neste requerimento.');$out[$f]=$slot;}
         $values=$d['campos']??[];if(!is_array($values)||array_diff(array_keys($values),array_column($catalog,'chave')))throw new RuleViolation('Campos complementares inválidos.');
@@ -79,7 +79,7 @@ final class AdmissionForm
                 $v=$values[$f['chave']]??($f['tipo']==='multiplos'?[]:'');
                 if($f['tipo']==='multiplos'){
                     if(!is_array($v)||!array_is_list($v)||count($v)>50)throw new RuleViolation('Selecione as opções válidas.');
-                    foreach($v as $item)if(!is_string($item)||!in_array($item,$f['opcoes'],true))throw new RuleViolation('Opção inválida.');$v=implode("\n",array_unique($v));
+                    foreach($v as $item)if(!is_string($item)||(!in_array($item,$f['opcoes'],true)&&!($review&&in_array($item,is_array($original['campos'][$f['chave']]??null)?$original['campos'][$f['chave']]:explode("\n",(string)($original['campos'][$f['chave']]??'')),true))))throw new RuleViolation('Opção inválida.');$v=implode("\n",array_unique($v));
                 }else{$v=self::text($v,$f['tipo']==='texto_longo'?8000:1000,!empty($f['obrigatorio']));if(($f['entrada']??$f['tipo'])==='selecao'&&$v!==''){$options=$f['opcoes'];if($f['chave']==='interesse_serie'){$currentCourse=(string)($out['campos']['interesse_curso']??'');if($currentCourse===''&&!($review&&self::legacy($original,'campos','interesse_curso','')))throw new RuleViolation('Selecione o curso primeiro.');$options=self::series($currentCourse,$options);}$selected=self::choice($v,$options);if($selected===null&&!($review&&self::legacy($original,'campos',$f['chave'],$v)&&($f['chave']!=='interesse_serie'||self::legacy($original,'campos','interesse_curso',(string)($out['campos']['interesse_curso']??'')))))throw new RuleViolation('Opção inválida para o curso selecionado.');if($selected!==null)$v=$selected;}if($f['tipo']==='numero'&&$v!==''&&(!ctype_digit($v)||(int)$v>100))throw new RuleViolation('Número inválido.');}
                 $out['campos'][$f['chave']]=$v;
             }catch(RuleViolation $e){throw new RuleViolation($f['nome'].': '.$e->getMessage());}
@@ -92,8 +92,8 @@ final class AdmissionForm
                 if($row['cpf']!==''&&!Cpf::valid($row['cpf']))throw new RuleViolation('CPF inválido em '.$row['nome'].'.');$out[$list][]=$row;
             }
         }
-        if(($d['declaracao']??false)!==true)throw new RuleViolation('Confirme a declaração de veracidade e ciência do tratamento dos dados.');
-        $out['declaracao']=true;$out['declaracao_nome']=CadastroText::upper(self::text($d['declaracao_nome']??'',191,true));$out['declaracao_versao']='1';
+        if(!$api&&($d['declaracao']??false)!==true)throw new RuleViolation('Confirme a declaração de veracidade e ciência do tratamento dos dados.');
+        $out['declaracao']=!$api;$out['declaracao_nome']=$api?'':CadastroText::upper(self::text($d['declaracao_nome']??'',191,true));$out['declaracao_versao']=$api?'api':'1';
         return $out;
     }
     public static function fromStored(array $d):array

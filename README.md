@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.1
+# ERP Educacional — 0.19.2
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.1.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.2.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -432,3 +432,14 @@ Os envios entram em **Requerimentos → Formulário público**. Pessoas, contas 
 ### Ajustes do requerimento (0.19.1)
 
 Nacionalidade aparece primeiro nos dados de cada pessoa. Para brasileiros, a UF de nascimento filtra as cidades. Outra nacionalidade permite informar a nacionalidade e o local de nascimento. Curso pretendido e ano/série são listas, com faixas do Fundamental I, Fundamental II e Ensino Médio; cursos ativos vêm da coligada do requerimento. O responsável financeiro oferece Pai, Mãe ou Outro. Nas autorizações de retirada, Pai/Mãe reaproveitam os dados informados e Outro abre o cadastro. A versão mantém o schema 36 e preserva os valores de requerimentos anteriores durante a conferência.
+
+
+### Requerimento da API em etapas (0.19.2)
+
+Turno pretendido oferece somente Matutino e Vespertino. A conexão existente com o endpoint de requerimentos do CRM recebe automaticamente o mapeamento preparado ao abrir a administração após a atualização. Usuário, senha criptografada e opções de conexão são preservados. Em Configurações → Integração de pessoas por API também é possível aplicar o modelo, revisar o mapeamento e conferir a coligada de destino.
+
+Em Requerimentos → Importados por API, Conferir abre as mesmas cinco etapas do formulário público. A aprovação cria ou aproveita pessoas, aluno, responsáveis e autorizações de retirada, sem matrícula ou cobranças. O responsável acadêmico não é presumido quando a origem não o informar. Campos adicionais mapeados são conferidos e importados mesmo fora do cadastro/ficha. Listas preservam todas as respostas, uma por linha. URLs de foto e documentos são preservadas como referências de origem; não há download remoto automático.
+
+O modelo foi preparado com o formulário exportado e os 86 nomes de campos do retorno anterior. Campos ausentes na resposta da origem, como pai/mãe no retorno anterior, precisam ser enviados pela API ou completados pela secretaria. A consulta real neste ambiente retornou HTTP 403; a integração ao vivo precisa ser verificada no WordPress da escola. O mapeamento pode ser aberto sem testar novamente a conexão.
+
+Detalhes: [Requerimento público e API](docs/REQUERIMENTO-PUBLICO.md). Migração 36 mantida.

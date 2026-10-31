@@ -1,6 +1,6 @@
 # Requerimento público de matrícula
 
-Versão 0.19.1 • Migração 36.
+Versão 0.19.2 • Migração 36.
 
 O formulário nativo foi construído a partir do JSON do Fluent Forms e do modelo HTML do PDF fornecidos. Não depende desses plugins para funcionar. Não importa submissões antigas automaticamente; a integração de requerimentos por API permanece em uma aba separada.
 
@@ -38,7 +38,7 @@ Cada opção múltipla é gravada no mesmo campo, uma resposta por linha. Respos
 
 A nacionalidade vem primeiro em cada bloco de pessoa. Para **Brasileira**, a seleção da UF de nascimento preenche a lista de cidades; mudar a UF limpa a cidade anteriormente selecionada. A opção **Exterior (EX)** permite informar o local por texto. Em **Outra nacionalidade**, preencha a nacionalidade e a cidade/local de nascimento. As cidades brasileiras são conferidas também no servidor.
 
-**Curso pretendido** utiliza os cursos ativos da coligada. Quando ainda não há cursos cadastrados, são mantidas as três opções do formulário de origem: Ensino Fundamental I, Ensino Fundamental II e Ensino Médio. **Ano/série pretendido** acompanha o curso: 1º–5º ano no Fundamental I, 6º–9º no Fundamental II, 1ª–3ª série no Ensino Médio. Para cursos sem essa classificação no nome, a lista contém os anos/séries do catálogo original. Mudar o curso limpa a série anterior. Essas seleções são informações de interesse e não criam matrícula.
+**Curso pretendido** utiliza os cursos ativos da coligada. Quando ainda não há cursos cadastrados, são mantidas as três opções do formulário de origem: Ensino Fundamental I, Ensino Fundamental II e Ensino Médio. **Ano/série pretendido** acompanha o curso: 1º–5º ano no Fundamental I, 6º–9º no Fundamental II, 1ª–3ª série no Ensino Médio. Para cursos sem essa classificação no nome, a lista contém os anos/séries do catálogo original. Mudar o curso limpa a série anterior. Essas seleções são informações de interesse e não criam matrícula. **Turno pretendido** oferece somente **Matutino** e **Vespertino**.
 
 Os seletores de responsável acadêmico e financeiro mostram **Pai, Mãe e Outro**, conforme a filiação informada. Requerimentos antigos que apontavam o financeiro diretamente para outro responsável acadêmico conservam a referência durante a conferência.
 
@@ -110,3 +110,24 @@ A resposta pública de recebimento contém somente protocolo e confirmação, co
 Testes de domínio, transações e permissões usam SQLite com adaptador WP de teste; verificações de rotas, proteção de entrada, arquivos criptografados, fotos e interface usam ambientes simulados. Fluxos de envio e aprovação foram exercitados em Chromium a 320, 390 e 1440 px. O PDF foi gerado e inspecionado visualmente.
 
 A migração de produção em MySQL e os hooks reais da biblioteca de mídia do site devem ser homologados no WordPress. Nenhum requerimento ou usuário real foi criado para executar esses testes.
+
+
+## Requerimentos recebidos por API (0.19.2)
+
+A integração existente continua em **Configurações → Integração de pessoas por API**. Ao atualizar e abrir a administração, conexões com `crm.colegiojourney.com.br/wp-json/ffapi/v1/requerimentos` recebem uma única vez o modelo de requerimento completo. A preparação não consulta a origem e não cria pessoas. Preserva URL, autenticação, caminho da lista, identificação, paginação e destinos adicionais não contemplados pelo modelo. Alterações feitas depois no mapeamento são mantidas.
+
+O botão **Aplicar mapeamento do requerimento** reaplica o modelo na conexão selecionada. Em **Configurar conexão**, confira **Requerimento completo em etapas** e a **Coligada de destino** (conexão antiga sem coligada assume 1). Após receber registros, use outra conexão para outro colégio. A fila, a conferência e o log respeitam essa coligada; pessoas/usuários permanecem compartilhados.
+
+O modelo reconhece os nomes do formulário Fluent Forms exportado e os 86 campos achatados da resposta anterior, além de nomes compostos, objetos `response`/`fields`/`dados`, datas brasileiras, UFs por nome ou sigla, sexo M/F e estado civil pelo cadastro do ERP. Inclui aluno, pai, mãe, outros responsáveis, endereços, empregador, informações familiares, ficha médica, aprendizagem, contatos de emergência e autorizações dos pais para retirada. Respostas múltiplas e listas aninhadas são preservadas, sem reduzir à primeira resposta.
+
+O retorno anterior não incluía os dados de pai/mãe, alguns contatos nem um ID estável do requerimento. O modelo não consegue obter campos que a origem omitiu: ajuste o endpoint ou complete os blocos na conferência. Um ID estável da submissão continua recomendado; sem ele, vale a assinatura canônica do registro. Referências de foto, guarda e adoção ficam em três campos adicionais protegidos, preservando maiúsculas/minúsculas das URLs e seus parâmetros; arquivos não são baixados automaticamente nem substituem o avatar.
+
+**Requerimentos → Importados por API → Conferir** usa o mesmo modal e as cinco etapas do formulário público. Campos adicionais mapeados do aluno e dos responsáveis aparecem mesmo quando configurados para não aparecer no cadastro/ficha, respeitando perfis e grupos. Valores médicos personalizados já recebidos podem ser preservados. A equipe confirma que conferiu os dados, sem simular uma declaração ou aceite da família. Responsáveis acadêmico e financeiro devem ser escolhidos quando não informados pela API.
+
+Antes de aprovar, escolha criar/aproveitar/reutilizar cada pessoa. A aprovação transacional cria ou aproveita pessoas/contas, aluno/RA, vínculos e retiradas, usando as mesmas regras do requerimento nativo. **Não cria matrícula, contrato ou parcelas.** Campos adicionais fornecidos são importados; informações ausentes não apagam campos complementares existentes. Depois da aprovação, o registro sai dos pendentes e permanece no log com origem, dados conferidos, usuário, data e códigos resultantes. Repetir a confirmação não duplica cadastros. Ocultar/restaurar continua disponível.
+
+Requerimentos pendentes usam o mapeamento atual ao abrir a conferência. Alterar o mapeamento ou receber mudanças da origem invalida uma conferência antiga. Não é preciso remapear toda a fila ao abrir configurações. Conexões genéricas no modo **Pessoas** conservam o fluxo anterior; importações já concluídas não são refeitas.
+
+Endpoint adicional: `POST /api-pessoas/modelo-requerimento`, exclusivo de administrador, com `idconexao` e cabeçalho `Idempotency-Key`. Aprovações continuam em `POST /api-pessoas/requerimentos/{id}/confirmar`, com versões do requerimento e mapeamento, dados conferidos, decisões por pessoa e `conferencia_confirmada: true`.
+
+Validação: domínio/transações/permissões com SQLite e PHP-WASM, regressão das conexões genéricas, interface JSDOM e conferência Chromium em 320, 390 e 1440 px. A consulta real da origem neste ambiente retornou HTTP 403; a autenticação e o retorno ao vivo ainda dependem da homologação no site da escola.

@@ -41,9 +41,7 @@
     "tipo": "selecao",
     "opcoes": [
       "Matutino",
-      "Vespertino",
-      "Integral",
-      "Noturno"
+      "Vespertino"
     ],
     "obrigatorio": false
   },
