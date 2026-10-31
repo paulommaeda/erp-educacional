@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.18.0
+Stable tag: 0.19.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.0 =
+* Requerimento público nativo, sem login, com formulário em etapas e conferência antes de criar pessoas e usuários.
+* Cadastro de aluno, pai, mãe e outros responsáveis com reaproveitamento explícito de pessoas existentes.
+* Ficha médica e aprendizagem estruturadas, 78 campos complementares, contatos de emergência e autorizações de retirada.
+* Foto, documentos de guarda/adoção protegidos, PDF do requerimento, histórico e isolamento por coligada.
+* Configuração dos textos e do recebimento; página pública e shortcode criados pelo plugin. Migração 36.
+
 
 = 0.18.0 =
 * Descontos com descrição, edição por parcela inicial, suspensão e histórico de regras; preserva parcelas anteriores e pagamentos.

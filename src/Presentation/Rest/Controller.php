@@ -42,6 +42,20 @@ final class Controller
     public function register(): void
     {
         $id='(?P<id>[1-9][0-9]{0,17})';
+        $admissions=new \EducacionalERP\Application\PublicAdmissions($this->db,$this->catalog);$pickup=new \EducacionalERP\Application\StudentPickup($this->db);
+        $admissionReview=fn()=>\EducacionalERP\Application\PublicAdmissions::canReview();
+        $this->route('/configuracoes/requerimento-publico','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Application\AdmissionSettings::settings());
+        $this->route('/configuracoes/requerimento-publico','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Application\AdmissionSettings::save($this->payload($r)));
+        $this->route('/requerimentos-publicos','GET',$admissionReview,fn($r)=>$admissions->listing((string)($r->get_param('status')?:'pendente'),(int)($r->get_param('page')?:1),(string)$r->get_param('search')));
+        $this->route('/requerimentos-publicos/formulario','GET',$admissionReview,fn()=>['campos'=>\EducacionalERP\Domain\AdmissionForm::fields(),'estados_civis'=>$this->db->rows('SELECT idestado_civil,nome FROM '.$this->db->table('estados_civis').' ORDER BY nome'),'configuracao'=>\EducacionalERP\Application\AdmissionSettings::read()]);
+        $this->route('/requerimentos-publicos/'.$id,'GET',$admissionReview,fn($r)=>$admissions->detail((int)$r['id']));
+        $this->route('/requerimentos-publicos/'.$id.'/aprovar','POST',$admissionReview,fn($r)=>$admissions->approve((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/requerimentos-publicos/'.$id.'/rejeitar','POST',$admissionReview,fn($r)=>$admissions->reject((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/requerimentos-publicos/arquivos/'.$id,'GET',$admissionReview,fn($r)=>$admissions->file((int)$r['id']));
+        $this->route('/requerimentos-publicos/'.$id.'/pdf','GET',$admissionReview,fn($r)=>$admissions->pdf((int)$r['id']));
+        $this->route('/retiradas-alunos/'.$id,'GET',fn()=>\EducacionalERP\Application\StudentPickup::permitted(),fn($r)=>$pickup->listing((int)$r['id']));
+        $this->route('/retiradas-alunos/'.$id,'POST',fn()=>\EducacionalERP\Application\StudentPickup::permitted(),fn($r)=>$pickup->save((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/retiradas-alunos/'.$id.'/requerimentos','GET',fn()=>\EducacionalERP\Application\PublicAdmissions::canReview(),fn($r)=>$admissions->studentRequests((int)$r['id']));
         $receipts=new \EducacionalERP\Application\PaymentReceipt($this->db,$this->access);
         $this->route('/lancamentos/'.$id.'/recibo','GET',fn()=>MenuPolicy::any(['financeiro','meu_financeiro','alunos']),fn($r)=>$receipts->download((int)$r['id']));
         $family=new \EducacionalERP\Application\FamilyStudents($this->db);$documents=new \EducacionalERP\Application\StudentDocuments($this->db);

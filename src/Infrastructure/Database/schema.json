@@ -4145,5 +4145,175 @@
         ]
       }
     ]
+  },
+  "requerimentos_publicos": {
+    "pk": [
+      "idrequerimento"
+    ],
+    "columns": {
+      "idrequerimento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "protocolo": "varchar(32) NOT NULL",
+      "chave_envio": "varchar(64) NOT NULL",
+      "hash_envio": "varchar(64) NOT NULL",
+      "nome_aluno": "varchar(191) NOT NULL",
+      "dados_json": "longtext NOT NULL",
+      "aprovados_json": "longtext NULL",
+      "resultado_json": "longtext NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "conferido_por": "bigint(20) unsigned NULL",
+      "conferido_em": "datetime NULL",
+      "motivo": "varchar(1000) NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idaluno": "bigint(20) unsigned NULL",
+      "declaracao_texto": "text NOT NULL",
+      "privacidade_texto": "text NOT NULL"
+    },
+    "unique": [
+      [
+        "protocolo"
+      ],
+      [
+        "codcoligada",
+        "chave_envio"
+      ],
+      [
+        "codcoligada",
+        "idrequerimento"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "status",
+        "idrequerimento"
+      ],
+      [
+        "codcoligada",
+        "idaluno"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "requerimento_arquivos": {
+    "pk": [
+      "idarquivo"
+    ],
+    "columns": {
+      "idarquivo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "idrequerimento": "bigint(20) unsigned NOT NULL",
+      "campo": "varchar(30) NOT NULL",
+      "arquivo_token": "varchar(64) NULL",
+      "arquivo_nome": "varchar(191) NOT NULL",
+      "arquivo_mime": "varchar(60) NOT NULL",
+      "tamanho": "int unsigned NOT NULL",
+      "sha256": "varchar(64) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idrequerimento",
+        "campo"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "idrequerimento"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada",
+          "idrequerimento"
+        ],
+        "target": "requerimentos_publicos",
+        "references": [
+          "codcoligada",
+          "idrequerimento"
+        ]
+      }
+    ]
+  },
+  "aluno_retiradas": {
+    "pk": [
+      "idautorizacao"
+    ],
+    "columns": {
+      "idautorizacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codpessoa": "bigint(20) unsigned NULL",
+      "nome": "varchar(191) NOT NULL",
+      "cpf": "varchar(11) NULL",
+      "rg": "varchar(40) NULL",
+      "telefone": "varchar(30) NULL",
+      "parentesco": "varchar(40) NOT NULL",
+      "observacoes": "varchar(1000) NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [
+      [
+        "codcoligada",
+        "idaluno",
+        "ativo"
+      ],
+      [
+        "codpessoa"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
   }
 }

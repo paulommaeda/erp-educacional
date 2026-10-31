@@ -8,10 +8,11 @@ use EducacionalERP\Domain\RuleViolation;
 final class DataExport
 {
     public const GROUPS=[
+        'requerimentos_publicos'=>['nome'=>'Requerimentos públicos e arquivos de origem','tabelas'=>['requerimentos_publicos','requerimento_arquivos']],
         'documentos_alunos'=>['nome'=>'Documentos dos alunos (cadastros e conferências)','tabelas'=>['tipos_documento_aluno','aluno_documentos']],
         'pessoas'=>['nome'=>'Pessoas e endereços','tabelas'=>['pessoas','pessoa_enderecos','estados_civis','numeracao_pessoas','api_requerimentos','grupos_campos','campos_adicionais','pessoa_campos_adicionais']],
         'usuarios'=>['nome'=>'Usuários vinculados (sem senhas)','tabelas'=>['pessoa_usuarios','usuarios']],
-        'alunos'=>['nome'=>'Alunos e responsáveis','tabelas'=>['alunos','aluno_responsaveis']],
+        'alunos'=>['nome'=>'Alunos e responsáveis','tabelas'=>['alunos','aluno_responsaveis','aluno_retiradas']],
         'academico'=>['nome'=>'Estrutura acadêmica e planos','tabelas'=>['coligadas','periodos_letivos','cursos','turnos','planos_pagamento','turmas','subtipos_disciplina','disciplinas','grades_curriculares','grade_disciplinas','turma_grades','professores','professor_disciplinas','professor_turmas','professor_valores_hora']],
         'matriculas'=>['nome'=>'Matrículas e rematrículas','tabelas'=>['aluno_periodos','matriculas','matricula_movimentacoes','ofertas_rematricula','oferta_turmas','rematriculas']],
         'financeiro'=>['nome'=>'Contratos, parcelas e financeiro','tabelas'=>['educbank_fila','educbank_retornos','educbank_recebimentos','contratos','parcelas','lancamentos','baixas','baixa_estornos','lancamento_ajustes','trocas_responsavel','troca_contratos','troca_lancamentos','contrato_descontos','desconto_lancamentos','desconto_recalculos','desconto_indicados']],
@@ -37,7 +38,7 @@ final class DataExport
         if(!is_array($groups)||array_diff($groups,array_keys(self::GROUPS)))throw new RuleViolation('Categoria inválida.');
         $result=['coligadas'=>[]];foreach($companies as $id)$result['coligadas'][(string)$id]=Coligadas::within($id,function()use($groups){
             $out=[];if(in_array('personalizacao',$groups,true)){$out['identidade_visual']=SchoolIdentity::read();$out['logo_url']=SchoolIdentity::logo();}
-            if(in_array('configuracoes',$groups,true))$out['configuracoes']=['codperiodo'=>SchoolSettings::current(),'texto_apresentacao_rematricula'=>SchoolSettings::renewalIntroduction(),'texto_bloqueio_rematricula'=>SchoolSettings::renewalBlockMessage(),'manual_aluno'=>SchoolSettings::manual(),'desconto_pontualidade'=>get_option(Coligadas::option('ederp_pontualidade'),'0.00')];return $out;
+            if(in_array('configuracoes',$groups,true))$out['configuracoes']=['requerimento_publico'=>AdmissionSettings::read(),'codperiodo'=>SchoolSettings::current(),'texto_apresentacao_rematricula'=>SchoolSettings::renewalIntroduction(),'texto_bloqueio_rematricula'=>SchoolSettings::renewalBlockMessage(),'manual_aluno'=>SchoolSettings::manual(),'desconto_pontualidade'=>get_option(Coligadas::option('ederp_pontualidade'),'0.00')];return $out;
         });
         if(in_array('configuracoes',$groups,true)){
             $roles=[];foreach(wp_roles()->roles as $slug=>$role)if(str_starts_with($slug,'erp_'))$roles[$slug]=$role;

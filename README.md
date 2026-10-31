@@ -1,11 +1,11 @@
-# ERP Educacional — 0.18.0
+# ERP Educacional — 0.19.0
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.18.0.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 35**, acrescentando descrições, histórico de regras por parcela e controle das indicações, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.0.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -422,3 +422,9 @@ Esta versão substitui o ID externo pelo CPF da pessoa principal para identifica
 Conferência sugere somente cadastros pelo CPF, evitando consultas por nascimento ausente. Na criação, um CPF já cadastrado reaproveita a pessoa sem atualizar dados. Novas pessoas continuam submetidas à validação existente de CPF e demais campos.
 
 Configurações agora possuem dez abas: período/rematrícula, colégio/cores, coligadas, pontualidade, numeração, estados civis, tipos de disciplina, grupos, campos e API. Somente a aba inicial busca dados no carregamento; as demais carregam ao abrir. Conteúdos são mantidos enquanto a página está aberta e atualizados após salvar. Testes comprovam uma consulta inicial e ausência de novas chamadas ao revisitar abas já carregadas.
+
+### Requerimento público (0.19.0)
+
+A página **Requerimento de matrícula** é criada automaticamente ao abrir o painel WordPress após atualizar. Em **Configurações → Requerimento público**, copie o endereço da coligada e personalize os textos ou encerre o recebimento. Também é possível usar `[erp_requerimento coligada="1"]` em outra página.
+
+Os envios entram em **Requerimentos → Formulário público**. Pessoas, contas WordPress, aluno e vínculos só são criados após conferência e aprovação. A matrícula e a cobrança continuam no fluxo próprio da secretaria. Consulte [o guia](docs/REQUERIMENTO-PUBLICO.md) para permissões, campos, documentos e PDF.

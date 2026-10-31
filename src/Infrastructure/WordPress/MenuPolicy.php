@@ -36,6 +36,8 @@ final class MenuPolicy
     public static function route(string $path,string $method):bool
     {
         if(Access::isAdmin())return true;
+        if(str_starts_with($path,'/requerimentos-publicos'))return self::can('requerimentos');
+        if(str_starts_with($path,'/retiradas-alunos'))return self::can('alunos');
         if(str_starts_with($path,'/api-pessoas'))return Access::isAdmin()||self::can('requerimentos');
         if(str_starts_with($path,'/documentos-alunos'))return self::can('documentos');
         if(str_starts_with($path,'/usuarios'))return self::can('usuarios');

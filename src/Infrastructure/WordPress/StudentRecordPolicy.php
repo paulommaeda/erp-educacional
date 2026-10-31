@@ -9,6 +9,7 @@ final class StudentRecordPolicy
     public const OPTION='ederp_student_record_policy';
     public static function section(array $field):?string
     {
+        $key=(string)($field['chave']??'');if(str_starts_with($key,'saude_'))return 'ficha_medica';if(str_starts_with($key,'aprendizagem_'))return 'dificuldades_aprendizagem';if(str_starts_with($key,'familia_')||$key==='contatos_emergencia')return 'dados_pessoais';
         if(isset(self::SECTIONS[$field['area_aluno']??'']))return $field['area_aluno'];
         // Existing canonical fields remain protected even if assigned to another display area.
         foreach([$field['chave']??'',$field['nome']??'',$field['grupo_nome']??''] as $value){

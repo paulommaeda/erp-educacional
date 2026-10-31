@@ -29,6 +29,8 @@ final class Bootstrap
         $accounts=new Accounts($db);$catalog=new CatalogService($db,$ops,$accounts);
         $controller=new Controller($db,$access,$academic,$catalog,new FinanceService($db,$ops),new ExportService($db),new RenewalService($db,$ops,$academic,$access),new StudentWorkflow($db,$ops,$catalog,$academic));
         add_action('rest_api_init',[$controller,'register']);
+        $admissions=new \EducacionalERP\Presentation\Rest\AdmissionController($db,new \EducacionalERP\Application\PublicAdmissions($db,$catalog));add_action('rest_api_init',[$admissions,'register']);
+        \EducacionalERP\Presentation\Portal\Admissions::register();
         $chat=new \EducacionalERP\Presentation\Rest\ChatController(new \EducacionalERP\Application\ChatService($db));add_action('rest_api_init',[$chat,'register']);
         add_filter('get_avatar_data', [new \EducacionalERP\Infrastructure\WordPress\Avatar($db),'filter'],10,2);
         add_action('ederp_cleanup_student_documents',static function()use($db){if(get_option('ederp_schema_version')===Installer::VERSION&&!get_option('ederp_schema_error'))(new \EducacionalERP\Application\StudentDocuments($db))->cleanupRejected();});

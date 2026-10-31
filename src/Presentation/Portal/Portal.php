@@ -25,7 +25,7 @@ final class Portal
     public function register():void
     {
         Authentication::register();
-        add_action('wp_enqueue_scripts',static function(){global $post;if($post instanceof \WP_Post && str_contains($post->post_content,'[erp_')){Pages::assets();wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);if(!is_user_logged_in()||in_array($_GET['erp_tela']??'',['recuperar_senha','redefinir_senha'],true))self::loginAssets();}});
+        add_action('wp_enqueue_scripts',static function(){global $post;if($post instanceof \WP_Post && str_contains($post->post_content,'[erp_')&&!str_contains($post->post_content,'[erp_requerimento')){Pages::assets();wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);if(!is_user_logged_in()||in_array($_GET['erp_tela']??'',['recuperar_senha','redefinir_senha'],true))self::loginAssets();}});
         add_action('admin_init',[self::class,'setup'],20);
         add_action('admin_init',static function(){if(is_user_logged_in()&&!Access::isAdmin()&&!wp_doing_ajax()){wp_safe_redirect(self::url());exit;}},1);
         add_filter('show_admin_bar',static fn($show)=>Access::isAdmin()?$show:false);

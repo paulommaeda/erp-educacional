@@ -1,0 +1,982 @@
+[
+  {
+    "chave": "interesse_curso",
+    "nome": "Curso pretendido",
+    "area": "solicitacao",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false
+  },
+  {
+    "chave": "interesse_serie",
+    "nome": "Ano/série pretendido",
+    "area": "solicitacao",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false
+  },
+  {
+    "chave": "interesse_turno",
+    "nome": "Turno pretendido",
+    "area": "solicitacao",
+    "tipo": "selecao",
+    "opcoes": [
+      "Matutino",
+      "Vespertino",
+      "Integral",
+      "Noturno"
+    ],
+    "obrigatorio": false
+  },
+  {
+    "chave": "indicado_por",
+    "nome": "Nome de quem indicou a família",
+    "area": "solicitacao",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false
+  },
+  {
+    "chave": "colegio_de_origem",
+    "nome": "Colégio de origem",
+    "area": "solicitacao",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false
+  },
+  {
+    "chave": "cidade_colegio_anterior",
+    "nome": "Cidade do colégio de origem",
+    "area": "solicitacao",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false
+  },
+  {
+    "chave": "uf_colegio_anterior",
+    "nome": "UF do colégio de origem",
+    "area": "solicitacao",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false
+  },
+  {
+    "chave": "aprendizagem_input_radio_3",
+    "nome": "Apresenta dificuldades, necessidades especiais ou transtornos de aprendizagem?",
+    "area": "dificuldades_aprendizagem",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "aprendizagem_checkbox",
+    "nome": "Dificuldades e necessidades identificadas",
+    "area": "dificuldades_aprendizagem",
+    "tipo": "multiplos",
+    "opcoes": [
+      "Altas habilidades/Superdotação",
+      "Síndrome de Down",
+      "TDA (Transtorno Déficit de Atenção)",
+      "TDAH (Transtorno Déficit de Atenção e Hiperatividade)",
+      "TEA (Transtorno do Espectro Autista)",
+      "Dislexia",
+      "Discalculia",
+      "Disgrafia",
+      "Disortografia",
+      "TOD",
+      "Deficiência Auditiva",
+      "Deficiência na fala",
+      "Deficiência Visual",
+      "Deficiência Intelectual",
+      "Deficiência Física"
+    ],
+    "obrigatorio": false,
+    "quando": {
+      "campo": "aprendizagem_input_radio_3",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "aprendizagem_deficiencia_fisica_aluno",
+    "nome": "Detalhes da deficiência física",
+    "area": "dificuldades_aprendizagem",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false,
+    "quando": {
+      "campo": "aprendizagem_input_radio_3",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "aprendizagem_acompanhamento_aluno",
+    "nome": "Faz acompanhamento de aprendizagem?",
+    "area": "dificuldades_aprendizagem",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "aprendizagem_medicacao_controlada",
+    "nome": "Usa medicação controlada?",
+    "area": "dificuldades_aprendizagem",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "aprendizagem_observacoes",
+    "nome": "Observações sobre aprendizagem e acompanhamento",
+    "area": "dificuldades_aprendizagem",
+    "tipo": "texto_longo",
+    "opcoes": [],
+    "obrigatorio": false
+  },
+  {
+    "chave": "familia_aluno_vive_com",
+    "nome": "Aluno vive com:",
+    "area": "familia",
+    "tipo": "selecao",
+    "opcoes": [
+      "Mãe e Pai",
+      "Só Mãe",
+      "Só Pai",
+      "Avós",
+      "Outros"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "familia_especifique",
+    "nome": "Outras pessoas com quem o aluno vive",
+    "area": "familia",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false,
+    "quando": {
+      "campo": "familia_aluno_vive_com",
+      "valores": [
+        "Outros"
+      ]
+    }
+  },
+  {
+    "chave": "familia_situacao_conjugal_pais",
+    "nome": "Atual situação conjugal dos pais",
+    "area": "familia",
+    "tipo": "selecao",
+    "opcoes": [
+      "Casados",
+      "Divorciados",
+      "Separados",
+      "Viúvo(a)"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "familia_guarda",
+    "nome": "Quem tem a guarda?",
+    "area": "familia",
+    "tipo": "selecao",
+    "opcoes": [
+      "Mãe",
+      "Pai"
+    ],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "familia_situacao_conjugal_pais",
+      "valores": [
+        "Divorciados",
+        "Separados"
+      ]
+    }
+  },
+  {
+    "chave": "familia_tipo_guarda",
+    "nome": "A guarda é:",
+    "area": "familia",
+    "tipo": "selecao",
+    "opcoes": [
+      "Unilateral",
+      "Compartilhada"
+    ],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "familia_situacao_conjugal_pais",
+      "valores": [
+        "Divorciados",
+        "Separados"
+      ]
+    }
+  },
+  {
+    "chave": "familia_adocao",
+    "nome": "O aluno passou pelo processo de adoção?",
+    "area": "familia",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "familia_input_radio",
+    "nome": "Documentação da adoção regularizada?",
+    "area": "familia",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "familia_adocao",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "familia_idade_adocao",
+    "nome": "Idade na adoção",
+    "area": "familia",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "familia_adocao",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "familia_numero_de_filhos",
+    "nome": "Número de Filhos",
+    "area": "familia",
+    "tipo": "numero",
+    "opcoes": [],
+    "obrigatorio": true
+  },
+  {
+    "chave": "familia_input_radio_6",
+    "nome": "Tem irmãos que estudam no colégio?",
+    "area": "familia",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_parto",
+    "nome": "O parto foi:",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Normal",
+      "Cesárea",
+      "Fórceps",
+      "Prematuro"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_problema_saude_1",
+    "nome": "Teve ou tem algum problema de saúde?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_quais_problemas_de_saude",
+    "nome": "Problemas de saúde identificados",
+    "area": "ficha_medica",
+    "tipo": "multiplos",
+    "opcoes": [
+      "Catapora",
+      "Meningite",
+      "Hepatite",
+      "Dengue",
+      "Pneumonia",
+      "COVID-19"
+    ],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_problema_saude_1",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_medicamento",
+    "nome": "Faz uso regular de medicamento?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_quais",
+    "nome": "Medicamentos de uso regular",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_medicamento",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_alergia",
+    "nome": "Tem algum tipo de alergia?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": false
+  },
+  {
+    "chave": "saude_tipos_de_alergia",
+    "nome": "Tipos de alergia",
+    "area": "ficha_medica",
+    "tipo": "multiplos",
+    "opcoes": [
+      "Pele",
+      "Alimentar",
+      "Bronquite",
+      "Renite"
+    ],
+    "obrigatorio": false,
+    "quando": {
+      "campo": "saude_alergia",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_elergico_medicacao",
+    "nome": "É alérgico a algum tipo de medicação?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_qual_alergico_medicacao",
+    "nome": "Medicamentos que causam alergia",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_elergico_medicacao",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_atendimento",
+    "nome": "Atualmente faz algum atendimento com profissionais de saúde? (Ex: cardiologista, dermatologista, endocrinologista..)",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_qual_atendimento",
+    "nome": "Profissionais de saúde que atendem o aluno",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_atendimento",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_convenio",
+    "nome": "Tem convênio médico?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_qual_convenio",
+    "nome": "Nome do convênio médico",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_convenio",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_tratamento_especializado",
+    "nome": "Faz algum tratamento especializado?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_especialidades",
+    "nome": "Especialidades do tratamento",
+    "area": "ficha_medica",
+    "tipo": "multiplos",
+    "opcoes": [
+      "Psicólogo",
+      "Psicopedagoga",
+      "Fonoaudiólogo",
+      "Terapia Ocupacional"
+    ],
+    "obrigatorio": false,
+    "quando": {
+      "campo": "saude_tratamento_especializado",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_escolarizacao",
+    "nome": "Recebe escolarização em outro espaço?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_escolarizacao_qual",
+    "nome": "Outro espaço de escolarização",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_escolarizacao",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_atividade_fisica",
+    "nome": "Alguma restrição quanto a prática de atividade físicas na escola?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_atividades_fisica_qual",
+    "nome": "Restrições às atividades físicas",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_atividade_fisica",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_crescimento",
+    "nome": "Faz ou fez tratamento para crescimento?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_crescimento_qual",
+    "nome": "Detalhes do tratamento para crescimento",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_crescimento",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_desenvolvimento",
+    "nome": "Teve atraso no desenvolvimento?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_desenvolvimento_qual",
+    "nome": "Detalhes do atraso no desenvolvimento",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_desenvolvimento",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_coracao",
+    "nome": "Tem ou teve problema no coração?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_acompanhamento",
+    "nome": "Faz acompanhamento do problema cardíaco?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_coracao",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_coracao_qual",
+    "nome": "Detalhes do problema cardíaco",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_coracao",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_intolerancia",
+    "nome": "Tem intolerância ou alergia à lactose ou ao glúten?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_intolerancia_qual",
+    "nome": "Intolerâncias e alergias alimentares",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_intolerancia",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_protese",
+    "nome": "Usa alguma prótese?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_protese_qual",
+    "nome": "Próteses utilizadas",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_protese",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_desmaio",
+    "nome": "Tem ou teve desmaio ou convulsão?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_acompanhamento_desmaio",
+    "nome": "Faz acompanhamento de desmaios ou convulsões?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_desmaio",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_desmaio_qual",
+    "nome": "Detalhes de desmaios ou convulsões",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_desmaio",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_diabetes",
+    "nome": "Tem diabetes?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_acompanhamento_diabetes",
+    "nome": "Faz acompanhamento da diabetes?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_diabetes",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_diabetes_qual",
+    "nome": "Detalhes do acompanhamento da diabetes",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_diabetes",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_coluna",
+    "nome": "Tem algum problema na coluna?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_coluna_qual",
+    "nome": "Detalhes do problema na coluna",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_coluna",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_fratura",
+    "nome": "Já teve alguma fratura?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_fratura_qual",
+    "nome": "Fraturas anteriores",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_fratura",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_caminhar",
+    "nome": "Tem dificuldade para caminhar?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_caminhar_qual",
+    "nome": "Detalhes da dificuldade para caminhar",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_caminhar",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_cirurgia",
+    "nome": "Já se submeteu a alguma cirurgia?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_cirurgia_qual",
+    "nome": "Cirurgias anteriores",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_cirurgia",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_peso",
+    "nome": "Tem problema com peso?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_peso_qual",
+    "nome": "Detalhes do problema com peso",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_peso",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_internado",
+    "nome": "Já esteve internado(a)?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_internado_qual",
+    "nome": "Motivo Internamento",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false,
+    "quando": {
+      "campo": "saude_internado",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_problema",
+    "nome": "Apresenta algum problema de saúde que não esteja especificado na lista acima?",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Sim",
+      "Não"
+    ],
+    "obrigatorio": true
+  },
+  {
+    "chave": "saude_problema_qual",
+    "nome": "Outros problemas de saúde",
+    "area": "ficha_medica",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": true,
+    "quando": {
+      "campo": "saude_problema",
+      "valores": [
+        "Sim"
+      ]
+    }
+  },
+  {
+    "chave": "saude_orientacoes_medicas",
+    "nome": "Orientações médicas",
+    "area": "ficha_medica",
+    "tipo": "texto_longo",
+    "opcoes": [],
+    "obrigatorio": false
+  },
+  {
+    "chave": "saude_brupo_sanguineo",
+    "nome": "Grupo Sanguíneo",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "A",
+      "B",
+      "AB",
+      "O"
+    ],
+    "obrigatorio": false
+  },
+  {
+    "chave": "saude_brupo_sanguineo_1",
+    "nome": "Fator RH",
+    "area": "ficha_medica",
+    "tipo": "selecao",
+    "opcoes": [
+      "Positivo",
+      "Negativo"
+    ],
+    "obrigatorio": false
+  },
+  {
+    "chave": "empresa",
+    "nome": "Empresa em que trabalha",
+    "area": "pessoais",
+    "tipo": "texto",
+    "opcoes": [],
+    "obrigatorio": false
+  }
+]
