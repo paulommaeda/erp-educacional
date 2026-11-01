@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.2
+# ERP Educacional — 0.19.3
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.2.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.3.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -443,3 +443,8 @@ Em Requerimentos → Importados por API, Conferir abre as mesmas cinco etapas do
 O modelo foi preparado com o formulário exportado e os 86 nomes de campos do retorno anterior. Campos ausentes na resposta da origem, como pai/mãe no retorno anterior, precisam ser enviados pela API ou completados pela secretaria. A consulta real neste ambiente retornou HTTP 403; a integração ao vivo precisa ser verificada no WordPress da escola. O mapeamento pode ser aberto sem testar novamente a conexão.
 
 Detalhes: [Requerimento público e API](docs/REQUERIMENTO-PUBLICO.md). Migração 36 mantida.
+
+
+### Compatibilidade com o retorno atual do CRM (0.19.3)
+
+O modelo de requerimento também reconhece `aluno_nome`, `endereco_aluno_rua`, `endereco_aluno_complemento`, `endereco_aluno_cidade`, `endereco_aluno_estado`, `endereco_aluno_pais`, `endereco_aluno_bairro` e o CEP em `endereco_aluno_dep`. Mantém os nomes anteriores do Fluent Forms como alternativas. Mapeamentos já salvos são preservados. A busca e a conferência foram verificadas no ERP da escola; nenhum cadastro foi aprovado durante essa verificação. Migração 36 mantida.

@@ -23,12 +23,12 @@ final class ExternalAdmissionTemplate
             $sets[$slot]=['nome'=>$name,'data_nascimento'=>'data_nascimento_'.$suffix,'cpf'=>'cpf_'.$suffix,'rg'=>'rg_'.$suffix,'email'=>'email_'.$suffix,'telefone'=>'celualr_'.$suffix,'local_nascimento'=>'cidade_natal_'.$suffix,'uf_nascimento'=>'uf_natal_'.$suffix,'nacionalidade'=>'naturalidade_'.$suffix,'grau_instrucao'=>'grau_de_instrucao_'.$suffix,'profissao'=>'profissao_'.$suffix,'idestado_civil'=>'estado_civil_'.$suffix,'religiao'=>'religiao_'.$suffix,'igreja'=>'igreja_'.$suffix,'raca_etnia'=>$slot==='mae'?'input_radio_9':'raca_'.$suffix,'endereco'=>'endereco_'.$suffix,'bairro'=>$slot==='academico'?'responsavel_ausencia_bairro':'bairro_'.$suffix];
         }
         foreach($sets as $slot=>$fields){foreach($fields as $dest=>$source){if(in_array($dest,['endereco','bairro'],true))continue;
-                $sources=$dest==='nome'?[$source.'_first_name',$source,$source.'.first_name']:[$source];$sources[]=$slot.'.'.$dest;
+                $sources=$dest==='nome'?[$source.'_first_name',$source,$source.'.first_name']:[$source];if($slot==='aluno'&&$dest==='nome')array_unshift($sources,'aluno_nome');$sources[]=$slot.'.'.$dest;
                 if($dest==='telefone')$sources[]='celular_'.($slot==='aluno'?'aluno':($slot==='academico'?'responsavel_ausencia':($slot==='financeiro'?'responsavel_financeiro':$slot)));
                 $add($slot,$dest,$sources);
             }
-            $address=$fields['endereco'];foreach(['rua'=>'address_line_1','complemento'=>'address_line_2','cidade'=>'city','estado'=>'state','cep'=>'zip','pais'=>'country','numero'=>'numero'] as $dest=>$source)$add($slot,$dest,[$address.'_'.$source,$address.'.'.$source,$slot.'.'.$dest],$dest==='pais'?'BR':'');
-            $add($slot,'bairro',[$fields['bairro'],$address.'_bairro',$address.'.bairro',$slot.'.bairro']);
+            $address=$fields['endereco'];foreach(['rua'=>'address_line_1','complemento'=>'address_line_2','cidade'=>'city','estado'=>'state','cep'=>'zip','pais'=>'country','numero'=>'numero'] as $dest=>$source){$sources=[$address.'_'.$source,$address.'.'.$source,$slot.'.'.$dest];if($slot==='aluno')array_unshift($sources,'endereco_aluno_'.$dest);if($slot==='aluno'&&$dest==='cep')$sources[]='endereco_aluno_dep';$add($slot,$dest,array_values(array_unique($sources)),$dest==='pais'?'BR':'');}
+            $district=[$fields['bairro'],$address.'_bairro',$address.'.bairro',$slot.'.bairro'];if($slot==='aluno')array_unshift($district,'endereco_aluno_bairro');$add($slot,'bairro',array_values(array_unique($district)));
             if($slot!=='aluno')$add($slot,'extra:empresa',['empresa_'.($slot==='academico'?'reposnavel_ausencia':($slot==='financeiro'?'reponsavel_financeiro':$slot)),$slot.'.empresa']);
         }
         foreach(AdmissionForm::fields() as $f){$key=$f['chave'];if($key==='empresa')continue;

@@ -1,6 +1,6 @@
 # Requerimento público de matrícula
 
-Versão 0.19.2 • Migração 36.
+Versão 0.19.3 • Migração 36.
 
 O formulário nativo foi construído a partir do JSON do Fluent Forms e do modelo HTML do PDF fornecidos. Não depende desses plugins para funcionar. Não importa submissões antigas automaticamente; a integração de requerimentos por API permanece em uma aba separada.
 
@@ -131,3 +131,8 @@ Requerimentos pendentes usam o mapeamento atual ao abrir a conferência. Alterar
 Endpoint adicional: `POST /api-pessoas/modelo-requerimento`, exclusivo de administrador, com `idconexao` e cabeçalho `Idempotency-Key`. Aprovações continuam em `POST /api-pessoas/requerimentos/{id}/confirmar`, com versões do requerimento e mapeamento, dados conferidos, decisões por pessoa e `conferencia_confirmada: true`.
 
 Validação: domínio/transações/permissões com SQLite e PHP-WASM, regressão das conexões genéricas, interface JSDOM e conferência Chromium em 320, 390 e 1440 px. A consulta real da origem neste ambiente retornou HTTP 403; a autenticação e o retorno ao vivo ainda dependem da homologação no site da escola.
+
+
+### Retorno atual validado no WordPress (0.19.3)
+
+A consulta realizada pelo WordPress da escola respondeu corretamente. O modelo reconhece o nome em `aluno_nome` e o endereço com sufixos em português, incluindo o CEP em `endereco_aluno_dep`, além dos caminhos originais do Fluent Forms. As referências já configuradas não são substituídas na atualização; ao reaplicar o modelo, os dois formatos continuam reconhecidos. A busca lê os registros e os deixa na fila **Requerimentos → Importados por API**, com o mesmo formulário de conferência em cinco etapas. Dados ausentes na resposta da origem devem ser completados na conferência. A aprovação permanece uma ação explícita da equipe.

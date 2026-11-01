@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.2
+Stable tag: 0.19.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,10 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.3 =
+* Reconhece aluno_nome e os campos de endereço do retorno atual do CRM, incluindo endereco_aluno_dep para CEP.
+* Preserva caminhos anteriores do Fluent Forms e mapeamentos já configurados. Schema 36 mantido.
 
 = 0.19.2 =
 * Turno pretendido limitado a Matutino e Vespertino.
