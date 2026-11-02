@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.3
+Stable tag: 0.19.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.4 =
+* Área do portal ocupa a largura disponível no desktop, incluindo contêineres internos e tabelas.
+* Botões das parcelas com espaçamento consistente; remove Ver descontos das linhas.
+* Número da parcela abre resumo em modal com situação, valores, pontualidade, bolsas, juros, multa e saldo.
+* Resumo compartilhado entre ficha do aluno, gestão financeira e portal da família, com fatura e recibo quando disponíveis.
+* Valores em reais e tabelas responsivas preservam os dados e as regras financeiras. Schema 36 mantido.
 
 = 0.19.3 =
 * Reconhece aluno_nome e os campos de endereço do retorno atual do CRM, incluindo endereco_aluno_dep para CEP.

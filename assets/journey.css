@@ -49,3 +49,7 @@ body.journey-portal-page{margin:0;background:var(--j-paper);color:var(--j-ink);f
 .journey-app .journey-account-submenu a:hover{background:var(--j-soft,#eaf8f2)}
 .journey-app .journey-account-submenu .journey-account-logout{color:#923737}
 @media(max-width:699px){.journey-header>a:first-child img{width:clamp(88px,29vw,155px)}.journey-account-menu{max-width:58%}}
+/* Let the workspace use the available desktop width, including nested screen roots. */
+@media(min-width:1100px){.journey-content{width:100%;max-width:100%;margin:0;padding-inline:32px}.journey-content>.ederp,.journey-content>.wrap,.journey-content>[data-journey-view]{width:100%;max-width:100%;min-width:0}.journey-content .erp-workflow{width:100%;max-width:100%}}
+
+.journey-content .erp-context-selectors>:only-child{grid-column:1/-1}

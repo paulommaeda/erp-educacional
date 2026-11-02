@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.3
+# ERP Educacional — 0.19.4
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.3.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.4.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -448,3 +448,14 @@ Detalhes: [Requerimento público e API](docs/REQUERIMENTO-PUBLICO.md). Migraçã
 ### Compatibilidade com o retorno atual do CRM (0.19.3)
 
 O modelo de requerimento também reconhece `aluno_nome`, `endereco_aluno_rua`, `endereco_aluno_complemento`, `endereco_aluno_cidade`, `endereco_aluno_estado`, `endereco_aluno_pais`, `endereco_aluno_bairro` e o CEP em `endereco_aluno_dep`. Mantém os nomes anteriores do Fluent Forms como alternativas. Mapeamentos já salvos são preservados. A busca e a conferência foram verificadas no ERP da escola; nenhum cadastro foi aprovado durante essa verificação. Migração 36 mantida.
+
+
+### Largura do portal e resumo da parcela (0.19.4)
+
+No desktop, a partir de 1100 px, `.journey-content` utiliza `width: 100%` e `max-width: 100%`, com margens laterais iguais. Os contêineres das telas e as tabelas acompanham essa largura; um único seletor de contexto ocupa a linha inteira.
+
+O número da parcela é um link visual para **Resumo da parcela**, na ficha do aluno e no portal da família. Na gestão, o vínculo Contrato / parcela e a ação Detalhes abrem o mesmo modal. Removido o botão Ver descontos das linhas. As ações Abrir fatura/Pagar e Recibo têm espaçamento uniforme e se acomodam à largura disponível.
+
+O resumo exibe aluno/RA quando presentes na tela, contrato, vencimento, situação, valor original, desconto incondicional, valor líquido, pontualidade prevista/concedida, juros, multa, valor pago e saldo. Inclui detalhamento das bolsas e cancelamento quando disponíveis. Fatura e recibo conservam as permissões e condições anteriores. O valor líquido continua sem deduzir a pontualidade prevista. A abertura usa os dados autorizados já carregados, sem consultar o Educbank ou alterar lançamentos. Fechar devolve o foco ao link.
+
+Validação: testes dos fluxos financeiros, ficha, permissões, recibos, edição/baixa, descontos e paginação; Chromium nas três telas em 320, 390, 1024, 1280, 1440 e 1920 px, sem rolagem horizontal da página e com modais ajustados ao viewport. Os testes antigos `payment-ui.cjs` e `workflow-ui.cjs` continuam com as mesmas falhas reproduzidas na versão 0.19.3, relacionadas aos fluxos anteriores de rematrícula e formulários. Nenhuma alteração de schema ou regra financeira.
