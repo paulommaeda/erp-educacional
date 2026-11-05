@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.7
+# ERP Educacional — 0.19.8
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.7.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.8.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -486,3 +486,10 @@ No requerimento e na conferência, o aluno deve ter rua/logradouro, número (ace
 O CEP vem primeiro no bloco de endereço. Ao digitar oito dígitos ou sair do campo, o formulário consulta `GET /wp-json/erp-educacional/v1/publico/cep/{cep}` e preenche rua, bairro, UF e cidade. O servidor consulta somente o host HTTPS fixo do ViaCEP, sem enviar dados da família, com cinco segundos de timeout, sem redirecionamentos e com resposta limitada a 16 KB. Há cache de um dia para encontrados, cinco minutos para não encontrados e limite por IP de 180 consultas por hora. Essa rota retorna somente dados postais públicos; as demais permissões do ERP são preservadas.
 
 Número e complemento são informados pelo usuário. Correções feitas durante a consulta e respostas antigas de outro CEP são preservadas/ignoradas conforme o caso. Se o serviço falhar, não encontrar o CEP ou retornar informações parciais, é possível completar o endereço manualmente. Abrir um requerimento já salvo não dispara consultas nem substitui seus dados. Não há alteração de schema.
+
+
+### Requerimento em celulares (0.19.8)
+
+Até 767 px de largura, os campos do requerimento público e da conferência em modal passam a uma coluna. Campos têm pelo menos 52 px de altura, texto de 16 px e 22 px entre as linhas; botões e rótulos de opções têm alvos de toque de pelo menos 48 px. A navegação entre etapas usa botões em largura total. A partir de 768 px, permanecem duas colunas. As regras de cadastro, obrigatoriedade, consulta por CEP e dados não mudam.
+
+Os CEPs são consultados online no ViaCEP, sem uma lista completa importada no ERP. Cada resultado encontrado pode permanecer em cache por até 24 horas, e um CEP não encontrado por até cinco minutos. Após a expiração, a próxima consulta busca os dados então disponíveis no serviço; não há importação periódica de toda a base de CEPs.

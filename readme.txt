@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.7
+Stable tag: 0.19.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.8 =
+* Requerimento em uma coluna no celular, inclusive na conferência em modal, até 767 px de largura.
+* Campos, botões e opções com tamanho e espaçamento adequados ao toque; desktop mantém duas colunas.
+* Preserva dados, validações e consulta por CEP. Schema 36 mantido.
 
 = 0.19.7 =
 * Endereço do aluno obrigatório no requerimento e na conferência, com complemento opcional e número aceitando S/N.
