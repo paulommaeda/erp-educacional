@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.9
+Stable tag: 0.19.10
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.10 =
+* Requerimento sem e-mail, empresa ou profissão na seção do aluno; responsáveis mantêm seus campos e e-mail obrigatório.
+* Aprovação gera o e-mail escolar com o usuário final e o domínio do colégio, inclusive em homônimos e escolha manual.
+* Campo de domínio nas configurações do colégio, com alternativa pelo e-mail ou site cadastrado. Não cria caixa postal no provedor.
+* Retirada exige selecionar pai ou mãe por checkbox e continua aceitando outras pessoas autorizadas.
+* Conferência nativa, importação de requerimentos da API e PDF seguem o fluxo atualizado. Schema 37 mantido.
 
 = 0.19.9 =
 * Administrador do WordPress pode excluir lançamentos inclusive pagos; Financeiro exclui somente sem pagamentos.

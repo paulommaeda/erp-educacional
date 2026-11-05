@@ -24,6 +24,6 @@ final class ExternalAdmissionReview
         // Only fields actually supplied by mapping, or filled by the reviewer, replace existing values.
         foreach($data['campos'] as $field=>$value)if($value===''&&($original['campos'][$field]??'')==='')unset($data['campos'][$field]);
         foreach($data['pessoas'] as $slot=>&$person)foreach($person['campos_adicionais']??[] as $field=>$value)if($value===''&&($original['pessoas'][$slot]['campos_adicionais'][$field]??'')==='')unset($person['campos_adicionais'][$field]);unset($person);
-        $result=(new AdmissionAcceptance($this->db,$this->catalog))->inside($data,$d['pessoas'],$key,!empty($original['contatos_emergencia']));return ['dados'=>$data,'resultado'=>$result];
+        $result=(new AdmissionAcceptance($this->db,$this->catalog))->inside($data,$d['pessoas'],$key,!empty($original['contatos_emergencia']));$data['pessoas']['aluno']['email']=$this->db->get('pessoas',(int)$result['pessoas']['aluno']['codpessoa'])['email'];return ['dados'=>$data,'resultado'=>$result];
     }
 }

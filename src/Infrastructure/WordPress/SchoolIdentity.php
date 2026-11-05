@@ -5,7 +5,7 @@ use EducacionalERP\Domain\RuleViolation;
 final class SchoolIdentity
 {
     public const OPTION='ederp_school_identity';
-    public const FIELDS=['nome'=>'Nome do colégio','descricao'=>'Descrição do site','razao_social'=>'Razão social','cnpj'=>'CNPJ','telefone'=>'Telefone','email'=>'E-mail','site'=>'Site','rua'=>'Rua','numero'=>'Número','complemento'=>'Complemento','bairro'=>'Bairro','cep'=>'CEP','cidade'=>'Cidade','estado'=>'Estado','pais'=>'País'];
+    public const FIELDS=['nome'=>'Nome do colégio','descricao'=>'Descrição do site','razao_social'=>'Razão social','cnpj'=>'CNPJ','telefone'=>'Telefone','email'=>'E-mail','dominio_email_alunos'=>'Domínio dos e-mails dos alunos','site'=>'Site','rua'=>'Rua','numero'=>'Número','complemento'=>'Complemento','bairro'=>'Bairro','cep'=>'CEP','cidade'=>'Cidade','estado'=>'Estado','pais'=>'País'];
     public const COLORS=['cor_primaria'=>'Botões e links','cor_destaque'=>'Destaque','cor_secundaria'=>'Cor secundária','cor_texto'=>'Texto','cor_fundo'=>'Fundo da página','cor_superficie'=>'Cartões e menus'];
     public static function option():string {return \EducacionalERP\Application\Coligadas::option(self::OPTION);}
     public const LOGIN_COLORS=['login_fundo'=>'Cor do fundo / início do degradê','login_fundo_final'=>'Final do degradê','login_form_fundo'=>'Fundo do formulário','login_texto'=>'Texto do formulário','login_botao'=>'Botão de entrar','login_botao_texto'=>'Texto do botão','login_campo_fundo'=>'Fundo dos campos','login_campo_borda'=>'Borda dos campos','login_painel_texto'=>'Texto da apresentação'];
@@ -29,6 +29,7 @@ final class SchoolIdentity
         $result=[];foreach(self::FIELDS as $key=>$label){if(!is_string($d[$key]??''))throw new RuleViolation('Campo inválido: '.$label);$value=sanitize_text_field($d[$key]??'');if(strlen($value)>250)throw new RuleViolation('Campo muito longo: '.$label);$result[$key]=$value;}
         if(!$result['nome'])throw new RuleViolation('Informe o nome do colégio.');
         if($result['email']&&!is_email($result['email']))throw new RuleViolation('E-mail inválido.');
+        $result['dominio_email_alunos']=self::normalizeStudentDomain($result['dominio_email_alunos']);
         if($result['site']&&(!filter_var($result['site'],FILTER_VALIDATE_URL)||!in_array(strtolower((string)parse_url($result['site'],PHP_URL_SCHEME)),['http','https'],true)))throw new RuleViolation('Informe o site completo com https:// ou http://.');
         foreach(self::COLORS as $key=>$label){$value=$d[$key]??self::defaults()[$key];if(!is_string($value)||!preg_match('/^#[a-f0-9]{6}$/i',$value))throw new RuleViolation('Cor inválida: '.$label);$result[$key]=strtolower($value);}
         $logo=filter_var($d['logo_id']??0,FILTER_VALIDATE_INT,['options'=>['min_range'=>0]]);if($logo===false||($logo&&!self::validLogo($logo)))throw new RuleViolation('Selecione uma imagem válida para o logo.');$result['logo_id']=$logo;
@@ -49,6 +50,20 @@ final class SchoolIdentity
         return $result+$login;
     }
     public static function validLogo(int $id):bool {return get_post_type($id)==='attachment'&&in_array(get_post_mime_type($id),['image/png','image/jpeg','image/webp','image/gif'],true);}
+    private static function normalizeStudentDomain(string $domain):string
+    {
+        $domain=strtolower(ltrim(trim($domain),'@'));if($domain==='')return '';
+        if(strlen($domain)>189||!str_contains($domain,'.')||str_ends_with($domain,'.')||filter_var($domain,FILTER_VALIDATE_IP)||!filter_var($domain,FILTER_VALIDATE_DOMAIN,FILTER_FLAG_HOSTNAME))throw new RuleViolation('Informe um domínio válido para os e-mails dos alunos, sem https:// ou caminho. Exemplo: colegio.com.br.');
+        return $domain;
+    }
+    /** Resolve within the admission's company, never from the visitor's Host header. */
+    public static function studentEmailDomain():string
+    {
+        $d=self::read();if($d['dominio_email_alunos']!=='')return self::normalizeStudentDomain((string)$d['dominio_email_alunos']);
+        $emailDomain=str_contains((string)$d['email'],'@')?substr($d['email'],strrpos($d['email'],'@')+1):'';
+        foreach([$emailDomain,(string)(parse_url((string)$d['site'],PHP_URL_HOST)??'')] as $candidate){if($candidate==='')continue;try{return self::normalizeStudentDomain($candidate);}catch(RuleViolation $e){}}
+        throw new RuleViolation('Configure o domínio dos e-mails dos alunos em Configurações > Colégio antes de aprovar o requerimento.');
+    }
     public static function save(array $d):array {
         Access::requireAdmin();if(!is_string($d['version']??null)||!hash_equals(self::version(),$d['version']))throw new RuleViolation('Configuração alterada. Recarregue antes de salvar.');
         $validated=self::validate($d);update_option(self::option(),$validated,false);update_option('blogname',$validated['nome']);update_option('blogdescription',$validated['descricao']);return self::payload();

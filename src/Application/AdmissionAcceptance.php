@@ -22,8 +22,8 @@ final class AdmissionAcceptance
                 elseif($action==='criar'){
                     // Never auto-merge by CPF, shared e-mail or approximate name.
                     $existing=$this->db->row('SELECT codpessoa FROM '.$this->db->table('pessoas').' WHERE nome=%s AND data_nascimento=%s LIMIT 1',[$p['nome'],$p['data_nascimento']]);if($existing&&($choice['confirmar_nova']??false)!==true)throw new RuleViolation((AdmissionForm::PEOPLE[$slot]??'Outro responsável').': já existe uma pessoa com este nome e nascimento. Selecione o cadastro existente ou corrija os dados.');
-                    $p['campos_adicionais']=($p['campos_adicionais']??[])+['empresa'=>$p['empresa']];unset($p['empresa'],$p['parentesco']);if(isset($choice['user_login']))$p['user_login']=$choice['user_login'];
-                    try{$created=$this->catalog->createInside('pessoas',$p,$key);}catch(\EducacionalERP\Domain\UsernameRequired $e){throw new \EducacionalERP\Domain\UsernameRequired((AdmissionForm::PEOPLE[$slot]??'Outro responsável').': '.$e->getMessage());}$people[$slot]=['codpessoa'=>(int)$created['id'],'acao'=>'criar'];
+                    $p['campos_adicionais']=($p['campos_adicionais']??[])+['empresa'=>$p['empresa']??''];unset($p['empresa'],$p['parentesco']);if(isset($choice['user_login']))$p['user_login']=$choice['user_login'];
+                    try{$created=$slot==='aluno'?$this->catalog->createAdmissionStudentInside($p,$key):$this->catalog->createInside('pessoas',$p,$key);}catch(\EducacionalERP\Domain\UsernameRequired $e){throw new \EducacionalERP\Domain\UsernameRequired((AdmissionForm::PEOPLE[$slot]??'Outro responsável').': '.$e->getMessage());}$people[$slot]=['codpessoa'=>(int)$created['id'],'acao'=>'criar'];
                 }else throw new RuleViolation('Escolha criar ou aproveitar cadastro para '.(AdmissionForm::PEOPLE[$slot]??'Outro responsável').'.');
             }
             $pid=$people['aluno']['codpessoa'];foreach($people as $slot=>$p)if($slot!=='aluno'&&$p['codpessoa']===$pid)throw new RuleViolation('O aluno não pode ser seu próprio responsável.');

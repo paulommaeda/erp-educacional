@@ -49,6 +49,16 @@ final class CatalogService
             $this->db->audit($table,$id,'criar',null,$data,$key);
             return ['id'=>(string)$id]+$account;
     }
+    /** Admission-only provisioning keeps ordinary person contact e-mail requirements unchanged. */
+    public function createAdmissionStudentInside(array $data,string $key):array
+    {
+        // Match ordinary person creation: sequence lock precedes the shared account lock.
+        $this->db->get('numeracao_pessoas',1,true);
+        $identity=$this->accounts->admissionStudentIdentity(Input::text($data['nome']??null),$data['user_login']??null);
+        $created=$this->createInside('pessoas',array_replace($data,$identity),$key);$user=get_userdata((int)$created['wp_user_id']);
+        if(!$user||$user->user_login!==$identity['user_login']||$user->user_email!==$identity['email'])throw new \EducacionalERP\Domain\UsernameRequired('O usuário ou e-mail escolar foi alterado ou acabou de ser utilizado. Confira e escolha outro nome de usuário.');
+        return $created;
+    }
     public function link(int $student,array $data,string $key): array
     {
         return $this->db->atomic(fn()=>$this->ops->run($key,'vincular',['idaluno'=>$student]+$data,fn()=>$this->linkInside($student,$data,$key)));

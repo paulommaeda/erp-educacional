@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.9
+# ERP Educacional — 0.19.10
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.9.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.10.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 37**, acrescentando data, autor e motivo da exclusão financeira, sem apagar baixas, renumerar cadastros ou modificar valores. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -506,3 +506,18 @@ A exclusão é lógica: o lançamento deixa de compor listas, totais, portal, re
 Endpoint autenticado: `POST /wp-json/erp-educacional/v1/lancamentos/{id}/excluir`, corpo `{"versao": 1, "motivo": "Registro duplicado"}`, nonce WordPress (ou autenticação REST nativa autorizada) e cabeçalho `Idempotency-Key`. A operação verifica coligada de trabalho, papel, capacidade, menu, versão e pagamentos atuais; retorna o identificador e a data da exclusão. Não aceita situação ou valores enviados para contornar a regra.
 
 Validação automatizada: `tests/financial-deletion.php`, `tests/financial-deletion-educbank.php` e `tests/financial-deletion-ui.cjs`. As suítes SQLite e mocks não substituem homologação das migrações e bloqueios concorrentes em WordPress/MySQL real.
+
+
+### Requerimento e e-mail escolar do aluno (0.19.10)
+
+O requerimento público e sua conferência não pedem e-mail, empresa nem profissão na seção do aluno. Empresa e profissão permanecem nos responsáveis; o e-mail de cada responsável continua obrigatório. O cadastro geral de Pessoas conserva seus campos. Dados profissionais já recebidos por mapeamento da API permanecem disponíveis para importação e não são apagados de cadastros existentes.
+
+Em **Configurações → Colégio**, informe **Domínio dos e-mails dos alunos** (por exemplo, `alunos.colegio.com.br`). Se estiver vazio, a aprovação usa o domínio do e-mail cadastrado do colégio ou, como alternativa, o host de seu site cadastrado. Não utiliza o Host enviado pelo visitante. Sem nenhuma dessas configurações válidas, o requerimento permanece pendente e a aprovação solicita configurar o domínio. A configuração é por coligada.
+
+Na aprovação, a nova Pessoa do aluno e sua conta WordPress recebem `usuario.final@dominio`. A geração ocorre sob o mesmo controle de criação das contas: homônimos tentam sobrenomes anteriores; usuário ou e-mail escolar ocupado exige outra combinação ou escolha manual na conferência. O endereço respeita o limite de 100 caracteres da conta WordPress. O endereço enviado no requerimento não determina o e-mail escolar de uma nova pessoa. Aprovar novamente é idempotente; aproveitar uma pessoa existente ou trocar o domínio não altera seus contatos anteriores. A aprovação guarda o endereço gerado no histórico, inclusive nos requerimentos da API.
+
+A geração cadastra o endereço no ERP e no WordPress; **não cria uma caixa postal** no Google Workspace ou outro provedor. Os convites mantêm a senha inicial aleatória e o link de criação de senha, incluindo o envio do acesso do aluno ao responsável acadêmico vinculado.
+
+Em **Pessoas autorizadas a retirar o aluno**, marque **Pai**, **Mãe** ou ambos. É obrigatório selecionar ao menos um dos dois já informados na filiação. Não é preciso repetir o cadastro deles; os dados são aproveitados dos vínculos. **Adicionar outra pessoa autorizada** permite registrar outros nomes, parentesco, contatos e documentos. A exigência é validada também no servidor, para envio e conferência. Os requerimentos pendentes anteriores podem precisar dessa seleção antes da aprovação.
+
+Sem novas tabelas ou alterações de schema. Validação específica: `tests/admission-student-identity.php`, `tests/admissions-ui.cjs`, `tests/public-admissions.php`, `tests/fluent-admission-api.php` e `tests/school-identity.php`.

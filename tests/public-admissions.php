@@ -6,7 +6,7 @@ use EducacionalERP\Domain\{AdmissionForm,RuleViolation,StudentFiles};
 use EducacionalERP\Infrastructure\Database\{Database,Installer};
 use EducacionalERP\Infrastructure\WordPress\{Access,StudentRecordPolicy,AdmissionGuard};
 function wp_tempnam($name){return tempnam(sys_get_temp_dir(),'req-photo-');}
-Access::install();$db=new Database($wpdb);$cat=new CatalogService($db,new Operations($db));$checks=0;
+Access::install();update_option(EducacionalERP\Infrastructure\WordPress\SchoolIdentity::option(),['nome'=>'COLÉGIO DE TESTE','dominio_email_alunos'=>'alunos.example.test']);$db=new Database($wpdb);$cat=new CatalogService($db,new Operations($db));$checks=0;
 function ck(bool $b,string $label):void {global $checks;if(!$b)throw new RuntimeException($label);$checks++;echo "PASS: $label\n";}
 function no(callable $fn,string $label):void {try{$fn();}catch(RuleViolation $e){ck(true,$label);return;}throw new RuntimeException('Expected rejection: '.$label);}
 function ky():string{return bin2hex(random_bytes(16));}

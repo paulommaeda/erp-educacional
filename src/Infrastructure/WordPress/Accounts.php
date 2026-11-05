@@ -63,6 +63,15 @@ final class Accounts
         (new AccountInvitations($this->db))->created($personId,(int)$id);
         return ['wp_user_id'=>(string)$id,'user_login'=>$login];
     }
+    /** Called before reviewed student creation, with the person sequence already locked. */
+    public function admissionStudentIdentity(string $name,?string $manual=null):array
+    {
+        $this->lock();$domain=SchoolIdentity::studentEmailDomain();$people=$this->db->table('pessoas');
+        $login=Usernames::choose($name,$manual,fn($candidate)=>(bool)username_exists($candidate)||(bool)email_exists($candidate.'@'.$domain)||(bool)$this->db->row("SELECT codpessoa FROM $people WHERE email=%s LIMIT 1",[$candidate.'@'.$domain]));
+        $email=$login.'@'.$domain;
+        if(strlen($email)>100||!is_email($email))throw new RuleViolation('O usuário e o domínio geram um e-mail acima do limite do WordPress. Escolha um usuário ou domínio mais curto.');
+        return ['user_login'=>$login,'email'=>$email];
+    }
     public function sync(int $personId): void
     {
         $t=$this->db->table('pessoa_usuarios');

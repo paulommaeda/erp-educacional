@@ -58,17 +58,20 @@ final class AdmissionForm
                 $valid=['nome'=>CadastroText::upper(self::text($p['nome']??'',191,true)),'data_nascimento'=>Input::date($p['data_nascimento']??null)];
                 if($valid['data_nascimento']>Input::today())throw new RuleViolation('Nascimento não pode estar no futuro.');
                 $cpf=preg_replace('/\D/','',self::text($p['cpf']??'',30));if($cpf!==''&&!Cpf::valid($cpf))throw new RuleViolation('CPF inválido.');$valid['cpf']=$cpf;
-                $email=strtolower(self::text($p['email']??'',191));if($email===''||!is_email($email))throw new RuleViolation('Informe um e-mail válido. O e-mail é obrigatório.');$valid['email']=$email;
+                // Students receive their school address only after review, from the actual WP login.
+                if($slot!=='aluno'){$email=strtolower(self::text($p['email']??'',191));if($email===''||!is_email($email))throw new RuleViolation('Informe um e-mail válido. O e-mail é obrigatório.');$valid['email']=$email;}
                 $valid['telefone']=self::text($p['telefone']??'',30);
+                if($slot==='aluno'&&!$api)unset($p['profissao'],$p['empresa']);
                 $valid+=PersonFields::validate($p);unset($valid['codpessoa_origem'],$valid['foto_attachment_id']);
                 if($slot==='aluno'){
+                    if(!$api)$valid['profissao']=null;
                     $required=['rua'=>'rua / logradouro','numero'=>'número (ou S/N)','cidade'=>'cidade','estado'=>'estado / região'];
                     if($valid['pais']==='BR')$required+=['bairro'=>'bairro','cep'=>'CEP'];
                     foreach($required as $field=>$label)if(trim((string)($valid[$field]??''))==='')throw new RuleViolation('Informe '.$label.' no endereço do aluno.');
                 }
                 // Civil status stays a selected system ID; no Fluent single-letter codes.
                 $valid['idestado_civil']=empty($p['idestado_civil'])?'':(string)Input::id($p['idestado_civil']);
-                $valid['empresa']=CadastroText::upper(self::text($p['empresa']??'',191));if(in_array($slot,['academico','financeiro','outro'],true)){$parentesco=strtolower((string)($p['parentesco']??'outro'));if(!isset(Relationships::LABELS[$parentesco]))throw new RuleViolation('Parentesco inválido.');$valid['parentesco']=$parentesco;}
+                $valid['empresa']=$slot==='aluno'&&!$api?'':CadastroText::upper(self::text($p['empresa']??'',191));if(in_array($slot,['academico','financeiro','outro'],true)){$parentesco=strtolower((string)($p['parentesco']??'outro'));if(!isset(Relationships::LABELS[$parentesco]))throw new RuleViolation('Parentesco inválido.');$valid['parentesco']=$parentesco;}
                 $nationality=self::fold((string)$valid['nacionalidade']);$uf=(string)$valid['uf_nascimento'];$city=(string)$valid['local_nascimento'];
                 if(preg_match('/^(?:BR|BRA|BRASIL|BRASILEIR[OA](?:\(A\))?)$/',$nationality)&&$uf!==''&&$uf!=='EX'&&$city!==''){
                     $br=json_decode(file_get_contents(dirname(__DIR__,2).'/assets/localidades/brasil.json'),true);$match=null;foreach($br[$uf]['cidades'] as $c)if(self::fold($c['nome'])===self::fold($city)){$match=$c['nome'];break;}
@@ -97,6 +100,7 @@ final class AdmissionForm
                 if($row['cpf']!==''&&!Cpf::valid($row['cpf']))throw new RuleViolation('CPF inválido em '.$row['nome'].'.');$out[$list][]=$row;
             }
         }
+        if(!array_intersect(['pai','mae'],array_column($out['retiradas'],'pessoa')))throw new RuleViolation('Autorização de retirada: selecione ao menos o pai ou a mãe informados no requerimento.');
         if(!$api&&($d['declaracao']??false)!==true)throw new RuleViolation('Confirme a declaração de veracidade e ciência do tratamento dos dados.');
         $out['declaracao']=!$api;$out['declaracao_nome']=$api?'':CadastroText::upper(self::text($d['declaracao_nome']??'',191,true));$out['declaracao_versao']=$api?'api':'1';
         return $out;

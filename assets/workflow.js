@@ -302,7 +302,7 @@
   },true);}
   async function schoolSettings(){
     const data=await api('colegio'),c=card('Colégio e identidade visual',data.data.nome),f=h('form',undefined,'ederp-form');f.dataset.modalTitle='Personalizar colégio';
-    for(const [name,label] of Object.entries(data.fields))f.append(input(name,label,name==='email'?'email':name==='site'?'url':'text',data.data[name],name==='nome').node);
+    for(const [name,label] of Object.entries(data.fields)){const item=input(name,label,name==='email'?'email':name==='site'?'url':'text',data.data[name],name==='nome');if(name==='dominio_email_alunos'){item.node.append(h('small','Exemplo: colegio.com.br. Se vazio, usa o domínio do e-mail do colégio ou do site cadastrado. Gera o endereço do aluno após a conferência; não cria uma caixa postal.'));}f.append(item.node);}
     const logo=input('logo_id','Logo','hidden',data.data.logo_id,false),preview=h('img');preview.alt='Logo do colégio';preview.style.maxWidth='220px';preview.style.maxHeight='100px';preview.hidden=!data.logo_url;if(data.logo_url)preview.src=data.logo_url;
     f.append(logo.node,preview,button('Selecionar / enviar logo',()=>{
       if(!window.wp?.media){alert('A biblioteca de mídia não foi carregada. Recarregue a página.');return;}
