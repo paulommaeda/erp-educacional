@@ -12,7 +12,7 @@ function dk():string{return bin2hex(random_bytes(16));}
 function dc(bool $ok,string $label):void{global $checks;if(!$ok)throw new RuntimeException($label);$checks++;echo "PASS: $label\n";}
 function dd(callable $work,string $label):void{try{$work();}catch(RuleViolation $e){dc(true,$label);return;}throw new RuntimeException($label);}
 function da(string $type,array $data):int{global $cat;return (int)$cat->create($type,$data,dk())['id'];}
-function deletionFixture(int $guardian,string $suffix=''):array{
+function deletionFixture(int $guardian,string $suffix='',int $installments=4):array{
     global $db,$workflow,$cat;
     $period=da('periodos_letivos',['codigo'=>'2026'.$suffix,'descricao'=>'Período de teste','data_inicio'=>'2026-01-01','data_fim'=>'2026-12-31']);
     $course=da('cursos',['codigo'=>'EF'.$suffix,'nome'=>'Fundamental']);$shift=da('turnos',['codigo'=>'M'.$suffix,'nome'=>'Manhã']);
@@ -20,7 +20,7 @@ function deletionFixture(int $guardian,string $suffix=''):array{
     $class=da('turmas',['codigo'=>'6ANO'.$suffix,'nome'=>'6º ANO','idcurso'=>$course,'idturno'=>$shift,'codperiodo'=>$period,'idplano'=>$plan,'capacidade'=>30]);
     $student=$workflow->createStudent(['email'=>'aluno'.$suffix.'@example.test','nome'=>'Aluno Exclusão '.$suffix,'data_nascimento'=>'2015-01-01'],dk());
     $cat->link((int)$student['idaluno'],['codpessoa_responsavel'=>$guardian,'parentesco'=>'mae','responsavel_financeiro'=>1,'responsavel_academico'=>1],dk());
-    $enrollment=$workflow->batch(['codperiodo'=>$period,'idturma'=>$class,'alunos'=>[$student['idaluno']],'quantidade_parcelas'=>4,'primeiro_vencimento'=>Input::today()],dk())['items'][0];
+    $enrollment=$workflow->batch(['codperiodo'=>$period,'idturma'=>$class,'alunos'=>[$student['idaluno']],'quantidade_parcelas'=>$installments,'primeiro_vencimento'=>Input::today()],dk())['items'][0];
     $titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d ORDER BY p.numero',[(int)$enrollment['idcontrato']]);
     return [$student,$enrollment,$titles,$period];
 }

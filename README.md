@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.11
+# ERP Educacional — 0.19.12
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.11.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.12.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 37**, acrescentando data, autor e motivo da exclusão financeira, sem apagar baixas, renumerar cadastros ou modificar valores. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -528,3 +528,18 @@ Sem novas tabelas ou alterações de schema. Validação específica: `tests/adm
 Corrige o erro crítico `Class "EducacionalERP\Presentation\Admin\Access" not found` ao carregar os recursos do ERP no `wp-admin` ou portal. A classe `Pages` importa `EducacionalERP\Infrastructure\WordPress\Access`, usada ao publicar as permissões para a interface. A atualização não requer migração de banco; schema 37 mantido.
 
 O teste `tests/admin-assets.php` reproduz a falha antes da correção pelo hook `admin_enqueue_scripts` e executa o método compartilhado com o portal. Verifica administrador, Financeiro, Secretaria e Aluno, configuração REST, nonce, scripts, estilos e revogação de permissões. `tests/portal-render.php` também executa o carregamento completo da renderização. Testes automatizados usam funções WordPress simuladas e SQLite, sem acesso ao site de produção.
+
+
+### Exclusão financeira em lote (0.19.12)
+
+Em **Gestão financeira → Consultar lançamentos**, selecione o aluno, aplique o filtro e marque as parcelas nas caixas de seleção. **Selecionar todos** marca os lançamentos disponíveis do resultado atual. Use **Excluir selecionados** para conferir aluno, quantidade, valores, contrato, parcela, vencimento e situação, informar um motivo e confirmar. O limite é de **100 lançamentos por operação**. Mudar de filtro ou aluno limpa a seleção; itens selecionados que não permitem edição desabilitam **Editar selecionados**.
+
+A exclusão aplica as mesmas regras da opção individual: administrador do WordPress pode excluir pagos ou baixas parciais; funcionário com perfil Financeiro e permissão de exclusão pode excluir somente sem pagamentos. Apenas consultar ou editar o financeiro não concede exclusão. A autorização considera os registros atuais no servidor, e o lote inteiro deve pertencer à coligada de trabalho.
+
+O processamento é atômico: todos os itens são bloqueados e validados antes das exclusões. Versão desatualizada, pagamento posterior à seleção, falta de permissão, título inexistente ou falha de gravação desfazem todo o lote. Reenviar a mesma operação não duplica exclusões. Cada título recebe motivo, usuário, data e auditoria própria, ligados pela mesma chave da operação.
+
+A exclusão continua sendo lógica, preservando pagamentos, contratos, cronogramas e backup. **Não cancela faturas nem estorna pagamentos no Educbank.** Filas e retornos dos títulos excluídos ficam ignorados. Sem alteração de schema.
+
+REST autenticado: `POST /wp-json/erp-educacional/v1/lancamentos/excluir-lote` com `{"lancamentos":[{"idlancamento":123,"versao":4}],"motivo":"Registros duplicados"}`, nonce ou autenticação nativa REST autorizada e cabeçalho `Idempotency-Key`. Retorna `excluidos` e a lista dos identificadores com a data de exclusão. Não aceita IDs duplicados ou situação enviada pelo cliente como autorização.
+
+Validação específica: `tests/financial-deletion-batch.php`, `tests/financial-deletion-batch-ui.cjs` e cenários de lote em `tests/financial-deletion-educbank.php`, além da regressão da exclusão individual e do carregamento do admin/portal. Testes com SQLite e WordPress simulado não substituem a homologação de bloqueios concorrentes em MySQL real.

@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.11
+Stable tag: 0.19.12
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.12 =
+* Exclusão de lançamentos financeiros em lote, com seleção individual ou de todos os itens disponíveis do filtro atual, até 100 por operação.
+* Confirmação com aluno, parcelas, situações, totais e motivo obrigatório; seleção respeita as permissões de cada perfil.
+* Lote atômico, com versões e idempotência: erro em qualquer item impede toda a exclusão. Auditoria individual com correlação comum.
+* Administrador pode incluir pagos e baixas parciais; Financeiro exclui apenas sem pagamentos.
+* Preserva históricos e ignora retornos dos títulos excluídos; não cancela nem estorna faturas no Educbank. Schema 37 mantido.
 
 = 0.19.11 =
 * Corrige erro crítico Class EducacionalERP\Presentation\Admin\Access not found no carregamento de recursos do ERP.

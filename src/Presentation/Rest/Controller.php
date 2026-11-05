@@ -218,6 +218,7 @@ final class Controller
         $this->route('/lancamentos/'.$id.'/baixas','POST',$cap('erp_baixar_lancamentos'),fn($r)=>$this->finance->pay((int)$r['id'],$this->payload($r),$this->key($r)));
         $financialDeletion=new \EducacionalERP\Application\FinancialDeletion($this->db,new Operations($this->db));
         $this->route('/lancamentos/'.$id.'/excluir','POST',fn()=>Access::canDeleteFinancial(),fn($r)=>$financialDeletion->remove((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/lancamentos/excluir-lote','POST',fn()=>Access::canDeleteFinancial(),fn($r)=>$financialDeletion->removeBatch($this->payload($r),$this->key($r)));
         $this->route('/lancamentos/'.$id.'/editar','POST',$cap('erp_ajustar_lancamentos'),fn($r)=>$this->finance->edit((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/lancamentos/editar-lote','POST',$cap('erp_ajustar_lancamentos'),fn($r)=>$this->finance->editBatch($this->payload($r),$this->key($r)));
         $this->route('/lancamentos/'.$id.'/ajustes','POST',$cap('erp_ajustar_lancamentos'),fn($r)=>$this->finance->adjust((int)$r['id'],$this->payload($r),$this->key($r)));
