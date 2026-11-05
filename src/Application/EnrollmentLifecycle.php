@@ -78,7 +78,8 @@ final class EnrollmentLifecycle
     public static function syncFirstPayment(Store $db,int $contractId,string $key):void
     {
         $contract=$db->get('contratos',$contractId);$m=$db->get('matriculas',(int)$contract['idmatricula'],true);if(!EnrollmentStatus::open($m['status']))return;
-        $titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND p.numero=1 FOR UPDATE',[$contractId]);
+        $titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND p.numero=1 AND l.excluido_em IS NULL FOR UPDATE',[$contractId]);
+        if(!$titles)return; // Removing a financial title does not change the academic situation.
         $paid=(bool)$titles;foreach($titles as $l)if($l['status']!=='quitado'||\EducacionalERP\Domain\Money::cents($l['saldo_aberto'])!==0||\EducacionalERP\Domain\Money::cents($l['valor_baixa'])<=0)$paid=false;
         $status=$paid?'cursando':'reservado';if($m['status']===$status)return;$db->update('matriculas',(int)$m['idmatricula'],['status'=>$status]);(new AcademicService($db,new Operations($db)))->movement((int)$m['idmatricula'],(int)$m['idturma_atual'],(int)$m['idturma_atual'],'situacao_financeiro',$paid?'Primeira parcela baixada integralmente':'Baixa da primeira parcela estornada',$m['status'],$status);$db->audit('matriculas',(int)$m['idmatricula'],'situacao_financeiro',$m,['status'=>$status,'idcontrato'=>$contractId],$key);
     }

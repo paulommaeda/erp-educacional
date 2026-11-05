@@ -10,7 +10,7 @@ final class IntegrationService
     public function __construct(private Store $db,private Operations $ops,private CatalogService $catalog){$this->companies=new CompanyData($db);}
     private function related(string $table,string $field,int $id,string $order):array
     {
-        return $this->db->rows('SELECT * FROM '.$this->db->table($table)." WHERE $field=%d ORDER BY $order",[$id]);
+        return $this->db->rows('SELECT * FROM '.$this->db->table($table)." WHERE $field=%d".($table==='lancamentos'?' AND excluido_em IS NULL':'')." ORDER BY $order",[$id]);
     }
     private function person(int $id):array
     {
@@ -40,7 +40,7 @@ final class IntegrationService
     }
     private function financial(int $id):array
     {
-        $row=$this->title($this->db->get('lancamentos',$id));$parcel=$this->db->get('parcelas',(int)$row['idparcela']);$contract=$this->companies->decorate($this->db->get('contratos',(int)$parcel['idcontrato']));$contract['descontos']=$this->related('contrato_descontos','idcontrato',(int)$contract['idcontrato'],'iddesconto');$enrollment=$this->enrollment((int)$contract['idmatricula'],false);
+        $title=$this->db->get('lancamentos',$id);if(!empty($title['excluido_em']))throw new RuleViolation('Lançamento excluído.');$row=$this->title($title);$parcel=$this->db->get('parcelas',(int)$row['idparcela']);$contract=$this->companies->decorate($this->db->get('contratos',(int)$parcel['idcontrato']));$contract['descontos']=$this->related('contrato_descontos','idcontrato',(int)$contract['idcontrato'],'iddesconto');$enrollment=$this->enrollment((int)$contract['idmatricula'],false);
         return ['lancamento'=>$row,'parcela'=>$parcel,'contrato'=>$contract,'responsavel_financeiro'=>$this->person((int)$row['codpessoa_rf_atual']),'aluno'=>$enrollment['aluno'],'matricula'=>$enrollment];
     }
     private function build(string $resource,int $id):array
@@ -60,7 +60,7 @@ final class IntegrationService
             $args=[(int)$cursor];$where=' AND r.codcoligada=%d';$args[]=Coligadas::current();$joins='';
             if($resource==='alunos'){$table=$this->db->table('alunos');$pk='idaluno';if($period){$where.=' AND EXISTS (SELECT 1 FROM '.$this->db->table('matriculas').' m WHERE m.idaluno=r.idaluno AND m.codperiodo=%d)';$args[]=$period;}if(!empty($query['ra'])){$where.=' AND r.ra=%s';$args[]=Input::text($query['ra'],40);}if($student){$where.=' AND r.idaluno=%d';$args[]=$student;}}
             elseif($resource==='matriculas'){$table=$this->db->table('matriculas');$pk='idmatricula';if($period){$where.=' AND r.codperiodo=%d';$args[]=$period;}if($student){$where.=' AND r.idaluno=%d';$args[]=$student;}if(!empty($query['idturma'])){$where.=' AND r.idturma_atual=%d';$args[]=Input::id($query['idturma']);}}
-            elseif($resource==='financeiro'){$table=$this->db->table('lancamentos');$pk='idlancamento';$joins=' JOIN '.$this->db->table('parcelas').' p ON p.idparcela=r.idparcela JOIN '.$this->db->table('contratos').' c ON c.idcontrato=p.idcontrato JOIN '.$this->db->table('matriculas').' m ON m.idmatricula=c.idmatricula';if($period){$where.=' AND m.codperiodo=%d';$args[]=$period;}if($student){$where.=' AND m.idaluno=%d';$args[]=$student;}if(!empty($query['idturma'])){$where.=' AND m.idturma_atual=%d';$args[]=Input::id($query['idturma']);}
+            elseif($resource==='financeiro'){$where.=' AND r.excluido_em IS NULL';$table=$this->db->table('lancamentos');$pk='idlancamento';$joins=' JOIN '.$this->db->table('parcelas').' p ON p.idparcela=r.idparcela JOIN '.$this->db->table('contratos').' c ON c.idcontrato=p.idcontrato JOIN '.$this->db->table('matriculas').' m ON m.idmatricula=c.idmatricula';if($period){$where.=' AND m.codperiodo=%d';$args[]=$period;}if($student){$where.=' AND m.idaluno=%d';$args[]=$student;}if(!empty($query['idturma'])){$where.=' AND m.idturma_atual=%d';$args[]=Input::id($query['idturma']);}
                 if(!empty($query['status'])){$status=$query['status'];if(!in_array($status,['em_aberto','vencido','baixado','cancelado'],true))throw new RuleViolation('Situação financeira inválida.');if($status==='cancelado')$where.=" AND r.status='cancelado'";elseif($status==='baixado')$where.=" AND r.status<>'cancelado' AND CAST(r.saldo_aberto AS DECIMAL(15,2))=0";else{$where.=" AND r.status<>'cancelado' AND CAST(r.saldo_aberto AS DECIMAL(15,2))>0 AND r.vencimento".($status==='vencido'?'<':'>=').'%s';$args[]=Input::today();}}
                 foreach(['vencimento_de'=>'>=','vencimento_ate'=>'<='] as $field=>$operator)if(!empty($query[$field])){$where.=" AND r.vencimento$operator%s";$args[]=Input::date($query[$field]);}
             }else throw new RuleViolation('Recurso inválido.');

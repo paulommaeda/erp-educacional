@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.8
+Stable tag: 0.19.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.9 =
+* Administrador do WordPress pode excluir lançamentos inclusive pagos; Financeiro exclui somente sem pagamentos.
+* Exclusão individual pelo menu de ações, com motivo obrigatório, controle de versão, idempotência e auditoria.
+* Títulos excluídos saem das consultas, totais, portal, recibos, bloqueio por inadimplência e APIs operacionais.
+* Baixas e vínculos são preservados para auditoria e backup. Não cancela nem estorna faturas no Educbank.
+* Filas, consultas e retornos Educbank não reativam títulos excluídos. Migração aditiva para schema 37.
 
 = 0.19.8 =
 * Requerimento em uma coluna no celular, inclusive na conferência em modal, até 767 px de largura.

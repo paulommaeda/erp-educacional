@@ -4,11 +4,11 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Infrastructure\Database\Database;
 final class Access
 {
-    public const CAPS=['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_baixar_lancamentos','erp_estornar_baixas','erp_ajustar_lancamentos','erp_trocar_responsavel_financeiro','erp_exportar_dados','erp_configurar','erp_auditar','erp_gerar_parcelas','erp_chat_atender','erp_chat_supervisao'];
+    public const CAPS=['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_baixar_lancamentos','erp_estornar_baixas','erp_ajustar_lancamentos','erp_excluir_lancamentos','erp_trocar_responsavel_financeiro','erp_exportar_dados','erp_configurar','erp_auditar','erp_gerar_parcelas','erp_chat_atender','erp_chat_supervisao'];
     public function __construct(private Database $db) {}
     public static function install(): void
     {
-        $roles=['erp_supervisao'=>['Supervisão',['erp_chat_supervisao']], 'erp_coordenacao'=>['Coordenação',['erp_chat_atender']], 'erp_orientacao'=>['Orientação',['erp_chat_atender']], 'erp_financeiro'=>['Financeiro',['erp_consultar_financeiro','erp_gerar_parcelas']], 'erp_secretaria'=>['Secretaria',['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_chat_atender']],
+        $roles=['erp_supervisao'=>['Supervisão',['erp_chat_supervisao']], 'erp_coordenacao'=>['Coordenação',['erp_chat_atender']], 'erp_orientacao'=>['Orientação',['erp_chat_atender']], 'erp_financeiro'=>['Financeiro',['erp_consultar_financeiro','erp_gerar_parcelas','erp_excluir_lancamentos']], 'erp_secretaria'=>['Secretaria',['erp_acessar_admin','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_chat_atender']],
             'erp_professor'=>['Professor',[]],'erp_pessoa'=>['Pessoa',[]],'erp_responsavel_academico'=>['Responsável acadêmico',[]],'erp_responsavel_financeiro'=>['Responsável financeiro',[]],'erp_aluno'=>['Aluno',[]],'erp_responsavel'=>['Responsável',[]]];
         foreach ($roles as $slug=>[$label,$caps]) {
             add_role($slug,$label,['read'=>true]);
@@ -23,6 +23,10 @@ final class Access
     public static function canGenerate():bool
     {
         return self::isAdmin() || (current_user_can('erp_gerar_parcelas') && in_array('erp_financeiro',wp_get_current_user()->roles,true) && MenuPolicy::can('financeiro'));
+    }
+    public static function canDeleteFinancial():bool
+    {
+        return self::isAdmin() || (current_user_can('erp_excluir_lancamentos') && in_array('erp_financeiro',wp_get_current_user()->roles,true) && MenuPolicy::can('financeiro'));
     }
     public static function isAdmin(): bool
     {

@@ -94,12 +94,12 @@ final class ContractDiscounts
     }
     private function changeable(array $title):bool
     {
-        if($title['status']==='cancelado'||Money::cents($title['valor_baixa'])>0)return false;
+        if(!empty($title['excluido_em'])||$title['status']==='cancelado'||Money::cents($title['valor_baixa'])>0)return false;
         return !$this->db->row('SELECT b.idbaixa FROM '.$this->db->table('baixas').' b WHERE b.idlancamento=%d AND NOT EXISTS (SELECT 1 FROM '.$this->db->table('baixa_estornos').' e WHERE e.idbaixa=b.idbaixa) LIMIT 1',[(int)$title['idlancamento']]);
     }
     private function syncOne(array $c,array $d,int $from,bool $futureOnly,bool $eligible,string $key,int $phase=0):int
     {
-        $count=0;$rules=$this->rules($d);$eligibility=[];$titles=$this->db->rows('SELECT l.*,p.numero FROM '.$this->db->table('lancamentos').' l JOIN '.$this->db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND p.numero>=%d ORDER BY l.idlancamento FOR UPDATE',[(int)$c['idcontrato'],$from]);
+        $count=0;$rules=$this->rules($d);$eligibility=[];$titles=$this->db->rows('SELECT l.*,p.numero FROM '.$this->db->table('lancamentos').' l JOIN '.$this->db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND l.excluido_em IS NULL AND p.numero>=%d ORDER BY l.idlancamento FOR UPDATE',[(int)$c['idcontrato'],$from]);
         foreach($titles as $title){if(($futureOnly&&$title['vencimento']<Input::today())||!$this->changeable($title))continue;$id=(int)$title['idlancamento'];$map=$this->db->row('SELECT * FROM '.$this->db->table('desconto_lancamentos').' WHERE iddesconto=%d AND idlancamento=%d FOR UPDATE',[(int)$d['iddesconto'],$id]);
             $rule=$rules[0]['regra'];foreach($rules as $version)if((int)$version['partir']<=(int)$title['numero'])$rule=$version['regra'];$target=$rule['tipo']==='indicacao'?(int)$rule['idaluno_indicado']:0;if(!array_key_exists($target,$eligibility))$eligibility[$target]=$target?$this->eligible($rule,$c):true;
             $previous=$map&&$map['revertido_em']===null?Money::cents($map['valor']):0;$wanted=$d['ativo']&&$rule['habilitado']&&$eligibility[$target]&&(int)$title['numero']>=(int)$rule['parcela_inicio']&&(int)$title['numero']<=(int)$rule['parcela_fim']?Money::cents($rule['valor']):0;

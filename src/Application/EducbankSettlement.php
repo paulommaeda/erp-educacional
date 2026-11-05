@@ -19,7 +19,8 @@ final class EducbankSettlement
     private function inside(array $job,array $remote):array
     {
         $finance=new FinanceService($this->db,new Operations($this->db));
-        [$title,$contract]=$finance->lockTitle((int)$job['idlancamento'],true);
+        [$title,$contract]=$finance->lockTitle((int)$job['idlancamento'],true,true);
+        if(!empty($title['excluido_em'])){FinancialDeletion::ignoreJob($this->db,$job);return ['acao'=>'lancamento_excluido','ignorado'=>true];}
         $job=$this->db->get('educbank_fila',(int)$job['idintegracao'],true);$company=(int)$job['codcoligada'];
         $settings=Settings::read($company);$returns=ReturnSettings::read($company,$job['ambiente']);
         if(!$returns['ativo']||!$settings['ativo']||$settings['ambiente']!==$job['ambiente']||Settings::scope($settings)['tenant']!==$job['tenant'])throw new RuleViolation('O retorno está desativado ou pertence a outro ambiente/tenant.');

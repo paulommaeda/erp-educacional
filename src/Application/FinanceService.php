@@ -7,8 +7,8 @@ use EducacionalERP\Infrastructure\WordPress\Accounts;
 final class FinanceService
 {
     public function __construct(private Store $db, private Operations $operations) {}
-    /** Acquires the same hierarchy as enrollment and transfer: student -> contract -> title. */
-    public function lockTitle(int $id,bool $allowClosed=false): array
+    /** Student -> contract -> title. allowExcluded is only for the return worker to acknowledge an ignored event. */
+    public function lockTitle(int $id,bool $allowClosed=false,bool $allowExcluded=false): array
     {
         $l=$this->db->table('lancamentos'); $p=$this->db->table('parcelas'); $c=$this->db->table('contratos'); $m=$this->db->table('matriculas');
         $path=$this->db->row("SELECT m.idaluno,c.idcontrato FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE l.idlancamento=%d",[$id]);
@@ -16,6 +16,7 @@ final class FinanceService
         $this->db->get('alunos',(int)$path['idaluno'],true);
         $contract=$this->db->get('contratos',(int)$path['idcontrato'],true);
         $title=$this->db->get('lancamentos',$id,true);
+        if(!$allowExcluded&&!empty($title['excluido_em']))throw new RuleViolation('Lançamento excluído. Atualize a consulta.');
         if (!$allowClosed && ($title['status']==='cancelado' || $contract['status']==='cancelado')) { throw new RuleViolation('Título ou contrato cancelado.'); }
         return [$title,$contract];
     }
@@ -131,7 +132,7 @@ final class FinanceService
     {
         $contracts=$db->rows('SELECT * FROM '.$db->table('contratos').' WHERE idmatricula=%d ORDER BY idcontrato FOR UPDATE',[$enrollment]);
         foreach($contracts as $contract){
-            $titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND l.vencimento>=%s AND l.saldo_aberto>0 AND l.status<>\'cancelado\' ORDER BY l.idlancamento FOR UPDATE',[(int)$contract['idcontrato'],Input::today()]);
+            $titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND l.excluido_em IS NULL AND l.vencimento>=%s AND l.saldo_aberto>0 AND l.status<>\'cancelado\' ORDER BY l.idlancamento FOR UPDATE',[(int)$contract['idcontrato'],Input::today()]);
             foreach($titles as $title){if(Money::cents($title['saldo_aberto'])<=0)continue;$id=(int)$title['idlancamento'];$db->update('lancamentos',$id,['status'=>'cancelado','valor_cancelado'=>$title['saldo_aberto'],'saldo_aberto'=>'0.00','cancelado_em'=>gmdate('Y-m-d H:i:s'),'motivo_cancelamento'=>$reason]);$db->audit('lancamentos',$id,'cancelar_saldo_futuro',$title,$db->get('lancamentos',$id),$key);}
             if(!(int)$contract['parcelas_geradas']&&$contract['status']!=='cancelado'){$db->update('contratos',(int)$contract['idcontrato'],['status'=>'cancelado']);$db->audit('contratos',(int)$contract['idcontrato'],'cancelar_pendente',$contract,$db->get('contratos',(int)$contract['idcontrato']),$key);}
         }
@@ -191,7 +192,7 @@ final class FinanceService
             $contracts=$this->db->rows("SELECT c.* FROM $c c JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND c.status <> 'cancelado' ORDER BY c.idcontrato FOR UPDATE",[$id]);
             $count=0; $total=0;
             foreach ($contracts as $contract) {
-                $titles=$this->db->rows("SELECT l.* FROM $l l JOIN $p p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND l.saldo_aberto>0 AND l.status IN ('aberto','parcial') ORDER BY l.idlancamento FOR UPDATE",[(int)$contract['idcontrato']]);
+                $titles=$this->db->rows("SELECT l.* FROM $l l JOIN $p p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND l.excluido_em IS NULL AND l.saldo_aberto>0 AND l.status IN ('aberto','parcial') ORDER BY l.idlancamento FOR UPDATE",[(int)$contract['idcontrato']]);
                 if ($contract['status']!=='ativo' && !$titles) { continue; }
                 $this->db->insert('troca_contratos',['idtroca'=>$change,'idcontrato'=>$contract['idcontrato'],'codpessoa_anterior'=>$contract['codpessoa_rf_atual'],'codpessoa_nova'=>$new]);
                 $this->db->update('contratos',(int)$contract['idcontrato'],['codpessoa_rf_atual'=>$new]);

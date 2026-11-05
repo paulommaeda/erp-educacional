@@ -87,7 +87,7 @@ final class RenewalService
     private function hasOverduePayments(int $student):bool
     {
         $l=$this->db->table('lancamentos');$p=$this->db->table('parcelas');$c=$this->db->table('contratos');$m=$this->db->table('matriculas');
-        foreach($this->db->rows("SELECT l.saldo_aberto FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND l.status<>'cancelado' AND l.vencimento<%s",[$student,Input::today()]) as $row)if(Money::cents($row['saldo_aberto'])>0)return true;
+        foreach($this->db->rows("SELECT l.saldo_aberto FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND l.excluido_em IS NULL AND l.status<>'cancelado' AND l.vencimento<%s",[$student,Input::today()]) as $row)if(Money::cents($row['saldo_aberto'])>0)return true;
         return false;
     }
     public function offers(int $student,int $period=0): array

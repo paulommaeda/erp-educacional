@@ -1,11 +1,11 @@
-# ERP Educacional — 0.19.8
+# ERP Educacional — 0.19.9
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.8.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.9.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 37**, acrescentando data, autor e motivo da exclusão financeira, sem apagar baixas, renumerar cadastros ou modificar valores. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -493,3 +493,16 @@ Número e complemento são informados pelo usuário. Correções feitas durante 
 Até 767 px de largura, os campos do requerimento público e da conferência em modal passam a uma coluna. Campos têm pelo menos 52 px de altura, texto de 16 px e 22 px entre as linhas; botões e rótulos de opções têm alvos de toque de pelo menos 48 px. A navegação entre etapas usa botões em largura total. A partir de 768 px, permanecem duas colunas. As regras de cadastro, obrigatoriedade, consulta por CEP e dados não mudam.
 
 Os CEPs são consultados online no ViaCEP, sem uma lista completa importada no ERP. Cada resultado encontrado pode permanecer em cache por até 24 horas, e um CEP não encontrado por até cinco minutos. Após a expiração, a próxima consulta busca os dados então disponíveis no serviço; não há importação periódica de toda a base de CEPs.
+
+
+### Exclusão de lançamentos financeiros (0.19.9)
+
+Em Gestão financeira → Consultar lançamentos, selecione o aluno e abra ☰ → **Excluir lançamento** na parcela. O modal identifica aluno, contrato, parcela, situação e valores; exige motivo antes da confirmação. O administrador do WordPress pode excluir também títulos pagos ou com baixa parcial. O funcionário com perfil **Financeiro**, capacidade `erp_excluir_lancamentos` e menu financeiro habilitado pode excluir apenas títulos sem pagamentos. Secretaria, responsáveis, alunos e perfis com mera consulta não recebem essa autorização. A regra é conferida no servidor com o registro bloqueado, inclusive em chamadas diretas à API.
+
+A exclusão é lógica: o lançamento deixa de compor listas, totais, portal, recibos, APIs operacionais e inadimplência que bloqueia rematrícula. Preserva valores originais, cronograma contratual, baixas, estornos, vínculos e auditoria com data UTC, usuário e motivo. Não muda a situação acadêmica e não recria a parcela ao pedir geração novamente. A exportação administrativa completa mantém os títulos excluídos com seus metadados para backup.
+
+**A exclusão afeta somente o ERP. Não cancela fatura, não estorna nem devolve pagamento no Educbank.** As filas e os retornos posteriores ficam ignorados para esse título, com histórico do resultado. Uma cobrança remota que precisar ser cancelada ou estornada exige tratamento financeiro separado. Requisições remotas que já estavam em execução não podem ser desfeitas pela exclusão local.
+
+Endpoint autenticado: `POST /wp-json/erp-educacional/v1/lancamentos/{id}/excluir`, corpo `{"versao": 1, "motivo": "Registro duplicado"}`, nonce WordPress (ou autenticação REST nativa autorizada) e cabeçalho `Idempotency-Key`. A operação verifica coligada de trabalho, papel, capacidade, menu, versão e pagamentos atuais; retorna o identificador e a data da exclusão. Não aceita situação ou valores enviados para contornar a regra.
+
+Validação automatizada: `tests/financial-deletion.php`, `tests/financial-deletion-educbank.php` e `tests/financial-deletion-ui.cjs`. As suítes SQLite e mocks não substituem homologação das migrações e bloqueios concorrentes em WordPress/MySQL real.

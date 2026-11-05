@@ -327,3 +327,9 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 @media(max-width:480px){.erp-installment-summary-grid{grid-template-columns:minmax(0,1fr)}.erp-installment-summary-field{display:flex;align-items:center;justify-content:space-between;gap:14px}.erp-installment-summary-field dt{flex:1 1 55%}.erp-installment-summary-field dd{flex:0 1 auto;font-size:18px;text-align:right}}
 
 .erp-installment-dialog .erp-modal-header{padding:0 0 16px}
+
+/* Financial deletion keeps payment records and requests an auditable reason. */
+.ederp .erp-finance-delete-action,.ederp .erp-finance-delete-confirm{background:#991b1b;color:#fff;border-color:#991b1b}
+.ederp .erp-finance-delete-action:hover,.ederp .erp-finance-delete-confirm:hover{background:#7f1d1d;color:#fff}
+.erp-finance-delete-details{display:grid;grid-template-columns:minmax(96px,1fr) minmax(0,2fr);gap:8px 16px;margin:0 0 16px}.erp-finance-delete-details dt{font-weight:600}.erp-finance-delete-details dd{margin:0;overflow-wrap:anywhere}
+.ederp .erp-finance-delete-warning{padding:14px 16px;border-radius:12px;background:#fff1f2;color:#881337;line-height:1.5}

@@ -30,6 +30,7 @@ final class PaymentReceipt
         }elseif((int)$l['codpessoa_rf_atual']!==$this->access->person()||!$this->access->canStudent((int)$student['idaluno'],'finance')){
             throw new RuleViolation('Sem autorização para emitir este recibo.');
         }
+        if(!empty($l['excluido_em']))throw new RuleViolation('Lançamento excluído. O recibo não está disponível.');
         if(FinancialStatus::value($l)!=='baixado')throw new RuleViolation('O recibo está disponível somente para parcelas pagas. Atualize a consulta.');
         $b=$this->db->table('baixas');$e=$this->db->table('baixa_estornos');$p=$this->db->table('pessoas');
         $payments=$this->db->rows("SELECT b.idbaixa,b.data_pagamento,b.valor_pago,b.forma_pagamento,b.referencia_externa,COALESCE(p.nome,d.nome) AS pagador FROM $b b LEFT JOIN $p p ON p.codpessoa=b.codpessoa_pagador JOIN $p d ON d.codpessoa=b.codpessoa_devedor WHERE b.idlancamento=%d AND b.codcoligada=%d AND NOT EXISTS (SELECT 1 FROM $e e WHERE e.idbaixa=b.idbaixa) ORDER BY b.data_pagamento,b.idbaixa",[$id,$company]);

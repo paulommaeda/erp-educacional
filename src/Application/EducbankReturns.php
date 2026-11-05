@@ -55,6 +55,7 @@ final class EducbankReturns
         $event=EducbankPayment::event($payload);$job=$this->job($company,$environment,$r['tenant'],$event['InvoiceId'],$event['ExternalId']);
         if(!$job)throw new RuleViolation('InvoiceId e ExternalId ainda não foram vinculados a esta coligada/ambiente.');
         $id=$this->enqueue($job,$event,'webhook');
+        if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return ['ok'=>true,'ignorado'=>true,'idretorno'=>$id];}
         // The same Paid/Pending payload can recur after a refund and repayment.
         // Re-verify it without adding another inbox row or duplicating a receipt.
         $this->db->query('UPDATE '.$this->db->table('educbank_retornos')." SET status='pendente',proxima_tentativa=NULL WHERE idretorno=%d AND status='processado'",[$id]);
@@ -77,6 +78,7 @@ final class EducbankReturns
     {
         $identity=EducbankPayment::event(['InvoiceId'=>$remote['id']??null,'ExternalId'=>$remote['externalId']??null,'Status'=>$remote['state']??null]);
         if($identity['InvoiceId']!==$job['idremoto']||$identity['ExternalId']!==$job['external_id'])throw new RuleViolation('Identificadores da fatura divergem do vínculo local.');
+        if(FinancialDeletion::excludedJob($this->db,$job)){$id=$this->enqueue($job,$identity,$origin);FinancialDeletion::ignoreJob($this->db,$job);return ['acao'=>'lancamento_excluido','ignorado'=>true,'idretorno'=>$id];}
         try{$event=EducbankPayment::fromInvoice($remote);}
         catch(RuleViolation $e){$id=$this->enqueue($job,$identity,$origin);$this->failure($id,$e);throw $e;}
         $id=$this->enqueue($job,$event,$origin);
@@ -88,7 +90,7 @@ final class EducbankReturns
     }
     private function failure(int $id,\Throwable $e):void
     {
-        $row=$this->db->get('educbank_retornos',$id);$error=$e instanceof RuleViolation?ResponseError::clip($e->getMessage()):'Falha interna no retorno. Nenhuma baixa parcial foi confirmada; tente reprocessar.';
+        $row=$this->db->get('educbank_retornos',$id);$job=$this->db->get('educbank_fila',(int)$row['idintegracao']);if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return;}$error=$e instanceof RuleViolation?ResponseError::clip($e->getMessage()):'Falha interna no retorno. Nenhuma baixa parcial foi confirmada; tente reprocessar.';
         $retry=$e instanceof RuleViolation&&(str_starts_with($error,'Sem confirmação de resposta')||preg_match('/HTTP (404|408|429|5\d\d)\b/',$error));
         $this->db->update('educbank_retornos',$id,['status'=>$retry&&(int)$row['tentativas']<8?'erro':'revisao','erro'=>$error,'proxima_tentativa'=>gmdate('Y-m-d H:i:s',time()+min(3600,60*(2**min(6,(int)$row['tentativas']))))]);
     }
@@ -99,7 +101,7 @@ final class EducbankReturns
             $rows=$this->db->rows('SELECT * FROM '.$this->db->table('educbank_retornos')." WHERE codcoligada=%d AND ambiente=%s AND tenant=%s AND status IN ('pendente','erro') AND (proxima_tentativa IS NULL OR proxima_tentativa<=%s) ORDER BY idretorno LIMIT %d",[$company,$s['ambiente'],Settings::scope($s)['tenant'],gmdate('Y-m-d H:i:s'),max(1,min(10,$limit))]);
             $client=new Client($s);$start=microtime(true);$count=0;
             foreach($rows as $row){if($count&&microtime(true)-$start>15)break;$id=(int)$row['idretorno'];$this->db->update('educbank_retornos',$id,['tentativas'=>(int)$row['tentativas']+1]);
-                try{$job=$this->db->get('educbank_fila',(int)$row['idintegracao']);$remote=$client->request('GET','/invoice/'.Client::uuid($row['invoice_id']));$result=(new EducbankSettlement($this->db))->apply($job,$remote);$this->db->update('educbank_retornos',$id,['status'=>'processado','erro'=>null,'proxima_tentativa'=>null,'processado_em'=>gmdate('Y-m-d H:i:s'),'idbaixa'=>$result['idbaixa']??null,'resultado_json'=>wp_json_encode($result)]);}
+                try{$job=$this->db->get('educbank_fila',(int)$row['idintegracao']);if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);$count++;continue;}$remote=$client->request('GET','/invoice/'.Client::uuid($row['invoice_id']));$result=(new EducbankSettlement($this->db))->apply($job,$remote);$this->db->update('educbank_retornos',$id,['status'=>'processado','erro'=>null,'proxima_tentativa'=>null,'processado_em'=>gmdate('Y-m-d H:i:s'),'idbaixa'=>$result['idbaixa']??null,'resultado_json'=>wp_json_encode($result)]);}
                 catch(\Throwable $e){$this->failure($id,$e);}$count++;
             }
             return ['processados'=>$count];
@@ -127,7 +129,7 @@ final class EducbankReturns
             ReturnSettings::write($company,$s['ambiente'],['cursor'=>$more?$next:0,'ultima_consulta'=>gmdate('Y-m-d H:i:s'),'erro_consulta'=>null]);
             // Recheck a previously settled invoice too, so missed refund notifications can be recovered.
             if(microtime(true)-$start<15){
-                $q=$this->db->table('educbank_recebimentos');$args=[$company,$s['ambiente'],Settings::scope($s)['tenant']];$where="codcoligada=%d AND ambiente=%s AND tenant=%s AND estado_remoto='Paid'";
+                $q=$this->db->table('educbank_recebimentos');$args=[$company,$s['ambiente'],Settings::scope($s)['tenant']];$where="codcoligada=%d AND ambiente=%s AND tenant=%s AND estado_remoto='Paid' AND idintegracao IN (SELECT q.idintegracao FROM ".$this->db->table('educbank_fila').' q JOIN '.$this->db->table('lancamentos').' l ON l.idlancamento=q.idlancamento WHERE l.excluido_em IS NULL)';
                 $old=$this->db->row("SELECT * FROM $q WHERE $where AND idrecebimento>%d ORDER BY idrecebimento LIMIT 1",[...$args,(int)$r['revisao_cursor']]);
                 if(!$old)$old=$this->db->row("SELECT * FROM $q WHERE $where ORDER BY idrecebimento LIMIT 1",$args);
                 if($old){$job=$this->db->get('educbank_fila',(int)$old['idintegracao']);try{$remote=$client->request('GET','/invoice/'.Client::uuid($job['idremoto']));$this->consume($job,$remote);}catch(\Throwable $e){$review++;}ReturnSettings::write($company,$s['ambiente'],['revisao_cursor'=>(int)$old['idrecebimento']]);}
@@ -148,6 +150,7 @@ final class EducbankReturns
     {
         Access::requireAdmin();$row=$this->db->get('educbank_retornos',$id);$s=Settings::read(Coligadas::current());
         if((int)$row['codcoligada']!==Coligadas::current()||$row['ambiente']!==$s['ambiente']||$row['tenant']!==Settings::scope($s)['tenant'])throw new RuleViolation('Retorno de outra coligada ou ambiente.');
+        $job=$this->db->get('educbank_fila',(int)$row['idintegracao']);if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return ['ignorado'=>true,'motivo'=>'lancamento_excluido'];}
         $this->db->update('educbank_retornos',$id,['status'=>'pendente','erro'=>null,'proxima_tentativa'=>null,'tentativas'=>0]);return ['enfileirado'=>true];
     }
 }
