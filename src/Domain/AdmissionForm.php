@@ -61,6 +61,11 @@ final class AdmissionForm
                 $email=strtolower(self::text($p['email']??'',191));if($email===''||!is_email($email))throw new RuleViolation('Informe um e-mail válido. O e-mail é obrigatório.');$valid['email']=$email;
                 $valid['telefone']=self::text($p['telefone']??'',30);
                 $valid+=PersonFields::validate($p);unset($valid['codpessoa_origem'],$valid['foto_attachment_id']);
+                if($slot==='aluno'){
+                    $required=['rua'=>'rua / logradouro','numero'=>'número (ou S/N)','cidade'=>'cidade','estado'=>'estado / região'];
+                    if($valid['pais']==='BR')$required+=['bairro'=>'bairro','cep'=>'CEP'];
+                    foreach($required as $field=>$label)if(trim((string)($valid[$field]??''))==='')throw new RuleViolation('Informe '.$label.' no endereço do aluno.');
+                }
                 // Civil status stays a selected system ID; no Fluent single-letter codes.
                 $valid['idestado_civil']=empty($p['idestado_civil'])?'':(string)Input::id($p['idestado_civil']);
                 $valid['empresa']=CadastroText::upper(self::text($p['empresa']??'',191));if(in_array($slot,['academico','financeiro','outro'],true)){$parentesco=strtolower((string)($p['parentesco']??'outro'));if(!isset(Relationships::LABELS[$parentesco]))throw new RuleViolation('Parentesco inválido.');$valid['parentesco']=$parentesco;}

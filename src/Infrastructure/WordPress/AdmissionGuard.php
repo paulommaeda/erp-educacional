@@ -9,6 +9,7 @@ final class AdmissionGuard
     private function ip():string {return hash_hmac('sha256',(string)($_SERVER['REMOTE_ADDR']??'unknown'),wp_salt('auth'));}
     private function signature(string $body):string {return hash_hmac('sha256',$body.'|'.$this->ip(),wp_salt('nonce').'|erp-admissions');}
     public function token(int $company):string {$this->rate('abrir',120);$body=$company.'.'.time().'.'.bin2hex(random_bytes(16));return $body.'.'.$this->signature($body);}
+    public function postcode():void {try{$this->rate('consultar_cep',180);}catch(RuleViolation $e){throw new RuleViolation('A consulta de CEP está temporariamente indisponível. Preencha o endereço manualmente.');}}
     public function verify(int $company,string $token,string $trap):void
     {
         $origin=(string)($_SERVER['HTTP_ORIGIN']??'');$home=parse_url(home_url('/'));$from=$origin!==''?parse_url($origin):[];

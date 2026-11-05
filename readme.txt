@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.6
+Stable tag: 0.19.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.7 =
+* Endereço do aluno obrigatório no requerimento e na conferência, com complemento opcional e número aceitando S/N.
+* Consulta automática pelo CEP preenche rua, bairro, UF e município e preserva número, complemento e correções manuais.
+* Consulta pelo servidor com cache e limites; preenchimento manual disponível em caso de falha ou CEP não encontrado.
+* Schema 36 mantido.
 
 = 0.19.6 =
 * Reordena o requerimento: curso, série e turno pretendidos; nome e nascimento do aluno; demais campos na sequência existente.

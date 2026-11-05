@@ -5,7 +5,7 @@ use EducacionalERP\Application\{Coligadas,AdmissionSettings,PublicAdmissions};
 use EducacionalERP\Domain\{AdmissionForm,RuleViolation,Input};
 use EducacionalERP\Infrastructure\Database\{Database,Installer};
 use EducacionalERP\Infrastructure\WordPress\{AdmissionGuard,SchoolIdentity};
-/** Only schema/challenge and POST submission are anonymous. All management uses Controller. */
+/** Anonymous form/challenge, postal lookup and submission; management stays protected. */
 final class AdmissionController
 {
     public function __construct(private Database $db,private PublicAdmissions $service){}
@@ -13,6 +13,10 @@ final class AdmissionController
     {
         $path='/publico/requerimentos/(?P<colegio>[1-9][0-9]{0,8})';
         foreach(['GET','POST'] as $method)register_rest_route(Controller::NS,$path,['methods'=>$method,'permission_callback'=>fn()=>get_option('ederp_schema_version')===Installer::VERSION&&!get_option('ederp_schema_error')?true:new \WP_Error('erp_schema','Requerimento temporariamente indisponível. Procure a secretaria.',['status'=>503]),'callback'=>fn($r)=>$this->handle($r,$method)]);
+        register_rest_route(Controller::NS,'/publico/cep/(?P<cep>[0-9]{8})',['methods'=>'GET','permission_callback'=>fn()=>get_option('ederp_schema_version')===Installer::VERSION&&!get_option('ederp_schema_error')?true:new \WP_Error('erp_schema','Consulta temporariamente indisponível.',['status'=>503]),'callback'=>function($r){
+            try{(new AdmissionGuard($this->db))->postcode();$data=(new \EducacionalERP\Infrastructure\WordPress\PostalAddress())->find((string)$r['cep']);$response=new \WP_REST_Response($data,200);$response->header('Cache-Control','no-store');return $response;}
+            catch(RuleViolation $e){return new \WP_Error('erp_cep',$e->getMessage(),['status'=>422]);}catch(\Throwable $e){return new \WP_Error('erp_cep','Não foi possível consultar o CEP. Preencha o endereço manualmente.',['status'=>503]);}
+        }]);
     }
     public function handle(\WP_REST_Request $r,string $method):mixed
     {

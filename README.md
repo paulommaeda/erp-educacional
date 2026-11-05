@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.6
+# ERP Educacional — 0.19.7
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.6.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.7.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -477,3 +477,12 @@ Mudanças de contato e revogação de atribuição acadêmica invalidam convites
 ### Ordem do requerimento (0.19.6)
 
 A etapa do aluno começa por Curso pretendido, Ano/série pretendido e Turno pretendido, seguida de Nome completo e Data de nascimento. Os demais campos seguem na ordem anterior. A alteração é somente de apresentação no formulário compartilhado de preenchimento e conferência, preservando validações, valores e mapeamentos. Schema 36 mantido.
+
+
+### Endereço do aluno e consulta por CEP (0.19.7)
+
+No requerimento e na conferência, o aluno deve ter rua/logradouro, número (aceita S/N), bairro, CEP, país, UF e cidade preenchidos para endereços brasileiros. Complemento é opcional. A validação também ocorre no servidor, inclusive na aprovação dos requerimentos recebidos por API. Os endereços dos responsáveis continuam podendo copiar o endereço do aluno. Para exterior, rua, número, país, estado/região e cidade são obrigatórios; complemento, bairro e código postal são opcionais.
+
+O CEP vem primeiro no bloco de endereço. Ao digitar oito dígitos ou sair do campo, o formulário consulta `GET /wp-json/erp-educacional/v1/publico/cep/{cep}` e preenche rua, bairro, UF e cidade. O servidor consulta somente o host HTTPS fixo do ViaCEP, sem enviar dados da família, com cinco segundos de timeout, sem redirecionamentos e com resposta limitada a 16 KB. Há cache de um dia para encontrados, cinco minutos para não encontrados e limite por IP de 180 consultas por hora. Essa rota retorna somente dados postais públicos; as demais permissões do ERP são preservadas.
+
+Número e complemento são informados pelo usuário. Correções feitas durante a consulta e respostas antigas de outro CEP são preservadas/ignoradas conforme o caso. Se o serviço falhar, não encontrar o CEP ou retornar informações parciais, é possível completar o endereço manualmente. Abrir um requerimento já salvo não dispara consultas nem substitui seus dados. Não há alteração de schema.
