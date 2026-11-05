@@ -21,9 +21,10 @@ final class FamilyStudents
             $a=(new FamilyAccess($this->db))->student($student,true);$id=(int)$a['codpessoa'];$before=$this->db->get('pessoas',$id,true);
             if(!isset($data['versao'])||(string)$data['versao']!==$before['versao'])throw new RuleViolation('Os dados do aluno foram atualizados. Reabra o cadastro antes de salvar.');
             $merged=array_merge($before,$data);$address=PersonFields::validate(array_merge($merged,['foto_attachment_id'=>null]));
-            $email=trim((string)($merged['email']??''));if($email!==''&&!is_email($email))throw new RuleViolation('Informe um e-mail válido.');
+            $email=trim((string)($merged['email']??''));if($email===''||strlen($email)>191||!is_email($email))throw new RuleViolation('Informe um e-mail válido. O e-mail é obrigatório.');
             $valid=array_intersect_key($address,array_flip(self::FIELDS));$valid['email']=$email===''?null:sanitize_email($email);$valid['telefone']=empty($merged['telefone'])?null:Input::text($merged['telefone'],30);$valid=CadastroText::normalize($valid);
             $this->db->update('pessoas',$id,$valid);(new Accounts($this->db))->sync($id);
+            (new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->contactChanged($id,(string)$before['email']!==$valid['email']);
             $this->db->audit('pessoas',$id,'contato_aluno_pelo_responsavel',array_intersect_key($before,array_flip(self::FIELDS)),$valid+['idaluno'=>$student],$key);
             return ['salvo'=>true,'versao'=>(string)((int)$before['versao']+1)];
         })));

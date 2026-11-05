@@ -47,10 +47,11 @@ final class Accounts
         if($dob>Input::today()) { throw new RuleViolation('Nascimento não pode estar no futuro.'); }
         $login=Usernames::choose($person['nome'],$manual,fn($name)=>(bool)username_exists($name));
         $email=$person['email']??'';
+        if(!is_string($email)||!is_email($email)) { throw new RuleViolation('Informe um e-mail válido para criar a conta WordPress.'); }
         // Family members may share contact e-mail. WordPress accounts require unique e-mail.
         if($email && email_exists($email)) { $email=''; }
         $parts=preg_split('/\s+/',trim($person['nome']));
-        $id=wp_insert_user(['user_login'=>$login,'user_pass'=>(new \DateTimeImmutable($dob))->format('dmY'),'user_email'=>$email,
+        $id=wp_insert_user(['user_login'=>$login,'user_pass'=>wp_generate_password(32,true,true),'user_email'=>$email,
             'display_name'=>$person['nome'],'first_name'=>$parts[0],'last_name'=>count($parts)>1?implode(' ',array_slice($parts,1)):'','role'=>'erp_pessoa']);
         if(is_wp_error($id)) {
             if($id->get_error_code()==='existing_user_login') { throw new UsernameRequired('Esse nome de usuário acabou de ser utilizado. Escolha outro.'); }
@@ -59,6 +60,7 @@ final class Accounts
         $this->cache((int)$id);
         $this->db->insert('pessoa_usuarios',['codpessoa'=>$personId,'wp_user_id'=>$id]);
         $this->sync($personId);
+        (new AccountInvitations($this->db))->created($personId,(int)$id);
         return ['wp_user_id'=>(string)$id,'user_login'=>$login];
     }
     public function sync(int $personId): void

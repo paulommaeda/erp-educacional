@@ -17,7 +17,7 @@ final class FakeStudentFiles implements StudentFiles {
 }
 $db=new Database($wpdb);Access::install();$storage=new FakeStudentFiles();$docs=new StudentDocuments($db,$storage);$family=new FamilyStudents($db);
 $child=$db->insert('pessoas',['nome'=>'ALUNO TESTE','data_nascimento'=>'2014-01-01','pais'=>'BR','estado'=>'PR','cidade'=>'CURITIBA','email'=>'aluno@example.test']);$student=$db->insert('alunos',['codpessoa'=>$child,'ra'=>'RA-01']);$studentUser=wp_insert_user(['user_login'=>'aluno.teste','user_email'=>'aluno@example.test','role'=>'erp_aluno']);$db->insert('pessoa_usuarios',['codpessoa'=>$child,'wp_user_id'=>$studentUser]);
-$mother=$db->insert('pessoas',['nome'=>'MAE TESTE','data_nascimento'=>'1980-01-01']);$parent=wp_insert_user(['user_login'=>'mae.teste','role'=>'erp_responsavel_academico']);$db->insert('pessoa_usuarios',['codpessoa'=>$mother,'wp_user_id'=>$parent]);
+$mother=$db->insert('pessoas',['email'=>'fixture-family-students-0@example.test','nome'=>'MAE TESTE','data_nascimento'=>'1980-01-01']);$parent=wp_insert_user(['user_login'=>'mae.teste','role'=>'erp_responsavel_academico']);$db->insert('pessoa_usuarios',['codpessoa'=>$mother,'wp_user_id'=>$parent]);
 $link=$db->insert('aluno_responsaveis',['idaluno'=>$student,'codpessoa_responsavel'=>$mother,'parentesco'=>'mae','responsavel_academico'=>1,'inicio_vigencia'=>'2020-01-01 00:00:00']);
 $type=$docs->saveType(['nome'=>'Certidão de nascimento','orientacoes'=>'Envie uma imagem legível','obrigatorio'=>1],kF())['idtipo_documento'];
 $staff=wp_insert_user(['user_login'=>'secretaria','role'=>'erp_secretaria']);$stranger=wp_insert_user(['user_login'=>'sem.vinculo','role'=>'erp_responsavel_academico']);

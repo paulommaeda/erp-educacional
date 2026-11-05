@@ -9,7 +9,7 @@ function detailKey():string{return bin2hex(random_bytes(16));}
 function detailCheck(bool $ok,string $label):void{if(!$ok)throw new RuntimeException($label);echo "PASS: $label\n";}
 function detailReject(callable $f,string $label):void{try{$f();}catch(RuleViolation $e){detailCheck(true,$label);return;}throw new RuntimeException($label);}
 $fields=['local_nascimento'=>'São José dos Pinhais','uf_nascimento'=>'pr','raca_etnia'=>'Indigena','nacionalidade'=>'Brasileira','grau_instrucao'=>'Pos-graduacao','profissao'=>'Médica'];
-$result=$catalog->create('pessoas',['nome'=>'Ana Detalhes','data_nascimento'=>'1980-01-01']+$fields,detailKey());$id=(int)$result['id'];$person=$db->get('pessoas',$id);
+$result=$catalog->create('pessoas',['email'=>'fixture-person-details-1@example.test','nome'=>'Ana Detalhes','data_nascimento'=>'1980-01-01']+$fields,detailKey());$id=(int)$result['id'];$person=$db->get('pessoas',$id);
 $expected=['local_nascimento'=>'SÃO JOSÉ DOS PINHAIS','uf_nascimento'=>'PR','raca_etnia'=>'INDÍGENA','nacionalidade'=>'BRASILEIRA','grau_instrucao'=>'PÓS-GRADUAÇÃO','profissao'=>'MÉDICA'];
 foreach($expected as $key=>$value)detailCheck($person[$key]===$value,'Cadastro grava '.$key.' normalizado');
 foreach(PersonFields::RACES as $value)detailCheck(PersonFields::validate(['raca_etnia'=>$value])['raca_etnia']===$value,'Aceita raça/etnia '.$value);
@@ -23,6 +23,6 @@ wp_set_current_user((int)$result['wp_user_id']);$before=$db->get('pessoas',$id);
 detailCheck($person['local_nascimento']==='LISBOA'&&$person['uf_nascimento']==='EX'&&$person['nacionalidade']==='PORTUGUESA'&&$person['raca_etnia']==='NÃO DECLARADA'&&$person['grau_instrucao']==='MESTRADO'&&$person['profissao']==='DOCENTE','Perfil pessoal altera todos os novos campos da própria pessoa');
 wp_set_current_user(1);$catalog->updatePerson($id,array_fill_keys(array_keys($expected),''),detailKey());$person=$db->get('pessoas',$id);
 foreach(array_keys($expected) as $key)detailCheck($person[$key]===null,'Permite limpar o campo opcional '.$key);
-$legacy=$catalog->create('pessoas',['nome'=>'Pessoa Sem Detalhes','data_nascimento'=>'2000-01-01'],detailKey());$person=$db->get('pessoas',(int)$legacy['id']);
+$legacy=$catalog->create('pessoas',['email'=>'fixture-person-details-0@example.test','nome'=>'Pessoa Sem Detalhes','data_nascimento'=>'2000-01-01'],detailKey());$person=$db->get('pessoas',(int)$legacy['id']);
 detailCheck($person['raca_etnia']===null&&$person['grau_instrucao']===null,'Cadastros antigos e novos sem detalhes continuam válidos');
 echo "PERSON_DETAILS_OK\n";

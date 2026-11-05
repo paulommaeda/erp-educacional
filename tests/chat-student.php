@@ -4,7 +4,7 @@ use EducacionalERP\Application\Coligadas;
 wp_set_current_user(1);
 $channel=$chat->saveChannel(['nome'=>'Identificação do aluno','ativo'=>true,'membros'=>[$staff]],ck())['idcanal'];
 $db->update('pessoas',$child,['nome'=>'JOAO DA SILVA','foto_attachment_id'=>10]);
-$child2=$db->insert('pessoas',['nome'=>'ANA DA SILVA','data_nascimento'=>'2017-01-01']);
+$child2=$db->insert('pessoas',['email'=>'fixture-chat-student-0@example.test','nome'=>'ANA DA SILVA','data_nascimento'=>'2017-01-01']);
 $student2=$db->insert('alunos',['codpessoa'=>$child2,'ra'=>'002']);
 $link2=$db->insert('aluno_responsaveis',['idaluno'=>$student2,'codpessoa_responsavel'=>$person,'parentesco'=>'mae','responsavel_academico'=>1,'inicio_vigencia'=>'2020-01-01 00:00:00']);
 wp_set_current_user($user);

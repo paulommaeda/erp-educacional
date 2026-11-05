@@ -45,7 +45,7 @@ final class CatalogService
             $id=$this->db->insert($table,$data);
             $account=[];
             if($table==='pessoas') { $account=$this->accounts->ensure($id,$d['user_login']??null); (new AdditionalFields($this->db))->write($id,$d['campos_adicionais']??null,$key); }
-            if($table==='alunos') { $this->accounts->ensure((int)$data['codpessoa']); }
+            if($table==='alunos') { $this->accounts->ensure((int)$data['codpessoa']); (new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->queue((int)$data['codpessoa']); }
             $this->db->audit($table,$id,'criar',null,$data,$key);
             return ['id'=>(string)$id]+$account;
     }
@@ -83,6 +83,7 @@ final class CatalogService
             }
             $id=$this->db->insert('aluno_responsaveis',$flags+['idaluno'=>$student,'codpessoa_responsavel'=>$person,'parentesco'=>$parent,'inicio_vigencia'=>gmdate('Y-m-d H:i:s')]);
             $this->accounts->sync($person);
+            if($flags['responsavel_academico']||!empty($existing['responsavel_academico'])) (new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->queue((int)$this->db->get('alunos',$student)['codpessoa'],false,!empty($existing['responsavel_academico'])&&!$flags['responsavel_academico']);
             $this->db->audit('aluno_responsaveis',$id,'vincular',null,$flags+['idaluno'=>$student,'codpessoa'=>$person],$key);
             return ['idvinculo'=>(string)$id];
     }
@@ -92,8 +93,10 @@ final class CatalogService
                     $cpf=isset($d['cpf'])?preg_replace('/\D/','',(string)$d['cpf']):null;
                     if ($cpf==='') { $cpf=null; }
                     if ($cpf!==null && !$this->validCpf($cpf)) { throw new RuleViolation('CPF inválido.'); }
-                    $email=isset($d['email']) && $d['email']!=='' ? sanitize_email($d['email']) : null;
-                    if ($email!==null && !is_email($email)) { throw new RuleViolation('E-mail inválido.'); }
+                    if(!is_string($d['email']??null)||trim($d['email'])==='') { throw new RuleViolation('Informe o e-mail. O e-mail é obrigatório para o acesso ao portal.'); }
+                    $email=trim($d['email']);
+                    if(strlen($email)>191||!is_email($email)) { throw new RuleViolation('E-mail inválido.'); }
+                    $email=sanitize_email($email);
                     $data=['nome'=>Input::text($d['nome']??null),'cpf'=>$cpf,'email'=>$email,'telefone'=>empty($d['telefone'])?null:Input::text($d['telefone'],30),
                         'data_nascimento'=>Input::date($d['data_nascimento']??null)];
                     if ($data['data_nascimento'] && $data['data_nascimento']>Input::today()) { throw new RuleViolation('Nascimento no futuro.'); }
@@ -111,6 +114,7 @@ final class CatalogService
             (new AdditionalFields($this->db))->write($id,$data['campos_adicionais']??null,$key);
             $valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);
             $account=$this->accounts->ensure($id,$data['user_login']??null);
+            (new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->contactChanged($id,(string)$before['email']!==$valid['email']);
             $this->db->audit('pessoas',$id,'editar',$before,$valid,$key);
             return ['codpessoa'=>(string)$id]+$account;
         }));
@@ -130,6 +134,7 @@ final class CatalogService
             if(array_key_exists('estado_civil',$data)&&!array_key_exists('idestado_civil',$data))$data['idestado_civil']=$data['estado_civil'];
             $valid=$this->personData(array_merge($before,$data));
             $valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);$this->accounts->sync($id);
+            (new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->contactChanged($id,(string)$before['email']!==$valid['email']);
             $this->db->audit('pessoas',$id,'editar_proprio_perfil',$before,$valid,$key);
             return ['salvo'=>true,'versao'=>(string)((int)$before['versao']+1)];
         }));

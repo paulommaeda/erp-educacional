@@ -10,9 +10,9 @@ $db=new Database($wpdb);$ops=new Operations($db);$catalog=new CatalogService($db
 function requestKey():string{return bin2hex(random_bytes(16));}
 function check(bool $condition,string $label):void{global $count;$count++;if(!$condition)throw new RuntimeException('FAIL: '.$label);echo "PASS: $label\n";}
 function refuse(callable $f,string $label):void{try{$f();}catch(RuleViolation $e){check(true,$label);return;}check(false,$label);}
-$father=$catalog->create('pessoas',['data_nascimento'=>'1980-08-15','nome'=>'Carlos da Silva'],requestKey())['id'];
-$mother=$catalog->create('pessoas',['data_nascimento'=>'1980-08-15','nome'=>'Ana da Silva'],requestKey())['id'];
-$payload=['nome'=>'Sofia da Silva','ra'=>'000045','data_nascimento'=>'2015-04-12'];$key=requestKey();
+$father=$catalog->create('pessoas',['email'=>'fixture-student-workflow-4@example.test','data_nascimento'=>'1980-08-15','nome'=>'Carlos da Silva'],requestKey())['id'];
+$mother=$catalog->create('pessoas',['email'=>'fixture-student-workflow-3@example.test','data_nascimento'=>'1980-08-15','nome'=>'Ana da Silva'],requestKey())['id'];
+$payload=['email'=>'fixture-student-workflow-2@example.test','nome'=>'Sofia da Silva','ra'=>'000045','data_nascimento'=>'2015-04-12'];$key=requestKey();
 $student=$flow->createStudent($payload,$key);
 check($student===$flow->createStudent($payload,$key),'cadastro integrado idempotente');
 $a=(int)$student['idaluno'];check($db->get('pessoas',(int)$student['codpessoa'])['nome']==='SOFIA DA SILVA','pessoa e aluno criados juntos');
@@ -41,7 +41,7 @@ $placementKey=requestKey();$m=$flow->assign($a,(int)$link['idvinculoperiodo'],['
 check($m===$flow->assign($a,(int)$link['idvinculoperiodo'],['idturma'=>$t,'quantidade_parcelas'=>3,'primeiro_vencimento'=>'2027-01-10'],$placementKey),'escolha de turma idempotente');
 check(count($db->rows('SELECT * FROM '.$db->table('contratos')))===1,'matrícula inicial cria contrato financeiro');
 check($db->get('matriculas',(int)$m['idmatricula'])['idcurso']===$course,'curso derivado da turma');
-$otherStudent=$flow->createStudent(['data_nascimento'=>'2015-04-12','nome'=>'Outro aluno','ra'=>'000046'],requestKey());
+$otherStudent=$flow->createStudent(['email'=>'fixture-student-workflow-1@example.test','data_nascimento'=>'2015-04-12','nome'=>'Outro aluno','ra'=>'000046'],requestKey());
 refuse(fn()=>$flow->assign((int)$otherStudent['idaluno'],(int)$link['idvinculoperiodo'],['idturma'=>$t],requestKey()),'não aceita vínculo de outro aluno');
 $secondLink=$flow->period((int)$otherStudent['idaluno'],['codperiodo'=>$period],requestKey());
 refuse(fn()=>$flow->assign((int)$otherStudent['idaluno'],(int)$secondLink['idvinculoperiodo'],['idturma'=>$t],requestKey()),'turma lotada é rejeitada');
@@ -50,7 +50,7 @@ check(count($db->rows('SELECT * FROM '.$db->table('parcelas').' WHERE idcontrato
 refuse(fn()=>$academic->createContract((int)$m['idmatricula'],['valor_original_total'=>'1200.00','quantidade_parcelas'=>3,'primeiro_vencimento'=>'2027-01-10'],requestKey()),'não duplica contrato em nova solicitação');
 $catalog->updatePerson((int)$student['codpessoa'],['nome'=>'Sofia Silva','email'=>'sofia@example.com'],requestKey());
 check($db->get('pessoas',(int)$student['codpessoa'])['nome']==='SOFIA SILVA','dados editáveis na ficha');
-try{$flow->createStudent(['data_nascimento'=>'2015-04-12','nome'=>'Pessoa que deve reverter','ra'=>'000045'],requestKey());}catch(RuntimeException $e){}
+try{$flow->createStudent(['email'=>'fixture-student-workflow-0@example.test','data_nascimento'=>'2015-04-12','nome'=>'Pessoa que deve reverter','ra'=>'000045'],requestKey());}catch(RuntimeException $e){}
 check(!$db->row('SELECT codpessoa FROM '.$db->table('pessoas').' WHERE nome=%s',['Pessoa que deve reverter']),'RA duplicado não deixa pessoa órfã');
 $export=(new ExportService($db))->student($a,(int)$period);check(count($export['matriculas'][0]['contratos'])===1,'exportação mantém contrato vinculado à matrícula');
 $pendingExport=(new ExportService($db))->student((int)$otherStudent['idaluno'],(int)$period);

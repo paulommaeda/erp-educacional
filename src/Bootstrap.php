@@ -16,13 +16,14 @@ final class Bootstrap
         finally { $wpdb->suppress_errors($previous); }
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::setup(true);
     }
-    public static function deactivate():void {wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DiscountCron::HOOK);wp_clear_scheduled_hook('ederp_cleanup_student_documents');wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::RETURNS_HOOK);}
+    public static function deactivate():void {wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\AccountInvitations::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DiscountCron::HOOK);wp_clear_scheduled_hook('ederp_cleanup_student_documents');wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::RETURNS_HOOK);}
     public function boot(): void
     {
         global $wpdb;
         \EducacionalERP\Infrastructure\WordPress\SchoolIdentity::register();
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::register();
         $db=new Database($wpdb); $ops=new Operations($db); $access=new Access($db); $academic=new AcademicService($db,$ops);
+        \EducacionalERP\Infrastructure\WordPress\AccountInvitations::register($db);
         \EducacionalERP\Infrastructure\Educbank\Cron::register($db);
         \EducacionalERP\Infrastructure\WordPress\DiscountCron::register($db);
         \EducacionalERP\Infrastructure\Educbank\Webhook::register($db);
@@ -64,7 +65,7 @@ final class Bootstrap
                 $p=$db->table('pessoas');$u=$db->table('pessoa_usuarios');
                 if(!$db->row("SELECT p.codpessoa FROM $p p LEFT JOIN $u u ON u.codpessoa=p.codpessoa WHERE u.wp_user_id IS NULL LIMIT 1")) { delete_option('ederp_accounts_pending_notice'); }
             }
-            if(Access::isAdmin() && get_option('ederp_accounts_pending_notice')) { echo '<div class="notice notice-warning"><p>Algumas pessoas precisam de data de nascimento ou nome de usuário. Abra ERP Educacional → Pessoas e edite os cadastros com conta pendente.</p></div>'; }
+            if(Access::isAdmin() && get_option('ederp_accounts_pending_notice')) { echo '<div class="notice notice-warning"><p>Algumas pessoas precisam de e-mail, data de nascimento ou nome de usuário. Abra ERP Educacional → Pessoas e edite os cadastros com conta pendente.</p></div>'; }
             if(current_user_can('erp_configurar') && (get_option('ederp_schema_version')!==Installer::VERSION || get_option('ederp_schema_error'))) { echo '<div class="notice notice-error"><p>O ERP requer migração. Acesse ERP Educacional → Configurações.</p></div>'; }
         });
         add_action('admin_post_ederp_migrate',static function()use($db){

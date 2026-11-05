@@ -50,6 +50,7 @@ final class DeletionService
             $pk=$this->db->schema()[$type]['pk'][0];$this->db->query('DELETE FROM '.$this->db->table($type)." WHERE $pk=%d",[$id]);
             if($type==='alunos')(new Accounts($this->db))->sync((int)$row['codpessoa']);
             if($type==='aluno_responsaveis')(new Accounts($this->db))->sync((int)$row['codpessoa_responsavel']);
+            if($type==='aluno_responsaveis'&&(int)$row['responsavel_academico'])(new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->queue((int)$this->db->get('alunos',(int)$row['idaluno'])['codpessoa'],false,true);
             $this->db->audit($type,$id,'excluir',$row,['motivo'=>$reason,'movimentos_iniciais'=>$children],$key);
             return ['excluido'=>true,'id'=>(string)$id];
         }));}finally{if($type==='periodos_letivos')$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$lock]);}

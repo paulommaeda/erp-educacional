@@ -9,7 +9,7 @@ Access::install();$db=new Database($wpdb);$cat=new CatalogService($db,new Operat
 function kp():string{return bin2hex(random_bytes(16));}
 function yes(bool $v,string $m):void{global $n;if(!$v)throw new RuntimeException($m);$n++;echo "PASS: $m\n";}
 function deny(callable $f,string $m):void{try{$f();}catch(RuleViolation $e){yes(true,$m);return;}throw new RuntimeException($m);}
-$p=$cat->create('pessoas',['nome'=>'Ana Perfil','data_nascimento'=>'1980-08-15'],kp());$other=$cat->create('pessoas',['nome'=>'Maria Outra','data_nascimento'=>'1980-01-01'],kp());
+$p=$cat->create('pessoas',['email'=>'fixture-portal-permissions-1@example.test','nome'=>'Ana Perfil','data_nascimento'=>'1980-08-15'],kp());$other=$cat->create('pessoas',['email'=>'fixture-portal-permissions-0@example.test','nome'=>'Maria Outra','data_nascimento'=>'1980-01-01'],kp());
 wp_set_current_user((int)$p['wp_user_id']);$before=$db->get('pessoas',(int)$p['id']);$r=$cat->updateOwn(['telefone'=>'41999999999','profissao'=>'Professora','versao'=>$before['versao']],kp());
 yes($db->get('pessoas',(int)$p['id'])['telefone']==='41999999999','pessoa edita seus próprios dados');
 yes($db->get('pessoas',(int)$other['id'])['telefone']===null,'edição pessoal não afeta outra pessoa');

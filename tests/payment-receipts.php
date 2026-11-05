@@ -18,7 +18,7 @@ function fixture(int $guardian,string $suffix=''):array{
     $course=ra('cursos',['codigo'=>'EF'.$suffix,'nome'=>'Fundamental']);$shift=ra('turnos',['codigo'=>'M'.$suffix,'nome'=>'Manhã']);
     $plan=ra('planos_pagamento',['codperiodo'=>$period,'codigo'=>'ANUAL'.$suffix,'nome'=>'Anuidade','valor_anuidade'=>'3000.00']);
     $class=ra('turmas',['codigo'=>'6ANO'.$suffix,'nome'=>'6º ANO','idcurso'=>$course,'idturno'=>$shift,'codperiodo'=>$period,'idplano'=>$plan,'capacidade'=>30]);
-    $a=$workflow->createStudent(['nome'=>'João Gonçalves de Sá'.$suffix,'data_nascimento'=>'2015-01-01'],rk());
+    $a=$workflow->createStudent(['email'=>'fixture-payment-receipts-2@example.test','nome'=>'João Gonçalves de Sá'.$suffix,'data_nascimento'=>'2015-01-01'],rk());
     $cat->link((int)$a['idaluno'],['codpessoa_responsavel'=>$guardian,'parentesco'=>'mae','responsavel_financeiro'=>1,'responsavel_academico'=>1],rk());
     $m=$workflow->batch(['codperiodo'=>$period,'idturma'=>$class,'alunos'=>[$a['idaluno']],'quantidade_parcelas'=>3,'primeiro_vencimento'=>'2026-01-10'],rk())['items'][0];
     $titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d ORDER BY p.numero',[(int)$m['idcontrato']]);
@@ -27,7 +27,7 @@ function fixture(int $guardian,string $suffix=''):array{
 $db->update('coligadas',1,['nome'=>'COLÉGIO DE TESTE','razao_social'=>'COLEGIO TESTE LTDA','cnpj'=>'11222333000181']);
 $GLOBALS['receipt_logo_files'][900]=dirname(__DIR__).'/assets/brand/journey.png';
 update_option(SchoolIdentity::option(),array_replace(SchoolIdentity::defaults(),['nome'=>'COLÉGIO DE TESTE','logo_id'=>900,'rua'=>'AVENIDA DA ESCOLA','numero'=>'123','bairro'=>'CENTRO','cidade'=>'CURITIBA','estado'=>'PR','cep'=>'80010-000','telefone'=>'(41) 3333-4444','email'=>'contato@example.test']));
-$guardian=ra('pessoas',['nome'=>'Maria da Conceição de Sá','data_nascimento'=>'1980-01-01','cpf'=>'52998224725']);$other=ra('pessoas',['nome'=>'Outro responsável','data_nascimento'=>'1981-01-01']);
+$guardian=ra('pessoas',['email'=>'fixture-payment-receipts-1@example.test','nome'=>'Maria da Conceição de Sá','data_nascimento'=>'1980-01-01','cpf'=>'52998224725']);$other=ra('pessoas',['email'=>'fixture-payment-receipts-0@example.test','nome'=>'Outro responsável','data_nascimento'=>'1981-01-01']);
 [$student,$enrollment,$titles]=fixture($guardian);$id=(int)$titles[0]['idlancamento'];
 update_option('ederp_pontualidade','50.00');(new ContractDiscounts($db,$ops))->add((int)$enrollment['idcontrato'],['nome'=>'Bolsa teste','valor'=>'100.00','parcela_inicio'=>1,'parcela_fim'=>3],rk());
 rd(fn()=>$receipts->details($id),'Parcela em aberto não gera recibo');

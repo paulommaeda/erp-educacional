@@ -11,7 +11,7 @@ final class Authentication
         add_filter('lostpassword_url',static fn($url,$redirect)=>Portal::url('recuperar_senha'),10,2);
         add_filter('retrieve_password_message',static function($message,$key,$login,$user){
             $url=add_query_arg(['erp_key'=>$key,'erp_login'=>$login],Portal::url('redefinir_senha'));
-            return \EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read()['nome']."\n\nUma redefinição de senha foi solicitada para sua conta.\n\n".$url."\n\nSe não foi você, ignore esta mensagem.\n";
+            return \EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read()['nome']."\n\nUma redefinição de senha foi solicitada para a conta de ".($user->display_name??$login).".\nUsuário: ".$login."\n\n".$url."\n\nSe não foi você, ignore esta mensagem.\n";
         },20,4);
     }
     public static function logoutUrl():string {return wp_nonce_url(add_query_arg('erp_auth','sair',Portal::url()),'ederp_logout');}
@@ -76,11 +76,12 @@ final class Authentication
     {
         $identity=\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::read();
         $copy=static fn(string $key):string=>str_replace('{colegio}',$identity['nome'],$identity[$key]);
-        $reset=$view==='redefinir_senha';$recover=$view==='recuperar_senha';$action=$reset?'redefinir':($recover?'recuperar':'entrar');
-        $title=$reset?'Definir nova senha':($recover?'Recuperar senha':$copy('login_titulo_form'));
-        $description=$reset?'Escolha uma nova senha para acessar seu portal com segurança.':($recover?'Informe seu usuário ou e-mail. Enviaremos as orientações para recuperar seu acesso.':$copy('login_descricao_form'));
+        $reset=$view==='redefinir_senha';$recover=$view==='recuperar_senha';$first=$reset&&($_GET['erp_primeiro_acesso']??'')==='1';$action=$reset?'redefinir':($recover?'recuperar':'entrar');
+        $title=$reset?($first?'Criar senha de acesso':'Definir nova senha'):($recover?'Recuperar senha':$copy('login_titulo_form'));
+        $description=$reset?'Escolha uma nova senha para acessar seu portal com segurança.':($recover?'Informe seu usuário ou e-mail. Se o e-mail for compartilhado na família, informe o nome de usuário da conta. Enviaremos as orientações para recuperar seu acesso.':$copy('login_descricao_form'));
         $notice=self::$message;if(isset($_GET['senha_alterada']))$notice='Senha alterada. Entre com sua nova senha.';
         $login=$reset?self::text('erp_login',$_GET):self::text('login',$_POST);$key=$reset?self::text('erp_key',$_GET):'';
+        if($first){$account=check_password_reset_key($key,$login);if(!is_wp_error($account))$description='Você está criando a senha da conta de '.$account->display_name.' (usuário: '.$login.').';}
         $html='<section class="erp-login-screen" style="'.esc_attr(\EducacionalERP\Infrastructure\WordPress\SchoolIdentity::loginStyle()).'">';
         $html.='<aside class="erp-login-story" aria-label="'.esc_attr($identity['nome']).'"><div class="erp-login-story-inner"><div class="erp-login-brand"><div class="erp-login-brand-logo">'.$logo.'</div>';
         if($copy('login_etiqueta')!=='')$html.='<span class="erp-login-tag">'.esc_html($copy('login_etiqueta')).'</span>';
@@ -93,7 +94,7 @@ final class Authentication
         if(defined('EDERP_VERSION'))$footer.='<span class="erp-login-version">Versão '.esc_html(EDERP_VERSION).'</span>';
         $footer.='</footer></div></div></section>';
         if($reset&&is_wp_error(check_password_reset_key($key,$login)))return $html.'<p role="alert" class="erp-login-notice">Link inválido ou expirado.</p><a href="'.esc_url(Portal::url('recuperar_senha')).'">Solicitar outro link</a>'.$footer;
-        $url=$reset?add_query_arg(['erp_key'=>$key,'erp_login'=>$login],Portal::url($view)):Portal::url($recover?'recuperar_senha':'inicio');
+        $url=$reset?add_query_arg(['erp_key'=>$key,'erp_login'=>$login]+($first?['erp_primeiro_acesso'=>'1']:[]),Portal::url($view)):Portal::url($recover?'recuperar_senha':'inicio');
         $html.='<form method="post" action="'.esc_url($url).'" class="erp-login-form">'.wp_nonce_field('ederp_auth_'.$action,'_wpnonce',false,false).'<input type="hidden" name="erp_auth" value="'.$action.'">';
         if($reset)$html.='<input type="hidden" name="login" value="'.esc_attr($login).'"><input type="hidden" name="key" value="'.esc_attr($key).'">';
         else $html.='<label for="erp-login-user">E-mail ou usuário</label><input id="erp-login-user" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" value="'.esc_attr($login).'" required>';
@@ -102,7 +103,7 @@ final class Authentication
             foreach($fields as $name=>$label){$id='erp-login-'.$name;$html.='<label for="'.$id.'">'.$label.'</label><div class="erp-login-password"><input id="'.$id.'" type="password" name="'.$name.'" autocomplete="'.($reset?'new-password':'current-password').'" '.($reset?'minlength="12" maxlength="4096"':'').' required><button type="button" class="erp-login-toggle" data-login-toggle aria-controls="'.$id.'" aria-pressed="false" aria-label="Mostrar '.esc_attr(strtolower($label)).'">Mostrar</button></div>';}
         }
         if(!$reset&&!$recover)$html.='<div class="erp-login-options"><label class="erp-login-remember"><input type="checkbox" name="remember" value="1"> Manter conectado</label><a href="'.esc_url(Portal::url('recuperar_senha')).'">Esqueci minha senha</a></div>';
-        $html.='<button type="submit">'.esc_html($reset?'Salvar nova senha':($recover?'Enviar link':$copy('login_botao_rotulo'))).'</button></form>';
+        $html.='<button type="submit">'.esc_html($reset?($first?'Criar minha senha':'Salvar nova senha'):($recover?'Enviar link':$copy('login_botao_rotulo'))).'</button></form>';
         return $html.$footer;
     }
 }

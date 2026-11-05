@@ -16,9 +16,9 @@ function structureO(int $company):array {
 function enrollO(int $student,array $structure):int {global $db;return $db->insert('matriculas',['idaluno'=>$student,'codperiodo'=>$structure['period'],'idcurso'=>$structure['course'],'idturma_atual'=>$structure['class'],'data_matricula'=>'2026-01-01','origem'=>'inicial']);}
 function resultO(int $person):array {global $overview,$access;foreach($overview->decorate($access->students()) as $row)if((int)$row['codpessoa']===$person)return $row;throw new RuntimeException('Aluno ausente');}
 $school=structureO(1);
-$child=$db->insert('pessoas',['nome'=>'ALUNO COM FOTO','data_nascimento'=>'2015-01-01','foto_attachment_id'=>10]);$student=$db->insert('alunos',['codpessoa'=>$child,'ra'=>'601']);$current=enrollO($student,$school[2026]);enrollO($student,$school[2027]);
-$other=$db->insert('pessoas',['nome'=>'ALUNO SEM FOTO','data_nascimento'=>'2016-01-01']);$otherStudent=$db->insert('alunos',['codpessoa'=>$other,'ra'=>'602']);enrollO($otherStudent,$school[2027]);
-$mother=$db->insert('pessoas',['nome'=>'MÃE DOS ALUNOS','data_nascimento'=>'1980-01-01']);$parent=wp_insert_user(['user_login'=>'mae','role'=>'erp_responsavel_academico']);$db->insert('pessoa_usuarios',['codpessoa'=>$mother,'wp_user_id'=>$parent]);
+$child=$db->insert('pessoas',['email'=>'fixture-family-overview-2@example.test','nome'=>'ALUNO COM FOTO','data_nascimento'=>'2015-01-01','foto_attachment_id'=>10]);$student=$db->insert('alunos',['codpessoa'=>$child,'ra'=>'601']);$current=enrollO($student,$school[2026]);enrollO($student,$school[2027]);
+$other=$db->insert('pessoas',['email'=>'fixture-family-overview-1@example.test','nome'=>'ALUNO SEM FOTO','data_nascimento'=>'2016-01-01']);$otherStudent=$db->insert('alunos',['codpessoa'=>$other,'ra'=>'602']);enrollO($otherStudent,$school[2027]);
+$mother=$db->insert('pessoas',['email'=>'fixture-family-overview-0@example.test','nome'=>'MÃE DOS ALUNOS','data_nascimento'=>'1980-01-01']);$parent=wp_insert_user(['user_login'=>'mae','role'=>'erp_responsavel_academico']);$db->insert('pessoa_usuarios',['codpessoa'=>$mother,'wp_user_id'=>$parent]);
 foreach([$student,$otherStudent] as $id)$db->insert('aluno_responsaveis',['idaluno'=>$id,'codpessoa_responsavel'=>$mother,'parentesco'=>'mae','responsavel_academico'=>1,'inicio_vigencia'=>'2020-01-01 00:00:00']);
 wp_set_current_user($parent);$row=resultO($child);
 okO(count($overview->decorate($access->students()))===2,'responsável recebe um cartão para cada filho');

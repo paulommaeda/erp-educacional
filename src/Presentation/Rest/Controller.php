@@ -186,6 +186,7 @@ final class Controller
         $this->route('/numeracao-pessoas','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\PersonNumbering($this->db))->save($this->payload($r),$this->key($r)));
         $this->route('/usuarios','GET',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->listing(['page'=>$r->get_param('page'),'search'=>$r->get_param('search')]));
         $this->route('/usuarios/'.$id,'POST',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->update((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/usuarios/'.$id.'/convite','POST',fn()=>MenuPolicy::can('usuarios')&&\EducacionalERP\Infrastructure\WordPress\UserPermissions::can('password'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->resendInvitation((int)$r['id'],$this->key($r)));
         $this->route('/secretaria/alunos','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentDirectory($r));
         $this->route('/secretaria/alunos','POST',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->workflow->createStudent($this->payload($r),$this->key($r)));
         $this->route('/secretaria/alunos/'.$id,'GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentSheet((int)$r['id']));

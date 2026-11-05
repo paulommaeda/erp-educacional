@@ -58,7 +58,7 @@ final class AdmissionForm
                 $valid=['nome'=>CadastroText::upper(self::text($p['nome']??'',191,true)),'data_nascimento'=>Input::date($p['data_nascimento']??null)];
                 if($valid['data_nascimento']>Input::today())throw new RuleViolation('Nascimento não pode estar no futuro.');
                 $cpf=preg_replace('/\D/','',self::text($p['cpf']??'',30));if($cpf!==''&&!Cpf::valid($cpf))throw new RuleViolation('CPF inválido.');$valid['cpf']=$cpf;
-                $email=strtolower(self::text($p['email']??'',191));if($email!==''&&!is_email($email))throw new RuleViolation('E-mail inválido.');$valid['email']=$email;
+                $email=strtolower(self::text($p['email']??'',191));if($email===''||!is_email($email))throw new RuleViolation('Informe um e-mail válido. O e-mail é obrigatório.');$valid['email']=$email;
                 $valid['telefone']=self::text($p['telefone']??'',30);
                 $valid+=PersonFields::validate($p);unset($valid['codpessoa_origem'],$valid['foto_attachment_id']);
                 // Civil status stays a selected system ID; no Fluent single-letter codes.

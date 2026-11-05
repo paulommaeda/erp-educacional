@@ -25,7 +25,7 @@ function is_ssl(){return true;}
 function wp_signon($credentials,$secure){$GLOBALS['signed']=$credentials;return $credentials['user_password']==='valid-password'?(object)['ID'=>2]:new WP_Error('incorrect_password');}
 function wp_set_current_user($id){$GLOBALS['current']=$id;}
 function retrieve_password($login){$GLOBALS['recover']=$login;return $login==='missing'?new WP_Error('invalidcombo'):true;}
-function check_password_reset_key($key,$login){return $key==='valid-key'?(object)['ID'=>2]:new WP_Error('expired_key');}
+function check_password_reset_key($key,$login){return $key==='valid-key'?(object)['ID'=>2,'display_name'=>'LUCAS ALUNO']:new WP_Error('expired_key');}
 function reset_password($user,$password){$GLOBALS['reset']=[$user->ID,$password];}
 define('MINUTE_IN_SECONDS',60);
 function okA($condition,$label){if(!$condition)throw new RuntimeException($label);echo "PASS: $label\n";}
@@ -50,3 +50,5 @@ $custom['login_titulo_form']='<script>alert(1)</script>';$GLOBALS['auth_options'
 $_GET=['erp_key'=>'valid-key','erp_login'=>'family'];$html=Authentication::render('LOGO','redefinir_senha');okA(str_contains($html,'<h1>Definir nova senha</h1>')&&str_contains($html,'name="confirm"')&&str_contains($html,'minlength="12"'),'personalização mantém campos e instruções da nova senha');
 $_GET=['erp_key'=>'invalid','erp_login'=>'family'];$html=Authentication::render('LOGO','redefinir_senha');okA(!str_contains($html,'<form')&&str_contains($html,'Solicitar outro link')&&str_ends_with($html,'</div></div></section>'),'link expirado mostra retorno seguro dentro do mesmo layout');
 $_GET=[];$html=Authentication::render('LOGO','recuperar_senha');okA(str_contains($html,'<h1>Recuperar senha</h1>')&&!str_contains($html,'name="password"')&&!str_contains($html,'wp-login.php'),'recuperação permanece no portal com o novo layout');
+
+$_GET=['erp_key'=>'valid-key','erp_login'=>'lucas.aluno','erp_primeiro_acesso'=>'1'];$html=Authentication::render('LOGO','redefinir_senha');okA(str_contains($html,'Criar senha de acesso')&&str_contains($html,'LUCAS ALUNO')&&str_contains($html,'lucas.aluno')&&str_contains($html,'erp_primeiro_acesso'),'primeiro acesso identifica a conta e permanece no portal');

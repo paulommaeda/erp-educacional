@@ -10,7 +10,7 @@ function keyM(){return bin2hex(random_bytes(20));}
 function okM($v,$m){if(!$v)throw new RuntimeException($m);echo "PASS: $m\n";}
 function denyM($f,$m){try{$f();}catch(RuleViolation $e){okM(true,$m);return;}throw new RuntimeException($m);}
 $db=new Database($wpdb);Access::install();
-$child=$db->insert('pessoas',['nome'=>'ALUNO TESTE','data_nascimento'=>'2012-01-01']);
+$child=$db->insert('pessoas',['email'=>'fixture-guardian-mail-0@example.test','nome'=>'ALUNO TESTE','data_nascimento'=>'2012-01-01']);
 $student=$db->insert('alunos',['codpessoa'=>$child,'ra'=>'001']);
 $guardian=$db->insert('pessoas',['nome'=>'MARIA RESPONSAVEL','data_nascimento'=>'1980-01-01','email'=>'familia@example.test']);
 $link=$db->insert('aluno_responsaveis',['idaluno'=>$student,'codpessoa_responsavel'=>$guardian,'parentesco'=>'mae','responsavel_academico'=>1,'inicio_vigencia'=>'2020-01-01 00:00:00']);

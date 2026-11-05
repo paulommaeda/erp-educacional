@@ -59,7 +59,12 @@ function wp_date(string $f): string {return date($f);}
 function wp_timezone(): DateTimeZone {return new DateTimeZone('UTC');}
 function get_current_user_id(): int {return $GLOBALS['test_user'];}
 function wp_set_current_user(int $id): void {$GLOBALS['test_user']=$id;}
-function get_users(array $args): array {return [(object)['ID'=>1]];}
+function get_users(array $args): array {
+ if(!isset($args['meta_key']))return [(object)['ID'=>1]];
+ global $wpdb;$query=$wpdb->pdo->prepare('SELECT user_id,value FROM mock_usermeta WHERE meta_key=?');$query->execute([$args['meta_key']]);$rows=$query->fetchAll(PDO::FETCH_ASSOC);
+ $rows=array_values(array_filter($rows,fn($r)=>(int)json_decode($r['value'],true)<=(int)$args['meta_value']));usort($rows,fn($a,$b)=>(int)$a['value']<=>(int)$b['value']);
+ return array_map(fn($r)=>(int)$r['user_id'],array_slice($rows,0,$args['number']??10));
+}
 function is_user_logged_in(): bool {return get_current_user_id()>0;}
 function current_user_can(string $cap,...$args): bool {if(get_current_user_id()===1)return true;$u=get_userdata(get_current_user_id());if(!$u)return false;foreach($u->roles as $r)if(!empty($GLOBALS['test_roles'][$r]['capabilities'][$cap]))return true;return false;}
 function remove_accents(string $s):string{return strtr($s,['á'=>'a','ã'=>'a','â'=>'a','à'=>'a','é'=>'e','ê'=>'e','í'=>'i','ó'=>'o','ô'=>'o','õ'=>'o','ú'=>'u','ç'=>'c','Ã'=>'A','Â'=>'A','À'=>'A','Ê'=>'E','Í'=>'I','Ó'=>'O','Ô'=>'O','Õ'=>'O','Ú'=>'U','Á'=>'A','É'=>'E','Ç'=>'C']);}
@@ -76,7 +81,7 @@ function wp_get_current_user():object{return get_userdata(get_current_user_id())
 function get_user_by(string $k,mixed $v):WP_User|false{if($k==='id')return get_userdata((int)$v);if($k==='email'){$q=$GLOBALS['wpdb']->pdo->prepare('SELECT * FROM mock_users WHERE user_email=?');$q->execute([$v]);$row=$q->fetch(PDO::FETCH_ASSOC);return $row?new WP_User($row):false;}return false;}
 function username_exists(string $v):int|false{global $wpdb;$s=$wpdb->pdo->prepare('SELECT ID FROM mock_users WHERE user_login=? COLLATE NOCASE');$s->execute([$v]);return ($id=$s->fetchColumn())?(int)$id:false;}
 function email_exists(string $v):int|false{global $wpdb;$s=$wpdb->pdo->prepare('SELECT ID FROM mock_users WHERE user_email=? COLLATE NOCASE');$s->execute([$v]);return ($id=$s->fetchColumn())?(int)$id:false;}
-function wp_insert_user(array $a):int|WP_Error{global $wpdb;if(empty($a['user_login']))return new WP_Error('empty_user_login','Cannot create a user with an empty login name.');$d=array_intersect_key($a,array_flip(['user_login','user_email','user_pass','display_name','first_name','last_name']));if(isset($a['role']))$d['roles']=json_encode([$a['role']]);if(isset($a['ID'])){$wpdb->update('mock_users',$d,['ID'=>$a['ID']]);return (int)$a['ID'];}$wpdb->insert('mock_users',$d);return $wpdb->insert_id;}
+function wp_insert_user(array $a):int|WP_Error{global $wpdb;if(empty($a['user_login']))return new WP_Error('empty_user_login','Cannot create a user with an empty login name.');$d=array_intersect_key($a,array_flip(['user_login','user_email','user_pass','display_name','first_name','last_name','user_activation_key']));if(isset($a['role']))$d['roles']=json_encode([$a['role']]);if(isset($a['ID'])){$wpdb->update('mock_users',$d,['ID'=>$a['ID']]);return (int)$a['ID'];}$wpdb->insert('mock_users',$d);return $wpdb->insert_id;}
 class WP_Error {public function __construct(private string $code,private string $message){} public function get_error_code():string{return $this->code;}public function get_error_message():string{return $this->message;}}
 function is_wp_error(mixed $v):bool{return $v instanceof WP_Error;}
 function wp_update_user(array $a):int|WP_Error{global $wpdb;
@@ -93,11 +98,13 @@ function sanitize_title(string $s):string{return strtolower(str_replace(' ','-',
 function get_role(string $s):TestRole|false{return isset($GLOBALS['test_roles'][$s])?new TestRole($s):false;}
 function sanitize_email(string $s): string {return $s;}
 function is_email(string $s): bool {return (bool)filter_var($s,FILTER_VALIDATE_EMAIL);}
+function wp_generate_password(int $length=12,bool $special=true,bool $extra=false):string{return substr(bin2hex(random_bytes($length)),0,$length);}
 function update_option(string $k,mixed $v,...$a):void{$GLOBALS['test_options'][$k]=$v;}
 function get_option(string $k,mixed $default=false):mixed{return $GLOBALS['test_options'][$k]??$default;}
 function delete_option(string $k):void{unset($GLOBALS['test_options'][$k]);}
 $wpdb=new wpdb();
-$wpdb->pdo->exec("CREATE TABLE mock_users (ID INTEGER PRIMARY KEY AUTOINCREMENT,user_login TEXT UNIQUE,user_email TEXT DEFAULT '',user_pass TEXT,display_name TEXT,first_name TEXT,last_name TEXT,roles TEXT DEFAULT '[]')");
+$wpdb->pdo->exec("CREATE TABLE mock_users (ID INTEGER PRIMARY KEY AUTOINCREMENT,user_login TEXT UNIQUE,user_email TEXT DEFAULT '',user_pass TEXT,display_name TEXT,first_name TEXT,last_name TEXT,roles TEXT DEFAULT '[]',user_activation_key TEXT DEFAULT '')");
+$wpdb->pdo->exec('CREATE TABLE mock_usermeta (user_id INTEGER NOT NULL,meta_key TEXT NOT NULL,value TEXT NOT NULL,PRIMARY KEY(user_id,meta_key))');
 wp_insert_user(['user_login'=>'admin','role'=>'administrator']);
 $schema=json_decode(file_get_contents(dirname(__DIR__).'/src/Infrastructure/Database/schema.json'),true);
 foreach($schema as $name=>$meta){
@@ -121,6 +128,6 @@ function wp_get_attachment_image_url(int $id,string $size):string|false{return $
 $wpdb->insert($wpdb->prefix."erp_numeracao_pessoas",["idnumeracao"=>1,"ultimo_codigo"=>0]);
 
 $wpdb->insert($wpdb->prefix.'erp_coligadas',['codcoligada'=>1,'nome'=>'COLIGADA PRINCIPAL','razao_social'=>'COLIGADA PRINCIPAL']);
-$GLOBALS['test_user_meta']=[];
-function get_user_meta($id,$key,$single=true){return $GLOBALS['test_user_meta'][$id][$key]??'';}
-function update_user_meta($id,$key,$value){$GLOBALS['test_user_meta'][$id][$key]=$value;}
+function get_user_meta($id,$key,$single=true){global $wpdb;$q=$wpdb->pdo->prepare('SELECT value FROM mock_usermeta WHERE user_id=? AND meta_key=?');$q->execute([$id,$key]);$value=$q->fetchColumn();return $value===false?'':json_decode($value,true);}
+function update_user_meta($id,$key,$value){global $wpdb;$q=$wpdb->pdo->prepare('INSERT INTO mock_usermeta(user_id,meta_key,value) VALUES(?,?,?) ON CONFLICT(user_id,meta_key) DO UPDATE SET value=excluded.value');$q->execute([$id,$key,json_encode($value)]);return true;}
+function delete_user_meta($id,$key){global $wpdb;$q=$wpdb->pdo->prepare('DELETE FROM mock_usermeta WHERE user_id=? AND meta_key=?');$q->execute([$id,$key]);return true;}

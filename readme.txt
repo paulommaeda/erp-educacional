@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.4
+Stable tag: 0.19.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.5 =
+* Novos usuários com senha aleatória e convite por e-mail para criar a senha no portal.
+* E-mail obrigatório no cadastro e na edição de pessoas, inclusive importações e requerimentos.
+* Convite da conta do aluno também enviado aos responsáveis acadêmicos, com nome, RA e usuário explícitos.
+* E-mail HTML com logo, cores e tipografia do colégio/coligada; envio pelo WordPress e SMTP configurado.
+* Fila após confirmação do cadastro, retentativas e reenvio por usuários autorizados na edição da conta.
+* Senhas existentes preservadas. Schema 36 mantido.
 
 = 0.19.4 =
 * Área do portal ocupa a largura disponível no desktop, incluindo contêineres internos e tabelas.

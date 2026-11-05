@@ -26,9 +26,9 @@ $db=new Database($wpdb); $ops=new Operations($db); $catalog=new CatalogService($
 $tag=bin2hex(random_bytes(8));
 function keyTest(): string { return bin2hex(random_bytes(16)); }
 function verify(bool $value,string $message): void { if(!$value) { throw new RuntimeException('FAIL: '.$message); } echo "PASS: $message\n"; }
-$person=$catalog->create('pessoas',['data_nascimento'=>'1980-08-15','nome'=>'Aluno Teste '.$tag],keyTest())['id'];
-$old=$catalog->create('pessoas',['data_nascimento'=>'1980-08-15','nome'=>'Responsável A '.$tag],keyTest())['id'];
-$new=$catalog->create('pessoas',['data_nascimento'=>'1980-08-15','nome'=>'Responsável B '.$tag],keyTest())['id'];
+$person=$catalog->create('pessoas',['email'=>'fixture-wordpress-integration-2@example.test','data_nascimento'=>'1980-08-15','nome'=>'Aluno Teste '.$tag],keyTest())['id'];
+$old=$catalog->create('pessoas',['email'=>'fixture-wordpress-integration-1@example.test','data_nascimento'=>'1980-08-15','nome'=>'Responsável A '.$tag],keyTest())['id'];
+$new=$catalog->create('pessoas',['email'=>'fixture-wordpress-integration-0@example.test','data_nascimento'=>'1980-08-15','nome'=>'Responsável B '.$tag],keyTest())['id'];
 $student=$catalog->create('alunos',['codpessoa'=>$person,'ra'=>'T'.$tag],keyTest())['id'];
 $catalog->link((int)$student,['codpessoa_responsavel'=>$old,'parentesco'=>'mae','responsavel_financeiro'=>1,'responsavel_academico'=>1],keyTest());
 $catalog->link((int)$student,['codpessoa_responsavel'=>$new,'parentesco'=>'pai','responsavel_academico'=>1,'pode_rematricular'=>1],keyTest());

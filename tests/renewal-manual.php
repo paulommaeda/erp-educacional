@@ -6,7 +6,7 @@ function get_attached_file($id){return __FILE__;}
 function wp_get_attachment_url($id){return 'https://example.test/manual.pdf';}
 wp_set_current_user(1);$settings=new EducacionalERP\Application\SchoolSettings($db);
 $settings->save(['codperiodo'=>$period,'manual_aluno_id'=>99],keyP());$manual=$settings->read()['manual_aluno'];testP($manual['id']===99&&strlen($manual['versao'])===64,'manual configurado com versão do arquivo');
-$new=$flow->createStudent(['nome'=>'Aluno Manual','data_nascimento'=>'2010-01-01','ra'=>'MANUAL-TEST'],keyP());$cat->link((int)$new['idaluno'],['codpessoa_responsavel'=>$rf,'parentesco'=>'pai','responsavel_financeiro'=>1,'responsavel_academico'=>1,'pode_rematricular'=>1],keyP());
+$new=$flow->createStudent(['email'=>'fixture-renewal-manual-0@example.test','nome'=>'Aluno Manual','data_nascimento'=>'2010-01-01','ra'=>'MANUAL-TEST'],keyP());$cat->link((int)$new['idaluno'],['codpessoa_responsavel'=>$rf,'parentesco'=>'pai','responsavel_financeiro'=>1,'responsavel_academico'=>1,'pode_rematricular'=>1],keyP());
 $enrolled=$academic->enroll(['idaluno'=>$new['idaluno'],'idturma'=>$t,'quantidade_parcelas'=>3,'primeiro_vencimento'=>'2030-01-01'],keyP());
 wp_set_current_user($rfUser);$available=$renew->offers((int)$new['idaluno']);testP(!$available[0]['indisponivel']&&$available[0]['manual_aluno']['versao']===$manual['versao'],'parcelas futuras liberam fluxo com manual');
 $body=['idoferta'=>$offer['idoferta'],'idmatricula_origem'=>$enrolled['idmatricula'],'idturma'=>$future,'aceite'=>true,'versao_termo'=>'1'];

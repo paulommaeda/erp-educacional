@@ -70,7 +70,7 @@ final class SchoolIdentity
         $ink=sscanf($d['cor_texto'],'#%02x%02x%02x');$surface=sscanf($d['cor_superficie'],'#%02x%02x%02x');$border=[];foreach($ink as $i=>$n)$border[]=(int)round($n*.24+$surface[$i]*.76);$d['login_campo_borda']=sprintf('#%02x%02x%02x',...$border);
         return $d;
     }
-    private static function contrast(string $hex):string { $rgb=sscanf($hex,'#%02x%02x%02x');$v=array_map(static function($n){$s=$n/255;return $s<=0.04045?$s/12.92:(($s+0.055)/1.055)**2.4;},$rgb);return 0.2126*$v[0]+0.7152*$v[1]+0.0722*$v[2]>0.179?'#111111':'#ffffff'; }
+    public static function contrast(string $hex):string { $rgb=sscanf($hex,'#%02x%02x%02x');$v=array_map(static function($n){$s=$n/255;return $s<=0.04045?$s/12.92:(($s+0.055)/1.055)**2.4;},$rgb);return 0.2126*$v[0]+0.7152*$v[1]+0.0722*$v[2]>0.179?'#111111':'#ffffff'; }
     public static function css():string {
         $d=self::read();$map=['--j-action'=>$d['cor_primaria'],'--erp-accent'=>$d['cor_primaria'],'--j-green'=>$d['cor_destaque'],'--j-yellow'=>$d['cor_secundaria'],'--j-ink'=>$d['cor_texto'],'--j-dark'=>$d['cor_texto'],'--j-paper'=>$d['cor_fundo'],'--j-surface'=>$d['cor_superficie'],'--j-onaction'=>self::contrast($d['cor_primaria'])];
         $css='';foreach($map as $k=>$v)$css.=$k.':'.$v.';';

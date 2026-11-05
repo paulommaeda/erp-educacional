@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.4
+# ERP Educacional — 0.19.5
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.4.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.5.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -76,7 +76,7 @@ Excluir aluno mantém a pessoa e sincroniza seus perfis. Excluir uma pessoa sem 
 
 Pessoas centralizam nome, nascimento, CPF, RG, contato, endereço brasileiro/estrangeiro, estado civil, profissão, religião, igreja, sexo e foto. Alunos recebem RA e tipo Regular/AEE. Parentesco e atribuições acadêmica/financeira são independentes e cumulativos.
 
-As contas WordPress são criadas com login `nome.sobrenome`, tentando sobrenomes anteriores em colisões; se necessário, a tela solicita um login manual. A senha inicial continua sendo nascimento DDMMAAAA. Alterar nome/nascimento não altera login ou senha. Meu perfil permite editar somente os próprios dados e a foto; RA, vínculos e permissões ficam fora dessa edição.
+As contas WordPress são criadas com login `nome.sobrenome`, tentando sobrenomes anteriores em colisões; se necessário, a tela solicita um login manual. Novas contas recebem uma senha aleatória de 32 caracteres e um convite por e-mail para criar a própria senha no portal. O e-mail é obrigatório nos novos cadastros e nas edições. Alterar nome/nascimento não altera login ou senha. Meu perfil permite editar somente os próprios dados e a foto; RA, vínculos e permissões ficam fora dessa edição.
 
 Importação continua disponível ao administrador: CSV UTF-8 de pessoas primeiro, alunos depois. `codpessoa_origem` e RA são independentes e mantêm zeros à esquerda. Reimportação idêntica não duplica registros. Modelos estão em `modelos/` e na tela. Foto é avatar local do WordPress, sem alterar o serviço externo Gravatar.
 
@@ -459,3 +459,16 @@ O número da parcela é um link visual para **Resumo da parcela**, na ficha do a
 O resumo exibe aluno/RA quando presentes na tela, contrato, vencimento, situação, valor original, desconto incondicional, valor líquido, pontualidade prevista/concedida, juros, multa, valor pago e saldo. Inclui detalhamento das bolsas e cancelamento quando disponíveis. Fatura e recibo conservam as permissões e condições anteriores. O valor líquido continua sem deduzir a pontualidade prevista. A abertura usa os dados autorizados já carregados, sem consultar o Educbank ou alterar lançamentos. Fechar devolve o foco ao link.
 
 Validação: testes dos fluxos financeiros, ficha, permissões, recibos, edição/baixa, descontos e paginação; Chromium nas três telas em 320, 390, 1024, 1280, 1440 e 1920 px, sem rolagem horizontal da página e com modais ajustados ao viewport. Os testes antigos `payment-ui.cjs` e `workflow-ui.cjs` continuam com as mesmas falhas reproduzidas na versão 0.19.3, relacionadas aos fluxos anteriores de rematrícula e formulários. Nenhuma alteração de schema ou regra financeira.
+
+
+### Convites para criação de senha (0.19.5)
+
+Novas pessoas recebem usuários WordPress com senha aleatória; o nascimento deixa de ser usado como senha inicial. A criação e a edição de pessoas exigem e-mail válido, incluindo importação CSV, conferência de requerimentos/API, Meu perfil e edição dos contatos do aluno pela família. O envio público permanece pendente até a aprovação da secretaria.
+
+O convite de primeiro acesso é enviado ao e-mail da pessoa. Ao tornar a pessoa aluno e vincular responsáveis acadêmicos, eles também recebem o convite da conta do aluno. Assunto, nome completo, RA, usuário e botão **Criar senha do aluno** deixam explícito qual conta será ativada. Responsáveis apenas financeiros não recebem essa cópia. Contatos compartilhados são aceitos; cada convite identifica o usuário, e a recuperação de senha dessas contas deve ser solicitada pelo nome de usuário.
+
+O HTML acompanha nome, logo e cores da identidade visual da coligada, com a fonte Inter usada no portal e fontes alternativas para clientes de e-mail sem suporte a fontes externas. O transporte continua sendo `wp_mail`, compatível com o serviço SMTP já instalado. O link utiliza as chaves nativas WordPress (validade padrão de 24 horas e uso único após a definição), apontando para a página de criação de senha do ERP.
+
+Uma fila em metadados dos usuários compartilha a transação do cadastro. O WP-Cron processa até 10 contas por execução e tenta novamente falhas de transporte, com espera progressiva e limite de cinco tentativas. É necessário manter o WP-Cron ou o cron de servidor funcionando. Em **Usuários → Editar**, quem possui permissão de redefinir senha pode consultar o estado e reenviar o convite enquanto a conta ainda não tiver senha própria. Chaves reutilizadas entre destinatários são armazenadas criptografadas; senhas e chaves não entram na auditoria nem nas respostas da API.
+
+Mudanças de contato e revogação de atribuição acadêmica invalidam convites pendentes anteriores. Senhas já definidas e contas existentes antes desta versão são preservadas; não ocorre redefinição nem disparo em massa durante a atualização. Schema 36 mantido.

@@ -20,7 +20,7 @@ final class UserService
         $items=[];foreach($query->get_results() as $u){
             // Read directory is available to authorized staff; protected accounts are never editable by them.
             $safe=UserPermissions::portalTarget($u);$link=$this->db->row('SELECT codpessoa FROM '.$this->db->table('pessoa_usuarios').' WHERE wp_user_id=%d',[(int)$u->ID]);$person=$link?$this->db->get('pessoas',(int)$link['codpessoa']):null;
-            $items[]=['id'=>(int)$u->ID,'login'=>$u->user_login,'nome'=>$u->display_name,'email'=>$u->user_email,'roles'=>array_values($u->roles),'perfis'=>array_map(fn($r)=>wp_roles()->roles[$r]['name']??$r,$u->roles),'codpessoa'=>$link['codpessoa']??null,'version'=>$this->version($u,$person),'editavel'=>Access::isAdmin()||$safe];
+            $items[]=['id'=>(int)$u->ID,'login'=>$u->user_login,'nome'=>$u->display_name,'email'=>$person['email']??$u->user_email,'roles'=>array_values($u->roles),'perfis'=>array_map(fn($r)=>wp_roles()->roles[$r]['name']??$r,$u->roles),'codpessoa'=>$link['codpessoa']??null,'convite'=>\EducacionalERP\Infrastructure\WordPress\AccountInvitations::summary((int)$u->ID),'version'=>$this->version($u,$person),'editavel'=>Access::isAdmin()||$safe];
         }
         return ['role_options'=>Access::isAdmin()?$this->roleOptions():[],'items'=>$items,'total'=>(int)$query->get_total(),'page'=>$page,'permissions'=>['roles'=>Access::isAdmin()]+array_map(fn($a)=>UserPermissions::can($a),array_combine(array_keys(UserPermissions::ACTIONS),array_keys(UserPermissions::ACTIONS)))];
     }
@@ -50,9 +50,23 @@ final class UserService
             $this->db->onCompletion(static function()use($id,$oldEmail,$newEmail){clean_user_cache($id);wp_cache_delete($oldEmail,'useremail');wp_cache_delete($newEmail,'useremail');});
             if($person&&isset($changes['user_email']))$this->db->update('pessoas',(int)$link['codpessoa'],['email'=>$changes['user_email']]);
             $result=wp_update_user($changes);if(is_wp_error($result))throw new RuleViolation($result->get_error_message());
+            if(isset($changes['user_pass']))\EducacionalERP\Infrastructure\WordPress\AccountInvitations::finish($id);
+            if($person&&isset($changes['user_email']))(new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->contactChanged((int)$link['codpessoa'],(string)$person['email']!==$changes['user_email']);
             if($roles!==null){$allowed=array_column($this->roleOptions(),'slug');foreach(array_intersect($u->roles,$allowed) as $role)if(!in_array($role,$roles,true))$u->remove_role($role);foreach($roles as $role)if(!in_array($role,$u->roles,true))$u->add_role($role);}
             $this->db->audit('usuarios',$id,'editar_conta',['email'=>$oldEmail,'roles'=>$oldRoles],$audit,$key);
             return ['salvo'=>true];
         });
+    }
+    public function resendInvitation(int $id,string $key):array
+    {
+        $this->target($id);if(!UserPermissions::can('password'))throw new RuleViolation('Sem permissão para reenviar o convite.');
+        return $this->db->atomic(fn()=>(new Operations($this->db))->run($key,'reenviar_convite_acesso',['wp_user_id'=>$id],function()use($id){
+            $this->target($id);$summary=\EducacionalERP\Infrastructure\WordPress\AccountInvitations::summary($id);
+            if(!$summary||!$summary['pode_reenviar'])throw new RuleViolation('Esta conta já possui senha própria. Use a recuperação de senha no portal.');
+            $link=$this->db->row('SELECT codpessoa FROM '.$this->db->table('pessoa_usuarios').' WHERE wp_user_id=%d',[$id]);
+            if(!$link)throw new RuleViolation('Conta sem pessoa vinculada.');
+            (new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->queue((int)$link['codpessoa'],true);
+            return ['mensagem'=>'Convite agendado para envio por e-mail.'];
+        }));
     }
 }
