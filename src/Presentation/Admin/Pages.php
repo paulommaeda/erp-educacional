@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 namespace EducacionalERP\Presentation\Admin;
+use EducacionalERP\Infrastructure\WordPress\Access;
 final class Pages
 {
     public function register(): void

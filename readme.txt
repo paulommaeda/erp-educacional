@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.10
+Stable tag: 0.19.11
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,11 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.11 =
+* Corrige erro crítico Class EducacionalERP\Presentation\Admin\Access not found no carregamento de recursos do ERP.
+* Importa a classe correta de permissões em Pages, restaurando o carregamento no wp-admin e no portal.
+* Teste de regressão executa o hook de assets com diferentes perfis, permissões e contextos. Schema 37 mantido.
 
 = 0.19.10 =
 * Requerimento sem e-mail, empresa ou profissão na seção do aluno; responsáveis mantêm seus campos e e-mail obrigatório.

@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.10
+# ERP Educacional — 0.19.11
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.10.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.11.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 37**, acrescentando data, autor e motivo da exclusão financeira, sem apagar baixas, renumerar cadastros ou modificar valores. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -521,3 +521,10 @@ A geração cadastra o endereço no ERP e no WordPress; **não cria uma caixa po
 Em **Pessoas autorizadas a retirar o aluno**, marque **Pai**, **Mãe** ou ambos. É obrigatório selecionar ao menos um dos dois já informados na filiação. Não é preciso repetir o cadastro deles; os dados são aproveitados dos vínculos. **Adicionar outra pessoa autorizada** permite registrar outros nomes, parentesco, contatos e documentos. A exigência é validada também no servidor, para envio e conferência. Os requerimentos pendentes anteriores podem precisar dessa seleção antes da aprovação.
 
 Sem novas tabelas ou alterações de schema. Validação específica: `tests/admission-student-identity.php`, `tests/admissions-ui.cjs`, `tests/public-admissions.php`, `tests/fluent-admission-api.php` e `tests/school-identity.php`.
+
+
+### Correção do carregamento do ERP (0.19.11)
+
+Corrige o erro crítico `Class "EducacionalERP\Presentation\Admin\Access" not found` ao carregar os recursos do ERP no `wp-admin` ou portal. A classe `Pages` importa `EducacionalERP\Infrastructure\WordPress\Access`, usada ao publicar as permissões para a interface. A atualização não requer migração de banco; schema 37 mantido.
+
+O teste `tests/admin-assets.php` reproduz a falha antes da correção pelo hook `admin_enqueue_scripts` e executa o método compartilhado com o portal. Verifica administrador, Financeiro, Secretaria e Aluno, configuração REST, nonce, scripts, estilos e revogação de permissões. `tests/portal-render.php` também executa o carregamento completo da renderização. Testes automatizados usam funções WordPress simuladas e SQLite, sem acesso ao site de produção.
