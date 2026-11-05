@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.5
+# ERP Educacional — 0.19.6
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.5.zip` em uma cópia de homologação com backup.
+1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.6.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 36**, acrescentando requerimentos públicos, arquivos privados, autorizações de retirada e os campos complementares do formulário, sem excluir ou renumerar cadastros. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -472,3 +472,8 @@ O HTML acompanha nome, logo e cores da identidade visual da coligada, com a font
 Uma fila em metadados dos usuários compartilha a transação do cadastro. O WP-Cron processa até 10 contas por execução e tenta novamente falhas de transporte, com espera progressiva e limite de cinco tentativas. É necessário manter o WP-Cron ou o cron de servidor funcionando. Em **Usuários → Editar**, quem possui permissão de redefinir senha pode consultar o estado e reenviar o convite enquanto a conta ainda não tiver senha própria. Chaves reutilizadas entre destinatários são armazenadas criptografadas; senhas e chaves não entram na auditoria nem nas respostas da API.
 
 Mudanças de contato e revogação de atribuição acadêmica invalidam convites pendentes anteriores. Senhas já definidas e contas existentes antes desta versão são preservadas; não ocorre redefinição nem disparo em massa durante a atualização. Schema 36 mantido.
+
+
+### Ordem do requerimento (0.19.6)
+
+A etapa do aluno começa por Curso pretendido, Ano/série pretendido e Turno pretendido, seguida de Nome completo e Data de nascimento. Os demais campos seguem na ordem anterior. A alteração é somente de apresentação no formulário compartilhado de preenchimento e conferência, preservando validações, valores e mapeamentos. Schema 36 mantido.

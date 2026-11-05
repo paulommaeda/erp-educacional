@@ -48,6 +48,9 @@ async function create(host,config,{data={},review=false,assets=''}={}){
  for(const def of config.campos||[]){if(def.chave==='empresa')continue;areas[def.area]??=group(def.area==='solicitacao'?panels[0]:def.area==='familia'?panels[2]:panels[3],areaNames[def.area]);const parent=areas[def.area];let x;
   if(def.tipo==='multiplos'){x=choices(parent,def.chave,def.nome,review?[...new Set([...def.opcoes,...(Array.isArray(data.campos?.[def.chave])?data.campos[def.chave]:String(data.campos?.[def.chave]||'').split('\n')).filter(Boolean)])]:def.opcoes,data.campos?.[def.chave]||[]);}else{const i=input(parent,def.chave,def.nome,(def.entrada||def.tipo)==='selecao'?'select':def.tipo==='texto_longo'?'textarea':def.tipo==='numero'?'number':'text',def.opcoes,data.campos?.[def.chave]);if(def.tipo==='numero'){i.min='0';i.max='100';}x={wrap:i.parentElement,inputs:[i],value:()=>i.value};}extras[def.chave]={...x,def};
  }
+ const studentGrid=sections.aluno.querySelector('.erp-admission-grid');
+ studentGrid.prepend(...['interesse_curso','interesse_serie','interesse_turno'].map(key=>extras[key]?.wrap).filter(Boolean),...['nome','data_nascimento'].map(key=>personControls.aluno[key].parentElement));
+ if(areas.solicitacao&&!areas.solicitacao.children.length)areas.solicitacao.parentElement.remove();
  const course=extras.interesse_curso,year=extras.interesse_serie;
  const matchOption=(i,value,legacy=false)=>{const option=[...i.options].find(o=>o.value&&fold(o.value)===fold(value));if(!option&&value&&legacy)i.append(new Option(value+' (valor anterior; conferir)',value));i.value=option?.value||(legacy?value:'');};
  for(const [key,x]of Object.entries(extras))if(x.inputs[0]?.tagName==='SELECT'&&!['interesse_curso','interesse_serie'].includes(key))matchOption(x.inputs[0],data.campos?.[key],review);

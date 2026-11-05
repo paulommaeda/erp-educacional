@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.5
+Stable tag: 0.19.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,10 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.6 =
+* Reordena o requerimento: curso, série e turno pretendidos; nome e nascimento do aluno; demais campos na sequência existente.
+* Preserva validações, campos, mapeamentos e dados. Schema 36 mantido.
 
 = 0.19.5 =
 * Novos usuários com senha aleatória e convite por e-mail para criar a senha no portal.
