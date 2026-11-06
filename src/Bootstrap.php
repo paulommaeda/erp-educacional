@@ -37,6 +37,7 @@ final class Bootstrap
         add_action('ederp_cleanup_student_documents',static function()use($db){if(get_option('ederp_schema_version')===Installer::VERSION&&!get_option('ederp_schema_error'))(new \EducacionalERP\Application\StudentDocuments($db))->cleanupRejected();});
         add_action('admin_init',static function(){if(Access::isAdmin()&&!wp_next_scheduled('ederp_cleanup_student_documents'))wp_schedule_event(time()+300,'hourly','ederp_cleanup_student_documents');});
         $pages=new Pages(); add_action('admin_menu',[$pages,'register']);
+        (new \EducacionalERP\Presentation\Admin\ChatRecovery($db))->register();
         (new \EducacionalERP\Presentation\Portal\Portal())->register();
         // ZIP replacements do not activate again. New releases also retry an older saved failure once.
         add_action('admin_init',static function()use($db){

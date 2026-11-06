@@ -41,6 +41,10 @@ function fixtureM(array $schema):Database{
         'parcelas'=>[['idparcela'=>1,'idcontrato'=>1,'numero'=>1,'competencia'=>'2026-01-01','vencimento_original'=>'2026-01-31','regra_desconto_condicional'=>'{}','regra_encargos'=>'{}','valor_original'=>'1000.00','valor_liquido'=>'1000.00']],
         'lancamentos'=>[['idlancamento'=>1,'idparcela'=>1,'codpessoa_rf_original'=>2,'codpessoa_rf_atual'=>2,'descricao'=>'PARCELA DO BACKUP','emissao'=>'2026-01-05','vencimento'=>'2026-01-31','valor_original'=>'1000.00','valor_liquido'=>'1000.00','valor_baixa'=>'100.00','saldo_aberto'=>'900.00','status'=>'parcial']],
         'baixas'=>[['idbaixa'=>1,'idlancamento'=>1,'codpessoa_devedor'=>2,'data_pagamento'=>'2026-01-10','registrado_em'=>'2026-01-10 12:00:00','forma_pagamento'=>'pix','valor_pago'=>'100.00','idempotencia'=>'backup-migration-payment','ator_wp_user_id'=>get_current_user_id()]],
+        'chat_canais'=>[['idcanal'=>1,'nome'=>'Secretaria']],
+        'chat_conversas'=>[['idconversa'=>1,'idcanal'=>1,'codpessoa'=>2,'idaluno'=>1,'ultima_mensagem_id'=>1]],
+        'chat_mensagens'=>[['idmensagem'=>1,'idconversa'=>1,'autor_wp_user_id'=>get_current_user_id(),'autor_nome'=>'Responsável','origem'=>'responsavel','texto'=>'MENSAGEM VÁLIDA DO BACKUP']],
+        'chat_anexos'=>[['idanexo'=>1,'idmensagem'=>1,'nome'=>'valido.txt','mime'=>'text/plain','tamanho'=>6,'conteudo_base64'=>base64_encode('backup')]],
     ];
     foreach($fixtures as $name=>$rows)foreach($rows as $row)if($wpdb->insert($db->table($name),$row)===false)throw new RuntimeException('Fixture inválida em '.$name.': '.$wpdb->last_error);
     return $db;
@@ -61,7 +65,7 @@ try{
         update_option('ederp_schema_version','36');update_option('ederp_schema_error','Falha de persistência. Verifique conexão, restrições e índices do ERP.');update_option('ederp_schema_attempt_release','0.19.15');
         checkM(SchemaMigration::shouldAttemptAutomatically(),'erro antigo permite uma tentativa na nova versão');
         SchemaMigration::run($db);
-        checkM(get_option('ederp_schema_version')===Installer::VERSION&&!get_option('ederp_schema_error'),$legacy?'recupera índice antigo usado pela FK sem remover vínculos':'atualiza backup íntegro 36 → 39');
+        checkM(get_option('ederp_schema_version')===Installer::VERSION&&!get_option('ederp_schema_error'),$legacy?'recupera índice antigo usado pela FK sem remover vínculos':'atualiza backup íntegro 36 → '.Installer::VERSION);
         checkM(snapshotM($db,$old)===$before,'todos os registros e valores anteriores permanecem iguais');
         foreach(['matriculas','contratos','lancamentos'] as $name)checkM($db->get($name,1)['excluido_em']===null,'registros restaurados continuam disponíveis em '.$name);
         checkM($db->get('contratos',1)['idmodelo']===null,'contrato antigo mantém seu termo e não recebe modelo inventado');

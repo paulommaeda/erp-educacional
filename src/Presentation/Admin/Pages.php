@@ -64,6 +64,7 @@ final class Pages
         if(in_array($slug,['config','configuracoes'],true)&&\EducacionalERP\Infrastructure\WordPress\SchemaMigration::pending()){
             $this->migration();return;
         }
+        if(in_array($slug,['config','configuracoes'],true))(new ChatRecovery(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->notice();
         if($slug==='contratos'){if(!Access::isAdmin()){wp_die('Somente administradores.');return;}echo '<div class="wrap ederp" data-erp-contracts><p role="status">Carregando contratos...</p></div>';return;}
         if($slug==='documentos'){echo '<div class="wrap ederp" data-erp-documents></div>';return;}
         if(in_array($slug,['alunos','professores','pessoas','matriculas','academico','exportacao','importacao','requerimentos','rematriculas','configuracoes'],true)) {

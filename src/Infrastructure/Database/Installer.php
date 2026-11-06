@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '39';
+    public const VERSION = '40';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -29,6 +29,7 @@ final class Installer
                 // Secondary indexes are reconciled explicitly; dbDelta can misread legacy names.
                 dbDelta("CREATE TABLE $table (\n" . implode(",\n", $lines) . "\n) ENGINE=InnoDB " . $this->db->wp->get_charset_collate() . ';');
                 if ($this->db->wp->last_error) { throw new \RuntimeException('Não foi possível ajustar as colunas.'); }
+                if($name==='chat_anexos')(new ChatAttachmentRecovery($this->db))->prepare();
                 $engine = $this->db->row('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', [$table]);
                 if (strtoupper($engine['ENGINE'] ?? '') !== 'INNODB') { throw new \RuntimeException('Tabela ' . $name . ' deve utilizar InnoDB.'); }
                 if($name==='coligadas')(new \EducacionalERP\Application\Coligadas($this->db))->seed();
@@ -103,6 +104,8 @@ final class Installer
                     }
                 });
             }
+            $stage = 'preservação dos anexos do chat restaurado';
+            (new ChatAttachmentRecovery($this->db))->recover();
             foreach ($this->db->schema() as $name => $meta) {
                 $table = $this->db->table($name);
                 foreach ($meta['fks'] as $i => $fk) {
