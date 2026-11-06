@@ -1,5 +1,15 @@
 # Validação
 
+## 0.19.17
+
+- Reproduzido em WordPress/MariaDB o erro exato de FK entre `chat_anexos(codcoligada,idmensagem)` e `chat_mensagens` apresentado após a restauração. A versão 0.19.16 interrompe a migração com esse backup fictício; a correção preserva os arquivos e conclui a atualização para schema 40.
+- `tests/wordpress-chat-recovery.php`: 105 verificações em WordPress 7.1.3 e MariaDB 11.4.8 reais. Conferidos mensagem ausente, referência a outra coligada, arquivo válido, dois colégios, conteúdo/nome/MIME/tamanho/coligada/data preservados e ausência de mensagens/conversas inventadas.
+- Falha de auditoria injetada por trigger reverte integralmente o lote, incluindo referências, versões e metadados. Nova tentativa conclui; repetição posterior não duplica registros nem auditoria. As FKs finais rejeitam novas referências inexistentes e de outra coligada.
+- Conferência e download exigem administrador WordPress; atendente e visitante são bloqueados. Arquivos pendentes não são disponibilizados pelo chat comum. Listagem não carrega conteúdo, nomes são escapados e downloads têm nonce individual, resposta como anexo e cache privado.
+- `tests/wordpress-migration.php`: 34 verificações de regressão, agora também com chat/anexo válidos na fixture de schema 36. Conferem preservação dos dados anteriores, inclusive financeiro, repetição, instalação nova e alteração do vínculo opcional com FK já existente.
+- Doze suítes PHP de regressão aprovadas, incluindo chat/aluno, índices, exportação, recursos do admin, portal, contratos/shortcodes, exclusões acadêmica/financeira e coligadas/permissões. Dois fluxos de interface do chat aprovados. Conferência dos anexos renderizada em Chromium a 1440, 390 e 320 px, sem rolagem horizontal e com os três downloads de teste acessíveis.
+- O ambiente é descartável e usa dados fictícios. Não houve acesso ao backup ou ao site real do colégio. A recuperação trata anexos com vínculos inválidos; outros conflitos de restauração permanecem sujeitos ao diagnóstico.
+
 ## 0.19.16
 
 - `tests/wordpress-migration.php`: 34 verificações em WordPress 7.1.3 e MariaDB 11.4.8 reais, com dbDelta original e banco descartável. A fixture usa o schema 36 publicado no commit `400ceb0605a2ae00f74430ca3e2d8da7f2daff32`; contém apenas estrutura, e os registros são fictícios.

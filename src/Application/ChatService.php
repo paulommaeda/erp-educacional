@@ -167,6 +167,6 @@ final class ChatService
     }
     public function attachment(int $id):array
     {
-        $f=$this->db->get('chat_anexos',$id);$m=$this->db->get('chat_mensagens',(int)$f['idmensagem']);$this->conversation((int)$m['idconversa']);return ['nome'=>$f['nome'],'mime'=>$f['mime'],'conteudo'=>$f['conteudo_base64']];
+        $f=$this->db->get('chat_anexos',$id);if($f['idmensagem']===null)throw new RuleViolation('Este anexo está preservado para conferência pelo administrador.');$m=$this->db->get('chat_mensagens',(int)$f['idmensagem']);$this->conversation((int)$m['idconversa']);return ['nome'=>$f['nome'],'mime'=>$f['mime'],'conteudo'=>$f['conteudo_base64']];
     }
 }
