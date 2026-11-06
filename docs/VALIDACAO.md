@@ -1,5 +1,12 @@
 # Validação
 
+## 0.19.15
+
+- `tests/contract-payer-shortcodes.php`: 35 verificações de emissão e prévia com estado civil, profissão, endereço completo e campos separados do assinante financeiro. Conferidos nome do estado civil por referência, texto legado, renomeação do cadastro, número zero, campos ausentes, endereço internacional e preservação do shortcode de endereço anterior.
+- Os testes distinguem aluno, responsável acadêmico e responsável financeiro, exercitam a troca financeira pelo fluxo próprio e conferem preservação do texto já emitido e aplicação explícita de modelo com os dados do novo assinante.
+- Sete suítes PHP aprovadas, incluindo contratos/modelos, estados civis, dados pessoais, bolsas, gestão financeira e exclusão de matrícula. Dez fluxos de interface de contratos e matrícula aprovados. Editor com a lista completa de shortcodes conferido em Chromium em 1440, 390 e 320 px, com inserção dos três novos campos principais e sem rolagem horizontal.
+- Schema 39 mantido; os campos já existem no cadastro de pessoas. Os serviços são executados com SQLite e fronteiras WordPress simuladas.
+
 ## 0.19.14
 
 - `tests/enrollment-deletion.php` reproduziu na versão 0.19.13 a mensagem "Não é possível excluir: existem contratos financeiros vinculados" mesmo após excluir os lançamentos e o contrato. A correção passa em 46 verificações: exclusão com histórico financeiro preservado, vínculo ao período reaberto, liberação de vaga e nova matrícula, consultas e API, pagamentos antigos, migração automática de situação, restrições acadêmicas, permissões, coligada, versão, idempotência e rollback completo por falha injetada na auditoria final.

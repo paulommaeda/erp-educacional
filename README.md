@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.14
+# ERP Educacional — 0.19.15
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.14.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.15.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 39**, acrescentando data, autor e motivo da exclusão de matrículas. Os contratos, parcelas e pagamentos anteriores são preservados. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -18,6 +18,8 @@ As turmas antigas ficam inicialmente sem plano, para não inventar preços. Cont
 O administrador encontra a gestão no menu **Contratos**, no portal e no WordPress. A Gestão financeira e a ficha do aluno também oferecem um atalho. Consulte por nome, RA, número, período ou situação, visualize/imprima o texto e abra **Editar** ou **Excluir**.
 
 Em **Contratos → Modelos de contrato**, cadastre o texto, a versão e os shortcodes. Há inserção por clique e prévia com dados de um contrato. Defina um modelo padrão ou escolha o modelo na matrícula. Cada emissão guarda seu texto preenchido; revisar um modelo não altera contratos anteriores. Os termos já aceitos nas ofertas de rematrícula continuam sendo respeitados.
+
+Para qualificar o responsável financeiro como assinante, use `[responsavel_estado_civil]`, `[responsavel_profissao]` e `[responsavel_endereco_completo]`. Rua, número, complemento, bairro, cidade, estado/UF, CEP e país também estão disponíveis separadamente no editor. Os dados vêm do cadastro da pessoa definida como responsável financeiro atual do contrato.
 
 Valores, bolsa, quantidade e primeiro vencimento podem ser alterados no contrato somente antes da geração de parcelas. Para excluir um contrato, primeiro exclua seus lançamentos na Gestão financeira, inclusive os cancelados ainda disponíveis. A exclusão guarda o histórico e permite configurar outro contrato na matrícula, com novo número. Veja o [guia de contratos e shortcodes](docs/CONTRATOS.md).
 

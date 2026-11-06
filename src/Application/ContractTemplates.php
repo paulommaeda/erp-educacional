@@ -11,6 +11,8 @@ final class ContractTemplates
     public const TOKENS=[
         'aluno_nome'=>'Nome do aluno','aluno_ra'=>'RA do aluno','aluno_cpf'=>'CPF do aluno','aluno_nascimento'=>'Nascimento do aluno','aluno_email'=>'E-mail do aluno','aluno_endereco'=>'Endereço do aluno',
         'responsavel_nome'=>'Nome do responsável financeiro','responsavel_cpf'=>'CPF do responsável financeiro','responsavel_rg'=>'RG do responsável financeiro','responsavel_email'=>'E-mail do responsável financeiro','responsavel_telefone'=>'Telefone do responsável financeiro','responsavel_endereco'=>'Endereço do responsável financeiro',
+        'responsavel_estado_civil'=>'Estado civil do responsável financeiro (assinante)','responsavel_profissao'=>'Profissão do responsável financeiro (assinante)','responsavel_endereco_completo'=>'Endereço completo do responsável financeiro (assinante), incluindo país',
+        'responsavel_rua'=>'Rua do responsável financeiro','responsavel_numero'=>'Número do endereço do responsável financeiro','responsavel_complemento'=>'Complemento do endereço do responsável financeiro','responsavel_bairro'=>'Bairro do responsável financeiro','responsavel_cidade'=>'Cidade do responsável financeiro','responsavel_estado'=>'Estado/UF do responsável financeiro','responsavel_cep'=>'CEP do responsável financeiro','responsavel_pais'=>'País do responsável financeiro (código ISO)',
         'pai_nome'=>'Nome do pai','pai_cpf'=>'CPF do pai','mae_nome'=>'Nome da mãe','mae_cpf'=>'CPF da mãe',
         'colegio_nome'=>'Nome do colégio','colegio_razao_social'=>'Razão social do colégio','colegio_cnpj'=>'CNPJ do colégio','colegio_endereco'=>'Endereço do colégio','colegio_email'=>'E-mail do colégio','colegio_telefone'=>'Telefone do colégio',
         'contrato_numero'=>'Número do contrato','contrato_data'=>'Data do contrato','contrato_valor_original'=>'Valor original total','contrato_desconto'=>'Bolsa total','contrato_valor_liquido'=>'Valor líquido total','contrato_parcelas'=>'Quantidade de parcelas','contrato_primeiro_vencimento'=>'Primeiro vencimento',
@@ -94,19 +96,23 @@ final class ContractTemplates
     }
 
     private static function date(?string $date):string {return $date?implode('/',array_reverse(explode('-',substr($date,0,10)))):'';}
-    private static function address(array $person):string
+    private static function address(array $person,bool $includeCountry=false):string
     {
-        $parts=[];foreach(['rua','numero','complemento','bairro','cidade','estado','cep'] as $field)if(!empty($person[$field]))$parts[]=$person[$field];return implode(', ',$parts);
+        $parts=[];foreach(['rua','numero','complemento','bairro','cidade','estado','cep'] as $field)if(isset($person[$field])&&trim((string)$person[$field])!=='')$parts[]=(string)$person[$field];
+        if($includeCountry&&$parts&&isset($person['pais'])&&trim((string)$person['pais'])!=='')$parts[]=(string)$person['pais'];return implode(', ',$parts);
     }
     private function values(array $c):array
     {
         $m=$this->db->get('matriculas',(int)$c['idmatricula']);$a=$this->db->get('alunos',(int)$m['idaluno']);$p=$this->db->get('pessoas',(int)$a['codpessoa']);$rf=$this->db->get('pessoas',(int)$c['codpessoa_rf_atual']);
+        $civilStatus=(string)($rf['estado_civil']??'');if(!empty($rf['idestado_civil']))$civilStatus=(string)$this->db->get('estados_civis',(int)$rf['idestado_civil'])['nome'];
         $period=$this->db->get('periodos_letivos',(int)$m['codperiodo']);$course=$this->db->get('cursos',(int)$m['idcurso']);$class=$this->db->get('turmas',(int)$m['idturma_atual']);$shift=$this->db->get('turnos',(int)$class['idturno']);$school=SchoolIdentity::read();$company=$this->db->get('coligadas',(int)$c['codcoligada']);
         $values=['aluno_nome'=>$p['nome'],'aluno_ra'=>$a['ra'],'aluno_cpf'=>$p['cpf']??'','aluno_nascimento'=>self::date($p['data_nascimento']??null),'aluno_email'=>$p['email']??'','aluno_endereco'=>self::address($p),
             'responsavel_nome'=>$rf['nome'],'responsavel_cpf'=>$rf['cpf']??'','responsavel_rg'=>$rf['rg']??'','responsavel_email'=>$rf['email']??'','responsavel_telefone'=>$rf['telefone']??'','responsavel_endereco'=>self::address($rf),
+            'responsavel_estado_civil'=>$civilStatus,'responsavel_profissao'=>$rf['profissao']??'','responsavel_endereco_completo'=>self::address($rf,true),
             'colegio_nome'=>$school['nome'],'colegio_razao_social'=>$company['razao_social']?:$school['razao_social'],'colegio_cnpj'=>($company['cnpj']??'')?:$school['cnpj'],'colegio_endereco'=>self::address($school),'colegio_email'=>$school['email'],'colegio_telefone'=>$school['telefone'],
             'contrato_numero'=>$c['numero'],'contrato_data'=>self::date($c['data_contrato']),'contrato_parcelas'=>(string)$c['quantidade_parcelas'],'contrato_primeiro_vencimento'=>self::date($c['primeiro_vencimento']),
             'matricula_id'=>(string)$m['idmatricula'],'periodo_codigo'=>$period['codigo'],'curso_nome'=>$course['nome'],'turma_nome'=>$class['nome'],'turno_nome'=>$shift['nome'],'plano_nome'=>$c['plano_nome_snapshot']??''];
+        foreach(['rua','numero','complemento','bairro','cidade','estado','cep','pais'] as $field)$values['responsavel_'.$field]=(string)($rf[$field]??'');
         foreach(['contrato_valor_original'=>'valor_original_total','contrato_desconto'=>'desconto_incondicional_total','contrato_valor_liquido'=>'valor_liquido_total'] as $token=>$field)$values[$token]='R$ '.number_format(Money::cents($c[$field])/100,2,',','.');
         foreach(['pai','mae'] as $relationship){$parent=$this->db->row('SELECT p.nome,p.cpf FROM '.$this->db->table('aluno_responsaveis').' r JOIN '.$this->db->table('pessoas').' p ON p.codpessoa=r.codpessoa_responsavel WHERE r.idaluno=%d AND r.parentesco=%s AND r.fim_vigencia IS NULL AND r.inicio_vigencia<=UTC_TIMESTAMP() ORDER BY r.idvinculo DESC LIMIT 1',[(int)$a['idaluno'],$relationship]);$values[$relationship.'_nome']=$parent['nome']??'';$values[$relationship.'_cpf']=$parent['cpf']??'';}
         $out=[];foreach(self::TOKENS as $token=>$_)$out['['.$token.']']=(string)($values[$token]??'');return $out;

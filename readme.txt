@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.14
+Stable tag: 0.19.15
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.15 =
+* Novos shortcodes do responsável financeiro/assinante: estado civil, profissão e endereço completo, incluindo país.
+* Campos de endereço também disponíveis separadamente: rua, número, complemento, bairro, cidade, estado/UF, CEP e país.
+* Estado civil usa o nome do cadastro referenciado e mantém compatibilidade com texto legado. Os campos usam o responsável financeiro atual do contrato.
+* Prévia e emissão compartilham os preenchimentos; textos já emitidos permanecem preservados. Mantido o shortcode anterior de endereço.
+* Botões de shortcodes longos se ajustam à largura do editor. Schema 39 mantido, sem nova migração.
 
 = 0.19.14 =
 * Corrige exclusão de matrícula após excluir seus lançamentos e contratos: os contratos guardados no histórico deixam de impedir a operação.
