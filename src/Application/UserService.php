@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace EducacionalERP\Application;
 use EducacionalERP\Domain\{Store,RuleViolation,Input};
-use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,UserPermissions};
+use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,UserPermissions,UserAccessLog,AccountInvitations};
 final class UserService
 {
     public function __construct(private Store $db){}
@@ -20,7 +20,8 @@ final class UserService
         $items=[];foreach($query->get_results() as $u){
             // Read directory is available to authorized staff; protected accounts are never editable by them.
             $safe=UserPermissions::portalTarget($u);$link=$this->db->row('SELECT codpessoa FROM '.$this->db->table('pessoa_usuarios').' WHERE wp_user_id=%d',[(int)$u->ID]);$person=$link?$this->db->get('pessoas',(int)$link['codpessoa']):null;
-            $items[]=['id'=>(int)$u->ID,'login'=>$u->user_login,'nome'=>$u->display_name,'email'=>$person['email']??$u->user_email,'roles'=>array_values($u->roles),'perfis'=>array_map(fn($r)=>wp_roles()->roles[$r]['name']??$r,$u->roles),'codpessoa'=>$link['codpessoa']??null,'convite'=>\EducacionalERP\Infrastructure\WordPress\AccountInvitations::summary((int)$u->ID),'version'=>$this->version($u,$person),'editavel'=>Access::isAdmin()||$safe];
+            $last=get_user_meta((int)$u->ID,UserAccessLog::LAST,true);$last=is_string($last)&&$last!==''?$last:null;
+            $items[]=['id'=>(int)$u->ID,'login'=>$u->user_login,'nome'=>$u->display_name,'email'=>$person['email']??$u->user_email,'roles'=>array_values($u->roles),'perfis'=>array_map(fn($r)=>wp_roles()->roles[$r]['name']??$r,$u->roles),'codpessoa'=>$link['codpessoa']??null,'convite'=>AccountInvitations::summary((int)$u->ID),'ultimo_acesso'=>$last,'ultimo_acesso_label'=>UserAccessLog::label($last),'version'=>$this->version($u,$person),'editavel'=>Access::isAdmin()||$safe];
         }
         return ['role_options'=>Access::isAdmin()?$this->roleOptions():[],'items'=>$items,'total'=>(int)$query->get_total(),'page'=>$page,'permissions'=>['roles'=>Access::isAdmin()]+array_map(fn($a)=>UserPermissions::can($a),array_combine(array_keys(UserPermissions::ACTIONS),array_keys(UserPermissions::ACTIONS)))];
     }
@@ -60,13 +61,43 @@ final class UserService
     public function resendInvitation(int $id,string $key):array
     {
         $this->target($id);if(!UserPermissions::can('password'))throw new RuleViolation('Sem permissão para reenviar o convite.');
-        return $this->db->atomic(fn()=>(new Operations($this->db))->run($key,'reenviar_convite_acesso',['wp_user_id'=>$id],function()use($id){
+        return $this->db->atomic(fn()=>(new Operations($this->db))->run($key,'reenviar_convite_acesso',['wp_user_id'=>$id],function()use($id,$key){
             $this->target($id);$summary=\EducacionalERP\Infrastructure\WordPress\AccountInvitations::summary($id);
             if(!$summary||!$summary['pode_reenviar'])throw new RuleViolation('Esta conta já possui senha própria. Use a recuperação de senha no portal.');
             $link=$this->db->row('SELECT codpessoa FROM '.$this->db->table('pessoa_usuarios').' WHERE wp_user_id=%d',[$id]);
             if(!$link)throw new RuleViolation('Conta sem pessoa vinculada.');
-            (new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->queue((int)$link['codpessoa'],true);
+            (new AccountInvitations($this->db))->queue((int)$link['codpessoa'],true,false,true);
+            $this->db->audit('usuarios',$id,'solicitar_convite',null,['solicitado_por'=>get_current_user_id()],$key);
             return ['mensagem'=>'Convite agendado para envio por e-mail.'];
         }));
+    }
+    public function sendInvitations(array $d,string $key):array
+    {
+        $this->access();if(!UserPermissions::can('password'))throw new RuleViolation('Sem permissão para enviar convites.');
+        $users=$d['usuarios']??null;
+        if(!is_array($users)||!array_is_list($users)||!$users||count($users)>100)throw new RuleViolation('Selecione de 1 a 100 usuários.');
+        $seen=[];
+        foreach($users as &$item){if(!is_array($item))throw new RuleViolation('Seleção de usuário inválida.');$id=Input::id($item['id']??null);if(isset($seen[$id])||!is_string($item['version']??null))throw new RuleViolation('Seleção repetida ou desatualizada. Recarregue a lista.');$seen[$id]=true;$item=['id'=>$id,'version'=>$item['version']];}unset($item);
+        usort($users,static fn($a,$b)=>$a['id']<=>$b['id']);
+        return $this->db->atomic(fn()=>(new Operations($this->db))->run($key,'enviar_convites_selecionados',['usuarios'=>$users],function()use($users,$key){
+            $items=[];
+            foreach($users as $item){
+                $id=$item['id'];$link=$this->db->row('SELECT codpessoa FROM '.$this->db->table('pessoa_usuarios').' WHERE wp_user_id=%d FOR UPDATE',[$id]);if(!$link)throw new RuleViolation('Uma das contas selecionadas não possui pessoa vinculada. Recarregue a lista.');
+                $person=$this->db->get('pessoas',(int)$link['codpessoa'],true);clean_user_cache($id);$user=$this->target($id);
+                if(!hash_equals($this->version($user,$person),$item['version']))throw new RuleViolation('A conta de '.$person['nome'].' foi alterada. Recarregue a lista antes de enviar.');
+                $summary=AccountInvitations::summary($id);if(!(int)$person['ativo']||!$summary||!$summary['pode_reenviar'])throw new RuleViolation('A conta de '.$person['nome'].' já possui senha própria ou está inativa. Atualize a seleção.');
+                (new AccountInvitations($this->db))->queue((int)$link['codpessoa'],true,false,true);
+                $this->db->audit('usuarios',$id,'solicitar_convite',['status'=>$summary['status']],['status'=>'pendente','solicitado_por'=>get_current_user_id()],$key);$items[]=['id'=>$id,'status'=>'pendente'];
+            }
+            return ['items'=>$items,'quantidade'=>count($items),'mensagem'=>count($items).' convite(s) agendado(s) para envio por e-mail.'];
+        }));
+    }
+    public function accessLog(int $id,int $page=1):array
+    {
+        if(!UserPermissions::can('access_log'))throw new RuleViolation('Sem permissão para consultar o histórico de acessos.');$user=$this->target($id);$page=max(1,min(100000,$page));
+        $rows=$this->db->rows('SELECT idacesso,tipo,ocorrido_em FROM '.$this->db->table('usuario_acessos').' WHERE wp_user_id=%d ORDER BY ocorrido_em DESC,idacesso DESC LIMIT 21 OFFSET %d',[$id,($page-1)*20]);
+        foreach($rows as &$row){$row['data_hora']=UserAccessLog::label($row['ocorrido_em']);$row['descricao']=$row['tipo']==='login'?'Entrada no sistema':'Acesso com sessão ativa';}unset($row);
+        $last=get_user_meta($id,UserAccessLog::LAST,true);
+        return ['id'=>$id,'login'=>$user->user_login,'nome'=>$user->display_name,'items'=>array_slice($rows,0,20),'more'=>count($rows)>20,'page'=>$page,'ultimo_acesso'=>is_string($last)?UserAccessLog::label($last):null,'fuso'=>wp_timezone()->getName()];
     }
 }

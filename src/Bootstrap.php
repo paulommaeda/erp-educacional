@@ -24,6 +24,7 @@ final class Bootstrap
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::register();
         $db=new Database($wpdb); $ops=new Operations($db); $access=new Access($db); $academic=new AcademicService($db,$ops);
         \EducacionalERP\Infrastructure\WordPress\AccountInvitations::register($db);
+        \EducacionalERP\Infrastructure\WordPress\UserAccessLog::register($db);
         \EducacionalERP\Infrastructure\Educbank\Cron::register($db);
         \EducacionalERP\Infrastructure\WordPress\DiscountCron::register($db);
         \EducacionalERP\Infrastructure\Educbank\Webhook::register($db);

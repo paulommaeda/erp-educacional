@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.17
+Stable tag: 0.19.18
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.18 =
+* Cadastro e importação criam a conta sem enviar automaticamente o convite de criação de senha. Convites antigos ainda na fila automática também aguardam uma solicitação manual.
+* Usuários e acessos permite selecionar até 100 contas entre páginas, conferir a seleção e encaminhar convites em lote. Permissões, versões e idempotência são conferidas no servidor.
+* Tags Não enviado, Na fila, Enviado e OK, com datas de envio e confirmação. OK exige a conclusão da senha inicial pelo link; uma senha definida pelo administrador não simula essa confirmação.
+* Último acesso com data/hora e histórico de entradas e retornos com sessão ativa, no fuso do WordPress. Schema 41 acrescenta o histórico sem gravar senhas ou links de redefinição.
+* Excluir pessoa também exclui sua conta WordPress, preservando os históricos e transferindo os conteúdos ao administrador. Falhas revertem a exclusão conjunta; a própria conta da sessão e pessoas com dependências continuam protegidas.
 
 = 0.19.17 =
 * Recupera a migração de backups com anexos do chat cuja mensagem não existe ou pertence a outra coligada.

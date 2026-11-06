@@ -56,6 +56,7 @@ final class Authentication
             if(strlen($password)<12||strlen($password)>4096)return 'Use uma senha com pelo menos 12 caracteres.';
             if($password!==self::text('confirm',$data))return 'As senhas não conferem.';
             $errors=new \WP_Error();do_action('validate_password_reset',$errors,$user);if($errors->has_errors())return 'A senha não atende aos requisitos da conta.';
+            \EducacionalERP\Infrastructure\WordPress\AccountInvitations::expectInitialReset((int)$user->ID,$key);
             reset_password($user,$password);delete_transient($rate);return 'reset_ok';
         }
         return 'Ação inválida.';

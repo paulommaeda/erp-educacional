@@ -4,8 +4,8 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\RuleViolation;
 final class UserPermissions
 {
-    public const ACTIONS=['email'=>'Alterar e-mail de usuários','password'=>'Redefinir senha de usuários'];
-    public static function forRole(string $role):array {return array_values(array_intersect(get_option('ederp_user_permissions',[])[$role]??($role==='erp_secretaria'?['email','password']:[]),array_keys(self::ACTIONS)));}
+    public const ACTIONS=['email'=>'Alterar e-mail de usuários','password'=>'Redefinir senha e enviar convites','access_log'=>'Consultar histórico de acessos'];
+    public static function forRole(string $role):array {return array_values(array_intersect(get_option('ederp_user_permissions',[])[$role]??($role==='erp_secretaria'?['email','password','access_log']:[]),array_keys(self::ACTIONS)));}
     public static function can(string $action):bool {
         if(!isset(self::ACTIONS[$action])||!is_user_logged_in()||!MenuPolicy::can('usuarios'))return false;
         if(Access::isAdmin())return true;

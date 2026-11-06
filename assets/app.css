@@ -336,3 +336,15 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 
 .erp-finance-delete-items{list-style:none;max-height:240px;overflow:auto;margin:0 0 16px;padding:0;overscroll-behavior:contain}.erp-finance-delete-items li{padding:10px 0;border-bottom:1px solid var(--j-line,#dce7e2);overflow-wrap:anywhere}.erp-finance-delete-items strong,.erp-finance-delete-items span{display:block}.erp-finance-delete-items span{font-size:14px}
 .ederp .erp-finance-filter-tools button:disabled{cursor:not-allowed}
+
+/* User invitations and access history. */
+.ederp .erp-users-list .erp-user-row{grid-template-columns:22px minmax(0,1.4fr) minmax(0,.8fr) minmax(0,1.15fr) minmax(0,1fr) minmax(110px,.7fr);gap:14px;align-items:start}
+.ederp .erp-users-list .erp-user-row>*{min-width:0;grid-column:auto;grid-row:auto;overflow-wrap:anywhere}
+.erp-user-identity,.erp-user-invitation,.erp-user-last-access,.erp-user-actions{display:grid;gap:7px}
+.ederp .erp-user-row input[type=checkbox]{width:18px;height:18px;min-height:0;margin-top:4px}
+.erp-invitation-tags{display:flex;flex-wrap:wrap;gap:6px}
+.erp-invitation-tag{display:inline-block;padding:4px 9px;border-radius:6px;font-size:12px;font-weight:600;border:1px solid transparent}
+.erp-invitation-tag.sent{color:#17518c;background:#e5effa;border-color:#a8c4e2}.erp-invitation-tag.ok{color:#0d593b;background:#e0f3e8;border-color:#95c7a7}.erp-invitation-tag.neutral{color:#405363;background:#eef2f5;border-color:#c8d4de}.erp-invitation-tag.error{color:#912931;background:#fff0f0;border-color:#e1b1b5}
+.erp-invitation-toolbar{margin:16px 0}.erp-invitation-toolbar .ederp-check{align-items:center}.erp-invitation-toolbar span{overflow-wrap:anywhere}
+.erp-user-access-log{grid-column:1/-1}.erp-user-access-log li{padding:10px 0;border-bottom:1px solid var(--j-line,#ddd)}.erp-form-dialog .ederp-form>ul{grid-column:1/-1;overflow-wrap:anywhere;padding-left:22px;max-height:240px;overflow:auto}
+@media(max-width:1100px){.ederp .erp-users-list .erp-user-row{grid-template-columns:22px minmax(0,1fr)}.ederp .erp-users-list .erp-user-row>*{grid-column:2;grid-row:auto}.ederp .erp-users-list .erp-user-row>:first-child{grid-column:1;grid-row:1}.erp-user-actions{display:flex;flex-wrap:wrap}.erp-user-actions button{width:auto}.erp-user-last-access{display:flex;gap:8px;flex-wrap:wrap}}

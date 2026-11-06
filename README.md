@@ -1,11 +1,11 @@
-# ERP Educacional — 0.19.17
+# ERP Educacional — 0.19.18
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.17.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 40**, preservando os registros existentes e os anexos do chat com vínculos inválidos no backup. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e o diagnóstico. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.18.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 41**, acrescentando o histórico de acessos e preservando os registros existentes. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e o diagnóstico. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -84,13 +84,15 @@ A tela Matrículas inicia com período atual e situação Ativa. Filtros: perío
 
 Somente administradores excluem cadastros, com motivo, confirmação, verificação de versão e auditoria. Cursos com turmas, planos vinculados, alunos com dependências, turmas com histórico e matrículas com contratos não podem ser excluídos. O período vigente não pode ser excluído. Matrículas acadêmicas antigas sem contrato ou movimentações posteriores podem ser excluídas, reabrindo o vínculo ao período; o vínculo pendente pode ser excluído separadamente. Históricos de responsáveis são preservados.
 
-Excluir aluno mantém a pessoa e sincroniza seus perfis. Excluir uma pessoa sem dependências mantém sua conta WordPress, desvincula-a e remove os perfis ERP; outros perfis e conteúdos WordPress são preservados. Exclusões são definitivas e não possuem lixeira.
+Excluir aluno mantém a pessoa e sincroniza seus perfis. Excluir uma pessoa sem dependências também exclui sua conta WordPress. Posts e links são transferidos ao administrador que confirmou a exclusão, e os históricos do ERP e de acessos são preservados. Uma falha reverte a operação conjunta. Não é permitido excluir a própria conta da sessão; contas em rede WordPress exigem administração da rede. Exclusões são definitivas e não possuem lixeira.
 
 ## Pessoas, contas e importação
 
 Pessoas centralizam nome, nascimento, CPF, RG, contato, endereço brasileiro/estrangeiro, estado civil, profissão, religião, igreja, sexo e foto. Alunos recebem RA e tipo Regular/AEE. Parentesco e atribuições acadêmica/financeira são independentes e cumulativos.
 
-As contas WordPress são criadas com login `nome.sobrenome`, tentando sobrenomes anteriores em colisões; se necessário, a tela solicita um login manual. Novas contas recebem uma senha aleatória de 32 caracteres e um convite por e-mail para criar a própria senha no portal. O e-mail é obrigatório nos novos cadastros e nas edições. Alterar nome/nascimento não altera login ou senha. Meu perfil permite editar somente os próprios dados e a foto; RA, vínculos e permissões ficam fora dessa edição.
+As contas WordPress são criadas com login `nome.sobrenome`, tentando sobrenomes anteriores em colisões; se necessário, a tela solicita um login manual. Novas contas recebem uma senha aleatória de 32 caracteres e ficam com convite **Não enviado**. Em **Usuários e acessos**, selecione as contas e confirme **Enviar convites selecionados**. Há tags **Na fila**, **Enviado** e **OK**, datas de envio/confirmação e o último acesso. O histórico fica disponível por usuário, conforme a permissão de consulta. Veja o [guia de usuários, convites e acessos](docs/USUARIOS-E-ACESSOS.md).
+
+O e-mail é obrigatório nos novos cadastros e nas edições. Cadastros, importações e novos vínculos não disparam convites automaticamente; solicitações antigas da fila automática são interrompidas. Alterar nome/nascimento não altera login ou senha. Meu perfil permite editar somente os próprios dados e a foto; RA, vínculos e permissões ficam fora dessa edição.
 
 Importação continua disponível ao administrador: CSV UTF-8 de pessoas primeiro, alunos depois. `codpessoa_origem` e RA são independentes e mantêm zeros à esquerda. Reimportação idêntica não duplica registros. Modelos estão em `modelos/` e na tela. Foto é avatar local do WordPress, sem alterar o serviço externo Gravatar.
 

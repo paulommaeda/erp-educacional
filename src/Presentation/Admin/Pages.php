@@ -8,7 +8,7 @@ final class Pages
     {
         add_menu_page('ERP Educacional','ERP Educacional','erp_acessar_admin','ederp',[$this,'home'],'dashicons-welcome-learn-more',26);
         foreach(['alunos'=>['Alunos','erp_gerenciar_pessoas'],'professores'=>['Professores','erp_gerenciar_academico'],'pessoas'=>['Pessoas','erp_gerenciar_pessoas'],'academico'=>['Estrutura acadêmica','erp_gerenciar_academico'],'matriculas'=>['Matrículas','erp_gerenciar_academico'],
-            'documentos'=>['Documentos dos alunos','erp_gerenciar_pessoas'],'financeiro'=>['Financeiro','erp_consultar_financeiro'],'contratos'=>['Contratos','manage_options'],'rematriculas'=>['Rematrículas','erp_gerenciar_academico'],'exportacao'=>['Exportação','manage_options'],'requerimentos'=>['Requerimentos','erp_gerenciar_pessoas'],'importacao'=>['Importação','manage_options'],'perfis'=>['Perfis e acessos','manage_options'],'config'=>['Configurações','erp_configurar']] as $slug=>[$title,$cap]) {
+            'documentos'=>['Documentos dos alunos','erp_gerenciar_pessoas'],'financeiro'=>['Financeiro','erp_consultar_financeiro'],'contratos'=>['Contratos','manage_options'],'rematriculas'=>['Rematrículas','erp_gerenciar_academico'],'exportacao'=>['Exportação','manage_options'],'requerimentos'=>['Requerimentos','erp_gerenciar_pessoas'],'importacao'=>['Importação','manage_options'],'usuarios'=>['Usuários e acessos','manage_options'],'perfis'=>['Perfis e acessos','manage_options'],'config'=>['Configurações','erp_configurar']] as $slug=>[$title,$cap]) {
             add_submenu_page('ederp',$title,$title,$cap,'ederp-'.$slug,fn()=>$this->screen($slug,$title,$cap));
         }
         add_action('admin_enqueue_scripts',function($hook){ if(str_contains((string)$hook,'ederp')) { self::assets(); } });
@@ -72,7 +72,7 @@ final class Pages
             return;
         }
         if($slug==='config'){echo '<div class="wrap ederp" data-erp-screen="configuracoes"></div>';}
-        if($slug==='perfis') { echo (new \EducacionalERP\Presentation\Portal\Portal())->render('perfis');return; }
+        if(in_array($slug,['perfis','usuarios'],true)) { echo (new \EducacionalERP\Presentation\Portal\Portal())->render($slug);return; }
         echo '<div class="wrap ederp"><h1>'.esc_html($title).'</h1>';
         if($slug==='financeiro') {
             if(Access::isAdmin())echo '<p><a class="erp-link-button" href="'.esc_url(is_admin()?admin_url('admin.php?page=ederp-contratos'):\EducacionalERP\Presentation\Portal\Portal::url('contratos')).'">Gerenciar contratos e modelos</a></p>';
@@ -92,7 +92,7 @@ final class Pages
             echo '<p>O responsável verá as ofertas elegíveis no Portal e confirmará a renovação com aceite do termo.</p>';
         } elseif($slug==='config') {
             echo '<p><a href="'.esc_url(\EducacionalERP\Presentation\Portal\Portal::url()).'">Abrir portal escolar</a></p>';
-            echo '<h2>Contas WordPress automáticas</h2><p>Cadastre as pessoas em Pessoas. A conta é criada com o nascimento informado, e os perfis são sincronizados pelos vínculos.</p>';
+            echo '<h2>Contas WordPress automáticas</h2><p>Cadastre as pessoas em Pessoas. A conta é criada automaticamente; envie o convite de senha pela tela Usuários e acessos quando desejar.</p>';
             echo '<h2>Banco de dados</h2><p>Versão instalada: '.esc_html((string)get_option('ederp_schema_version','não instalada')).'</p>';
             if(get_option('ederp_schema_error')) { echo '<p>'.esc_html((string)get_option('ederp_schema_error')).'</p>'; }
             echo '<form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="ederp_migrate">';

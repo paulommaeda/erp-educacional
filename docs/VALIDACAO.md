@@ -1,5 +1,16 @@
 # Validação
 
+## 0.19.18
+
+- `tests/wordpress-user-access.php`: 36 verificações em WordPress 7.1.3/MariaDB 11.4.8 reais. Cadastro cria conta sem envio; fila automática antiga é interrompida; lote com versão divergente reverte estado/fila e lote válido é idempotente. Transporte interceptado antes de qualquer envio externo.
+- Conferidos Enviado após aceite do transporte, ausência de OK para chave inválida ou senha definida pelo administrador e OK após redefinição real da senha inicial pelo link no portal. Login real com a nova senha registra histórico e último acesso; retorno com sessão ativa, horários em America/Sao_Paulo e permissões por conta/perfil também foram exercitados.
+- Confirmação de senha simulada durante o transporte permanece OK após o worker retornar. As gravações do convite comparam o estado anterior para preservar confirmações concorrentes e impedir novas entregas da senha inicial já definida.
+- Exclusão usa `wp_delete_user` real na mesma transação da pessoa. Trigger de auditoria com falha injetada restaura pessoa, usuário, metadados e autoria de posts/links; nova tentativa exclui ambos, transfere conteúdos ao administrador, mantém o histórico e é idempotente. Própria conta e pessoa com aluno vinculado permanecem protegidas.
+- `tests/account-invitations.php`: 34 verificações com nova política manual, mantendo criptografia, identidade visual, contatos compartilhados, destinatários acadêmicos, chave expirada, revogação/troca de e-mail, falha de transporte, permissões e ausência de senhas/chaves na auditoria.
+- Dezesseis suítes PHP de regressão aprovadas e sete testes de interface aprovados, incluindo usuários, convites, autenticação, ficha e ações de matrícula. A interface verifica seleção entre páginas, confirmação prévia, reenvio após erro com a mesma chave de operação, tags e histórico. Lista, confirmação e histórico inspecionados em Chromium a 1440, 768, 390 e 320 px, sem rolagem horizontal.
+- Schema 41 acrescenta `usuario_acessos`, sem FK de exclusão para preservar o histórico das contas removidas. Não são gravados senhas, tokens ou conteúdo dos e-mails. O registro de acessos começa nesta versão. Não houve acesso à instalação do colégio ou envio real de convites.
+- `tests/wordpress-migration.php`: 34 verificações adicionais com dbDelta real, incluindo schema 36 → 41 com financeiro/chat preservados, repetição e instalação nova. A tabela de acessos é adicionada sem alterar os registros anteriores.
+
 ## 0.19.17
 
 - Reproduzido em WordPress/MariaDB o erro exato de FK entre `chat_anexos(codcoligada,idmensagem)` e `chat_mensagens` apresentado após a restauração. A versão 0.19.16 interrompe a migração com esse backup fictício; a correção preserva os arquivos e conclui a atualização para schema 40.
