@@ -1,5 +1,18 @@
 # Validação
 
+## 0.19.19
+
+- Reproduzido na versão 0.19.18 o erro de FK entre `matricula_movimentacoes(idmatricula)` e `matriculas` informado após a restauração. A correção conclui a migração 36 → 42 em WordPress 7.1.3/MariaDB 11.4.8 reais, com dados fictícios e dbDelta original.
+- `tests/wordpress-movement-recovery.php`: 29 verificações. A cópia integral mantém todos os campos e tipos retornados pelo banco, inclusive códigos de matrícula, coligada, turmas e solicitante ausentes. Hash e conteúdo são conferidos antes da retirada do histórico operacional. Documento privado real criptografado continua legível e sua referência permanece no JSON exportado.
+- Falha injetada na segunda auditoria reverte todo o lote: originais permanecem, cópias parciais desaparecem e a versão continua 36. Repetição não altera dados ou duplica auditorias; restaurar novamente a mesma linha reutiliza sua cópia, e outro conteúdo com o mesmo código produz uma cópia distinta. A FK final rejeita uma nova movimentação sem matrícula.
+- Movimentação válida, alunos, matrículas, contratos, parcelas, pagamentos e demais registros anteriores permanecem iguais. Nenhuma matrícula, turma, pessoa ou coligada é inventada. Atendente e visitante não consultam nem baixam as cópias administrativas.
+- Inconsistências independentes em contratos e leituras do chat aparecem juntas no relatório antes da criação das FKs. Elas mantêm a migração pendente e não alteram o financeiro. As cópias e seus downloads permanecem acessíveis ao administrador; corrigir os dados fictícios permite concluir e limpa o relatório anterior. A conferência inclui referências compostas e respeita componentes opcionais nulos.
+- `tests/wordpress-migration.php`: 34 verificações de regressão aprovadas, incluindo backup íntegro, índice restaurado, repetição, conflito em chave única, retomada e instalação nova. `tests/wordpress-user-access.php`: 36 verificações aprovadas, preservando a política de convites manuais, confirmação da senha, histórico de acessos e exclusão transacional da pessoa/conta.
+- `tests/wordpress-chat-recovery.php`: 105 verificações aprovadas com schema 42, preservando a recuperação anterior dos anexos, arquivos válidos, isolamento entre coligadas, rollback, permissões e repetição sem duplicação.
+- Dezesseis suítes PHP de regressão aprovadas, incluindo índices, contratos/shortcodes, exclusão e ciclo de matrícula, fluxo do aluno, exportação, permissões, convites, usuários e portal. Sintaxe PHP dos arquivos alterados e referências do schema conferidas.
+- Telas reais de migração pendente e registros preservados renderizadas em Chromium a 1440, 390 e 320 px, sem rolagem horizontal. Downloads individuais com nonce e botão de migração acessíveis; capturas inspecionadas visualmente.
+- Schema 42 acrescenta `registros_preservados` sem FK para os códigos de origem, permitindo guardar a cópia mesmo quando o registro relacionado está ausente. As FKs operacionais continuam restritivas. Não houve acesso ao backup ou à instalação do colégio nem envio de e-mails reais.
+
 ## 0.19.18
 
 - `tests/wordpress-user-access.php`: 36 verificações em WordPress 7.1.3/MariaDB 11.4.8 reais. Cadastro cria conta sem envio; fila automática antiga é interrompida; lote com versão divergente reverte estado/fila e lote válido é idempotente. Transporte interceptado antes de qualquer envio externo.

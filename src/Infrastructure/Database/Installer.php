@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '41';
+    public const VERSION = '42';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -15,6 +15,7 @@ final class Installer
         $stage = 'preparação do banco';
         try {
             update_option('ederp_schema_error', 'Migração em andamento ou interrompida. Execute novamente a verificação.', false);
+            delete_option('ederp_schema_integrity');
             foreach([$this->db->wp->users,$this->db->wp->usermeta] as $native) {
                 $engine=$this->db->row('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s',[$native]);
                 if(strtoupper($engine['ENGINE']??'')!=='INNODB') { throw new \RuntimeException('As tabelas WordPress de usuários e metadados devem ser InnoDB para contas transacionais.'); }
@@ -106,6 +107,11 @@ final class Installer
             }
             $stage = 'preservação dos anexos do chat restaurado';
             (new ChatAttachmentRecovery($this->db))->recover();
+            $stage = 'preservação dos históricos sem matrícula do backup';
+            (new OrphanMovementRecovery($this->db))->recover();
+            $stage = 'conferência das referências do backup';
+            $issues=(new ForeignKeyIntegrity($this->db))->scan();
+            if($issues){update_option('ederp_schema_integrity',['verificado_em'=>gmdate('Y-m-d H:i:s'),'referencias'=>$issues],false);throw new \RuntimeException('Há '.count($issues).' referência(s) com registros inconsistentes no backup. Consulte a lista completa em Configurações.');}
             foreach ($this->db->schema() as $name => $meta) {
                 $table = $this->db->table($name);
                 foreach ($meta['fks'] as $i => $fk) {
