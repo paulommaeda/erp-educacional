@@ -61,6 +61,9 @@ final class Pages
     {
         if($slug==='importacao' && !\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()) { wp_die('Somente administradores.'); }
         if(!current_user_can($cap)) { wp_die('Sem permissão.'); }
+        if(in_array($slug,['config','configuracoes'],true)&&\EducacionalERP\Infrastructure\WordPress\SchemaMigration::pending()){
+            $this->migration();return;
+        }
         if($slug==='contratos'){if(!Access::isAdmin()){wp_die('Somente administradores.');return;}echo '<div class="wrap ederp" data-erp-contracts><p role="status">Carregando contratos...</p></div>';return;}
         if($slug==='documentos'){echo '<div class="wrap ederp" data-erp-documents></div>';return;}
         if(in_array($slug,['alunos','professores','pessoas','matriculas','academico','exportacao','importacao','requerimentos','rematriculas','configuracoes'],true)) {
@@ -95,6 +98,17 @@ final class Pages
             wp_nonce_field('ederp_migrate'); submit_button('Verificar/aplicar migrações'); echo '</form>';
         }
         echo '</div>';
+    }
+    private function migration():void
+    {
+        $installed=(string)get_option('ederp_schema_version','não instalada');
+        $error=(string)get_option('ederp_schema_error','');
+        echo '<section class="wrap ederp erp-migration"><h1>Atualização do banco de dados</h1><p>O ERP precisa concluir a atualização do banco para abrir as configurações.</p>';
+        echo '<p>Versão instalada: <strong>'.esc_html($installed).'</strong> · Versão necessária: <strong>'.esc_html(\EducacionalERP\Infrastructure\Database\Installer::VERSION).'</strong></p>';
+        if($error!=='')echo '<div class="notice notice-error" role="alert"><p><strong>Diagnóstico da última tentativa</strong></p><p style="overflow-wrap:anywhere">'.esc_html($error).'</p></div>';
+        echo '<p>A verificação pode ser repetida. Se houver um impedimento, a tela mostrará a tabela e a etapa que precisam de atenção.</p><form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="ederp_migrate">';
+        wp_nonce_field('ederp_migrate');
+        echo '<p class="submit"><button type="submit" class="button button-primary">Verificar/aplicar migrações</button></p></form></section>';
     }
     private function form(string $title,string $route,array $fields): void
     {
