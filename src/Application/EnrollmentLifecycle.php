@@ -10,6 +10,7 @@ final class EnrollmentLifecycle
     private function lock(int $id,array $data):array
     {
         $row=$this->db->get('matriculas',$id);$this->db->get('alunos',(int)$row['idaluno'],true);$row=$this->db->get('matriculas',$id,true);
+        if(!empty($row['excluido_em']))throw new RuleViolation('Matrícula excluída.');
         if((string)($data['versao']??'')!==(string)$row['versao'])throw new RuleViolation('Matrícula alterada. Atualize a ficha.');return $row;
     }
     public function history(int $id):array

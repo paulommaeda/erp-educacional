@@ -1,5 +1,12 @@
 # Validação
 
+## 0.19.14
+
+- `tests/enrollment-deletion.php` reproduziu na versão 0.19.13 a mensagem "Não é possível excluir: existem contratos financeiros vinculados" mesmo após excluir os lançamentos e o contrato. A correção passa em 46 verificações: exclusão com histórico financeiro preservado, vínculo ao período reaberto, liberação de vaga e nova matrícula, consultas e API, pagamentos antigos, migração automática de situação, restrições acadêmicas, permissões, coligada, versão, idempotência e rollback completo por falha injetada na auditoria final.
+- `tests/enrollment-deletion-educbank.php`: 18 verificações adicionais sobre as simulações de retorno Educbank, com integração ativa. Conferidos preservação das baixas e registros remotos, bloqueio de reenfileiramento por período/configurações, reprocessamento manual, resposta tardia, payload de matrícula excluída e novas filas independentes na matrícula substituta. Nenhuma chamada HTTP adicional é feita pela exclusão ou pelos reenvios testados.
+- Vinte suítes PHP aprovadas, incluindo contratos, exclusão financeira individual e em lote, integração Educbank, ciclo de matrícula, bolsas, vínculos familiares, rotas, exportação e carregamento do admin. Regressões de ações de matrícula, escolha de modelos na matrícula e ficha do aluno aprovadas na interface; sintaxe dos arquivos alterados conferida.
+- A migração adiciona três campos opcionais e um índice em matrículas (schema 39). Os serviços usam transações e chaves estrangeiras SQLite com fronteiras WordPress simuladas; dbDelta e concorrência MySQL real continuam para homologação.
+
 ## 0.19.13
 
 - `tests/contracts.php`: 97 verificações de modelos, padrão por coligada, preenchimento, prévia, preservação do texto emitido, permissões no serviço e nas rotas, versões, idempotência, edição pendente, exclusão, pagamentos preservados, reemissão e integridade das chaves estrangeiras.

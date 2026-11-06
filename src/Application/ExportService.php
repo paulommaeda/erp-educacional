@@ -14,7 +14,7 @@ final class ExportService
     {
         return $this->db->atomic(function()use($period,$cursor,$limit){
             $m=$this->db->table('matriculas');
-            $rows=$this->db->rows("SELECT DISTINCT idaluno FROM $m WHERE codperiodo=%d AND idaluno>%d ORDER BY idaluno LIMIT %d",[$period,$cursor,$limit+1]);
+            $rows=$this->db->rows("SELECT DISTINCT idaluno FROM $m WHERE codperiodo=%d AND excluido_em IS NULL AND idaluno>%d ORDER BY idaluno LIMIT %d",[$period,$cursor,$limit+1]);
             $more=count($rows)>$limit; $rows=array_slice($rows,0,$limit); $out=[];
             foreach($rows as $r) { $out[]=$this->build((int)$r['idaluno'],$period); }
             return ['items'=>$out,'next_cursor'=>$more?(string)end($rows)['idaluno']:null];
@@ -39,7 +39,7 @@ final class ExportService
         foreach($links as &$v) { $v['pessoa']=$this->person((int)$v['codpessoa_responsavel']); }
         unset($v);
         $m=$this->db->table('matriculas');
-        $enrollments=$this->db->rows("SELECT * FROM $m WHERE idaluno=%d AND codperiodo=%d ORDER BY idmatricula",[$id,$period]);
+        $enrollments=$this->db->rows("SELECT * FROM $m WHERE idaluno=%d AND codperiodo=%d AND excluido_em IS NULL ORDER BY idmatricula",[$id,$period]);
         foreach($enrollments as &$enrollment) {
             $enrollment['periodo']=$this->db->get('periodos_letivos',(int)$enrollment['codperiodo']);
             $enrollment['curso']=$this->db->get('cursos',(int)$enrollment['idcurso']);

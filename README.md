@@ -1,11 +1,11 @@
-# ERP Educacional — 0.19.13
+# ERP Educacional — 0.19.14
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Substitua o plugin anterior pelo ZIP `erp-educacional-0.19.13.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 38**, acrescentando modelos de contrato, origem do texto gerado e data, autor e motivo da exclusão do contrato. Os contratos e pagamentos anteriores são preservados. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.14.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 39**, acrescentando data, autor e motivo da exclusão de matrículas. Os contratos, parcelas e pagamentos anteriores são preservados. Se a migração não concluir, use ERP → Configurações → Verificar/aplicar migrações.
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -20,6 +20,8 @@ O administrador encontra a gestão no menu **Contratos**, no portal e no WordPre
 Em **Contratos → Modelos de contrato**, cadastre o texto, a versão e os shortcodes. Há inserção por clique e prévia com dados de um contrato. Defina um modelo padrão ou escolha o modelo na matrícula. Cada emissão guarda seu texto preenchido; revisar um modelo não altera contratos anteriores. Os termos já aceitos nas ofertas de rematrícula continuam sendo respeitados.
 
 Valores, bolsa, quantidade e primeiro vencimento podem ser alterados no contrato somente antes da geração de parcelas. Para excluir um contrato, primeiro exclua seus lançamentos na Gestão financeira, inclusive os cancelados ainda disponíveis. A exclusão guarda o histórico e permite configurar outro contrato na matrícula, com novo número. Veja o [guia de contratos e shortcodes](docs/CONTRATOS.md).
+
+Se a matrícula foi cadastrada incorretamente, depois de excluir seus lançamentos e contratos, use **Excluir** na matrícula. Os contratos já excluídos são reconhecidos como histórico e permitem essa operação. A matrícula é preservada internamente, sai das consultas e libera a vaga, o curso/período e o vínculo do aluno para uma nova matrícula. Transferências e rematrículas com histórico acadêmico continuam protegidas.
 
 ## Integração Educbank
 

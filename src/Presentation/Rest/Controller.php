@@ -284,7 +284,7 @@ final class Controller
     {
         $cards=[];
         foreach(['pessoas'=>['pessoas','Pessoas cadastradas'],'alunos'=>['alunos','Alunos cadastrados'],'academico'=>['turmas','Turmas cadastradas'],'matriculas'=>['matriculas','Matrículas registradas']] as $menu=>[$table,$title])if(MenuPolicy::can($menu)){
-            $where=[];$args=[];if($table!=='pessoas'){$where[]='codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();}if($period&&in_array($table,['turmas','matriculas'],true)){$where[]='codperiodo=%d';$args[]=$period;}
+            $where=[];$args=[];if($table!=='pessoas'){$where[]='codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();}if($table==='matriculas')$where[]='excluido_em IS NULL';if($period&&in_array($table,['turmas','matriculas'],true)){$where[]='codperiodo=%d';$args[]=$period;}
             $cards[]=['menu'=>$menu,'titulo'=>$title,'total'=>(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table($table).($where?' WHERE '.implode(' AND ',$where):''),$args)['n']];
         }
         $students=(new \EducacionalERP\Application\FamilyOverview($this->db))->decorate($this->access->students());
@@ -418,7 +418,7 @@ final class Controller
     public function academicView(int $student,int $period=0): array
     {
         $m=$this->db->table('matriculas'); $t=$this->db->table('turmas'); $c=$this->db->table('cursos'); $p=$this->db->table('periodos_letivos'); $u=$this->db->table('turnos'); $ct=$this->db->table('contratos');
-        return $this->db->rows("SELECT m.versao,m.idmatricula,m.idmatricula_origem,m.codperiodo,m.idcurso,m.idturma_atual,m.status,m.data_matricula,(SELECT COUNT(*) FROM $ct ct WHERE ct.idmatricula=m.idmatricula AND ct.excluido_em IS NULL) AS contratos,p.codigo AS periodo,c.nome AS curso,t.nome AS turma,u.nome AS turno FROM $m m JOIN $t t ON t.idturma=m.idturma_atual JOIN $c c ON c.idcurso=m.idcurso JOIN $p p ON p.codperiodo=m.codperiodo JOIN $u u ON u.idturno=t.idturno WHERE m.idaluno=%d".($period?' AND m.codperiodo=%d':'')." ORDER BY p.data_inicio DESC",$period?[$student,$period]:[$student]);
+        return $this->db->rows("SELECT m.versao,m.idmatricula,m.idmatricula_origem,m.codperiodo,m.idcurso,m.idturma_atual,m.status,m.data_matricula,(SELECT COUNT(*) FROM $ct ct WHERE ct.idmatricula=m.idmatricula AND ct.excluido_em IS NULL) AS contratos,p.codigo AS periodo,c.nome AS curso,t.nome AS turma,u.nome AS turno FROM $m m JOIN $t t ON t.idturma=m.idturma_atual JOIN $c c ON c.idcurso=m.idcurso JOIN $p p ON p.codperiodo=m.codperiodo JOIN $u u ON u.idturno=t.idturno WHERE m.idaluno=%d AND m.excluido_em IS NULL".($period?' AND m.codperiodo=%d':'')." ORDER BY p.data_inicio DESC",$period?[$student,$period]:[$student]);
     }
     private function integrationRoutes():void
     {

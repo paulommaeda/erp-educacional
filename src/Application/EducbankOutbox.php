@@ -31,14 +31,14 @@ final class EducbankOutbox
     }
     public function enrollment(int $id,bool $invoices=false):void
     {
-        $m=$this->db->get('matriculas',$id);$s=Settings::read((int)$m['codcoligada']);if(!$s['ativo'])return;
+        $m=$this->db->get('matriculas',$id);if(!empty($m['excluido_em']))return;$s=Settings::read((int)$m['codcoligada']);if(!$s['ativo'])return;
         $this->put($m,$s,'matricula',$id,null);
         if($invoices)foreach($this->db->rows('SELECT l.idlancamento FROM '.$this->db->table('lancamentos').' l JOIN '.$this->db->table('parcelas').' p ON p.idparcela=l.idparcela JOIN '.$this->db->table('contratos').' c ON c.idcontrato=p.idcontrato WHERE c.idmatricula=%d AND l.excluido_em IS NULL',[$id]) as $row)$this->put($m,$s,'fatura',(int)$row['idlancamento'],(int)$row['idlancamento']);
     }
     public function invoice(int $id):void
     {
         $r=$this->db->row('SELECT c.idmatricula FROM '.$this->db->table('lancamentos').' l JOIN '.$this->db->table('parcelas').' p ON p.idparcela=l.idparcela JOIN '.$this->db->table('contratos').' c ON c.idcontrato=p.idcontrato WHERE l.idlancamento=%d AND l.excluido_em IS NULL',[$id]);if(!$r)return;
-        $m=$this->db->get('matriculas',(int)$r['idmatricula']);$s=Settings::read((int)$m['codcoligada']);if(!$s['ativo'])return;
+        $m=$this->db->get('matriculas',(int)$r['idmatricula']);if(!empty($m['excluido_em']))return;$s=Settings::read((int)$m['codcoligada']);if(!$s['ativo'])return;
         // A fresh bill always depends on the enrollment, including deferred renewal installments.
         $this->put($m,$s,'matricula',(int)$m['idmatricula'],null);$this->put($m,$s,'fatura',$id,$id);
     }
@@ -50,6 +50,6 @@ final class EducbankOutbox
     }
     public static function refresh(Store $db,int $company):void
     {
-        $s=Settings::read($company);if(!$s['ativo'])return;$db->query("UPDATE ".$db->table('educbank_fila')." SET geracao=geracao+1,status='pendente',proxima_tentativa=NULL,erro=NULL,versao=versao+1 WHERE codcoligada=%d AND ambiente=%s AND tenant=%s AND (tipo<>'fatura' OR idlancamento IN (SELECT idlancamento FROM ".$db->table('lancamentos')." WHERE excluido_em IS NULL))",[$company,$s['ambiente'],Settings::scope($s)['tenant']]);
+        $s=Settings::read($company);if(!$s['ativo'])return;$db->query("UPDATE ".$db->table('educbank_fila')." SET geracao=geracao+1,status='pendente',proxima_tentativa=NULL,erro=NULL,versao=versao+1 WHERE codcoligada=%d AND ambiente=%s AND tenant=%s AND idmatricula IN (SELECT idmatricula FROM ".$db->table('matriculas')." WHERE excluido_em IS NULL) AND (tipo<>'fatura' OR idlancamento IN (SELECT idlancamento FROM ".$db->table('lancamentos')." WHERE excluido_em IS NULL))",[$company,$s['ambiente'],Settings::scope($s)['tenant']]);
     }
 }

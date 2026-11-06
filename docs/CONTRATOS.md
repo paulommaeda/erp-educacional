@@ -1,4 +1,4 @@
-# Contratos e modelos — 0.19.13
+# Contratos e modelos — 0.19.14
 
 O menu **Contratos** está disponível para administradores do WordPress no portal e no wp-admin. Também há atalhos na Gestão financeira e na área Financeiro da ficha do aluno. A coligada de trabalho e o período da consulta são respeitados.
 
@@ -17,6 +17,14 @@ Enquanto nenhuma parcela tiver sido gerada, também é possível corrigir valor 
 3. Volte ao contrato, informe o motivo e marque a confirmação com o número do contrato.
 
 O contrato sai das consultas operacionais. Seu registro, texto, parcelas e baixas permanecem no banco para auditoria e exportação administrativa. A matrícula é preservada. A ação não cancela nem estorna faturas no Educbank. Se for preciso emitir outro contrato, a ficha do aluno volta a oferecer **Configurar contrato**; o novo contrato recebe outro número, preservando o anterior no histórico.
+
+### Excluir a matrícula depois do financeiro
+
+Na versão 0.19.14, depois de excluir os lançamentos e os contratos, também é possível excluir a matrícula cadastrada incorretamente. Abra **Excluir** na matrícula e informe o motivo. Contratos já excluídos deixam de bloquear essa ação; um contrato cancelado que ainda está disponível precisa ser excluído antes.
+
+A matrícula sai da lista, da ficha e do portal, enquanto seu registro permanece ligado ao histórico financeiro. O vínculo ao período volta a **Aguardando turma**, e a vaga e o curso/período ficam liberados para uma nova matrícula. Pagamentos, textos, parcelas, movimentações financeiras e auditoria são preservados. Transferências, rematrículas e outras movimentações acadêmicas continuam impedindo a exclusão.
+
+As filas Educbank antigas ficam ignoradas e não são recriadas por reprocessamento ou alterações cadastrais. Uma nova matrícula recebe seu próprio identificador e suas próprias filas. A exclusão local não cancela matrícula nem faturas na plataforma Educbank.
 
 ## Cadastrar modelos
 
@@ -46,6 +54,8 @@ Os shortcodes são substituições de texto de uma lista fixa. Não executam sho
 ## Atualização
 
 A versão 0.19.13 adiciona a tabela `modelos_contrato` e campos opcionais de origem do texto e exclusão em `contratos` (schema 38). A migração é aditiva e preserva o texto e a versão dos contratos anteriores. A exportação administrativa do grupo Financeiro inclui modelos, contratos excluídos e seus metadados.
+
+A versão 0.19.14 acrescenta os metadados de exclusão em `matriculas` (schema 39). Os registros anteriores começam sem marca de exclusão. O backup administrativo do grupo Matrículas mantém os registros excluídos e seus metadados; as consultas operacionais os omitem.
 
 ## API autenticada
 

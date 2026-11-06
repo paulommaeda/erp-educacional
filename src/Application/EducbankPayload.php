@@ -9,7 +9,7 @@ final class EducbankPayload
     public function __construct(private Store $db){}
     public function context(int $id,array $settings):array
     {
-        $m=$this->db->get('matriculas',$id);$student=$this->db->get('alunos',(int)$m['idaluno']);$p=$this->db->get('pessoas',(int)$student['codpessoa']);$class=$this->db->get('turmas',(int)$m['idturma_atual']);$company=$this->db->get('coligadas',(int)$m['codcoligada']);
+        $m=$this->db->get('matriculas',$id);if(!empty($m['excluido_em']))throw new RuleViolation('Matrícula excluída.');$student=$this->db->get('alunos',(int)$m['idaluno']);$p=$this->db->get('pessoas',(int)$student['codpessoa']);$class=$this->db->get('turmas',(int)$m['idturma_atual']);$company=$this->db->get('coligadas',(int)$m['codcoligada']);
         $year=$settings['periodos'][$m['codperiodo']]??null;$program=$settings['turmas'][$class['idturma']]??null;
         if(!$year)throw new RuleViolation('Mapeie o ano/semestre do período letivo nas configurações Educbank.');
         if(!in_array($program,Settings::PROGRAMS,true))throw new RuleViolation('Mapeie a série Educbank da turma nas configurações.');
