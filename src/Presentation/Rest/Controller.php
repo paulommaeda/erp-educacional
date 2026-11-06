@@ -196,6 +196,8 @@ final class Controller
         $this->route('/numeracao-pessoas','GET',fn()=>Access::isAdmin(),fn()=>(new \EducacionalERP\Application\PersonNumbering($this->db))->read());
         $this->route('/numeracao-pessoas','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Application\PersonNumbering($this->db))->save($this->payload($r),$this->key($r)));
         $this->route('/usuarios','GET',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->listing(['page'=>$r->get_param('page'),'search'=>$r->get_param('search')]));
+        $this->route('/usuarios/convites','POST',fn()=>MenuPolicy::can('usuarios')&&\EducacionalERP\Infrastructure\WordPress\UserPermissions::can('password'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->sendInvitations($this->payload($r),$this->key($r)));
+        $this->route('/usuarios/'.$id.'/acessos','GET',fn()=>MenuPolicy::can('usuarios')&&\EducacionalERP\Infrastructure\WordPress\UserPermissions::can('access_log'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->accessLog((int)$r['id'],(int)($r->get_param('page')?:1)));
         $this->route('/usuarios/'.$id,'POST',fn()=>MenuPolicy::can('usuarios'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->update((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/usuarios/'.$id.'/convite','POST',fn()=>MenuPolicy::can('usuarios')&&\EducacionalERP\Infrastructure\WordPress\UserPermissions::can('password'),fn($r)=>(new \EducacionalERP\Application\UserService($this->db))->resendInvitation((int)$r['id'],$this->key($r)));
         $this->route('/secretaria/alunos','GET',$cap('erp_gerenciar_pessoas'),fn($r)=>$this->studentDirectory($r));

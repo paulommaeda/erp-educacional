@@ -4349,6 +4349,23 @@
       }
     ]
   },
+  "usuario_acessos": {
+    "pk": ["idacesso"],
+    "columns": {
+      "idacesso": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "wp_user_id": "bigint(20) unsigned NOT NULL",
+      "user_login_snapshot": "varchar(60) NOT NULL",
+      "nome_snapshot": "varchar(250) NOT NULL",
+      "tipo": "varchar(20) NOT NULL",
+      "ocorrido_em": "datetime NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [["wp_user_id", "ocorrido_em", "idacesso"]],
+    "fks": []
+  },
   "aluno_retiradas": {
     "pk": [
       "idautorizacao"

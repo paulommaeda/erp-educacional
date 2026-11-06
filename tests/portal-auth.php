@@ -10,6 +10,8 @@ function add_action($name,$call,$priority=10,$args=1){$GLOBALS['hooks'][$name]=$
 function add_filter($name,$call,$priority=10,$args=1){$GLOBALS['hooks'][$name]=$call;}
 function do_action($name,...$args){}
 function get_option($name,$default=false){return $GLOBALS['auth_options'][$name]??$default;}
+if(!function_exists('get_user_meta')){function get_user_meta($id,$key,$single=true){return '';}}
+if(!function_exists('get_current_user_id')){function get_current_user_id(){return 0;}}
 function home_url($path=''){return 'https://school.test'.$path;}
 function add_query_arg($arg,$value=null,$url=null){if(!is_array($arg)){$arg=[$arg=>$value];}else{$url=$value;}$url=$url??'https://school.test';return $url.(str_contains($url,'?')?'&':'?').http_build_query($arg);}
 function wp_unslash($s){return $s;}

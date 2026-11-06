@@ -11,7 +11,7 @@ final class DataExport
         'requerimentos_publicos'=>['nome'=>'Requerimentos públicos e arquivos de origem','tabelas'=>['requerimentos_publicos','requerimento_arquivos']],
         'documentos_alunos'=>['nome'=>'Documentos dos alunos (cadastros e conferências)','tabelas'=>['tipos_documento_aluno','aluno_documentos']],
         'pessoas'=>['nome'=>'Pessoas e endereços','tabelas'=>['pessoas','pessoa_enderecos','estados_civis','numeracao_pessoas','api_requerimentos','grupos_campos','campos_adicionais','pessoa_campos_adicionais']],
-        'usuarios'=>['nome'=>'Usuários vinculados (sem senhas)','tabelas'=>['pessoa_usuarios','usuarios']],
+        'usuarios'=>['nome'=>'Usuários vinculados e acessos (sem senhas)','tabelas'=>['pessoa_usuarios','usuarios','usuario_acessos']],
         'alunos'=>['nome'=>'Alunos e responsáveis','tabelas'=>['alunos','aluno_responsaveis','aluno_retiradas']],
         'academico'=>['nome'=>'Estrutura acadêmica e planos','tabelas'=>['coligadas','periodos_letivos','cursos','turnos','planos_pagamento','turmas','subtipos_disciplina','disciplinas','grades_curriculares','grade_disciplinas','turma_grades','professores','professor_disciplinas','professor_turmas','professor_valores_hora']],
         'matriculas'=>['nome'=>'Matrículas e rematrículas','tabelas'=>['aluno_periodos','matriculas','matricula_movimentacoes','ofertas_rematricula','oferta_turmas','rematriculas']],

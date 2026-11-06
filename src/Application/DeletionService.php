@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Application;
 use EducacionalERP\Domain\{Input,RuleViolation};
 use EducacionalERP\Infrastructure\Database\Database;
-use EducacionalERP\Infrastructure\WordPress\{Access,Accounts};
+use EducacionalERP\Infrastructure\WordPress\{Access,Accounts,AccountDeletion};
 final class DeletionService
 {
     public const TYPES=['tipos_disciplina','estados_civis','planos_pagamento','pessoas','alunos','periodos_letivos','cursos','turnos','turmas','matriculas','aluno_periodos','aluno_responsaveis'];
@@ -34,16 +34,13 @@ final class DeletionService
                 $where=[];$args=[];foreach($fk['columns'] as $i=>$column){$where[]="$column=%s";$args[]=$row[$fk['references'][$i]];}
                 if($this->db->row('SELECT '.$meta['pk'][0].' FROM '.$this->db->table($child).' WHERE '.implode(' AND ',$where).' LIMIT 1 FOR UPDATE',$args))throw new RuleViolation('Não é possível excluir: existem '.($labels[$child]??str_replace('_',' ',$child)).' vinculados.');
             }
-            if($type==='pessoas'){
-                $link=$this->db->row('SELECT * FROM '.$this->db->table('pessoa_usuarios').' WHERE codpessoa=%d FOR UPDATE',[$id]);
-                if($link){$uid=(int)$link['wp_user_id'];$u=get_userdata($uid);if($u){foreach($u->roles as $role)if(str_starts_with($role,'erp_'))$u->remove_role($role);if(!$u->roles)$u->add_role('subscriber');$this->db->onCompletion(static fn()=>clean_user_cache($uid));}$this->db->query('DELETE FROM '.$this->db->table('pessoa_usuarios').' WHERE codpessoa=%d',[$id]);}
-            }
+            $deletedUser=$type==='pessoas'?(new AccountDeletion($this->db))->remove($id):null;
             $pk=$this->db->schema()[$type]['pk'][0];$this->db->query('DELETE FROM '.$this->db->table($type)." WHERE $pk=%d",[$id]);
             if($type==='alunos')(new Accounts($this->db))->sync((int)$row['codpessoa']);
             if($type==='aluno_responsaveis')(new Accounts($this->db))->sync((int)$row['codpessoa_responsavel']);
             if($type==='aluno_responsaveis'&&(int)$row['responsavel_academico'])(new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->queue((int)$this->db->get('alunos',(int)$row['idaluno'])['codpessoa'],false,true);
-            $this->db->audit($type,$id,'excluir',$row,['motivo'=>$reason,'movimentos_iniciais'=>$children],$key);
-            return ['excluido'=>true,'id'=>(string)$id];
+            $this->db->audit($type,$id,'excluir',$row,['motivo'=>$reason,'movimentos_iniciais'=>$children,'wp_user_id_excluido'=>$deletedUser],$key);
+            return ['excluido'=>true,'id'=>(string)$id,'wp_user_id_excluido'=>$deletedUser];
         }));}finally{if($type==='periodos_letivos')$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$lock]);}
     }
 }
