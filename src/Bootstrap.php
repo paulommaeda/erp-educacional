@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace EducacionalERP;
 use EducacionalERP\Infrastructure\Database\{Database,Installer};
-use EducacionalERP\Infrastructure\WordPress\{Access,Accounts};
+use EducacionalERP\Infrastructure\WordPress\{Access,Accounts,SchemaMigration};
 use EducacionalERP\Application\{Operations,AcademicService,CatalogService,FinanceService,ExportService,RenewalService,StudentWorkflow};
 use EducacionalERP\Presentation\{Rest\Controller,Admin\Pages,Portal\Shortcodes};
 final class Bootstrap
@@ -11,7 +11,7 @@ final class Bootstrap
     {
         if($networkWide) { wp_die('Ative o ERP individualmente em cada site. Ativação em rede não é suportada nesta versão.'); }
         global $wpdb; $previous=$wpdb->suppress_errors(true);
-        try { (new Installer(new Database($wpdb)))->install(); Access::install(); }
+        try { SchemaMigration::run(new Database($wpdb)); }
         catch(\Throwable $e) { update_option('ederp_schema_error',$e->getMessage(),false); wp_die(esc_html('ERP não ativado: '.$e->getMessage())); }
         finally { $wpdb->suppress_errors($previous); }
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::setup(true);
@@ -38,13 +38,11 @@ final class Bootstrap
         add_action('admin_init',static function(){if(Access::isAdmin()&&!wp_next_scheduled('ederp_cleanup_student_documents'))wp_schedule_event(time()+300,'hourly','ederp_cleanup_student_documents');});
         $pages=new Pages(); add_action('admin_menu',[$pages,'register']);
         (new \EducacionalERP\Presentation\Portal\Portal())->register();
-        // ZIP replacements do not run activation hooks. Apply pending additive migrations once.
+        // ZIP replacements do not activate again. New releases also retry an older saved failure once.
         add_action('admin_init',static function()use($db){
-            if(current_user_can('manage_options') && get_option('ederp_schema_version')!==Installer::VERSION && !get_option('ederp_schema_error')) {
-                $previous=$db->wp->suppress_errors(true);
-                try { (new Installer($db))->install(); Access::install(); }
-                catch(\Throwable $e) { update_option('ederp_schema_error',$e->getMessage(),false); }
-                finally { $db->wp->suppress_errors($previous); }
+            if(current_user_can('manage_options') && SchemaMigration::shouldAttemptAutomatically()) {
+                try { SchemaMigration::run($db); }
+                catch(\Throwable $ignored) { /* The diagnostic is saved for the recovery screen. */ }
             }
         });
         add_action('admin_init',static function()use($db,$catalog){if(!Access::isAdmin()||get_option('ederp_schema_version')!==Installer::VERSION||get_option('ederp_schema_error'))return;try{(new \EducacionalERP\Application\ExternalPeopleApi($db,$catalog))->installAdmissionTemplates();delete_option('ederp_api_template_error');}catch(\Throwable $e){update_option('ederp_api_template_error','Não foi possível preparar o mapeamento do requerimento. Confira os campos adicionais ativos e a configuração da conexão.',false);}},30);
@@ -71,8 +69,8 @@ final class Bootstrap
         add_action('admin_post_ederp_migrate',static function()use($db){
             if(!current_user_can('erp_configurar') && !current_user_can('manage_options')) { wp_die('Sem permissão.'); }
             check_admin_referer('ederp_migrate');
-            try { (new Installer($db))->install(); Access::install(); }
-            catch(\Throwable $e) { update_option('ederp_schema_error',$e->getMessage(),false); }
+            try { SchemaMigration::run($db); }
+            catch(\Throwable $ignored) { /* Display the saved diagnostic after redirect. */ }
             wp_safe_redirect(admin_url('admin.php?page=ederp-config')); exit;
         });
         // Accounts can be deleted without touching historical ERP people or balances.

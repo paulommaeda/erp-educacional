@@ -1,0 +1,4319 @@
+{
+  "coligadas": {
+    "columns": {
+      "codcoligada": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "nome": "varchar(191) NOT NULL",
+      "razao_social": "varchar(191) NOT NULL",
+      "cnpj": "varchar(14) NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "int unsigned NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "codcoligada"
+    ],
+    "unique": [
+      [
+        "cnpj"
+      ]
+    ],
+    "indexes": [
+      [
+        "nome"
+      ]
+    ],
+    "fks": []
+  },
+  "pessoas": {
+    "pk": [
+      "codpessoa"
+    ],
+    "columns": {
+      "codpessoa": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "nome": "varchar(191) NOT NULL",
+      "nome_social": "varchar(191) DEFAULT NULL",
+      "cpf": "varchar(11) DEFAULT NULL",
+      "data_nascimento": "date DEFAULT NULL",
+      "email": "varchar(191) DEFAULT NULL",
+      "telefone": "varchar(30) DEFAULT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codpessoa_origem": "varchar(80) DEFAULT NULL",
+      "rg": "varchar(40) DEFAULT NULL",
+      "rua": "varchar(191) DEFAULT NULL",
+      "numero": "varchar(30) DEFAULT NULL",
+      "complemento": "varchar(191) DEFAULT NULL",
+      "bairro": "varchar(100) DEFAULT NULL",
+      "cep": "varchar(20) DEFAULT NULL",
+      "cidade": "varchar(100) DEFAULT NULL",
+      "estado": "varchar(100) DEFAULT NULL",
+      "pais": "varchar(2) NOT NULL DEFAULT 'BR'",
+      "estado_civil": "varchar(20) DEFAULT NULL",
+      "local_nascimento": "varchar(191) DEFAULT NULL",
+      "uf_nascimento": "varchar(2) DEFAULT NULL",
+      "raca_etnia": "varchar(20) DEFAULT NULL",
+      "nacionalidade": "varchar(100) DEFAULT NULL",
+      "grau_instrucao": "varchar(30) DEFAULT NULL",
+      "profissao": "varchar(100) DEFAULT NULL",
+      "religiao": "varchar(100) DEFAULT NULL",
+      "igreja": "varchar(191) DEFAULT NULL",
+      "sexo": "varchar(10) DEFAULT NULL",
+      "foto_attachment_id": "bigint(20) unsigned DEFAULT NULL",
+      "idestado_civil": "bigint(20) unsigned DEFAULT NULL",
+      "codigo_pessoa": "varchar(80) DEFAULT NULL"
+    },
+    "unique": [
+      [
+        "cpf"
+      ],
+      [
+        "codpessoa_origem"
+      ],
+      [
+        "codigo_pessoa"
+      ]
+    ],
+    "indexes": [
+      [
+        "nome"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idestado_civil"
+        ],
+        "target": "estados_civis",
+        "references": [
+          "idestado_civil"
+        ]
+      }
+    ]
+  },
+  "pessoa_enderecos": {
+    "pk": [
+      "idendereco"
+    ],
+    "columns": {
+      "idendereco": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "tipo": "varchar(30) NOT NULL",
+      "cep": "varchar(10) NOT NULL",
+      "logradouro": "varchar(191) NOT NULL",
+      "numero": "varchar(30) NOT NULL",
+      "complemento": "varchar(191) DEFAULT NULL",
+      "bairro": "varchar(100) NOT NULL",
+      "cidade": "varchar(100) NOT NULL",
+      "uf": "varchar(2) NOT NULL",
+      "pais": "varchar(2) NOT NULL DEFAULT 'BR'",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "pessoa_usuarios": {
+    "pk": [
+      "codpessoa"
+    ],
+    "columns": {
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "wp_user_id"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "alunos": {
+    "pk": [
+      "idaluno"
+    ],
+    "columns": {
+      "idaluno": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "ra": "varchar(40) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "tipo_aluno": "varchar(10) NOT NULL DEFAULT 'Regular'",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "codpessoa"
+      ],
+      [
+        "codcoligada",
+        "ra"
+      ],
+      [
+        "codcoligada",
+        "idaluno"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "aluno_responsaveis": {
+    "pk": [
+      "idvinculo"
+    ],
+    "columns": {
+      "idvinculo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codpessoa_responsavel": "bigint(20) unsigned NOT NULL",
+      "parentesco": "varchar(30) NOT NULL",
+      "responsavel_academico": "tinyint(1) NOT NULL DEFAULT 0",
+      "responsavel_financeiro": "tinyint(1) NOT NULL DEFAULT 0",
+      "pode_rematricular": "tinyint(1) NOT NULL DEFAULT 0",
+      "inicio_vigencia": "datetime NOT NULL",
+      "fim_vigencia": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idvinculo"
+      ]
+    ],
+    "indexes": [
+      [
+        "idaluno",
+        "fim_vigencia"
+      ],
+      [
+        "codpessoa_responsavel",
+        "fim_vigencia"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_responsavel"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "periodos_letivos": {
+    "pk": [
+      "codperiodo"
+    ],
+    "columns": {
+      "codperiodo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codigo": "varchar(30) NOT NULL",
+      "descricao": "varchar(191) NOT NULL",
+      "data_inicio": "date NOT NULL",
+      "data_fim": "date NOT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'planejado'",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codperiodo_proximo": "bigint(20) unsigned DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "codigo"
+      ],
+      [
+        "codcoligada",
+        "codperiodo"
+      ]
+    ],
+    "indexes": [
+      [
+        "codperiodo_proximo"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codperiodo_proximo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo_proximo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      }
+    ]
+  },
+  "cursos": {
+    "pk": [
+      "idcurso"
+    ],
+    "columns": {
+      "idcurso": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(191) NOT NULL",
+      "descricao": "text DEFAULT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "codigo"
+      ],
+      [
+        "codcoligada",
+        "idcurso"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "turnos": {
+    "pk": [
+      "idturno"
+    ],
+    "columns": {
+      "idturno": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(100) NOT NULL",
+      "hora_inicio": "time DEFAULT NULL",
+      "hora_fim": "time DEFAULT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "codigo"
+      ],
+      [
+        "codcoligada",
+        "idturno"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "turmas": {
+    "pk": [
+      "idturma"
+    ],
+    "columns": {
+      "idturma": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codperiodo": "bigint(20) unsigned NOT NULL",
+      "idcurso": "bigint(20) unsigned NOT NULL",
+      "idturno": "bigint(20) unsigned NOT NULL",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(100) NOT NULL",
+      "capacidade": "int unsigned NOT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'ativa'",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idplano": "bigint(20) unsigned DEFAULT NULL",
+      "idturma_proxima": "bigint(20) unsigned DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codperiodo",
+        "codigo"
+      ],
+      [
+        "idturma",
+        "codperiodo",
+        "idcurso"
+      ],
+      [
+        "codcoligada",
+        "idturma"
+      ],
+      [
+        "codcoligada",
+        "idturma",
+        "codperiodo",
+        "idcurso"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "idcurso"
+        ],
+        "target": "cursos",
+        "references": [
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "idturno"
+        ],
+        "target": "turnos",
+        "references": [
+          "idturno"
+        ]
+      },
+      {
+        "columns": [
+          "idplano"
+        ],
+        "target": "planos_pagamento",
+        "references": [
+          "idplano"
+        ]
+      },
+      {
+        "columns": [
+          "idturma_proxima"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcurso"
+        ],
+        "target": "cursos",
+        "references": [
+          "codcoligada",
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturno"
+        ],
+        "target": "turnos",
+        "references": [
+          "codcoligada",
+          "idturno"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idplano"
+        ],
+        "target": "planos_pagamento",
+        "references": [
+          "codcoligada",
+          "idplano"
+        ]
+      }
+    ]
+  },
+  "matriculas": {
+    "pk": [
+      "idmatricula"
+    ],
+    "columns": {
+      "idmatricula": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NOT NULL",
+      "idcurso": "bigint(20) unsigned NOT NULL",
+      "idturma_atual": "bigint(20) unsigned NOT NULL",
+      "idmatricula_origem": "bigint(20) unsigned DEFAULT NULL",
+      "data_matricula": "date NOT NULL",
+      "status": "varchar(30) NOT NULL DEFAULT 'reservado'",
+      "origem": "varchar(30) NOT NULL",
+      "encerrado_em": "datetime DEFAULT NULL",
+      "motivo_encerramento": "text DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "ativo_unico": "tinyint(1) DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idaluno",
+        "codperiodo",
+        "idcurso",
+        "ativo_unico"
+      ],
+      [
+        "codcoligada",
+        "idmatricula"
+      ]
+    ],
+    "indexes": [
+      [
+        "codperiodo",
+        "idturma_atual",
+        "status"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "idcurso"
+        ],
+        "target": "cursos",
+        "references": [
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "idturma_atual",
+          "codperiodo",
+          "idcurso"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma",
+          "codperiodo",
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "idmatricula_origem"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcurso"
+        ],
+        "target": "cursos",
+        "references": [
+          "codcoligada",
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturma_atual",
+          "codperiodo",
+          "idcurso"
+        ],
+        "target": "turmas",
+        "references": [
+          "codcoligada",
+          "idturma",
+          "codperiodo",
+          "idcurso"
+        ]
+      }
+    ]
+  },
+  "matricula_movimentacoes": {
+    "pk": [
+      "idmovimentacao"
+    ],
+    "columns": {
+      "idmovimentacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idmatricula": "bigint(20) unsigned NOT NULL",
+      "tipo": "varchar(30) NOT NULL",
+      "idturma_origem": "bigint(20) unsigned DEFAULT NULL",
+      "idturma_destino": "bigint(20) unsigned DEFAULT NULL",
+      "status_anterior": "varchar(30) DEFAULT NULL",
+      "status_novo": "varchar(30) NOT NULL",
+      "efetivado_em": "datetime NOT NULL",
+      "registrado_em": "datetime NOT NULL",
+      "motivo": "text NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "solicitante_codpessoa": "bigint(20) unsigned DEFAULT NULL",
+      "solicitante_nome": "varchar(191) DEFAULT NULL",
+      "data_solicitacao": "date DEFAULT NULL",
+      "colegio_destino": "varchar(191) DEFAULT NULL",
+      "documento_token": "varchar(64) DEFAULT NULL",
+      "documento_nome": "varchar(191) DEFAULT NULL",
+      "documento_mime": "varchar(100) DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idmovimentacao"
+      ]
+    ],
+    "indexes": [
+      [
+        "idmatricula",
+        "efetivado_em"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "idturma_origem"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "idturma_destino"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "solicitante_codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "codcoligada",
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturma_origem"
+        ],
+        "target": "turmas",
+        "references": [
+          "codcoligada",
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturma_destino"
+        ],
+        "target": "turmas",
+        "references": [
+          "codcoligada",
+          "idturma"
+        ]
+      }
+    ]
+  },
+  "ofertas_rematricula": {
+    "pk": [
+      "idoferta"
+    ],
+    "columns": {
+      "idoferta": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codperiodo_destino": "bigint(20) unsigned NOT NULL",
+      "idcurso_origem": "bigint(20) unsigned NOT NULL",
+      "idcurso_destino": "bigint(20) unsigned NOT NULL",
+      "abertura_em": "datetime NOT NULL",
+      "encerramento_em": "datetime NOT NULL",
+      "versao_termo": "varchar(40) NOT NULL",
+      "texto_termo": "longtext NOT NULL",
+      "valor_total": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "numero_parcelas": "int unsigned NOT NULL",
+      "primeiro_vencimento": "date NOT NULL",
+      "dia_vencimento": "tinyint unsigned NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idoferta"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codperiodo_destino"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "idcurso_origem"
+        ],
+        "target": "cursos",
+        "references": [
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "idcurso_destino"
+        ],
+        "target": "cursos",
+        "references": [
+          "idcurso"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo_destino"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcurso_destino"
+        ],
+        "target": "cursos",
+        "references": [
+          "codcoligada",
+          "idcurso"
+        ]
+      }
+    ]
+  },
+  "oferta_turmas": {
+    "pk": [
+      "idoferta",
+      "idturma"
+    ],
+    "columns": {
+      "idoferta": "bigint(20) unsigned NOT NULL",
+      "idturma": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idoferta",
+        "idturma"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idoferta"
+        ],
+        "target": "ofertas_rematricula",
+        "references": [
+          "idoferta"
+        ]
+      },
+      {
+        "columns": [
+          "idturma"
+        ],
+        "target": "turmas",
+        "references": [
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idoferta"
+        ],
+        "target": "ofertas_rematricula",
+        "references": [
+          "codcoligada",
+          "idoferta"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturma"
+        ],
+        "target": "turmas",
+        "references": [
+          "codcoligada",
+          "idturma"
+        ]
+      }
+    ]
+  },
+  "rematriculas": {
+    "pk": [
+      "idrematricula"
+    ],
+    "columns": {
+      "idrematricula": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idoferta": "bigint(20) unsigned NOT NULL",
+      "idmatricula_origem": "bigint(20) unsigned NOT NULL",
+      "idmatricula_destino": "bigint(20) unsigned DEFAULT NULL",
+      "codpessoa_solicitante": "bigint(20) unsigned NOT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "status": "varchar(20) NOT NULL",
+      "termo_versao": "varchar(40) NOT NULL",
+      "termo_hash": "varchar(64) NOT NULL",
+      "aceito_em": "datetime NOT NULL",
+      "concluido_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "ativo_unico": "tinyint(1) DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ],
+      [
+        "idoferta",
+        "idmatricula_origem",
+        "ativo_unico"
+      ],
+      [
+        "codcoligada",
+        "idrematricula"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idoferta"
+        ],
+        "target": "ofertas_rematricula",
+        "references": [
+          "idoferta"
+        ]
+      },
+      {
+        "columns": [
+          "idmatricula_origem"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "idmatricula_destino"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_solicitante"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idoferta"
+        ],
+        "target": "ofertas_rematricula",
+        "references": [
+          "codcoligada",
+          "idoferta"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idmatricula_destino"
+        ],
+        "target": "matriculas",
+        "references": [
+          "codcoligada",
+          "idmatricula"
+        ]
+      }
+    ]
+  },
+  "contratos": {
+    "pk": [
+      "idcontrato"
+    ],
+    "columns": {
+      "idcontrato": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "numero": "varchar(100) NOT NULL",
+      "idmatricula": "bigint(20) unsigned NOT NULL",
+      "codpessoa_rf_original": "bigint(20) unsigned NOT NULL",
+      "codpessoa_rf_atual": "bigint(20) unsigned NOT NULL",
+      "data_contrato": "date NOT NULL",
+      "valor_original_total": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_incondicional_total": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "valor_liquido_total": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "quantidade_parcelas": "int unsigned NOT NULL",
+      "moeda": "varchar(3) NOT NULL DEFAULT 'BRL'",
+      "status": "varchar(20) NOT NULL DEFAULT 'ativo'",
+      "versao_termo": "varchar(40) NOT NULL",
+      "termo_snapshot": "longtext NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idplano": "bigint(20) unsigned DEFAULT NULL",
+      "plano_nome_snapshot": "varchar(100) DEFAULT NULL",
+      "plano_versao_snapshot": "bigint(20) unsigned DEFAULT NULL",
+      "primeiro_vencimento": "date DEFAULT NULL",
+      "parcelas_geradas": "tinyint(1) NOT NULL DEFAULT 1",
+      "parcelas_geradas_em": "datetime DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "numero"
+      ],
+      [
+        "codcoligada",
+        "idcontrato"
+      ]
+    ],
+    "indexes": [
+      [
+        "parcelas_geradas",
+        "idmatricula"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_rf_original"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_rf_atual"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "idplano"
+        ],
+        "target": "planos_pagamento",
+        "references": [
+          "idplano"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "codcoligada",
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idplano"
+        ],
+        "target": "planos_pagamento",
+        "references": [
+          "codcoligada",
+          "idplano"
+        ]
+      }
+    ]
+  },
+  "parcelas": {
+    "pk": [
+      "idparcela"
+    ],
+    "columns": {
+      "idparcela": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "numero": "int unsigned NOT NULL",
+      "competencia": "date NOT NULL",
+      "vencimento_original": "date NOT NULL",
+      "valor_original": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_incondicional": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "valor_liquido": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_condicional_previsto": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "limite_desconto_condicional": "date DEFAULT NULL",
+      "regra_desconto_condicional": "longtext NOT NULL",
+      "taxa_juros_mensal": "decimal(9,6) NOT NULL DEFAULT 0",
+      "percentual_multa": "decimal(9,6) NOT NULL DEFAULT 0",
+      "regra_encargos": "longtext NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idcontrato",
+        "numero"
+      ],
+      [
+        "codcoligada",
+        "idparcela"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "idcontrato"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "codcoligada",
+          "idcontrato"
+        ]
+      }
+    ]
+  },
+  "lancamentos": {
+    "pk": [
+      "idlancamento"
+    ],
+    "columns": {
+      "idlancamento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idparcela": "bigint(20) unsigned NOT NULL",
+      "codpessoa_rf_original": "bigint(20) unsigned NOT NULL",
+      "codpessoa_rf_atual": "bigint(20) unsigned NOT NULL",
+      "descricao": "varchar(191) NOT NULL",
+      "emissao": "date NOT NULL",
+      "vencimento": "date NOT NULL",
+      "valor_original": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_incondicional": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "valor_liquido": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_condicional_aplicado": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "juros_aplicados": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "multa_aplicada": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "valor_baixa": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "saldo_aberto": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "status": "varchar(20) NOT NULL DEFAULT 'aberto'",
+      "cancelado_em": "datetime NULL",
+      "motivo_cancelamento": "text NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "valor_cancelado": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idparcela"
+      ],
+      [
+        "codcoligada",
+        "idlancamento"
+      ]
+    ],
+    "indexes": [
+      [
+        "codpessoa_rf_atual",
+        "status",
+        "vencimento"
+      ],
+      [
+        "status",
+        "vencimento"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idparcela"
+        ],
+        "target": "parcelas",
+        "references": [
+          "idparcela"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_rf_original"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_rf_atual"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idparcela"
+        ],
+        "target": "parcelas",
+        "references": [
+          "codcoligada",
+          "idparcela"
+        ]
+      }
+    ]
+  },
+  "baixas": {
+    "pk": [
+      "idbaixa"
+    ],
+    "columns": {
+      "idbaixa": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idlancamento": "bigint(20) unsigned NOT NULL",
+      "codpessoa_devedor": "bigint(20) unsigned NOT NULL",
+      "codpessoa_pagador": "bigint(20) unsigned DEFAULT NULL",
+      "data_pagamento": "date NOT NULL",
+      "registrado_em": "datetime NOT NULL",
+      "valor_pago": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "principal_liquidado": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "juros_pagos": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "multa_paga": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "desconto_condicional_concedido": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "forma_pagamento": "varchar(30) NOT NULL",
+      "referencia_externa": "varchar(100) DEFAULT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ],
+      [
+        "codcoligada",
+        "idbaixa"
+      ]
+    ],
+    "indexes": [
+      [
+        "idlancamento",
+        "data_pagamento"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "idlancamento"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_devedor"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_pagador"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "codcoligada",
+          "idlancamento"
+        ]
+      }
+    ]
+  },
+  "baixa_estornos": {
+    "pk": [
+      "idestorno"
+    ],
+    "columns": {
+      "idestorno": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idbaixa": "bigint(20) unsigned NOT NULL",
+      "valor": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "motivo": "text NOT NULL",
+      "efetivado_em": "datetime NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ],
+      [
+        "codcoligada",
+        "idestorno"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idbaixa"
+        ],
+        "target": "baixas",
+        "references": [
+          "idbaixa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idbaixa"
+        ],
+        "target": "baixas",
+        "references": [
+          "codcoligada",
+          "idbaixa"
+        ]
+      }
+    ]
+  },
+  "lancamento_ajustes": {
+    "pk": [
+      "idajuste"
+    ],
+    "columns": {
+      "idajuste": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idlancamento": "bigint(20) unsigned NOT NULL",
+      "componente": "varchar(40) NOT NULL",
+      "valor_delta": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "motivo": "text NOT NULL",
+      "efetivado_em": "datetime NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ],
+      [
+        "codcoligada",
+        "idajuste"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "idlancamento"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "codcoligada",
+          "idlancamento"
+        ]
+      }
+    ]
+  },
+  "trocas_responsavel": {
+    "pk": [
+      "idtroca"
+    ],
+    "columns": {
+      "idtroca": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codpessoa_anterior": "bigint(20) unsigned NOT NULL",
+      "codpessoa_nova": "bigint(20) unsigned NOT NULL",
+      "efetivado_em": "datetime NOT NULL",
+      "motivo": "text NOT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "idempotencia": "varchar(100) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idempotencia"
+      ],
+      [
+        "codcoligada",
+        "idtroca"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_anterior"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_nova"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "troca_contratos": {
+    "pk": [
+      "idtroca",
+      "idcontrato"
+    ],
+    "columns": {
+      "idtroca": "bigint(20) unsigned NOT NULL",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "codpessoa_anterior": "bigint(20) unsigned NOT NULL",
+      "codpessoa_nova": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idtroca",
+        "idcontrato"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idtroca"
+        ],
+        "target": "trocas_responsavel",
+        "references": [
+          "idtroca"
+        ]
+      },
+      {
+        "columns": [
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "idcontrato"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_anterior"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_nova"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idtroca"
+        ],
+        "target": "trocas_responsavel",
+        "references": [
+          "codcoligada",
+          "idtroca"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "codcoligada",
+          "idcontrato"
+        ]
+      }
+    ]
+  },
+  "troca_lancamentos": {
+    "pk": [
+      "idtroca",
+      "idlancamento"
+    ],
+    "columns": {
+      "idtroca": "bigint(20) unsigned NOT NULL",
+      "idlancamento": "bigint(20) unsigned NOT NULL",
+      "codpessoa_anterior": "bigint(20) unsigned NOT NULL",
+      "codpessoa_nova": "bigint(20) unsigned NOT NULL",
+      "saldo_transferido": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idtroca",
+        "idlancamento"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idtroca"
+        ],
+        "target": "trocas_responsavel",
+        "references": [
+          "idtroca"
+        ]
+      },
+      {
+        "columns": [
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "idlancamento"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_anterior"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa_nova"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idtroca"
+        ],
+        "target": "trocas_responsavel",
+        "references": [
+          "codcoligada",
+          "idtroca"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "codcoligada",
+          "idlancamento"
+        ]
+      }
+    ]
+  },
+  "auditoria": {
+    "pk": [
+      "idauditoria"
+    ],
+    "columns": {
+      "idauditoria": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "entidade": "varchar(50) NOT NULL",
+      "entidade_id": "bigint(20) unsigned NOT NULL",
+      "acao": "varchar(50) NOT NULL",
+      "antes_json": "longtext DEFAULT NULL",
+      "depois_json": "longtext DEFAULT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "ocorrido_em": "datetime NOT NULL",
+      "correlacao_id": "varchar(100) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idauditoria"
+      ]
+    ],
+    "indexes": [
+      [
+        "entidade",
+        "entidade_id",
+        "ocorrido_em"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "operacoes": {
+    "pk": [
+      "idoperacao"
+    ],
+    "columns": {
+      "idoperacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "chave": "varchar(100) NOT NULL",
+      "tipo": "varchar(50) NOT NULL",
+      "request_hash": "varchar(64) NOT NULL",
+      "resposta_json": "longtext DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "chave"
+      ],
+      [
+        "codcoligada",
+        "idoperacao"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "aluno_periodos": {
+    "pk": [
+      "idvinculoperiodo"
+    ],
+    "columns": {
+      "idvinculoperiodo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NOT NULL",
+      "idmatricula": "bigint(20) unsigned DEFAULT NULL",
+      "status": "varchar(30) NOT NULL DEFAULT 'aguardando_turma'",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idaluno",
+        "codperiodo"
+      ],
+      [
+        "idmatricula"
+      ],
+      [
+        "codcoligada",
+        "idvinculoperiodo"
+      ]
+    ],
+    "indexes": [
+      [
+        "codperiodo",
+        "status"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "codcoligada",
+          "idmatricula"
+        ]
+      }
+    ]
+  },
+  "planos_pagamento": {
+    "pk": [
+      "idplano"
+    ],
+    "columns": {
+      "idplano": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(100) NOT NULL",
+      "valor_anuidade": "decimal(15,2) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codperiodo": "bigint(20) unsigned DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "codperiodo",
+        "codigo"
+      ],
+      [
+        "codcoligada",
+        "idplano"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codperiodo"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      }
+    ]
+  },
+  "estados_civis": {
+    "pk": [
+      "idestado_civil"
+    ],
+    "columns": {
+      "idestado_civil": "bigint(20) unsigned NOT NULL",
+      "nome": "varchar(80) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": []
+  },
+  "numeracao_pessoas": {
+    "pk": [
+      "idnumeracao"
+    ],
+    "columns": {
+      "idnumeracao": "bigint(20) unsigned NOT NULL",
+      "ultimo_codigo": "bigint(20) unsigned NOT NULL DEFAULT 0",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [],
+    "fks": []
+  },
+  "contrato_descontos": {
+    "pk": [
+      "iddesconto"
+    ],
+    "columns": {
+      "iddesconto": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "nome": "varchar(191) NOT NULL",
+      "valor": "decimal(15,2) NOT NULL",
+      "parcela_inicio": "int unsigned NOT NULL",
+      "parcela_fim": "int unsigned NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "excluido_em": "datetime NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "descricao": "text DEFAULT NULL",
+      "tipo": "varchar(20) NOT NULL DEFAULT 'comum'",
+      "habilitado": "tinyint(1) NOT NULL DEFAULT 1",
+      "idaluno_indicado": "bigint(20) unsigned DEFAULT NULL",
+      "indicacao_ativa": "tinyint(1) NOT NULL DEFAULT 0",
+      "ultima_verificacao_em": "datetime DEFAULT NULL",
+      "regras_json": "longtext DEFAULT NULL",
+      "ultima_alteracao_parcela": "int unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "iddesconto"
+      ]
+    ],
+    "indexes": [
+      [
+        "idcontrato",
+        "ativo"
+      ],
+      [
+        "codcoligada"
+      ],
+      [
+        "codcoligada",
+        "idaluno_indicado",
+        "ativo",
+        "tipo"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "idcontrato"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "codcoligada",
+          "idcontrato"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno_indicado"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "desconto_lancamentos": {
+    "pk": [
+      "idaplicacao"
+    ],
+    "columns": {
+      "idaplicacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "iddesconto": "bigint(20) unsigned NOT NULL",
+      "idlancamento": "bigint(20) unsigned NOT NULL",
+      "valor": "decimal(15,2) NOT NULL",
+      "revertido_em": "datetime NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "nome_snapshot": "varchar(191) DEFAULT NULL",
+      "descricao_snapshot": "text DEFAULT NULL",
+      "tipo_snapshot": "varchar(20) DEFAULT NULL"
+    },
+    "unique": [
+      [
+        "iddesconto",
+        "idlancamento"
+      ],
+      [
+        "codcoligada",
+        "idaplicacao"
+      ]
+    ],
+    "indexes": [
+      [
+        "idlancamento"
+      ],
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "iddesconto"
+        ],
+        "target": "contrato_descontos",
+        "references": [
+          "iddesconto"
+        ]
+      },
+      {
+        "columns": [
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "idlancamento"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddesconto"
+        ],
+        "target": "contrato_descontos",
+        "references": [
+          "codcoligada",
+          "iddesconto"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "codcoligada",
+          "idlancamento"
+        ]
+      }
+    ]
+  },
+  "tipos_disciplina": {
+    "pk": [
+      "idtipo_disciplina"
+    ],
+    "columns": {
+      "idtipo_disciplina": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "nome": "varchar(100) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idtipo_disciplina"
+      ],
+      [
+        "codcoligada",
+        "nome"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "historicos_anteriores": {
+    "pk": [
+      "idhistorico"
+    ],
+    "columns": {
+      "idhistorico": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "escola_nome": "varchar(200) NOT NULL",
+      "escola_cnpj": "varchar(14) DEFAULT NULL",
+      "rua": "varchar(200) DEFAULT NULL",
+      "numero": "varchar(200) DEFAULT NULL",
+      "complemento": "varchar(200) DEFAULT NULL",
+      "bairro": "varchar(200) DEFAULT NULL",
+      "cep": "varchar(200) DEFAULT NULL",
+      "cidade": "varchar(200) DEFAULT NULL",
+      "estado": "varchar(200) DEFAULT NULL",
+      "pais": "varchar(200) DEFAULT NULL",
+      "observacoes": "text DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idhistorico"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ],
+      [
+        "idaluno"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "historico_anos": {
+    "pk": [
+      "idano"
+    ],
+    "columns": {
+      "idano": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idhistorico": "bigint(20) unsigned NOT NULL",
+      "periodo_letivo": "varchar(80) NOT NULL",
+      "ano_letivo": "varchar(20) NOT NULL",
+      "serie": "varchar(80) NOT NULL",
+      "curso": "varchar(120) NOT NULL",
+      "resultado": "varchar(80) DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idano"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ],
+      [
+        "idhistorico"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idhistorico"
+        ],
+        "target": "historicos_anteriores",
+        "references": [
+          "codcoligada",
+          "idhistorico"
+        ]
+      }
+    ]
+  },
+  "historico_disciplinas": {
+    "pk": [
+      "idregistro_disciplina"
+    ],
+    "columns": {
+      "idregistro_disciplina": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idano": "bigint(20) unsigned NOT NULL",
+      "nome": "varchar(160) NOT NULL",
+      "nota_final": "varchar(30) NOT NULL",
+      "idtipo_disciplina": "bigint(20) unsigned NOT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idsubtipo_disciplina": "bigint(20) unsigned NULL"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idregistro_disciplina"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada"
+      ],
+      [
+        "idano"
+      ],
+      [
+        "idtipo_disciplina"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idano"
+        ],
+        "target": "historico_anos",
+        "references": [
+          "codcoligada",
+          "idano"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ],
+        "target": "tipos_disciplina",
+        "references": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idsubtipo_disciplina"
+        ],
+        "target": "subtipos_disciplina",
+        "references": [
+          "codcoligada",
+          "idsubtipo_disciplina"
+        ]
+      }
+    ]
+  },
+  "chat_canais": {
+    "pk": [
+      "idcanal"
+    ],
+    "columns": {
+      "idcanal": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "nome": "varchar(120) NOT NULL",
+      "descricao": "varchar(500) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idcanal"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ativo"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "chat_membros": {
+    "pk": [
+      "idmembro"
+    ],
+    "columns": {
+      "idmembro": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idcanal": "bigint(20) unsigned NOT NULL",
+      "wp_user_id": "bigint(20) unsigned NOT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idcanal",
+        "wp_user_id"
+      ]
+    ],
+    "indexes": [
+      [
+        "wp_user_id"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcanal"
+        ],
+        "target": "chat_canais",
+        "references": [
+          "codcoligada",
+          "idcanal"
+        ]
+      }
+    ]
+  },
+  "chat_conversas": {
+    "pk": [
+      "idconversa"
+    ],
+    "columns": {
+      "idconversa": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idcanal": "bigint(20) unsigned NOT NULL",
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "ultima_mensagem_id": "bigint(20) unsigned NOT NULL DEFAULT 0",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idaluno": "bigint(20) unsigned DEFAULT NULL"
+    },
+    "unique": [
+      [
+        "idcanal",
+        "codpessoa",
+        "idaluno"
+      ],
+      [
+        "codcoligada",
+        "idconversa"
+      ]
+    ],
+    "indexes": [
+      [
+        "codpessoa"
+      ],
+      [
+        "ultima_mensagem_id"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcanal"
+        ],
+        "target": "chat_canais",
+        "references": [
+          "codcoligada",
+          "idcanal"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "chat_mensagens": {
+    "pk": [
+      "idmensagem"
+    ],
+    "columns": {
+      "idmensagem": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idconversa": "bigint(20) unsigned NOT NULL",
+      "autor_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "autor_nome": "varchar(191) NOT NULL",
+      "origem": "varchar(12) NOT NULL",
+      "texto": "text NOT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idmensagem"
+      ]
+    ],
+    "indexes": [
+      [
+        "idconversa",
+        "idmensagem"
+      ],
+      [
+        "autor_wp_user_id",
+        "criado_em"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idconversa"
+        ],
+        "target": "chat_conversas",
+        "references": [
+          "codcoligada",
+          "idconversa"
+        ]
+      }
+    ]
+  },
+  "chat_anexos": {
+    "pk": [
+      "idanexo"
+    ],
+    "columns": {
+      "idanexo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idmensagem": "bigint(20) unsigned NOT NULL",
+      "nome": "varchar(191) NOT NULL",
+      "mime": "varchar(100) NOT NULL",
+      "tamanho": "int unsigned NOT NULL",
+      "conteudo_base64": "longtext NOT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [
+      [
+        "idmensagem"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idmensagem"
+        ],
+        "target": "chat_mensagens",
+        "references": [
+          "codcoligada",
+          "idmensagem"
+        ]
+      }
+    ]
+  },
+  "chat_leituras": {
+    "pk": [
+      "idleitura"
+    ],
+    "columns": {
+      "idleitura": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idconversa": "bigint(20) unsigned NOT NULL",
+      "wp_user_id": "bigint(20) unsigned NOT NULL",
+      "ultima_mensagem_id": "bigint(20) unsigned NOT NULL DEFAULT 0",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idconversa",
+        "wp_user_id"
+      ]
+    ],
+    "indexes": [
+      [
+        "wp_user_id"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idconversa"
+        ],
+        "target": "chat_conversas",
+        "references": [
+          "codcoligada",
+          "idconversa"
+        ]
+      }
+    ]
+  },
+  "campos_adicionais": {
+    "columns": {
+      "idcampo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "chave": "varchar(80) NOT NULL",
+      "nome": "varchar(120) NOT NULL",
+      "tipo": "varchar(20) NOT NULL",
+      "secao": "varchar(20) NOT NULL",
+      "exibir_pessoa": "tinyint(1) NOT NULL DEFAULT 1",
+      "opcoes": "text NOT NULL",
+      "ordem": "int unsigned NOT NULL DEFAULT 0",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idgrupo": "bigint(20) unsigned DEFAULT NULL",
+      "condicao_exibicao": "varchar(20) NOT NULL DEFAULT 'sempre'",
+      "resposta_exibicao": "varchar(1000) NOT NULL DEFAULT ''",
+      "exibir_aluno": "tinyint(1) NOT NULL DEFAULT 1",
+      "area_aluno": "varchar(30) NOT NULL DEFAULT 'dados'"
+    },
+    "pk": [
+      "idcampo"
+    ],
+    "unique": [
+      [
+        "chave"
+      ]
+    ],
+    "indexes": [
+      [
+        "idgrupo"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "idgrupo"
+        ],
+        "target": "grupos_campos",
+        "references": [
+          "idgrupo"
+        ]
+      }
+    ]
+  },
+  "pessoa_campos_adicionais": {
+    "columns": {
+      "idvalor": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "idcampo": "bigint(20) unsigned NOT NULL",
+      "valor": "longtext NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "idvalor"
+    ],
+    "unique": [
+      [
+        "codpessoa",
+        "idcampo"
+      ]
+    ],
+    "indexes": [
+      [
+        "idcampo"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      },
+      {
+        "columns": [
+          "idcampo"
+        ],
+        "target": "campos_adicionais",
+        "references": [
+          "idcampo"
+        ]
+      }
+    ]
+  },
+  "grupos_campos": {
+    "columns": {
+      "idgrupo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "nome": "varchar(120) NOT NULL",
+      "ordem": "int unsigned NOT NULL DEFAULT 0",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "idgrupo"
+    ],
+    "unique": [
+      [
+        "nome"
+      ]
+    ],
+    "indexes": [],
+    "fks": []
+  },
+  "api_requerimentos": {
+    "columns": {
+      "idrequerimento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "chave_origem": "varchar(64) NOT NULL",
+      "identificador": "varchar(191) NOT NULL",
+      "pessoas_json": "longtext NOT NULL",
+      "resultado_json": "longtext NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "conferido_por": "bigint(20) unsigned NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "cpf_origem": "varchar(11) NULL",
+      "identidade_registro": "tinyint(1) NOT NULL DEFAULT 0",
+      "id_externo": "varchar(191) NULL",
+      "dados_importados_json": "longtext NULL",
+      "importado_em": "datetime NULL",
+      "origem_json": "longtext NULL",
+      "idconexao": "varchar(64) NOT NULL DEFAULT 'principal'"
+    },
+    "pk": [
+      "idrequerimento"
+    ],
+    "unique": [
+      [
+        "chave_origem"
+      ]
+    ],
+    "indexes": [
+      [
+        "status"
+      ],
+      [
+        "idconexao",
+        "status"
+      ]
+    ],
+    "fks": []
+  },
+  "disciplinas": {
+    "columns": {
+      "iddisciplina": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(120) NOT NULL",
+      "idtipo_disciplina": "bigint(20) unsigned NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "idsubtipo_disciplina": "bigint(20) unsigned NULL"
+    },
+    "pk": [
+      "iddisciplina"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "iddisciplina"
+      ],
+      [
+        "codcoligada",
+        "codigo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ],
+        "target": "tipos_disciplina",
+        "references": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idsubtipo_disciplina"
+        ],
+        "target": "subtipos_disciplina",
+        "references": [
+          "codcoligada",
+          "idsubtipo_disciplina"
+        ]
+      }
+    ]
+  },
+  "grades_curriculares": {
+    "columns": {
+      "idgrade": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idcurso": "bigint(20) unsigned NOT NULL",
+      "codigo": "varchar(30) NOT NULL",
+      "nome": "varchar(120) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "idgrade"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idgrade"
+      ],
+      [
+        "codcoligada",
+        "codigo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcurso"
+        ],
+        "target": "cursos",
+        "references": [
+          "codcoligada",
+          "idcurso"
+        ]
+      }
+    ]
+  },
+  "grade_disciplinas": {
+    "columns": {
+      "iditem": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idgrade": "bigint(20) unsigned NOT NULL",
+      "iddisciplina": "bigint(20) unsigned NOT NULL",
+      "carga_horaria": "decimal(12,2) NOT NULL DEFAULT 0",
+      "ordem": "int unsigned NOT NULL DEFAULT 0"
+    },
+    "pk": [
+      "iditem"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "iditem"
+      ],
+      [
+        "codcoligada",
+        "idgrade",
+        "iddisciplina"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idgrade"
+        ],
+        "target": "grades_curriculares",
+        "references": [
+          "codcoligada",
+          "idgrade"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddisciplina"
+        ],
+        "target": "disciplinas",
+        "references": [
+          "codcoligada",
+          "iddisciplina"
+        ]
+      }
+    ]
+  },
+  "turma_grades": {
+    "columns": {
+      "idvinculo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idturma": "bigint(20) unsigned NOT NULL",
+      "idgrade": "bigint(20) unsigned NOT NULL"
+    },
+    "pk": [
+      "idvinculo"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idvinculo"
+      ],
+      [
+        "codcoligada",
+        "idturma"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturma"
+        ],
+        "target": "turmas",
+        "references": [
+          "codcoligada",
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idgrade"
+        ],
+        "target": "grades_curriculares",
+        "references": [
+          "codcoligada",
+          "idgrade"
+        ]
+      }
+    ]
+  },
+  "professores": {
+    "columns": {
+      "idprofessor": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codpessoa": "bigint(20) unsigned NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "idprofessor"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idprofessor"
+      ],
+      [
+        "codcoligada",
+        "codpessoa"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  },
+  "professor_disciplinas": {
+    "columns": {
+      "idvinculo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idprofessor": "bigint(20) unsigned NOT NULL",
+      "iddisciplina": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NULL"
+    },
+    "pk": [
+      "idvinculo"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idvinculo"
+      ],
+      [
+        "codcoligada",
+        "idprofessor",
+        "iddisciplina",
+        "codperiodo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idprofessor"
+        ],
+        "target": "professores",
+        "references": [
+          "codcoligada",
+          "idprofessor"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddisciplina"
+        ],
+        "target": "disciplinas",
+        "references": [
+          "codcoligada",
+          "iddisciplina"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      }
+    ]
+  },
+  "professor_valores_hora": {
+    "columns": {
+      "idvalor": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idprofessor": "bigint(20) unsigned NOT NULL",
+      "iddisciplina": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NOT NULL",
+      "valor_hora": "decimal(12,2) NOT NULL DEFAULT 0"
+    },
+    "pk": [
+      "idvalor"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idvalor"
+      ],
+      [
+        "codcoligada",
+        "idprofessor",
+        "iddisciplina",
+        "codperiodo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idprofessor"
+        ],
+        "target": "professores",
+        "references": [
+          "codcoligada",
+          "idprofessor"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddisciplina"
+        ],
+        "target": "disciplinas",
+        "references": [
+          "codcoligada",
+          "iddisciplina"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      }
+    ]
+  },
+  "professor_turmas": {
+    "columns": {
+      "idatribuicao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idprofessor": "bigint(20) unsigned NOT NULL",
+      "iddisciplina": "bigint(20) unsigned NOT NULL",
+      "idturma": "bigint(20) unsigned NOT NULL",
+      "codperiodo": "bigint(20) unsigned NOT NULL"
+    },
+    "pk": [
+      "idatribuicao"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idatribuicao"
+      ],
+      [
+        "codcoligada",
+        "idprofessor",
+        "iddisciplina",
+        "idturma",
+        "codperiodo"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idprofessor"
+        ],
+        "target": "professores",
+        "references": [
+          "codcoligada",
+          "idprofessor"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddisciplina"
+        ],
+        "target": "disciplinas",
+        "references": [
+          "codcoligada",
+          "iddisciplina"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idturma"
+        ],
+        "target": "turmas",
+        "references": [
+          "codcoligada",
+          "idturma"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "codperiodo"
+        ],
+        "target": "periodos_letivos",
+        "references": [
+          "codcoligada",
+          "codperiodo"
+        ]
+      }
+    ]
+  },
+  "subtipos_disciplina": {
+    "columns": {
+      "idsubtipo_disciplina": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "idtipo_disciplina": "bigint(20) unsigned NOT NULL",
+      "nome": "varchar(120) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "pk": [
+      "idsubtipo_disciplina"
+    ],
+    "unique": [
+      [
+        "codcoligada",
+        "idsubtipo_disciplina"
+      ],
+      [
+        "codcoligada",
+        "idtipo_disciplina",
+        "nome"
+      ]
+    ],
+    "indexes": [],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ],
+        "target": "tipos_disciplina",
+        "references": [
+          "codcoligada",
+          "idtipo_disciplina"
+        ]
+      }
+    ]
+  },
+  "tipos_documento_aluno": {
+    "pk": [
+      "idtipo_documento"
+    ],
+    "columns": {
+      "idtipo_documento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "nome": "varchar(120) NOT NULL",
+      "orientacoes": "varchar(1000) DEFAULT NULL",
+      "obrigatorio": "tinyint(1) NOT NULL DEFAULT 0",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "ordem": "int unsigned NOT NULL DEFAULT 0",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idtipo_documento"
+      ],
+      [
+        "codcoligada",
+        "nome"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ativo",
+        "ordem"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "aluno_documentos": {
+    "pk": [
+      "iddocumento"
+    ],
+    "columns": {
+      "iddocumento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "idtipo_documento": "bigint(20) unsigned NOT NULL",
+      "ativo_unico": "tinyint(1) DEFAULT 1",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "arquivo_token": "varchar(64) DEFAULT NULL",
+      "arquivo_nome": "varchar(191) NOT NULL",
+      "arquivo_mime": "varchar(60) NOT NULL",
+      "tamanho": "int unsigned NOT NULL",
+      "sha256": "varchar(64) NOT NULL",
+      "enviado_por_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "enviado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "revisado_por_wp_user_id": "bigint(20) unsigned DEFAULT NULL",
+      "revisado_em": "datetime DEFAULT NULL",
+      "motivo": "varchar(1000) DEFAULT NULL",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idaluno",
+        "idtipo_documento",
+        "ativo_unico"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "status",
+        "iddocumento"
+      ],
+      [
+        "idaluno",
+        "idtipo_documento"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idtipo_documento"
+        ],
+        "target": "tipos_documento_aluno",
+        "references": [
+          "codcoligada",
+          "idtipo_documento"
+        ]
+      }
+    ]
+  },
+  "educbank_fila": {
+    "pk": [
+      "idintegracao"
+    ],
+    "columns": {
+      "idintegracao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "ambiente": "varchar(10) NOT NULL",
+      "tenant": "varchar(63) NOT NULL",
+      "tipo": "varchar(15) NOT NULL",
+      "idlocal": "bigint(20) unsigned NOT NULL",
+      "idmatricula": "bigint(20) unsigned NOT NULL",
+      "idlancamento": "bigint(20) unsigned DEFAULT NULL",
+      "external_id": "varchar(80) NOT NULL",
+      "idremoto": "varchar(36) DEFAULT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "geracao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "tentativas": "int unsigned NOT NULL DEFAULT 0",
+      "hash_sincronizado": "varchar(64) DEFAULT NULL",
+      "identidade_hash": "varchar(64) DEFAULT NULL",
+      "status_remoto": "varchar(40) DEFAULT NULL",
+      "url_fatura": "text DEFAULT NULL",
+      "erro": "varchar(500) DEFAULT NULL",
+      "proxima_tentativa": "datetime DEFAULT NULL",
+      "sincronizado_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "ambiente",
+        "tenant",
+        "tipo",
+        "idlocal"
+      ],
+      [
+        "codcoligada",
+        "ambiente",
+        "tenant",
+        "tipo",
+        "idremoto"
+      ],
+      [
+        "codcoligada",
+        "idintegracao"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ambiente",
+        "tenant",
+        "status",
+        "proxima_tentativa"
+      ],
+      [
+        "idmatricula"
+      ],
+      [
+        "idlancamento"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idmatricula"
+        ],
+        "target": "matriculas",
+        "references": [
+          "codcoligada",
+          "idmatricula"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idlancamento"
+        ],
+        "target": "lancamentos",
+        "references": [
+          "codcoligada",
+          "idlancamento"
+        ]
+      }
+    ]
+  },
+  "educbank_retornos": {
+    "pk": [
+      "idretorno"
+    ],
+    "columns": {
+      "idretorno": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "ambiente": "varchar(10) NOT NULL",
+      "tenant": "varchar(63) NOT NULL",
+      "idintegracao": "bigint(20) unsigned NOT NULL",
+      "idbaixa": "bigint(20) unsigned DEFAULT NULL",
+      "invoice_id": "varchar(36) NOT NULL",
+      "external_id": "varchar(80) NOT NULL",
+      "status_remoto": "varchar(40) NOT NULL",
+      "origem": "varchar(20) NOT NULL DEFAULT 'webhook'",
+      "hash_evento": "varchar(64) NOT NULL",
+      "payload_json": "text NOT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "tentativas": "int unsigned NOT NULL DEFAULT 0",
+      "erro": "varchar(500) DEFAULT NULL",
+      "proxima_tentativa": "datetime DEFAULT NULL",
+      "processado_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "resultado_json": "text DEFAULT NULL"
+    },
+    "unique": [
+      [
+        "hash_evento"
+      ],
+      [
+        "codcoligada",
+        "idretorno"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ambiente",
+        "tenant",
+        "status",
+        "proxima_tentativa"
+      ],
+      [
+        "idintegracao"
+      ],
+      [
+        "idbaixa"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idintegracao"
+        ],
+        "target": "educbank_fila",
+        "references": [
+          "codcoligada",
+          "idintegracao"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idbaixa"
+        ],
+        "target": "baixas",
+        "references": [
+          "codcoligada",
+          "idbaixa"
+        ]
+      }
+    ]
+  },
+  "educbank_recebimentos": {
+    "pk": [
+      "idrecebimento"
+    ],
+    "columns": {
+      "idrecebimento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "ambiente": "varchar(10) NOT NULL",
+      "tenant": "varchar(63) NOT NULL",
+      "idintegracao": "bigint(20) unsigned NOT NULL",
+      "idbaixa": "bigint(20) unsigned DEFAULT NULL",
+      "snapshot_hash": "varchar(64) DEFAULT NULL",
+      "snapshot_json": "text DEFAULT NULL",
+      "antes_json": "text DEFAULT NULL",
+      "depois_hash": "varchar(64) DEFAULT NULL",
+      "estado_remoto": "varchar(40) NOT NULL DEFAULT 'Pending'",
+      "conferido_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idintegracao"
+      ],
+      [
+        "idbaixa"
+      ],
+      [
+        "codcoligada",
+        "idrecebimento"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ambiente",
+        "tenant"
+      ],
+      [
+        "idbaixa"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idintegracao"
+        ],
+        "target": "educbank_fila",
+        "references": [
+          "codcoligada",
+          "idintegracao"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idbaixa"
+        ],
+        "target": "baixas",
+        "references": [
+          "codcoligada",
+          "idbaixa"
+        ]
+      }
+    ]
+  },
+  "desconto_recalculos": {
+    "pk": [
+      "idrecalculo"
+    ],
+    "columns": {
+      "idrecalculo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "geracao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "tentativas": "int unsigned NOT NULL DEFAULT 0",
+      "erro": "varchar(500) DEFAULT NULL",
+      "proxima_tentativa": "datetime DEFAULT NULL",
+      "processado_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idcontrato"
+      ],
+      [
+        "codcoligada",
+        "idrecalculo"
+      ]
+    ],
+    "indexes": [
+      [
+        "status",
+        "proxima_tentativa"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "codcoligada",
+          "idcontrato"
+        ]
+      }
+    ]
+  },
+  "desconto_indicados": {
+    "pk": [
+      "idreferencia"
+    ],
+    "columns": {
+      "idreferencia": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "iddesconto": "bigint(20) unsigned NOT NULL",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "iddesconto",
+        "idaluno"
+      ],
+      [
+        "codcoligada",
+        "idreferencia"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "idaluno"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddesconto"
+        ],
+        "target": "contrato_descontos",
+        "references": [
+          "codcoligada",
+          "iddesconto"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "requerimentos_publicos": {
+    "pk": [
+      "idrequerimento"
+    ],
+    "columns": {
+      "idrequerimento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "protocolo": "varchar(32) NOT NULL",
+      "chave_envio": "varchar(64) NOT NULL",
+      "hash_envio": "varchar(64) NOT NULL",
+      "nome_aluno": "varchar(191) NOT NULL",
+      "dados_json": "longtext NOT NULL",
+      "aprovados_json": "longtext NULL",
+      "resultado_json": "longtext NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "conferido_por": "bigint(20) unsigned NULL",
+      "conferido_em": "datetime NULL",
+      "motivo": "varchar(1000) NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idaluno": "bigint(20) unsigned NULL",
+      "declaracao_texto": "text NOT NULL",
+      "privacidade_texto": "text NOT NULL"
+    },
+    "unique": [
+      [
+        "protocolo"
+      ],
+      [
+        "codcoligada",
+        "chave_envio"
+      ],
+      [
+        "codcoligada",
+        "idrequerimento"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "status",
+        "idrequerimento"
+      ],
+      [
+        "codcoligada",
+        "idaluno"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      }
+    ]
+  },
+  "requerimento_arquivos": {
+    "pk": [
+      "idarquivo"
+    ],
+    "columns": {
+      "idarquivo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "idrequerimento": "bigint(20) unsigned NOT NULL",
+      "campo": "varchar(30) NOT NULL",
+      "arquivo_token": "varchar(64) NULL",
+      "arquivo_nome": "varchar(191) NOT NULL",
+      "arquivo_mime": "varchar(60) NOT NULL",
+      "tamanho": "int unsigned NOT NULL",
+      "sha256": "varchar(64) NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idrequerimento",
+        "campo"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "idrequerimento"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada",
+          "idrequerimento"
+        ],
+        "target": "requerimentos_publicos",
+        "references": [
+          "codcoligada",
+          "idrequerimento"
+        ]
+      }
+    ]
+  },
+  "aluno_retiradas": {
+    "pk": [
+      "idautorizacao"
+    ],
+    "columns": {
+      "idautorizacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "codpessoa": "bigint(20) unsigned NULL",
+      "nome": "varchar(191) NOT NULL",
+      "cpf": "varchar(11) NULL",
+      "rg": "varchar(40) NULL",
+      "telefone": "varchar(30) NULL",
+      "parentesco": "varchar(40) NOT NULL",
+      "observacoes": "varchar(1000) NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [],
+    "indexes": [
+      [
+        "codcoligada",
+        "idaluno",
+        "ativo"
+      ],
+      [
+        "codpessoa"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codpessoa"
+        ],
+        "target": "pessoas",
+        "references": [
+          "codpessoa"
+        ]
+      }
+    ]
+  }
+}

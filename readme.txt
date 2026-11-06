@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.15
+Stable tag: 0.19.16
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.16 =
+* Corrige a substituição de índices antigos após restauração: cria os índices necessários antes de remover os anteriores, preservando as chaves estrangeiras.
+* Uma nova versão do plugin pode tentar novamente uma migração que falhou em uma versão anterior, sem repetir a falha a cada acesso.
+* Configurações no WordPress e no portal mostram a recuperação do banco e o botão de migração sem depender da API bloqueada.
+* Diagnóstico informa etapa, tabela e detalhe do banco, com valores dos registros omitidos. Migração incompleta não confirma uma nova versão do banco.
+* Migração 36 → 39, repetição, recuperação de índices e preservação de registros verificadas em WordPress/MariaDB reais de teste. Schema 39 mantido.
 
 = 0.19.15 =
 * Novos shortcodes do responsável financeiro/assinante: estado civil, profissão e endereço completo, incluindo país.

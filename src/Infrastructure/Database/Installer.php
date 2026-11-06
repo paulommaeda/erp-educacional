@@ -12,6 +12,7 @@ final class Installer
         $lock = 'ederp_schema_' . substr(hash('sha256', $this->db->wp->prefix . DB_NAME), 0, 32);
         $got = $this->db->row('SELECT GET_LOCK(%s, 5) AS acquired', [$lock]);
         if ((int)($got['acquired'] ?? 0) !== 1) { throw new \RuntimeException('Outra migração está em execução. Tente novamente.'); }
+        $stage = 'preparação do banco';
         try {
             update_option('ederp_schema_error', 'Migração em andamento ou interrompida. Execute novamente a verificação.', false);
             foreach([$this->db->wp->users,$this->db->wp->usermeta] as $native) {
@@ -20,27 +21,29 @@ final class Installer
             }
             require_once ABSPATH . 'wp-admin/includes/upgrade.php';
             foreach ($this->db->schema() as $name => $meta) {
+                $stage = 'estrutura da tabela ' . $name;
                 $table = $this->db->table($name);
                 $lines = [];
                 foreach ($meta['columns'] as $col => $definition) { $lines[] = "$col $definition"; }
                 $lines[] = 'PRIMARY KEY  (' . implode(',', $meta['pk']) . ')';
-                $exists=$this->db->row('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=%s',[$table]);
-                $previousIndexes=$exists?$this->db->rows("SHOW INDEX FROM $table"):[];
                 // Secondary indexes are reconciled explicitly; dbDelta can misread legacy names.
                 dbDelta("CREATE TABLE $table (\n" . implode(",\n", $lines) . "\n) ENGINE=InnoDB " . $this->db->wp->get_charset_collate() . ';');
-                if ($this->db->wp->last_error) { throw new \RuntimeException('dbDelta falhou em ' . $name . ': ' . $this->db->wp->last_error); }
+                if ($this->db->wp->last_error) { throw new \RuntimeException('Não foi possível ajustar as colunas.'); }
                 $engine = $this->db->row('SELECT ENGINE FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s', [$table]);
                 if (strtoupper($engine['ENGINE'] ?? '') !== 'INNODB') { throw new \RuntimeException('Tabela ' . $name . ' deve utilizar InnoDB.'); }
                 if($name==='coligadas')(new \EducacionalERP\Application\Coligadas($this->db))->seed();
-                // Remove obsolete global business keys; local unique keys below replace them.
+                $stage = 'índices da tabela ' . $name;
+                // A legacy unique key can still support a foreign key after a restore.
+                // Install replacement indexes before removing any obsolete key.
+                SchemaIndexes::ensure($this->db,$table,$meta);
+                $stage = 'substituição de índices antigos da tabela ' . $name;
+                // Local keys now exist; obsolete global business keys can be removed.
                 if(in_array($name,['alunos','periodos_letivos','cursos','turnos','planos_pagamento','contratos'],true)){
                     $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index)if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$keys[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];
                     foreach($keys as $key=>$cols){ksort($cols);$cols=array_values($cols);if(!in_array('codcoligada',$cols,true)&&!in_array($cols,$meta['unique'],true))$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
                 }
                 if($name==='chat_conversas'){
                     $keys=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $idx)if((int)$idx['Non_unique']===0&&$idx['Key_name']!=='PRIMARY')$keys[$idx['Key_name']][(int)$idx['Seq_in_index']]=$idx['Column_name'];
-                    // Drop the old family/channel key only after adding the student key.
-                    SchemaIndexes::ensure($this->db,$table,$meta);
                     foreach($keys as $key=>$cols){ksort($cols);if(array_values($cols)===['idcanal','codpessoa'])$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
                 }
                 if($name==='professor_disciplinas'){
@@ -51,10 +54,11 @@ final class Installer
                     $obsolete=[];foreach($this->db->rows("SHOW INDEX FROM $table") as $index)if((int)$index['Non_unique']===0&&$index['Key_name']!=='PRIMARY')$obsolete[$index['Key_name']][(int)$index['Seq_in_index']]=$index['Column_name'];
                     foreach($obsolete as $key=>$cols){ksort($cols);if(array_values($cols)===['cpf_origem'])$this->db->query("ALTER TABLE $table DROP INDEX `".str_replace('`','``',$key)."`");}
                 }
-                SchemaIndexes::ensure($this->db,$table,$meta);
+                SchemaIndexes::verify($meta,$this->db->rows("SHOW INDEX FROM $table"));
                 $columns = $this->db->rows("SHOW COLUMNS FROM $table");
                 if (count($columns) !== count($meta['columns'])) { throw new \RuntimeException('Estrutura divergente em ' . $name); }
             }
+            $stage = 'adequação dos registros históricos';
             if((int)get_option('ederp_schema_version',0)<27){
                 $this->db->atomic(function(){
                     $q=$this->db->table('professor_disciplinas');$p=$this->db->table('periodos_letivos');
@@ -102,6 +106,7 @@ final class Installer
             foreach ($this->db->schema() as $name => $meta) {
                 $table = $this->db->table($name);
                 foreach ($meta['fks'] as $i => $fk) {
+                    $stage = 'vínculo da tabela ' . $name . ' (' . implode(', ', $fk['columns']) . ') com ' . $fk['target'];
                     $constraint = 'erp_fk_' . substr(hash('sha256', $table . ':' . $i), 0, 32);
                     $existing = $this->db->rows('SELECT COLUMN_NAME, REFERENCED_TABLE_NAME, REFERENCED_COLUMN_NAME FROM information_schema.KEY_COLUMN_USAGE WHERE CONSTRAINT_SCHEMA = DATABASE() AND TABLE_NAME = %s AND CONSTRAINT_NAME = %s ORDER BY ORDINAL_POSITION', [$table, $constraint]);
                     $target = $this->db->table($fk['target']);
@@ -112,13 +117,27 @@ final class Installer
                     $this->db->query("ALTER TABLE $table ADD CONSTRAINT $constraint FOREIGN KEY (" . implode(',', $fk['columns']) . ") REFERENCES $target (" . implode(',', $fk['references']) . ') ON DELETE RESTRICT ON UPDATE RESTRICT');
                 }
             }
+            $stage = 'conclusão dos registros históricos';
             if(version_compare((string)get_option('ederp_schema_version','0'),'13','<')){
                 $this->db->atomic(function(){foreach($this->db->rows('SELECT * FROM '.$this->db->table('contratos')." WHERE numero LIKE 'CT-%' ORDER BY idcontrato FOR UPDATE") as $contract){$id=(int)$contract['idcontrato'];$number=\EducacionalERP\Application\ContractNumbers::forEnrollment($this->db,(int)$contract['idmatricula'],$id);$this->db->update('contratos',$id,['numero'=>$number]);$this->db->audit('contratos',$id,'padronizar_numero',$contract,['numero'=>$number],'migracao_13_contrato');}});
             }
             if((int)get_option('ederp_schema_version',0)<29)(new \EducacionalERP\Application\AdditionalFields($this->db))->ensureStudentSections();
             if((int)get_option('ederp_schema_version',0)<36)\EducacionalERP\Domain\AdmissionForm::seed($this->db);
+            $stage = 'confirmação da versão do banco';
             update_option('ederp_schema_version', self::VERSION, false);
+            if(get_option('ederp_schema_version')!==self::VERSION)throw new \RuntimeException('Não foi possível registrar a versão do banco.');
             delete_option('ederp_schema_error');
-        } finally { $this->db->row('SELECT RELEASE_LOCK(%s) AS released', [$lock]); }
+            if(get_option('ederp_schema_error'))throw new \RuntimeException('Não foi possível limpar o diagnóstico anterior nas opções do WordPress.');
+        } catch (\Throwable $e) {
+            // Capture before RELEASE_LOCK clears wpdb::last_error. Never include SQL or record values.
+            $detail = trim($this->db->wp->last_error);
+            $detail = preg_replace('/[\'\"](?:\\\\.|[^\'\"\\\\])*[\'\"]/us', '[valor omitido]', $detail) ?? '';
+            $message = 'Migração interrompida em ' . $stage . '. ' . $e->getMessage();
+            if($detail!=='')$message .= ' Detalhe do banco: ' . mb_substr($detail,0,800);
+            throw new \RuntimeException($message,0,$e);
+        } finally {
+            try { $this->db->row('SELECT RELEASE_LOCK(%s) AS released', [$lock]); }
+            catch (\Throwable $ignored) { /* A lost connection already releases its advisory lock. */ }
+        }
     }
 }

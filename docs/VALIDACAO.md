@@ -1,5 +1,16 @@
 # Validação
 
+## 0.19.16
+
+- `tests/wordpress-migration.php`: 34 verificações em WordPress 7.1.3 e MariaDB 11.4.8 reais, com dbDelta original e banco descartável. A fixture usa o schema 36 publicado no commit `400ceb0605a2ae00f74430ca3e2d8da7f2daff32`; contém apenas estrutura, e os registros são fictícios.
+- Reproduzida na versão anterior a mensagem genérica de persistência ao remover um índice único antigo ainda necessário à FK de pessoas/alunos. A nova ordem instala o índice substituto antes da remoção e mantém a FK ativa.
+- Conferidos backup íntegro 36 → 39, restauração com índice antigo, repetição idempotente e igualdade de todos os registros/valores anteriores, incluindo matrícula, termo do contrato, parcela, saldo e pagamento. Registros não são marcados como excluídos nem recebem modelos inventados.
+- Backup com chave única ausente e RA duplicado interrompe a migração sem avançar a versão. O diagnóstico identifica tabela, etapa e erro; valores dos registros e SQL não aparecem. Tentativa manual conclui após corrigir o conflito e preserva os dois alunos.
+- Recuperação acessível em Configurações no WordPress e no portal sem carregar a API bloqueada; nonce e escape do diagnóstico conferidos. Erro antigo permite uma tentativa na nova versão; falha dessa tentativa não causa novas migrações em cada acesso.
+- Instalação nova, preparação dos cadastros iniciais e repetição sem duplicação também conferidas no banco real. Tela de recuperação renderizada antes de carregar funções exclusivas do wp-admin e inspecionada em Chromium a 1440, 390 e 320 px, sem rolagem horizontal e com o botão de migração acessível.
+- Sete suítes de regressão aprovadas: índices, recursos do admin, rotas do portal, shortcodes do assinante, exclusão de matrícula, contratos/modelos e permissões das rotas de integração. Sintaxe dos arquivos PHP alterados conferida.
+- O teste local não contém o backup do colégio nem executa operações no site real. Outros impedimentos específicos da restauração passam a ser apresentados no diagnóstico administrativo. Schema 39 mantido.
+
 ## 0.19.15
 
 - `tests/contract-payer-shortcodes.php`: 35 verificações de emissão e prévia com estado civil, profissão, endereço completo e campos separados do assinante financeiro. Conferidos nome do estado civil por referência, texto legado, renomeação do cadastro, número zero, campos ausentes, endereço internacional e preservação do shortcode de endereço anterior.
