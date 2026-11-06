@@ -8,7 +8,7 @@ final class Pages
     {
         add_menu_page('ERP Educacional','ERP Educacional','erp_acessar_admin','ederp',[$this,'home'],'dashicons-welcome-learn-more',26);
         foreach(['alunos'=>['Alunos','erp_gerenciar_pessoas'],'professores'=>['Professores','erp_gerenciar_academico'],'pessoas'=>['Pessoas','erp_gerenciar_pessoas'],'academico'=>['Estrutura acadêmica','erp_gerenciar_academico'],'matriculas'=>['Matrículas','erp_gerenciar_academico'],
-            'documentos'=>['Documentos dos alunos','erp_gerenciar_pessoas'],'financeiro'=>['Financeiro','erp_consultar_financeiro'],'rematriculas'=>['Rematrículas','erp_gerenciar_academico'],'exportacao'=>['Exportação','manage_options'],'requerimentos'=>['Requerimentos','erp_gerenciar_pessoas'],'importacao'=>['Importação','manage_options'],'perfis'=>['Perfis e acessos','manage_options'],'config'=>['Configurações','erp_configurar']] as $slug=>[$title,$cap]) {
+            'documentos'=>['Documentos dos alunos','erp_gerenciar_pessoas'],'financeiro'=>['Financeiro','erp_consultar_financeiro'],'contratos'=>['Contratos','manage_options'],'rematriculas'=>['Rematrículas','erp_gerenciar_academico'],'exportacao'=>['Exportação','manage_options'],'requerimentos'=>['Requerimentos','erp_gerenciar_pessoas'],'importacao'=>['Importação','manage_options'],'perfis'=>['Perfis e acessos','manage_options'],'config'=>['Configurações','erp_configurar']] as $slug=>[$title,$cap]) {
             add_submenu_page('ederp',$title,$title,$cap,'ederp-'.$slug,fn()=>$this->screen($slug,$title,$cap));
         }
         add_action('admin_enqueue_scripts',function($hook){ if(str_contains((string)$hook,'ederp')) { self::assets(); } });
@@ -18,6 +18,8 @@ final class Pages
         global $post;
         $photoPage=in_array(sanitize_key((string)($_GET['erp_tela']??'')),['pessoas','alunos','configuracoes'],true)||($post instanceof \WP_Post && preg_match('/\[erp_(pessoas|alunos|configuracoes)\b/',$post->post_content));
         if(current_user_can('upload_files') && (is_admin()||$photoPage)) { wp_enqueue_media(); }
+        wp_enqueue_script('ederp-contracts',plugins_url('assets/contracts.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
+        wp_enqueue_style('ederp-contracts',plugins_url('assets/contracts.css',EDERP_FILE),['ederp'],EDERP_VERSION);
         wp_enqueue_script('ederp-family',plugins_url('assets/family-students.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_style('ederp-family',plugins_url('assets/family-students.css',EDERP_FILE),['ederp'],EDERP_VERSION);
         wp_enqueue_script('ederp-person-fields',plugins_url('assets/person-fields.js',EDERP_FILE),[],EDERP_VERSION,true);
@@ -59,6 +61,7 @@ final class Pages
     {
         if($slug==='importacao' && !\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()) { wp_die('Somente administradores.'); }
         if(!current_user_can($cap)) { wp_die('Sem permissão.'); }
+        if($slug==='contratos'){if(!Access::isAdmin()){wp_die('Somente administradores.');return;}echo '<div class="wrap ederp" data-erp-contracts><p role="status">Carregando contratos...</p></div>';return;}
         if($slug==='documentos'){echo '<div class="wrap ederp" data-erp-documents></div>';return;}
         if(in_array($slug,['alunos','professores','pessoas','matriculas','academico','exportacao','importacao','requerimentos','rematriculas','configuracoes'],true)) {
             echo '<div class="wrap ederp erp-workflow" data-erp-screen="'.esc_attr($slug).'"><p role="status">Carregando...</p></div>';
@@ -68,6 +71,7 @@ final class Pages
         if($slug==='perfis') { echo (new \EducacionalERP\Presentation\Portal\Portal())->render('perfis');return; }
         echo '<div class="wrap ederp"><h1>'.esc_html($title).'</h1>';
         if($slug==='financeiro') {
+            if(Access::isAdmin())echo '<p><a class="erp-link-button" href="'.esc_url(is_admin()?admin_url('admin.php?page=ederp-contratos'):\EducacionalERP\Presentation\Portal\Portal::url('contratos')).'">Gerenciar contratos e modelos</a></p>';
             echo '<section class="erp-finance-workspace"><nav class="erp-tabs erp-finance-tabs" aria-label="Consultas financeiras"><button type="button" data-finance-tab="titles" aria-pressed="true" class="active">Lançamentos</button>';
             if(\EducacionalERP\Infrastructure\WordPress\Access::canGenerate())echo '<button type="button" data-finance-tab="pending" aria-pressed="false">Contratos aguardando parcelas</button>';
             echo '</nav>';

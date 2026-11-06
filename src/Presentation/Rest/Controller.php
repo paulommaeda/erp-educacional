@@ -42,6 +42,17 @@ final class Controller
     public function register(): void
     {
         $id='(?P<id>[1-9][0-9]{0,17})';
+        $contracts=new \EducacionalERP\Application\Contracts($this->db,new Operations($this->db));
+        $models=new \EducacionalERP\Application\ContractTemplates($this->db,new Operations($this->db));
+        $this->route('/contratos','GET',fn()=>Access::isAdmin(),fn($r)=>$contracts->listing($r->get_query_params()));
+        $this->route('/contratos/'.$id,'GET',fn()=>Access::isAdmin(),fn($r)=>$contracts->detail((int)$r['id']));
+        $this->route('/contratos/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$contracts->update((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/contratos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$contracts->remove((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/modelos-contrato','GET',fn()=>Access::isAdmin()||current_user_can('erp_gerenciar_academico'),fn($r)=>$models->listing($r->get_param('todos')==='1'));
+        $this->route('/modelos-contrato','POST',fn()=>Access::isAdmin(),fn($r)=>$models->save(null,$this->payload($r),$this->key($r)));
+        $this->route('/modelos-contrato/previa','POST',fn()=>Access::isAdmin(),fn($r)=>$models->preview($this->payload($r)));
+        $this->route('/modelos-contrato/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>$models->save((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/modelos-contrato/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$models->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $admissions=new \EducacionalERP\Application\PublicAdmissions($this->db,$this->catalog);$pickup=new \EducacionalERP\Application\StudentPickup($this->db);
         $admissionReview=fn()=>\EducacionalERP\Application\PublicAdmissions::canReview();
         $this->route('/configuracoes/requerimento-publico','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Application\AdmissionSettings::settings());
@@ -248,7 +259,7 @@ final class Controller
         $a=$this->db->get('alunos',$student);
         if((int)$a['codcoligada']!==\EducacionalERP\Application\Coligadas::current())throw new RuleViolation('Aluno não pertence à coligada de trabalho.');
         $c=$this->db->table('contratos');$m=$this->db->table('matriculas');$b=$this->db->table('baixas');$e=$this->db->table('baixa_estornos');$l=$this->db->table('lancamentos');$p=$this->db->table('parcelas');
-        $contracts=$this->db->rows("SELECT c.idcontrato,c.numero FROM $c c JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d ORDER BY c.idcontrato DESC",[$student]);
+        $contracts=$this->db->rows("SELECT c.idcontrato,c.numero FROM $c c JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND c.excluido_em IS NULL ORDER BY c.idcontrato DESC",[$student]);
         $payments=$this->db->rows("SELECT b.idbaixa,b.idlancamento,b.data_pagamento,b.valor_pago FROM $b b JOIN $l l ON l.idlancamento=b.idlancamento JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND l.excluido_em IS NULL AND NOT EXISTS (SELECT 1 FROM $e e WHERE e.idbaixa=b.idbaixa) ORDER BY b.idbaixa DESC",[$student]);
         return ['contratos'=>$contracts,'lancamentos'=>$this->financeView($student),'baixas'=>$payments,'responsaveis'=>$this->guardianView($student)];
     }
@@ -407,7 +418,7 @@ final class Controller
     public function academicView(int $student,int $period=0): array
     {
         $m=$this->db->table('matriculas'); $t=$this->db->table('turmas'); $c=$this->db->table('cursos'); $p=$this->db->table('periodos_letivos'); $u=$this->db->table('turnos'); $ct=$this->db->table('contratos');
-        return $this->db->rows("SELECT m.versao,m.idmatricula,m.idmatricula_origem,m.codperiodo,m.idcurso,m.idturma_atual,m.status,m.data_matricula,(SELECT COUNT(*) FROM $ct ct WHERE ct.idmatricula=m.idmatricula) AS contratos,p.codigo AS periodo,c.nome AS curso,t.nome AS turma,u.nome AS turno FROM $m m JOIN $t t ON t.idturma=m.idturma_atual JOIN $c c ON c.idcurso=m.idcurso JOIN $p p ON p.codperiodo=m.codperiodo JOIN $u u ON u.idturno=t.idturno WHERE m.idaluno=%d".($period?' AND m.codperiodo=%d':'')." ORDER BY p.data_inicio DESC",$period?[$student,$period]:[$student]);
+        return $this->db->rows("SELECT m.versao,m.idmatricula,m.idmatricula_origem,m.codperiodo,m.idcurso,m.idturma_atual,m.status,m.data_matricula,(SELECT COUNT(*) FROM $ct ct WHERE ct.idmatricula=m.idmatricula AND ct.excluido_em IS NULL) AS contratos,p.codigo AS periodo,c.nome AS curso,t.nome AS turma,u.nome AS turno FROM $m m JOIN $t t ON t.idturma=m.idturma_atual JOIN $c c ON c.idcurso=m.idcurso JOIN $p p ON p.codperiodo=m.codperiodo JOIN $u u ON u.idturno=t.idturno WHERE m.idaluno=%d".($period?' AND m.codperiodo=%d':'')." ORDER BY p.data_inicio DESC",$period?[$student,$period]:[$student]);
     }
     private function integrationRoutes():void
     {

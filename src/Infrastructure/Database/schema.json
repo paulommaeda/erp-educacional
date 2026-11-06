@@ -1149,6 +1149,48 @@
       }
     ]
   },
+  "modelos_contrato": {
+    "pk": [
+      "idmodelo"
+    ],
+    "columns": {
+      "idmodelo": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "nome": "varchar(191) NOT NULL",
+      "texto": "longtext NOT NULL",
+      "versao_texto": "varchar(40) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "padrao": "tinyint(1) NOT NULL DEFAULT 0",
+      "excluido_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idmodelo"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ativo",
+        "padrao"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
   "contratos": {
     "pk": [
       "idcontrato"
@@ -1177,7 +1219,13 @@
       "primeiro_vencimento": "date DEFAULT NULL",
       "parcelas_geradas": "tinyint(1) NOT NULL DEFAULT 1",
       "parcelas_geradas_em": "datetime DEFAULT NULL",
-      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idmodelo": "bigint(20) unsigned DEFAULT NULL",
+      "modelo_nome_snapshot": "varchar(191) DEFAULT NULL",
+      "modelo_versao_snapshot": "bigint(20) unsigned DEFAULT NULL",
+      "excluido_em": "datetime DEFAULT NULL",
+      "excluido_por_wp_user_id": "bigint(20) unsigned DEFAULT NULL",
+      "motivo_exclusao": "text DEFAULT NULL"
     },
     "unique": [
       [
@@ -1196,6 +1244,11 @@
       ],
       [
         "codcoligada"
+      ],
+      [
+        "codcoligada",
+        "excluido_em",
+        "idmatricula"
       ]
     ],
     "fks": [
@@ -1264,6 +1317,17 @@
         "references": [
           "codcoligada",
           "idplano"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idmodelo"
+        ],
+        "target": "modelos_contrato",
+        "references": [
+          "codcoligada",
+          "idmodelo"
         ]
       }
     ]

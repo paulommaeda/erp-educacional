@@ -22,7 +22,7 @@ final class ExportService
     }
     private function related(string $table,string $field,int $id,string $order=''): array
     {
-        return $this->db->rows('SELECT * FROM '.$this->db->table($table)." WHERE $field=%d".($table==='lancamentos'?' AND excluido_em IS NULL':'').($order?' ORDER BY '.$order:''),[$id]);
+        return $this->db->rows('SELECT * FROM '.$this->db->table($table)." WHERE $field=%d".(in_array($table,['lancamentos','contratos'],true)?' AND excluido_em IS NULL':'').($order?' ORDER BY '.$order:''),[$id]);
     }
     private function person(int $id): array
     {

@@ -4,8 +4,8 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\RuleViolation;
 final class MenuPolicy
 {
-    public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','documentos'=>'Documentos dos alunos','pessoas'=>'Pessoas','alunos'=>'Alunos','professores'=>'Professores','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Gestão financeira','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
-    private const ADMIN=['exportacao','importacao','perfis','configuracoes'];
+    public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','documentos'=>'Documentos dos alunos','pessoas'=>'Pessoas','alunos'=>'Alunos','professores'=>'Professores','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Gestão financeira','contratos'=>'Contratos','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
+    private const ADMIN=['contratos','exportacao','importacao','perfis','configuracoes'];
     private const CAPS=['documentos'=>'erp_gerenciar_pessoas','requerimentos'=>'erp_gerenciar_pessoas','pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','professores'=>'erp_gerenciar_academico','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','rematriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro'];
     public static function defaults(string $role):array
     {
@@ -43,6 +43,8 @@ final class MenuPolicy
         if(str_starts_with($path,'/usuarios'))return self::can('usuarios');
         if(str_starts_with($path,'/exclusoes')||($path==='/configuracoes'&&$method!=='GET'))return false;
         if(str_starts_with($path,'/perfis')||str_starts_with($path,'/importacao')||str_starts_with($path,'/contas'))return false;
+        if($path==='/contratos'||preg_match('~^/contratos/[^/]+(?:/excluir)?$~',$path))return false;
+        if(str_starts_with($path,'/modelos-contrato'))return $method==='GET'&&self::any(['matriculas','alunos','academico']);
         if(str_starts_with($path,'/contratos/')||str_starts_with($path,'/financeiro/pendentes'))return self::can('financeiro');
         if(str_starts_with($path,'/turmas/')&&str_ends_with($path,'/plano'))return self::any(['matriculas','alunos','academico']);
         if(str_starts_with($path,'/cadastros/'))return self::can(str_contains($path,'/pessoas')?'pessoas':(str_contains($path,'/alunos')?'alunos':'academico'));
@@ -66,7 +68,7 @@ final class MenuPolicy
     {
         Access::requireAdmin();$data=get_option('ederp_menu_policy',[]);$rows=[];
         foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'student_sections'=>get_option(StudentRecordPolicy::OPTION,[])[$slug]??[],'field_groups'=>get_option('ederp_field_group_policy',[])[$slug]??[],'user_permissions'=>UserPermissions::forRole($slug),'custom'=>str_starts_with($slug,'erp_custom_')];
-        return ['student_sections'=>StudentRecordPolicy::SECTIONS,'field_groups'=>(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups(),'user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','exportacao','importacao','perfis','configuracoes']))];
+        return ['student_sections'=>StudentRecordPolicy::SECTIONS,'field_groups'=>(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups(),'user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','contratos','exportacao','importacao','perfis','configuracoes']))];
     }
     public static function save(array $data):array
     {

@@ -1,5 +1,14 @@
 # Validação
 
+## 0.19.13
+
+- `tests/contracts.php`: 97 verificações de modelos, padrão por coligada, preenchimento, prévia, preservação do texto emitido, permissões no serviço e nas rotas, versões, idempotência, edição pendente, exclusão, pagamentos preservados, reemissão e integridade das chaves estrangeiras.
+- `npm --prefix tests run test:contracts`: dez fluxos de interface, incluindo busca e paginação, impressão/visualização segura do texto, edição com modelo, tratamento de erro e repetição, exclusão com confirmação, criação/revisão/exclusão de modelo, prévia e matrícula com modelo padrão ou texto personalizado. A matrícula sem modelos cadastrados também foi verificada.
+- Chromium instalado localmente, com API simulada: lista, texto do contrato, lista de modelos e editor em 1440, 768, 390 e 320 px. Dezesseis capturas, sem erros JavaScript ou rolagem horizontal; layout conferido visualmente. Cabeçalho do modal mantém o botão Fechar acessível durante a rolagem.
+- Regressões aprovadas de planos de pagamento, bolsas, ciclo de matrícula, coligadas, transições de curso, permissões das rotas de integração, gestão financeira, exclusão financeira em lote e retorno Educbank, exportação seletiva, portal e carregamento dos recursos administrativos. Verificação de sintaxe em 187 arquivos PHP e vinte arquivos JavaScript.
+- Na conferência ampliada, cinco testes legados (`academic-management.php`, `people-filter.php`, `integration-api.php`, `payment-receipts.php`, `renewal-manual.php`) apresentaram falhas já reproduzidas na versão 0.19.12, sem as alterações deste desenvolvimento. Os testes antigos de interface `workflow-ui.cjs`, `portal-ui.cjs` e a etapa final de configurações de `management-ui.cjs` também reproduzem as mesmas falhas na base anterior. Os testes específicos novos e os fluxos de matrícula ligados à mudança passam.
+- Serviços executados com transações e chaves estrangeiras SQLite e fronteiras WordPress simuladas. A migração aditiva para schema 38 foi conferida no esquema; dbDelta e bloqueios concorrentes ainda exigem homologação em WordPress/MySQL. Não houve acesso à instalação do colégio nem envio de dados ao Educbank.
+
 ## 0.15.3
 
 - `tests/api-connections.php`: conexões independentes, criação idempotente, senhas criptografadas sem exposição, mesma URL/ID externo em origens distintas, conferência de pai/mãe/responsável acadêmico/financeiro, reaproveitamento de pessoa entre papéis, remapeamento restrito à origem, restauração de ocultados, campos adicionais ocultos/listas, retirada de blocos, histórico, configuração anterior, versão e permissão de administrador.
