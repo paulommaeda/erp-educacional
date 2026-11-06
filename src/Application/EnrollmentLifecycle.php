@@ -46,7 +46,7 @@ final class EnrollmentLifecycle
                 if($future){$f=$future[0];if(!Coligadas::destinationPeriod($this->db,$period,$this->db->get('periodos_letivos',(int)$f['codperiodo']))||!EnrollmentStatus::open($f['status']))throw new RuleViolation('Rematrícula posterior incompatível com o próximo período.');
                     $source=$this->db->get('turmas',(int)$m['idturma_atual']);$target=$this->db->row('SELECT * FROM '.$this->db->table('turmas').' WHERE codperiodo=%d AND idcurso=%d AND idturno=%d AND codigo=%s FOR UPDATE',[$next,(int)$m['idcurso'],(int)$source['idturno'],$source['codigo']]);
                     if(!$target)throw new RuleViolation('Cadastre ou copie a turma atual (mesmo código, curso e turno) no próximo período antes de reprovar.');
-                    $this->academic->planForClass((int)$target['idturma']);$contracts=$this->db->rows('SELECT * FROM '.$this->db->table('contratos').' WHERE idmatricula=%d ORDER BY idcontrato FOR UPDATE',[(int)$f['idmatricula']]);
+                    $this->academic->planForClass((int)$target['idturma']);$contracts=$this->db->rows('SELECT * FROM '.$this->db->table('contratos').' WHERE idmatricula=%d AND excluido_em IS NULL ORDER BY idcontrato FOR UPDATE',[(int)$f['idmatricula']]);
                     $cross=(int)$f['codcoligada']!==(int)$m['codcoligada'];
                     $this->cancelInside($f,'Rematrícula cancelada por reprovação no período anterior',$key,$cross);
                     $replacement=$this->academic->placeInside((int)$m['idaluno'],$next,(int)$target['idturma'],$key);$newId=(int)$replacement['idmatricula'];$this->db->update('matriculas',$newId,['idmatricula_origem'=>$id,'origem'=>'reprovacao']);

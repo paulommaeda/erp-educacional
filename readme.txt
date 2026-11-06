@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.12
+Stable tag: 0.19.13
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.13 =
+* Menu Contratos para o administrador: consulta por aluno/RA/número, período, situação, paginação, visualização, impressão, edição e exclusão.
+* Modelos de contrato por coligada, com versão, situação, modelo padrão, shortcodes inseridos por clique e prévia com dados reais de um contrato.
+* Matrículas permitem escolher um modelo ou texto personalizado; o conteúdo preenchido é salvo no contrato e não muda quando o modelo é revisado ou excluído.
+* Edição financeira somente antes da geração de parcelas. Textos revisados exigem nova versão, motivo, controle de concorrência, idempotência e auditoria.
+* Exclusão de contrato exige confirmação e exclusão prévia dos lançamentos vinculados. Preserva textos, parcelas, baixas e matrícula; não cancela faturas no Educbank.
+* Migração aditiva para schema 38: modelos, origem do texto e metadados de exclusão do contrato. Contratos anteriores são preservados.
 
 = 0.19.12 =
 * Exclusão de lançamentos financeiros em lote, com seleção individual ou de todos os itens disponíveis do filtro atual, até 100 por operação.

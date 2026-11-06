@@ -10,7 +10,7 @@ final class IntegrationService
     public function __construct(private Store $db,private Operations $ops,private CatalogService $catalog){$this->companies=new CompanyData($db);}
     private function related(string $table,string $field,int $id,string $order):array
     {
-        return $this->db->rows('SELECT * FROM '.$this->db->table($table)." WHERE $field=%d".($table==='lancamentos'?' AND excluido_em IS NULL':'')." ORDER BY $order",[$id]);
+        return $this->db->rows('SELECT * FROM '.$this->db->table($table)." WHERE $field=%d".(in_array($table,['lancamentos','contratos'],true)?' AND excluido_em IS NULL':'')." ORDER BY $order",[$id]);
     }
     private function person(int $id):array
     {

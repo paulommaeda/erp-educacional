@@ -42,7 +42,7 @@ final class AcademicService
         $matricula=$this->db->get('matriculas',$enrollment,true);
         if(!\EducacionalERP\Domain\EnrollmentStatus::open($matricula['status'])) { throw new RuleViolation('A matrícula deve estar ativa para gerar o contrato.'); }
         $contracts=$this->db->table('contratos');
-        if($this->db->row("SELECT idcontrato FROM $contracts WHERE idmatricula=%d FOR UPDATE",[$enrollment])) { throw new RuleViolation('Esta matrícula já possui contrato financeiro.'); }
+        if($this->db->row("SELECT idcontrato FROM $contracts WHERE idmatricula=%d AND excluido_em IS NULL FOR UPDATE",[$enrollment])) { throw new RuleViolation('Esta matrícula já possui contrato financeiro.'); }
         $links = $this->db->table('aluno_responsaveis');
         $rf = $this->db->rows("SELECT * FROM $links WHERE idaluno=%d AND responsavel_financeiro=1 AND fim_vigencia IS NULL AND inicio_vigencia <= UTC_TIMESTAMP() FOR UPDATE", [(int)$student['idaluno']]);
         if (count($rf) !== 1) { throw new RuleViolation('Cadastre exatamente um responsável financeiro vigente.'); }
@@ -61,8 +61,9 @@ final class AcademicService
             'codpessoa_rf_original'=>$person['codpessoa'],'codpessoa_rf_atual'=>$person['codpessoa'],'data_contrato'=>Input::today(),
             'valor_original_total'=>Money::format($original),'desconto_incondicional_total'=>Money::format($discount),'valor_liquido_total'=>Money::format($original-$discount),
             'quantidade_parcelas'=>$count,'primeiro_vencimento'=>$first,'versao_termo'=>Input::text($data['versao_termo']??'1',40),
-            'termo_snapshot'=>Input::text($data['termo']??'Contrato registrado pela secretaria.',20000),
+            'termo_snapshot'=>Input::text($data['termo']??'Contrato registrado pela secretaria.',40000),
             'idplano'=>$plan['idplano'],'plano_nome_snapshot'=>$plan['nome'],'plano_versao_snapshot'=>$plan['versao'],'parcelas_geradas'=>0]);
+        (new ContractTemplates($this->db,$this->operations))->applyInside($contract,$data);
         $result=['idcontrato'=>(string)$contract,'quantidade_parcelas'=>$count,'valor_anuidade'=>Money::format($original),'parcelas_geradas'=>!$defer];
         $this->db->audit('contratos',$contract,'criar',null,$this->db->get('contratos',$contract),$key);
         if(!$defer)$this->generateInside($contract,$key);
@@ -86,6 +87,7 @@ final class AcademicService
     {
         $initial=$this->db->get('contratos',$id);$m=$this->db->get('matriculas',(int)$initial['idmatricula']);
         $student=$this->db->get('alunos',(int)$m['idaluno'],true);$m=$this->db->get('matriculas',(int)$m['idmatricula'],true);$contract=$this->db->get('contratos',$id,true);
+        if(!empty($contract['excluido_em']))throw new RuleViolation('Contrato excluído.');
         if((int)$contract['parcelas_geradas'])return ['idcontrato'=>(string)$id,'quantidade_parcelas'=>(int)$contract['quantidade_parcelas'],'ja_geradas'=>true];
         if(!\EducacionalERP\Domain\EnrollmentStatus::open($m['status'])||$contract['status']!=='ativo')throw new RuleViolation('Matrícula e contrato devem estar ativos.');
         if($this->db->row('SELECT idparcela FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d FOR UPDATE',[$id]))throw new RuleViolation('Contrato com parcelas existentes e situação divergente. Procure o administrador.');

@@ -21,12 +21,12 @@ final class ContractDiscounts
     }
     private function contract(int $id,bool $lock=false):array
     {
-        $c=$this->db->get('contratos',$id);if((int)$c['codcoligada']!==Coligadas::current())throw new RuleViolation('Contrato de outra coligada.');
+        $c=$this->db->get('contratos',$id);if(!empty($c['excluido_em']))throw new RuleViolation('Contrato excluído.');if((int)$c['codcoligada']!==Coligadas::current())throw new RuleViolation('Contrato de outra coligada.');
         if($lock){$m=$this->db->get('matriculas',(int)$c['idmatricula']);$this->db->get('alunos',(int)$m['idaluno'],true);$c=$this->db->get('contratos',$id,true);if($c['status']!=='ativo')throw new RuleViolation('Contrato não está ativo.');}return $c;
     }
     public function contracts(int $student):array
     {
-        Access::requireAdmin();$a=$this->db->get('alunos',$student);if((int)$a['codcoligada']!==Coligadas::current())throw new RuleViolation('Aluno de outra coligada.');return $this->db->rows('SELECT c.* FROM '.$this->db->table('contratos').' c JOIN '.$this->db->table('matriculas').' m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d ORDER BY c.idcontrato DESC',[$student]);
+        Access::requireAdmin();$a=$this->db->get('alunos',$student);if((int)$a['codcoligada']!==Coligadas::current())throw new RuleViolation('Aluno de outra coligada.');return $this->db->rows('SELECT c.* FROM '.$this->db->table('contratos').' c JOIN '.$this->db->table('matriculas').' m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND c.excluido_em IS NULL ORDER BY c.idcontrato DESC',[$student]);
     }
     public function list(int $id):array
     {

@@ -16,4 +16,14 @@ Instale manualmente o ZIP 0.8.2 substituindo a versão instalada, sem desinstala
 
 A integração usa main diretamente; não depende de GitHub Releases. O pacote GitHub é reconhecido pelo PUC para manter o diretório erp-educacional.
 
+## Disponibilidade no WordPress
+
+Uma versão concluída deve ser publicada na `main` para que o WordPress possa encontrá-la. Abrir uma proposta de alteração ou enviar o código apenas a uma branch de desenvolvimento não atualiza o canal de distribuição. A exceção é uma entrega solicitada expressamente apenas para revisão.
+
+Depois da publicação, confirme remotamente `Version` e `EDERP_VERSION` em `erp-educacional.php` e `Stable tag` em `readme.txt`. Os três devem identificar a nova versão, maior que a anterior. Mantenha os arquivos completos do plugin na raiz da branch e a pasta `erp-educacional` no ZIP.
+
+A consulta automática do atualizador ocorre periodicamente, por padrão a cada 12 horas. Para consultar uma versão recém-publicada imediatamente, abra **Plugins → ERP Educacional → Verificar atualizações**. O WordPress só oferece versões superiores à instalada; uma versão já instalada não deve reaparecer como atualização pendente.
+
+As orientações de entrega também estão em `AGENTS.md`, para que as próximas versões concluídas mantenham esse fluxo.
+
 Se o repositório se tornar privado, configure uma credencial de leitura na constante EDERP_GITHUB_TOKEN do wp-config.php do site. Nunca inclua tokens nos arquivos do repositório ou no ZIP.
