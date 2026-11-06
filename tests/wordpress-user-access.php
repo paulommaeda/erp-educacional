@@ -16,7 +16,7 @@ use EducacionalERP\Presentation\Portal\Authentication;
 use EducacionalERP\Domain\RuleViolation;
 $admin=get_users(['role'=>'administrator','number'=>1])[0]??null;if(!$admin)throw new RuntimeException('Administrador ausente.');wp_set_current_user($admin->ID);
 $savedPrefix=$wpdb->prefix;$savedOptions=[];$created=[];$checks=[];$mails=[];$mailOK=true;$confirmDuringSend=null;$previous=$wpdb->suppress_errors(true);
-foreach(['ederp_schema_version','ederp_schema_error','ederp_schema_attempt_release','timezone_string'] as $key)$savedOptions[$key]=get_option($key,null);
+foreach(['ederp_schema_version','ederp_schema_error','ederp_schema_attempt_release','ederp_schema_integrity','timezone_string'] as $key)$savedOptions[$key]=get_option($key,null);
 add_filter('pre_wp_mail',static function($result,$atts)use(&$mails,&$mailOK,&$confirmDuringSend){$mails[]=$atts;if($mailOK&&$confirmDuringSend){$link=linkUA($atts);$user=get_user_by('login',$link['erp_login']??'');if($user&&(int)$user->ID===$confirmDuringSend){$confirmDuringSend=null;AccountInvitations::expectInitialReset((int)$user->ID,$link['erp_key']);reset_password($user,'SenhaDuranteEnvio123!');}}return $mailOK;},999,2);
 function kUA():string{return bin2hex(random_bytes(16));}
 function okUA(bool $value,string $message):void{global $checks;if(!$value)throw new RuntimeException($message);$checks[]=$message;}

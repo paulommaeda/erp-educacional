@@ -65,6 +65,7 @@ final class Pages
             $this->migration();return;
         }
         if(in_array($slug,['config','configuracoes'],true))(new ChatRecovery(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->notice();
+        if(in_array($slug,['config','configuracoes'],true))(new BackupRecovery(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->notice();
         if($slug==='contratos'){if(!Access::isAdmin()){wp_die('Somente administradores.');return;}echo '<div class="wrap ederp" data-erp-contracts><p role="status">Carregando contratos...</p></div>';return;}
         if($slug==='documentos'){echo '<div class="wrap ederp" data-erp-documents></div>';return;}
         if(in_array($slug,['alunos','professores','pessoas','matriculas','academico','exportacao','importacao','requerimentos','rematriculas','configuracoes'],true)) {
@@ -107,6 +108,8 @@ final class Pages
         echo '<section class="wrap ederp erp-migration"><h1>Atualização do banco de dados</h1><p>O ERP precisa concluir a atualização do banco para abrir as configurações.</p>';
         echo '<p>Versão instalada: <strong>'.esc_html($installed).'</strong> · Versão necessária: <strong>'.esc_html(\EducacionalERP\Infrastructure\Database\Installer::VERSION).'</strong></p>';
         if($error!=='')echo '<div class="notice notice-error" role="alert"><p><strong>Diagnóstico da última tentativa</strong></p><p style="overflow-wrap:anywhere">'.esc_html($error).'</p></div>';
+        BackupRecovery::integrityReport();
+        (new BackupRecovery(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->notice();
         echo '<p>A verificação pode ser repetida. Se houver um impedimento, a tela mostrará a tabela e a etapa que precisam de atenção.</p><form method="post" action="'.esc_url(admin_url('admin-post.php')).'"><input type="hidden" name="action" value="ederp_migrate">';
         wp_nonce_field('ederp_migrate');
         echo '<p class="submit"><button type="submit" class="button button-primary">Verificar/aplicar migrações</button></p></form></section>';

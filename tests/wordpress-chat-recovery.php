@@ -13,7 +13,7 @@ use EducacionalERP\Presentation\Admin\ChatRecovery;
 use EducacionalERP\Domain\RuleViolation;
 $admin=get_users(['role'=>'administrator','number'=>1])[0]??null;if(!$admin)throw new RuntimeException('Administrador ausente.');
 wp_set_current_user($admin->ID);Access::install();$checks=0;$savedPrefix=$wpdb->prefix;$savedOptions=[];$savedUser=get_current_user_id();
-foreach(['ederp_schema_version','ederp_schema_error','ederp_schema_attempt_release'] as $key)$savedOptions[$key]=get_option($key,null);
+foreach(['ederp_schema_version','ederp_schema_error','ederp_schema_attempt_release','ederp_schema_integrity'] as $key)$savedOptions[$key]=get_option($key,null);
 $old=json_decode(file_get_contents(__DIR__.'/fixtures/schema-36.json'),true,512,JSON_THROW_ON_ERROR);$previous=$wpdb->suppress_errors(true);
 function checkCR(bool $ok,string $label):void{global $checks;if(!$ok)throw new RuntimeException($label);$checks++;echo "PASS: $label\n";}
 function deniedCR(callable $work,string $label):void{try{$work();}catch(RuleViolation $e){checkCR(true,$label);return;}throw new RuntimeException($label);}

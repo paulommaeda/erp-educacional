@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.18
+Stable tag: 0.19.19
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.19 =
+* Recupera a migração de backups com movimentações cujo código de matrícula não existe no banco restaurado.
+* Preserva uma cópia integral de cada movimentação, seus códigos originais e a referência ao documento antes de retirá-la do histórico ativo. Movimentações válidas permanecem intactas.
+* Novo menu administrativo Registros preservados, com exportação privada do registro completo e download do documento original quando disponível.
+* Preservação verificada, auditada e transacional. Repetir a migração ou restaurar novamente o mesmo histórico não duplica sua cópia; versões diferentes são mantidas separadamente.
+* Confere todas as referências declaradas e reúne os demais vínculos pendentes na tela de Configurações. Não cria matrículas ou dados financeiros ausentes, nem confirma uma atualização incompleta.
+* Schema 42 acrescenta a tabela de preservação. Chaves estrangeiras continuam protegendo os registros operacionais.
 
 = 0.19.18 =
 * Cadastro e importação criam a conta sem enviar automaticamente o convite de criação de senha. Convites antigos ainda na fila automática também aguardam uma solicitação manual.
