@@ -9,7 +9,7 @@ final class EnrollmentDirectory
     {
         $m=$this->db->table('matriculas');$a=$this->db->table('alunos');$p=$this->db->table('pessoas');$t=$this->db->table('turmas');$c=$this->db->table('cursos');$u=$this->db->table('turnos');$l=$this->db->table('periodos_letivos');
         $joins=" FROM $m m JOIN $a a ON a.idaluno=m.idaluno JOIN $p p ON p.codpessoa=a.codpessoa JOIN $t t ON t.idturma=m.idturma_atual JOIN $c c ON c.idcurso=m.idcurso JOIN $u u ON u.idturno=t.idturno JOIN $l l ON l.codperiodo=m.codperiodo";
-        $where=['m.codcoligada=%d'];$args=[Coligadas::current()];$period=SchoolSettings::resolve($data['codperiodo']??null);
+        $where=['m.codcoligada=%d','m.excluido_em IS NULL'];$args=[Coligadas::current()];$period=SchoolSettings::resolve($data['codperiodo']??null);
         if($period){$where[]='m.codperiodo=%d';$args[]=$period;}
         foreach(['idturma'=>'m.idturma_atual','idcurso'=>'m.idcurso','idturno'=>'t.idturno'] as $key=>$col)if(!empty($data[$key])){$where[]="$col=%d";$args[]=Input::id($data[$key]);}
         foreach(['status'=>'m.status','tipo_aluno'=>'a.tipo_aluno','origem'=>'m.origem'] as $key=>$col)if(!empty($data[$key])){$where[]="$col=%s";$args[]=Input::text($data[$key],30);}

@@ -36,12 +36,13 @@ final class EducbankIntegration
         Access::requireAdmin();$period=Input::id($d['codperiodo']??null);$cursor=max(0,(int)($d['cursor']??0));$company=Coligadas::current();
         if((int)$this->db->get('periodos_letivos',$period)['codcoligada']!==$company)throw new RuleViolation('Período de outra coligada.');if(!Settings::read($company)['ativo'])throw new RuleViolation('Ative a integração desta coligada antes de enfileirar.');
         return $this->db->atomic(fn()=>(new Operations($this->db))->run($key,'educbank_enfileirar',$d,function()use($period,$cursor,$company){
-            $rows=$this->db->rows('SELECT idmatricula FROM '.$this->db->table('matriculas').' WHERE codcoligada=%d AND codperiodo=%d AND idmatricula>%d ORDER BY idmatricula LIMIT 21',[$company,$period,$cursor]);$more=count($rows)>20;$rows=array_slice($rows,0,20);$outbox=new EducbankOutbox($this->db);foreach($rows as $r)$outbox->enrollment((int)$r['idmatricula'],true);return ['enfileiradas'=>count($rows),'proximo_cursor'=>$more?(int)end($rows)['idmatricula']:null];
+            $rows=$this->db->rows('SELECT idmatricula FROM '.$this->db->table('matriculas').' WHERE codcoligada=%d AND codperiodo=%d AND excluido_em IS NULL AND idmatricula>%d ORDER BY idmatricula LIMIT 21',[$company,$period,$cursor]);$more=count($rows)>20;$rows=array_slice($rows,0,20);$outbox=new EducbankOutbox($this->db);foreach($rows as $r)$outbox->enrollment((int)$r['idmatricula'],true);return ['enfileiradas'=>count($rows),'proximo_cursor'=>$more?(int)end($rows)['idmatricula']:null];
         }));
     }
     public function retry(int $id):array
     {
         Access::requireAdmin();$job=$this->db->get('educbank_fila',$id);$s=Settings::read(Coligadas::current());if($this->scope($s,Coligadas::current())!==[(int)$job['codcoligada'],$job['ambiente'],$job['tenant']])throw new RuleViolation('Registro de outra coligada ou ambiente.');
+        if(EnrollmentDeletion::excludedJob($this->db,$job)){EnrollmentDeletion::ignoreJob($this->db,$job);return ['ignorado'=>true,'motivo'=>'matricula_excluida'];}
         if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return ['ignorado'=>true,'motivo'=>'lancamento_excluido'];}
         $this->db->update('educbank_fila',$id,['status'=>'pendente','proxima_tentativa'=>null,'erro'=>null,'tentativas'=>0,'geracao'=>(int)$job['geracao']+1]);return ['enfileirado'=>true];
     }
@@ -61,14 +62,20 @@ final class EducbankIntegration
             }
         }finally{$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$lock]);}return ['processados'=>$count];
     }
+    private function ignored(array $job):bool
+    {
+        if(EnrollmentDeletion::excludedJob($this->db,$job)){EnrollmentDeletion::ignoreJob($this->db,$job);return true;}
+        if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return true;}
+        return false;
+    }
     private function preserveNewer(array $job):void
     {
-        if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return;}
+        if($this->ignored($job))return;
         $this->db->query('UPDATE '.$this->db->table('educbank_fila')." SET status='pendente',proxima_tentativa=NULL WHERE idintegracao=%d AND geracao>%d",[(int)$job['idintegracao'],(int)$job['geracao']]);
     }
     private function finish(array $job,string $status,array $extra=[]):void
     {
-        if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return;}
+        if($this->ignored($job))return;
         $id=(int)$job['idintegracao'];$this->db->update('educbank_fila',$id,$extra+['erro'=>null,'proxima_tentativa'=>null,'sincronizado_em'=>gmdate('Y-m-d H:i:s')]);
         // A concurrent edit must remain pending, even when an older HTTP request succeeds.
         $this->db->query('UPDATE '.$this->db->table('educbank_fila')." SET status=CASE WHEN geracao=%d THEN %s ELSE 'pendente' END WHERE idintegracao=%d",[(int)$job['geracao'],$status,$id]);
@@ -110,14 +117,14 @@ final class EducbankIntegration
     }
     private function work(array $job,array $s):void
     {
-        if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return;}
+        if($this->ignored($job))return;
         $client=new Client($s);$builder=new EducbankPayload($this->db);$m=$this->db->get('matriculas',(int)$job['idmatricula']);
         if($job['tipo']==='matricula'&&in_array($m['status'],['cancelada','transferencia_externa'],true)){$this->finish($job,($job['idremoto']||$job['identidade_hash'])?'revisao':'ignorado',['erro'=>($job['idremoto']||$job['identidade_hash'])?'Matrícula encerrada no ERP. Confira a situação acadêmica no Educbank; cancelamentos de faturas são enviados separadamente.':null]);return;}
         if($job['tipo']==='fatura'){
             $title=$this->db->get('lancamentos',(int)$job['idlancamento']);$cancel=$title['status']==='cancelado'||Money::cents($title['valor_liquido'])===0;
             if($cancel){if(!$job['idremoto']&&!$job['identidade_hash']){$this->finish($job,'ignorado');return;}$remote=$this->find($job,$client,null);if(!$remote)throw new RuleViolation('Criação anterior sem confirmação. Aguardando localizar a fatura no Educbank para cancelar com segurança.');
                 if(($remote['state']??'')==='Paid')throw new RuleViolation('A fatura foi paga no Educbank. Concilie o pagamento antes de cancelar.');
-                if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return;}
+                if($this->ignored($job))return;
                 if(($remote['state']??'')!=='Canceled')$remote=$client->request('POST','/invoice/'.$job['idremoto'].'/cancel',['reasonCancellation'=>$title['status']==='cancelado'?'EnrollmentCanceled':'Other','comment'=>'Cancelamento/zeramento do lançamento no ERP.']);
                 $this->finish($job,'sincronizado',['status_remoto'=>$remote['state']??'Canceled']);return;
             }
@@ -142,12 +149,12 @@ final class EducbankIntegration
             if($job['tipo']==='matricula'&&in_array($remote['enrollmentStatus']??'',['Canceled','Evaded'],true))throw new RuleViolation('Matrícula cancelada/evadida no Educbank. Confira antes de alterar.');
             $update=$payload;if($job['tipo']==='matricula')$update=array_intersect_key($payload,array_flip(['student','academicClassName','academicProgram','guardians']));
             else $update=EducbankPayload::invoiceUpdate($payload,$remote);
-            if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return;}
+            if($this->ignored($job))return;
             $remote=$this->send($client,'PUT',$this->path($job).'/'.$job['idremoto'],$update,$context['rf'],$s['ambiente']);
         }else{
             // Persist before HTTP: a timeout or crash is recovered by GET externalId, never a blind POST.
             $identity=EducbankPayload::identity($job['tipo'],$payload);$this->db->update('educbank_fila',(int)$job['idintegracao'],['identidade_hash'=>$identity]);
-            if(FinancialDeletion::excludedJob($this->db,$job)){FinancialDeletion::ignoreJob($this->db,$job);return;}
+            if($this->ignored($job))return;
             $remote=$this->send($client,'POST',$this->path($job),$payload,$context['rf'],$s['ambiente']);$this->remember($job,$remote['id']??'');
         }
         if(!empty($remote['errors']))throw new RuleViolation('Educbank criou o registro com pendências. Confira o produto e os dados na plataforma.');

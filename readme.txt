@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.13
+Stable tag: 0.19.14
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.14 =
+* Corrige exclusão de matrícula após excluir seus lançamentos e contratos: os contratos guardados no histórico deixam de impedir a operação.
+* Matrícula excluída sai das consultas, ficha, portal e APIs, reabre o vínculo ao período e libera a vaga e uma nova matrícula no mesmo curso/período.
+* Preserva contratos, parcelas, baixas, movimentações financeiras, vínculos e auditoria; contratos ainda disponíveis e históricos acadêmicos de transferência/rematrícula permanecem protegidos.
+* Motivo, administrador, coligada, versão e idempotência conferidos em transação; falha na gravação reverte toda a operação.
+* Filas e retornos Educbank da matrícula excluída permanecem ignorados, inclusive em reprocessamento e respostas tardias. A ação local não cancela registros remotos.
+* Migração aditiva para schema 39: data, autor e motivo da exclusão em matrículas.
 
 = 0.19.13 =
 * Menu Contratos para o administrador: consulta por aluno/RA/número, período, situação, paginação, visualização, impressão, edição e exclusão.
