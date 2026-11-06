@@ -1,4 +1,4 @@
-# Contratos e modelos — 0.19.14
+# Contratos e modelos — 0.19.15
 
 O menu **Contratos** está disponível para administradores do WordPress no portal e no wp-admin. Também há atalhos na Gestão financeira e na área Financeiro da ficha do aluno. A coligada de trabalho e o período da consulta são respeitados.
 
@@ -41,13 +41,20 @@ O contrato guarda o texto preenchido, nome do modelo, versão do modelo e versã
 | Grupo | Campos |
 | --- | --- |
 | Aluno | `[aluno_nome]`, `[aluno_ra]`, `[aluno_cpf]`, `[aluno_nascimento]`, `[aluno_email]`, `[aluno_endereco]` |
-| Responsável financeiro atual | `[responsavel_nome]`, `[responsavel_cpf]`, `[responsavel_rg]`, `[responsavel_email]`, `[responsavel_telefone]`, `[responsavel_endereco]` |
+| Responsável financeiro atual (assinante) | `[responsavel_nome]`, `[responsavel_cpf]`, `[responsavel_rg]`, `[responsavel_email]`, `[responsavel_telefone]`, `[responsavel_estado_civil]`, `[responsavel_profissao]` |
+| Endereço do assinante | `[responsavel_endereco_completo]`, `[responsavel_rua]`, `[responsavel_numero]`, `[responsavel_complemento]`, `[responsavel_bairro]`, `[responsavel_cidade]`, `[responsavel_estado]`, `[responsavel_cep]`, `[responsavel_pais]`, `[responsavel_endereco]` |
 | Pai e mãe com vínculo vigente | `[pai_nome]`, `[pai_cpf]`, `[mae_nome]`, `[mae_cpf]` |
 | Colégio | `[colegio_nome]`, `[colegio_razao_social]`, `[colegio_cnpj]`, `[colegio_endereco]`, `[colegio_email]`, `[colegio_telefone]` |
 | Contrato | `[contrato_numero]`, `[contrato_data]`, `[contrato_valor_original]`, `[contrato_desconto]`, `[contrato_valor_liquido]`, `[contrato_parcelas]`, `[contrato_primeiro_vencimento]` |
 | Acadêmico | `[matricula_id]`, `[periodo_codigo]`, `[curso_nome]`, `[turma_nome]`, `[turno_nome]`, `[plano_nome]` |
 
 Datas são preenchidas como `DD/MM/AAAA` e valores como `R$ 12.000,00`. Dados opcionais ausentes ficam em branco. A razão social e o CNPJ vêm prioritariamente da coligada proprietária do contrato; os demais dados institucionais usam a identidade configurada nessa coligada.
+
+Estado civil, profissão e endereço vêm do cadastro em **Pessoas** do responsável financeiro atual do contrato, que será o assinante. O estado civil é preenchido pelo nome cadastrado em **Configurações → Estados civis**, com suporte ao texto legado. Não são usados os dados do aluno ou de um responsável que tenha somente atribuição acadêmica.
+
+`[responsavel_endereco_completo]` reúne rua, número, complemento, bairro, cidade, estado/UF e CEP, acrescentando o país quando há dados de endereço. Campos ausentes são omitidos sem separadores vazios. `[responsavel_endereco]` continua com a composição anterior, sem país. CEP e os campos individuais usam os valores salvos no cadastro; `[responsavel_pais]` retorna o código ISO, como `BR` ou `US`.
+
+Os novos campos são válidos na prévia e nas próximas emissões. Alterar os dados da pessoa ou trocar o responsável financeiro não modifica o texto já salvo nos contratos; use a edição do contrato para aplicar explicitamente um modelo atualizado, com motivo, quando necessário.
 
 Os shortcodes são substituições de texto de uma lista fixa. Não executam shortcodes de plugins, HTML ou código WordPress. O conteúdo tem limite de 40.000 bytes antes do preenchimento; nome e versão têm limites de 191 e 40 bytes, respectivamente.
 
