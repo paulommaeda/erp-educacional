@@ -1,11 +1,11 @@
-# ERP Educacional — 0.19.19
+# ERP Educacional — 0.19.20
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.19.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 42**, acrescentando a preservação integral de históricos sem matrícula e mantendo os dados existentes. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.20.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 43**, acrescentando comprovantes de exclusão e mantendo os dados existentes. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -16,6 +16,12 @@ As turmas antigas ficam inicialmente sem plano, para não inventar preços. Cont
 Quando o backup contém anexos do chat sem mensagem válida na mesma coligada, os arquivos permanecem guardados com sua referência original. O administrador pode conferi-los em **ERP Educacional → Anexos preservados**. As mensagens e os anexos válidos continuam nas suas conversas; os arquivos pendentes são acessíveis somente ao administrador para conferência.
 
 Se uma movimentação aponta para uma matrícula ausente, a cópia integral do registro e a referência ao documento ficam em **ERP Educacional → Registros preservados**. A preservação é confirmada antes da retirada desse histórico da tabela operacional. Matrículas e movimentações válidas permanecem intactas. Outros vínculos inconsistentes são apresentados juntos em Configurações e precisam de conferência antes da conclusão.
+
+## Exclusão completa pelo administrador
+
+Em **ERP Educacional → Excluir dados**, escolha o tipo de registro e pesquise por nome, RA, código ou descrição. **Conferir exclusão** mostra o registro e todas as dependências que serão apagadas, incluindo os alunos afetados, financeiro, históricos, chat, documentos e contas da seleção. Informe o motivo e digite **EXCLUIR** para confirmar. A opção também está no diálogo de exclusão dos cadastros principais e no atalho das Configurações.
+
+Ao escolher um aluno, marque **Excluir também o cadastro da pessoa e a conta WordPress** se desejar essa exclusão conjunta. A prévia será atualizada com os demais vínculos da pessoa. Responsáveis e outros cadastros compartilhados não são incluídos como pais implícitos. Uma mudança nos dados exige outra prévia. A instalação da versão prepara o recurso; a exclusão depende da confirmação do administrador. Veja [o guia de exclusão definitiva](docs/EXCLUSAO-DEFINITIVA.md).
 
 ## Contratos e modelos
 
