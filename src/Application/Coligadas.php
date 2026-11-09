@@ -8,7 +8,7 @@ final class Coligadas
 {
     private static ?int $context=null;
     public function __construct(private Store $db){}
-    public static function current():int {return self::$context??max(1,function_exists('get_user_meta')?(int)get_user_meta(get_current_user_id(),'ederp_coligada',true):1);}
+    public static function current():int {return self::$context??max(1,(function_exists('get_user_meta')?(int)get_user_meta(get_current_user_id(),'ederp_coligada',true):0)?: (int)get_option('ederp_default_company',1));}
     public static function option(string $key):string {return self::current()===1?$key:$key.'_coligada_'.self::current();}
     public static function within(int $id,callable $work):mixed {$old=self::$context;self::$context=$id;try{return $work();}finally{self::$context=$old;}}
     public static function management():bool {return Access::isAdmin()||current_user_can('erp_gerenciar_academico')||current_user_can('erp_gerenciar_pessoas')||current_user_can('erp_consultar_financeiro');}
@@ -65,7 +65,7 @@ final class Coligadas
     }
     /** Initial insertion happens before ownership FKs are added; DDL is repeatable. */
     public function seed():void {
-        if($this->db->row('SELECT codcoligada FROM '.$this->db->table('coligadas').' WHERE codcoligada=1'))return;
+        if($this->db->row('SELECT codcoligada FROM '.$this->db->table('coligadas').' LIMIT 1'))return;
         $identity=get_option('ederp_school_identity',[]);$this->db->insert('coligadas',['codcoligada'=>1,'nome'=>$identity['nome']??'COLIGADA PRINCIPAL','razao_social'=>$identity['razao_social']??'COLIGADA PRINCIPAL','cnpj'=>self::validCnpj(preg_replace('/\D/','',(string)($identity['cnpj']??'')))?preg_replace('/\D/','',(string)$identity['cnpj']):null]);
     }
 }

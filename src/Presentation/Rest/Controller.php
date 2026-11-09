@@ -162,6 +162,11 @@ final class Controller
         $this->route('/configuracoes','GET',fn()=>true,fn()=>(new SchoolSettings($this->db))->read());
         $this->route('/configuracoes','POST',fn()=>Access::isAdmin(),fn($r)=>(new SchoolSettings($this->db))->save($this->payload($r),$this->key($r)));
         foreach(DeletionService::TYPES as $type)$this->route('/exclusoes/'.$type.'/'.$id,'POST',fn()=>Access::isAdmin(),fn($r)=>(new DeletionService($this->db,new Operations($this->db)))->remove($type,(int)$r['id'],$this->payload($r),$this->key($r)));
+        $purge=new \EducacionalERP\Application\PermanentDeletion($this->db);$purgeCatalog=new \EducacionalERP\Application\PermanentDeletionCatalog($this->db);
+        $this->route('/exclusao-definitiva/tipos','GET',fn()=>Access::isAdmin(),fn()=>$purgeCatalog->types());
+        $this->route('/exclusao-definitiva/registros','GET',fn()=>Access::isAdmin(),fn($r)=>$purgeCatalog->listing($r->get_params()));
+        $this->route('/exclusao-definitiva/previa','POST',fn()=>Access::isAdmin(),fn($r)=>$purge->preview($this->payload($r)));
+        $this->route('/exclusao-definitiva/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$purge->remove($this->payload($r),$this->key($r)));
         $this->route('/matriculas','GET',$cap('erp_gerenciar_academico'),fn($r)=>(new EnrollmentDirectory($this->db))->search($r->get_params()));
         $this->route('/matriculas/lote','POST',$cap('erp_gerenciar_academico'),fn($r)=>$this->workflow->batch($this->payload($r),$this->key($r)));
         $this->route('/matriculas/filtros','GET',$cap('erp_gerenciar_academico'),fn()=>[

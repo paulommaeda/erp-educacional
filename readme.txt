@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.19
+Stable tag: 0.19.20
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,15 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.20 =
+* Administrador pode excluir definitivamente qualquer tipo de registro do ERP e seus vínculos pela nova tela Excluir dados, com busca por nome, RA, código ou descrição.
+* Prévia apresenta quantidades, exemplos, alunos afetados, contas WordPress, documentos e configurações da seleção. Exige motivo e confirmação digitada EXCLUIR.
+* Aluno permite escolher a exclusão conjunta da pessoa e da conta WordPress. Pais compartilhados, como responsáveis, turmas e planos, entram somente quando forem explicitamente selecionados ou forem dependências do registro escolhido.
+* Confirmação vinculada ao administrador e ao conteúdo integral da seleção: alterações ou novos vínculos exigem outra prévia. Exclusão transacional e idempotente, com comprovante global sem cópia dos dados excluídos.
+* Documentos privados são removidos após a confirmação do banco; arquivos compartilhados são mantidos até a última referência. Falhas ficam em fila para nova tentativa e aparecem como pendências na resposta.
+* Resolve vínculos compostos e ciclos opcionais mantendo as FKs ativas. Período atual e configurações das coligadas excluídas são limpos; a última coligada deixa um espaço vazio para nova configuração.
+* Recurso exclusivo de administradores WordPress, com verificação no servidor. Schema 43 acrescenta comprovantes e fila de arquivos; instalar a versão apenas prepara o recurso para uso mediante confirmação.
 
 = 0.19.19 =
 * Recupera a migração de backups com movimentações cujo código de matrícula não existe no banco restaurado.

@@ -11,6 +11,7 @@ final class Pages
             'documentos'=>['Documentos dos alunos','erp_gerenciar_pessoas'],'financeiro'=>['Financeiro','erp_consultar_financeiro'],'contratos'=>['Contratos','manage_options'],'rematriculas'=>['Rematrículas','erp_gerenciar_academico'],'exportacao'=>['Exportação','manage_options'],'requerimentos'=>['Requerimentos','erp_gerenciar_pessoas'],'importacao'=>['Importação','manage_options'],'usuarios'=>['Usuários e acessos','manage_options'],'perfis'=>['Perfis e acessos','manage_options'],'config'=>['Configurações','erp_configurar']] as $slug=>[$title,$cap]) {
             add_submenu_page('ederp',$title,$title,$cap,'ederp-'.$slug,fn()=>$this->screen($slug,$title,$cap));
         }
+        if(Access::isAdmin())add_submenu_page('ederp','Excluir dados','Excluir dados','manage_options','ederp-excluir-dados',fn()=>$this->screen('excluir-dados','Excluir dados','manage_options'));
         add_action('admin_enqueue_scripts',function($hook){ if(str_contains((string)$hook,'ederp')) { self::assets(); } });
     }
     public static function assets(): void
@@ -18,6 +19,7 @@ final class Pages
         global $post;
         $photoPage=in_array(sanitize_key((string)($_GET['erp_tela']??'')),['pessoas','alunos','configuracoes'],true)||($post instanceof \WP_Post && preg_match('/\[erp_(pessoas|alunos|configuracoes)\b/',$post->post_content));
         if(current_user_can('upload_files') && (is_admin()||$photoPage)) { wp_enqueue_media(); }
+        if(Access::isAdmin()){wp_enqueue_script('ederp-permanent-deletion',plugins_url('assets/permanent-deletion.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);wp_enqueue_style('ederp-permanent-deletion',plugins_url('assets/permanent-deletion.css',EDERP_FILE),['ederp'],EDERP_VERSION);}
         wp_enqueue_script('ederp-contracts',plugins_url('assets/contracts.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_style('ederp-contracts',plugins_url('assets/contracts.css',EDERP_FILE),['ederp'],EDERP_VERSION);
         wp_enqueue_script('ederp-family',plugins_url('assets/family-students.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
@@ -66,6 +68,7 @@ final class Pages
         }
         if(in_array($slug,['config','configuracoes'],true))(new ChatRecovery(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->notice();
         if(in_array($slug,['config','configuracoes'],true))(new BackupRecovery(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->notice();
+        if($slug==='excluir-dados'){if(!Access::isAdmin()){wp_die('Somente administradores.');return;}echo '<div class="wrap ederp" data-erp-permanent-delete><p role="status">Carregando exclusão de dados...</p></div>';return;}
         if($slug==='contratos'){if(!Access::isAdmin()){wp_die('Somente administradores.');return;}echo '<div class="wrap ederp" data-erp-contracts><p role="status">Carregando contratos...</p></div>';return;}
         if($slug==='documentos'){echo '<div class="wrap ederp" data-erp-documents></div>';return;}
         if(in_array($slug,['alunos','professores','pessoas','matriculas','academico','exportacao','importacao','requerimentos','rematriculas','configuracoes'],true)) {

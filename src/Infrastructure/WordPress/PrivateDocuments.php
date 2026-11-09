@@ -16,6 +16,7 @@ final class PrivateDocuments
         $token=bin2hex(random_bytes(32));$payload=wp_json_encode(['owner'=>get_current_user_id(),'created'=>time(),'name'=>sanitize_file_name($f['name']),'mime'=>$mime,'data'=>base64_encode(file_get_contents($f['tmp_name']))]);$iv=random_bytes(12);$tag='';$encrypted=openssl_encrypt($payload,'aes-256-gcm',$this->key(),OPENSSL_RAW_DATA,$iv,$tag);
         if($encrypted===false||file_put_contents($this->path($token),$iv.$tag.$encrypted,LOCK_EX)===false)throw new RuleViolation('Não foi possível guardar o documento.');return ['token'=>$token,'nome'=>sanitize_file_name($f['name'])];
     }
+    public function delete(string $token):bool {$path=$this->path($token);return !is_file($path)||@unlink($path);}
     public function read(string $token):array
     {
         Access::requireAdmin();$path=$this->path($token);$raw=is_file($path)?file_get_contents($path):false;if(!$raw||strlen($raw)<29)throw new RuleViolation('Documento não encontrado.');$plain=openssl_decrypt(substr($raw,28),'aes-256-gcm',$this->key(),OPENSSL_RAW_DATA,substr($raw,0,12),substr($raw,12,16));$d=$plain===false?null:json_decode($plain,true);if(!is_array($d))throw new RuleViolation('Não foi possível ler o documento.');return $d;

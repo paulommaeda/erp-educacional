@@ -19,7 +19,8 @@ final class OrphanMovementRecovery
                     if(!$saved){
                         $preserved=$this->db->insert('registros_preservados',['tabela_origem'=>'matricula_movimentacoes','registro_origem_id'=>$id,'idmatricula_origem'=>$row['idmatricula'],'codcoligada_origem'=>$row['codcoligada'],'dados_json'=>$json,'hash_registro'=>$hash,'motivo'=>'Matrícula não encontrada no banco restaurado.','tem_documento'=>empty($row['documento_token'])?0:1,'preservado_em'=>gmdate('Y-m-d H:i:s')]);
                         $saved=$this->db->get('registros_preservados',$preserved);
-                        Coligadas::within(1,fn()=>$this->db->audit('registros_preservados',$preserved,'preservar_movimento_backup',null,['tabela_origem'=>'matricula_movimentacoes','registro_origem_id'=>$id,'idmatricula_origem'=>$row['idmatricula'],'codcoligada_origem'=>$row['codcoligada'],'hash_registro'=>$hash],'schema-42-movimentos'));
+                        $company=$this->db->row('SELECT codcoligada FROM '.$this->db->table('coligadas').' ORDER BY ativo DESC,codcoligada LIMIT 1');
+                        Coligadas::within((int)$company['codcoligada'],fn()=>$this->db->audit('registros_preservados',$preserved,'preservar_movimento_backup',null,['tabela_origem'=>'matricula_movimentacoes','registro_origem_id'=>$id,'idmatricula_origem'=>$row['idmatricula'],'codcoligada_origem'=>$row['codcoligada'],'hash_registro'=>$hash],'schema-42-movimentos'));
                     }
                     if($saved['dados_json']!==$json||!hash_equals($hash,hash('sha256',$saved['dados_json'])))throw new \RuntimeException('Não foi possível confirmar a cópia integral do histórico. O registro original foi mantido.');
                     if($this->db->query("DELETE FROM $source WHERE idmovimentacao=%s AND versao=%s",[$id,$row['versao']])!==1)throw new \RuntimeException('Histórico alterado durante a preservação. Repita a migração.');

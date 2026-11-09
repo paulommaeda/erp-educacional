@@ -1,5 +1,17 @@
 # Validação
 
+## 0.19.20
+
+- `tests/wordpress-permanent-deletion.php`: 69 verificações em WordPress 7.1.3/MariaDB 11.4.8 reais com dados fictícios. Cadastro de aluno com pessoa/usuário, matrículas, contrato, parcela, pagamento e estorno, trocas de responsável com chaves compostas, histórico escolar, chat/anexo, documentos, registros preservados, fila/retornos/recebimentos Educbank, requerimento importado e resposta de operação. Prévia reúne todas as dependências e identifica alunos afetados por exclusão direta de responsável financeiro.
+- Comprovadas exclusão conjunta da pessoa/conta, opção de manter pessoa/conta, histórico de acessos, transferência de posts WordPress e preservação integral do contrato de outro aluno com o mesmo responsável. Pais compartilhados ficam fora da seleção implícita. Todas as FKs declaradas permanecem habilitadas e consistentes após os casos testados.
+- Falha por trigger na gravação do comprovante final reverte todos os dados, usuário, autoria WordPress e comprovante, preservando os arquivos físicos. Falha posterior na fila de arquivos mantém a operação concluída e a pendência durável; nova tentativa limpa a fila sem repetir as exclusões. Arquivo compartilhado permanece até a última referência.
+- Assinatura falsa, confirmação ausente, prévia de outro administrador, novo vínculo após a prévia, chave inválida e tabela externa ao schema são recusados. Secretaria e visitante não consultam ou executam o recurso; a própria conta exige outro administrador.
+- Exclusão de associação com chave composta mantém os cadastros pais. Ciclo opcional entre períodos é resolvido sem desligar FKs. Período atual limpa a seleção correspondente; exclusão de coligada limpa suas configurações, e exclusão da última ativa prepara espaço vazio e atualiza a preferência sem recriar os dados apagados.
+- `tests/permanent-deletion-routes.php` verifica as quatro rotas com administrador e responsável. `tests/permanent-deletion-ui.cjs` cobre busca, prévia, mudança de escopo, contagens, escape, confirmação digitada, motivo, nonce, falha/repetição com a mesma chave e interface indisponível para outro perfil. Ações de matrícula e carregamento das Configurações também passam na interface.
+- Quinze suítes PHP de regressão aprovadas, incluindo coligadas, planos, ciclo e exclusão de matrícula, contratos, fluxo do aluno, convites, usuários, exportação, rotas e carregamento administrativo. Em WordPress/MariaDB, passaram adicionalmente 34 verificações de migração geral, 36 de usuários/acessos e 29 de recuperação dos históricos do backup, com schema 43.
+- Prévia e confirmação inspecionadas visualmente em Chromium a 1440, 390 e 320 px. Campos, fechamento fixo durante rolagem e confirmação acessíveis; nenhum excesso horizontal na página ou no diálogo. Ajustado o botão de fechamento para preservar o título no celular.
+- Schema 43 adiciona comprovantes sem FK de propriedade, para registrar inclusive exclusões de coligadas. A atualização apenas instala o recurso. Não houve acesso ao site do colégio, exclusão de dados reais, envio de e-mail ou chamada ao Educbank. Documentos da biblioteca WordPress continuam sob gestão da biblioteca; serviços externos exigem suas próprias operações.
+
 ## 0.19.19
 
 - Reproduzido na versão 0.19.18 o erro de FK entre `matricula_movimentacoes(idmatricula)` e `matriculas` informado após a restauração. A correção conclui a migração 36 → 42 em WordPress 7.1.3/MariaDB 11.4.8 reais, com dados fictícios e dbDelta original.

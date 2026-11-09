@@ -18,7 +18,7 @@ final class DataExport
         'financeiro'=>['nome'=>'Contratos, parcelas e financeiro','tabelas'=>['educbank_fila','educbank_retornos','educbank_recebimentos','modelos_contrato','contratos','parcelas','lancamentos','baixas','baixa_estornos','lancamento_ajustes','trocas_responsavel','troca_contratos','troca_lancamentos','contrato_descontos','desconto_lancamentos','desconto_recalculos','desconto_indicados']],
         'chat'=>['nome'=>'Chat, canais e anexos privados','tabelas'=>['chat_canais','chat_membros','chat_conversas','chat_mensagens','chat_anexos','chat_leituras']],
         'historico_escolar'=>['nome'=>'Históricos escolares anteriores','tabelas'=>['tipos_disciplina','historicos_anteriores','historico_anos','historico_disciplinas']],
-        'historico'=>['nome'=>'Log de modificações','tabelas'=>['auditoria']],
+        'historico'=>['nome'=>'Log de modificações e exclusões','tabelas'=>['auditoria','exclusoes_definitivas']],
         'personalizacao'=>['nome'=>'Identidade visual e cores','tabelas'=>[]],
         'configuracoes'=>['nome'=>'Configurações e perfis de acesso','tabelas'=>[]],
     ];

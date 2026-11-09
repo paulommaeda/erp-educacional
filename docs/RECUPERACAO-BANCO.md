@@ -1,11 +1,11 @@
 # Recuperar o ERP após restaurar um backup
 
-O backup pode conter uma versão anterior do banco. O número **36** exibido em Banco de dados é a versão da estrutura; o plugin atual usa a estrutura **42**. Esse número é diferente da versão do plugin, **0.19.19**.
+O backup pode conter uma versão anterior do banco. O número **36** exibido em Banco de dados é a versão da estrutura; o plugin atual usa a estrutura **43**. Esse número é diferente da versão do plugin, **0.19.20**.
 
-1. Em **Plugins → ERP Educacional → Verificar atualizações**, consulte e instale a versão **0.19.19** ou posterior.
+1. Em **Plugins → ERP Educacional → Verificar atualizações**, consulte e instale a versão **0.19.20** ou posterior.
 2. Abra o painel WordPress como administrador. A nova versão faz uma tentativa de migração, mesmo se houver um erro de versão anterior salvo.
 3. Entre em **ERP Educacional → Configurações**. Se a atualização estiver pendente, a tela apresenta as versões do banco, o diagnóstico da última tentativa e **Verificar/aplicar migrações**. O mesmo recurso está disponível em Configurações no portal.
-4. Clique em **Verificar/aplicar migrações**. Ao concluir, o banco passa a **42** e as configurações voltam a carregar.
+4. Clique em **Verificar/aplicar migrações**. Ao concluir, o banco passa a **43** e as configurações voltam a carregar.
 5. Se a tentativa falhar, confira **Diagnóstico da última tentativa** e **Referências pendentes**. A lista reúne as tabelas e os vínculos que ainda precisam de conferência, a quantidade de registros e o primeiro código encontrado. Um conflito nos dados ou uma restrição de acesso do servidor precisa ser tratado conforme esse diagnóstico.
 
 A correção cria os índices substitutos antes de remover índices antigos. As chaves estrangeiras continuam ativas; os registros de alunos, matrículas, contratos, parcelas e pagamentos são preservados. Repetir a verificação permite continuar uma migração interrompida. Não altere manualmente o número da versão do banco para ocultar o aviso.
