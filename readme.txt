@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.20
+Stable tag: 0.19.21
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.21 =
+* Novos requerimentos do formulário público geram confirmação de recebimento por e-mail aos responsáveis e ao comercial configurado por coligada.
+* Configurações → Requerimento público permite ativar a confirmação, escolher responsável acadêmico, financeiro ou ambos e cadastrar até 30 e-mails do comercial. Endereços repetidos são normalizados e recebem uma única notificação por requerimento.
+* Mensagens individuais com identidade do colégio e protocolo. A confirmação do responsável não expõe outros destinatários; respostas médicas, documentos, anexos e links de senha ficam fora do e-mail.
+* Fila transacional: transporte somente após a gravação, tentativas automáticas com intervalo e estado por destinatário. Conferência mostra enviados, pendentes e falhas; administrador pode tentar novamente os pendentes sem repetir os já enviados.
+* Destinatários privados não são incluídos na API pública nem no formulário de conferência. Aprovação mantém o provisionamento de pessoas/contas e o envio manual dos convites de senha em Usuários e acessos.
+* Schema 44 adiciona notificações vinculadas ao requerimento, incluídas na exportação e na exclusão definitiva. Não cria confirmações retroativas para requerimentos antigos.
 
 = 0.19.20 =
 * Administrador pode excluir definitivamente qualquer tipo de registro do ERP e seus vínculos pela nova tela Excluir dados, com busca por nome, RA, código ou descrição.

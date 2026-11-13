@@ -24,7 +24,7 @@ final class AdmissionController
         try{
             $company=Input::id($r['colegio']);$c=$this->db->get('coligadas',$company);if(!(int)$c['ativo'])throw new RuleViolation('Requerimento indisponível para este colégio.');
             $result=Coligadas::within($company,function()use($r,$method,$company){
-                $settings=AdmissionSettings::read();if(!(int)$settings['ativo'])throw new RuleViolation('O recebimento de requerimentos está encerrado.');$guard=new AdmissionGuard($this->db);
+                $settings=AdmissionSettings::publicData();if(!(int)$settings['ativo'])throw new RuleViolation('O recebimento de requerimentos está encerrado.');$guard=new AdmissionGuard($this->db);
                 if($method==='GET'){$civil=$this->db->rows('SELECT idestado_civil,nome FROM '.$this->db->table('estados_civis').' ORDER BY nome');return ['colegio'=>SchoolIdentity::read()['nome'],'logo'=>SchoolIdentity::logo(),'configuracao'=>$settings,'campos'=>AdmissionForm::fields($this->db),'estados_civis'=>$civil,'token'=>$guard->token($company),'versao'=>'1'];}
                 if((int)($_SERVER['CONTENT_LENGTH']??0)>16000000)throw new RuleViolation('O envio supera 15 MB. Reduza os anexos.');
                 $raw=$r->get_param('dados');if(!is_string($raw)||strlen($raw)>100000)throw new RuleViolation('Dados do requerimento inválidos ou acima do limite.');
