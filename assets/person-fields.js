@@ -20,7 +20,26 @@ function extras(f,p,all=false,group=null,sheetArea=null,protectedSection=null){
  }
 }
 function visible(d,value){const v=String(value??'').trim(),answer=String(d.resposta_exibicao??'').trim();switch(d.condicao_exibicao){case 'preenchido':return v!=='';case 'vazio':return v==='';case 'igual':return v.toLocaleUpperCase('pt-BR')===answer.toLocaleUpperCase('pt-BR');case 'diferente':return v.toLocaleUpperCase('pt-BR')!==answer.toLocaleUpperCase('pt-BR');default:return true;}}
-window.EDERPFields={extras,visible,personalOptions,personalChoices,personalValue,attach(f,p){
+function profileDocuments(f,box,p,birthState){
+ f.classList.add('erp-profile-personal-fields');
+ const oldNationality=box.querySelector('[name=nacionalidade]'),oldBirth=box.querySelector('[name=local_nascimento]');
+ const nationality=choice(box,'nacionalidade','Nacionalidade',[[p.nacionalidade||'',p.nacionalidade||'Carregando...']],p.nacionalidade),birthCity=choice(box,'local_nascimento','Local de nascimento',[[p.local_nascimento||'',p.local_nascimento||'Carregando...']],p.local_nascimento),foreign=field(box,'','Local de nascimento',p.local_nascimento);
+ nationality.disabled=birthCity.disabled=foreign.disabled=true;foreign.parentElement.hidden=true;foreign.maxLength=191;oldNationality.parentElement.remove();oldBirth.parentElement.remove();birthState.setAttribute('aria-label','UF de nascimento');birthState.parentElement.firstChild.textContent='UF de nascimento';
+ const ordered=[f.querySelector('[name=cpf]')?.parentElement,box.querySelector('[name=rg]').parentElement,nationality.parentElement,birthState.parentElement,birthCity.parentElement,foreign.parentElement,box.querySelector('[name=raca_etnia]').parentElement].filter(Boolean);for(const label of ordered.reverse())box.querySelector('legend').after(label);
+ const fold=value=>String(value??'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+ return (countries,br)=>{
+  const previous=String(p.nacionalidade||''),key=fold(previous),brazil=/^(?:BR|BRA|BRASIL|BRASILEIR[OA](?:\(A\))?)$/.test(key),matched=brazil?'BR':Object.keys(countries).find(code=>fold(code)===key||fold(countries[code])===key);
+  nationality.replaceChildren();nationality.append(new Option('Brasil',matched==='BR'?previous:'BRASILEIRA'),new Option('Não informado',''));
+  for(const [code,label] of Object.entries(countries).filter(([code])=>code!=='BR').sort((a,b)=>a[1].localeCompare(b[1],'pt-BR')))nationality.append(new Option(label,matched===code?previous:label.toUpperCase()));
+  if(previous&&!matched)nationality.append(new Option(previous+' (valor cadastrado)',previous));nationality.value=previous;nationality.disabled=false;
+  const fillBirth=(value='',preserve=false)=>{value=String(value??'');birthCity.replaceChildren(new Option(birthState.value?'Não informado':'Selecione a UF primeiro',''));for(const city of br[birthState.value]?.cidades||[])birthCity.append(new Option(city.nome,city.nome.toUpperCase()));const match=[...birthCity.options].find(option=>option.value&&fold(option.value)===fold(value));if(match&&preserve)match.value=value;else if(value&&preserve)birthCity.append(new Option(value+' (valor cadastrado; conferir)',value));birthCity.value=preserve?value:(match?.value||'');};
+  const toggle=()=>{const outside=birthState.value==='EX';birthCity.parentElement.hidden=birthCity.disabled=outside;foreign.parentElement.hidden=foreign.disabled=!outside;if(outside){birthCity.removeAttribute('name');foreign.name='local_nascimento';}else{foreign.removeAttribute('name');birthCity.name='local_nascimento';}};
+  if(p.uf_nascimento&&!birthState.value){birthState.append(new Option(p.uf_nascimento+' (valor cadastrado; conferir)',p.uf_nascimento));birthState.value=p.uf_nascimento;}
+  const initialBirthState=birthState.value;birthCity.disabled=false;fillBirth(p.local_nascimento,true);toggle();birthState.addEventListener('change',()=>{foreign.value='';fillBirth();toggle();});
+  f.addEventListener('reset',()=>setTimeout(()=>{nationality.value=previous;birthState.value=initialBirthState;foreign.value=p.local_nascimento||'';fillBirth(p.local_nascimento,true);toggle();},0));
+ };
+}
+window.EDERPFields={extras,visible,personalOptions,personalChoices,personalValue,attach(f,p,{profile=false}={}){
  f.classList.add('erp-person-fields');
  const box=node('fieldset'),legend=node('legend','Documentos e informações pessoais');box.append(legend);f.append(box);
  for(const [name,title] of [['rg','RG']])field(box,name,title,p[name]);
@@ -35,6 +54,7 @@ window.EDERPFields={extras,visible,personalOptions,personalChoices,personalValue
  field(box,'nacionalidade','Nacionalidade',p.nacionalidade);
  choice(box,'grau_instrucao','Grau de Instrução',personalOptions('grau_instrucao'),personalValue('grau_instrucao',p.grau_instrucao));
  for(const [name,title] of [['profissao','Profissão'],['religiao','Religião'],['igreja','Igreja']])field(box,name,title,p[name]);
+ const prepareProfile=profile?profileDocuments(f,box,p,birthState):null;
  const address=node('fieldset');address.append(node('legend','Endereço'));f.append(address);
  for(const [name,title] of [['rua','Rua'],['numero','Número'],['complemento','Complemento'],['bairro','Bairro'],['cep','CEP']])field(address,name,title,p[name]);
  const country=choice(address,'pais','País',[['BR','Brasil']],p.pais||'BR');
@@ -46,6 +66,7 @@ window.EDERPFields={extras,visible,personalOptions,personalChoices,personalValue
  datasets.then(([countries,br])=>{
   const fill=(s,options,value)=>{s.replaceChildren();options.forEach(([v,t])=>{const o=node('option',t);o.value=v;s.append(o);});s.value=value||'';};
   fill(birthState,[['','Não informado'],...Object.entries(br).map(([uf,v])=>[uf,uf+' — '+v.nome]).sort((a,b)=>a[1].localeCompare(b[1])),['EX','Exterior (EX)']],p.uf_nascimento?.toUpperCase());birthState.disabled=false;
+  prepareProfile?.(countries,br);
   fill(country,Object.entries(countries).map(([k,v])=>[k,v.toUpperCase()]),p.pais||'BR');
   fill(region,[['','Selecione...'],...Object.entries(br).map(([uf,v])=>[uf,v.nome.toUpperCase()+' ('+uf+')']).sort((a,b)=>a[1].localeCompare(b[1]))],p.estado);
   const cities=(value='')=>fill(city,[['','Selecione...'],...(br[region.value]?.cidades||[]).map(c=>[c.nome.toUpperCase(),c.nome.toUpperCase()])],value);

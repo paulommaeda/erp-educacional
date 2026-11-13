@@ -1,5 +1,14 @@
 # Validação
 
+## 0.19.22
+
+- `tests/profile-personal-ui.cjs` abre o perfil com os scripts reais de formulário/modal e verifica a ordem CPF, RG, Nacionalidade, UF, Local e Raça/Etnia, CPF único dentro da seção, Brasil primeiro e preservação da nacionalidade existente.
+- Exercitados troca de UF com limpeza/filtragem dos municípios, nacionalidade independente da UF, payload do endpoint próprio, nascimento no exterior por texto, campos sem UF, valores legados e falha no carregamento. Há somente um campo de local ativo no envio; erro nas listas bloqueia o formulário antes de qualquer POST.
+- `tests/person-details.php` aprova gravação de cidade válida, rejeita novas combinações incompatíveis ou sem UF e confirma rollback de todos os campos e da versão. Perfil continua aceitando exterior, nacionalidade diferente do país de nascimento e valores legados sem alteração, inclusive normalização de caixa.
+- Seis suítes PHP aprovadas: detalhes de pessoas, contas, shortcodes do responsável financeiro, recursos administrativos, rotas do portal e permissões da ficha. Quatro suítes de interface aprovadas: perfil pessoal, campos compartilhados/CSV, modais de perfil/avatar e menu da conta.
+- Chromium a 1440, 390 e 320 px com perfil e modal reais, dados fictícios e API simulada. Ordem das seis primeiras posições e ausência de excesso horizontal conferidas. Capturas de desktop e celular inspecionadas; o celular utiliza uma coluna para manter os documentos legíveis.
+- Schema 44 mantido. Nenhuma migração ou alteração em lote nos cadastros. Validação de serviço executada com SQLite e fronteiras WordPress simuladas; não houve acesso ou gravação no site do colégio.
+
 ## 0.19.21
 
 - `tests/wordpress-admission-notifications.php`: 46 verificações em WordPress 7.1.3/MariaDB 11.4.8 reais. A configuração normaliza/deduplica destinatários, recusa cabeçalhos e opções inválidas, permanece isolada por coligada e não aparece na API anônima. Todos os transportes foram interceptados por `pre_wp_mail`; nenhuma mensagem foi enviada externamente.

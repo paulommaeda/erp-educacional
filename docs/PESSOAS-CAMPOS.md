@@ -1,6 +1,12 @@
-# Documentos e informações pessoais — 0.15.4
+# Documentos e informações pessoais — 0.19.22
 
 Em Pessoas → Cadastrar novo / Editar → Informações pessoais, os campos ficam na seção Documentos e informações pessoais. O perfil pessoal usa o mesmo cadastro. Todos são opcionais e são gravados em maiúsculas; o e-mail continua com sua escrita original.
+
+Em **Meu perfil → Editar meus dados**, o início da seção segue **CPF → RG → Nacionalidade → UF de nascimento → Local de nascimento → Raça/Etnia**. CPF aparece uma única vez, antes do RG. Nacionalidade usa uma lista de países com **Brasil** na primeira opção; campos vazios e textos de nacionalidade já cadastrados são preservados até a escolha do usuário.
+
+Ao escolher uma UF brasileira, **Local de nascimento** mostra seus municípios. Trocar a UF limpa a seleção anterior. **Exterior (EX)** permite informar o local por texto. Um valor legado ainda não associado a uma UF/cidade continua disponível para conferência; alterações em outros dados não o apagam. Novas combinações de município/UF são conferidas também no servidor. A nacionalidade é independente da naturalidade e do endereço atual.
+
+No computador, o perfil mantém duas colunas. No celular, os campos ocupam uma coluna para preservar a leitura dos documentos e das opções. As mudanças do perfil mantêm as chaves do cadastro e das integrações. Schema 44 mantido nesta atualização.
 
 | Campo | Chave no CSV / API | Definição em pessoas | Preenchimento |
 |---|---|---|---|
@@ -21,7 +27,9 @@ Na ficha do aluno, os valores aparecem em Dados do aluno → Dados pessoais, res
 
 Schema 32 adiciona cinco colunas opcionais por dbDelta. Não remove cadastros, vínculos ou valores de campos adicionais. Um campo adicional com chave parecida continua em `campos_adicionais`, separado do campo nativo; revise seu mapeamento se desejar passar a usar o campo nativo. Cadastros anteriores começam com os novos valores vazios.
 
-# Verificação desta versão
+# Verificação da introdução dos campos (schema 32)
+
+As verificações da versão 0.19.22 estão registradas em [VALIDACAO.md](VALIDACAO.md#01922).
 
 - PHP 8.1: sintaxe dos arquivos alterados validada. PHP-WASM/SQLite e stubs WordPress: cadastro, edição parcial, perfil próprio, limpeza de opcionais, opções válidas/inválidas, exportação, CSV, conferência/importação de requerimentos e permissões.
 - JSDOM: opções completas, preenchimento para edição, profissão única, UF independente do endereço, modelo CSV e novos campos na conferência da API e ficha do aluno.
