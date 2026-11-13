@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.21
+Stable tag: 0.19.22
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.22 =
+* Editar meus dados move CPF para Documentos e informações pessoais e organiza o início da seção em CPF, RG, Nacionalidade, UF de nascimento, Local de nascimento e Raça/Etnia.
+* Nacionalidade passa a ser uma lista de países, com Brasil na primeira opção. Valores anteriores são preservados, inclusive nacionalidades descritas por texto.
+* Local de nascimento acompanha a UF escolhida; mudar a UF limpa a cidade anterior. Exterior mantém preenchimento por texto. Naturalidade e nacionalidade permanecem independentes do endereço.
+* Perfil valida novas combinações de município/UF no servidor e mantém locais legados quando não foram alterados. Carregamento incompleto das listas impede salvar dados parciais.
+* Perfil em uma coluna no celular, preservando duas colunas no computador. Schema 44 mantido, sem nova migração.
 
 = 0.19.21 =
 * Novos requerimentos do formulário público geram confirmação de recebimento por e-mail aos responsáveis e ao comercial configurado por coligada.

@@ -143,7 +143,7 @@ final class CatalogService
             if(!empty($data['foto_attachment_id'])&&(int)$data['foto_attachment_id']!==(int)$before['foto_attachment_id']&&!\EducacionalERP\Infrastructure\WordPress\Access::isAdmin()&&(int)get_post_field('post_author',(int)$data['foto_attachment_id'])!==$user)throw new RuleViolation('Use uma foto enviada pela sua própria conta.');
             if(array_key_exists('estado_civil',$data)&&!array_key_exists('idestado_civil',$data))$data['idestado_civil']=$data['estado_civil'];
             $valid=$this->personData(array_merge($before,$data));
-            $valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);$this->accounts->sync($id);
+            \EducacionalERP\Domain\PersonFields::validateBirthChange($valid,$before);$valid['codpessoa_origem']=$before['codpessoa_origem'];$this->db->update('pessoas',$id,$valid);$this->accounts->sync($id);
             (new \EducacionalERP\Infrastructure\WordPress\AccountInvitations($this->db))->contactChanged($id,(string)$before['email']!==$valid['email']);
             $this->db->audit('pessoas',$id,'editar_proprio_perfil',$before,$valid,$key);
             return ['salvo'=>true,'versao'=>(string)((int)$before['versao']+1)];

@@ -348,3 +348,6 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .erp-invitation-toolbar{margin:16px 0}.erp-invitation-toolbar .ederp-check{align-items:center}.erp-invitation-toolbar span{overflow-wrap:anywhere}
 .erp-user-access-log{grid-column:1/-1}.erp-user-access-log li{padding:10px 0;border-bottom:1px solid var(--j-line,#ddd)}.erp-form-dialog .ederp-form>ul{grid-column:1/-1;overflow-wrap:anywhere;padding-left:22px;max-height:240px;overflow:auto}
 @media(max-width:1100px){.ederp .erp-users-list .erp-user-row{grid-template-columns:22px minmax(0,1fr)}.ederp .erp-users-list .erp-user-row>*{grid-column:2;grid-row:auto}.ederp .erp-users-list .erp-user-row>:first-child{grid-column:1;grid-row:1}.erp-user-actions{display:flex;flex-wrap:wrap}.erp-user-actions button{width:auto}.erp-user-last-access{display:flex;gap:8px;flex-wrap:wrap}}
+/* Personal profile keeps full-width fields readable on phones. */
+.ederp .erp-profile-personal-fields input,.ederp .erp-profile-personal-fields select{box-sizing:border-box;min-width:0;width:100%}
+@media(max-width:600px){.ederp .erp-profile-personal-fields,.ederp .erp-profile-personal-fields fieldset{grid-template-columns:minmax(0,1fr)!important}}

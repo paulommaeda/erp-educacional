@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.21
+# ERP Educacional — 0.19.22
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.21.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.22.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 44**, acrescentando a fila de confirmações de requerimentos e mantendo os dados existentes. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -16,6 +16,10 @@ As turmas antigas ficam inicialmente sem plano, para não inventar preços. Cont
 Quando o backup contém anexos do chat sem mensagem válida na mesma coligada, os arquivos permanecem guardados com sua referência original. O administrador pode conferi-los em **ERP Educacional → Anexos preservados**. As mensagens e os anexos válidos continuam nas suas conversas; os arquivos pendentes são acessíveis somente ao administrador para conferência.
 
 Se uma movimentação aponta para uma matrícula ausente, a cópia integral do registro e a referência ao documento ficam em **ERP Educacional → Registros preservados**. A preservação é confirmada antes da retirada desse histórico da tabela operacional. Matrículas e movimentações válidas permanecem intactas. Outros vínculos inconsistentes são apresentados juntos em Configurações e precisam de conferência antes da conclusão.
+
+## Editar meus dados
+
+Em **Meu perfil → Editar meus dados**, a seção **Documentos e informações pessoais** começa por **CPF → RG → Nacionalidade → UF de nascimento → Local de nascimento → Raça/Etnia**. A nacionalidade utiliza uma lista com Brasil primeiro, e os municípios de nascimento acompanham a UF escolhida. **Exterior (EX)** mantém o local por texto. Valores anteriores são preservados. No celular, o perfil usa uma coluna; no computador, duas. Veja [o guia dos campos pessoais](docs/PESSOAS-CAMPOS.md).
 
 ## Requerimentos, contas e confirmação por e-mail
 

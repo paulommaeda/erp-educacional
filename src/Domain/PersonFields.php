@@ -6,6 +6,17 @@ final class PersonFields
     public const RACES=['BRANCA','PRETA','PARDA','AMARELA','INDÍGENA','NÃO DECLARADA'];
     public const EDUCATION=['ENSINO BÁSICO','ENSINO MÉDIO','GRADUAÇÃO','PÓS-GRADUAÇÃO','MESTRADO','DOUTORADO'];
     public static function studentType(mixed $v): string { if(is_string($v))$v=CadastroText::upper($v);if(!in_array($v,['REGULAR','AEE'],true))throw new RuleViolation('Tipo de aluno deve ser Regular ou AEE.');return $v; }
+    /** Keep an unchanged legacy value; a newly selected birthplace must match its UF. */
+    public static function validateBirthChange(array $current,array $before):void
+    {
+        $uf=(string)($current['uf_nascimento']??'');$city=(string)($current['local_nascimento']??'');
+        if($uf===CadastroText::upper(trim((string)($before['uf_nascimento']??'')))&&$city===CadastroText::upper(trim((string)($before['local_nascimento']??''))))return;
+        if($city===''||$uf==='EX')return;
+        if($uf==='')throw new RuleViolation('Selecione a UF de nascimento antes do local de nascimento.');
+        $br=json_decode(file_get_contents(dirname(__DIR__,2).'/assets/localidades/brasil.json'),true,512,JSON_THROW_ON_ERROR);
+        foreach($br[$uf]['cidades']??[] as $place)if(remove_accents(CadastroText::upper($place['nome']))===remove_accents(CadastroText::upper($city)))return;
+        throw new RuleViolation('Selecione um local de nascimento pertencente à UF informada.');
+    }
     public static function validate(array $d): array
     {
         $out=[];
