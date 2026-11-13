@@ -1,0 +1,15 @@
+<?php
+declare(strict_types=1);
+namespace EducacionalERP\Infrastructure\WordPress;
+/** Receipt only: no health answers, identity documents, attachments or password links. */
+final class AdmissionConfirmationMail
+{
+    public static function render(array $data,bool $commercial=false):string
+    {
+        $school=SchoolIdentity::read();$logo=SchoolIdentity::logo();$e=static fn($v)=>esc_html((string)$v);$title=$commercial?'Novo requerimento recebido':'Recebemos seu requerimento';$color=$school['cor_primaria'];
+        $received=wp_date('d/m/Y H:i',strtotime($data['recebido_em'].' UTC'));$details='<p><strong>Aluno:</strong> '.$e($data['aluno']).'<br><strong>Protocolo:</strong> '.$e($data['protocolo']).'<br><strong>Recebido em:</strong> '.$e($received).'</p>';
+        if($commercial){$details.='<p><strong>Interesse:</strong> '.$e(implode(' · ',array_filter([$data['curso'],$data['serie'],$data['turno']]))).'</p><h2 style="font-size:18px">Contato dos responsáveis</h2>';foreach($data['responsaveis']??[] as $guardian)$details.='<p>'.$e($guardian['nome']).'<br>'.$e($guardian['email']).(!empty($guardian['telefone'])?'<br>'.$e($guardian['telefone']):'').'</p>';$details.='<p>Confira o requerimento em Requerimentos → Formulário público, usando o protocolo acima.</p><p><a href="'.esc_url(admin_url('admin.php?page=ederp-requerimentos')).'" style="display:inline-block;padding:12px 20px;background:'.$color.';color:'.SchoolIdentity::contrast($color).';text-decoration:none;border-radius:8px">Abrir requerimentos</a></p>';}
+        $copy=$commercial?'Uma família enviou um novo requerimento pelo formulário do colégio.':'Confirmamos o recebimento do requerimento de matrícula. Nossa equipe conferirá as informações apresentadas.';
+        return '<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>'.$e($title).'</title></head><body style="margin:0;background:'.$school['cor_fundo'].';color:'.$school['cor_texto'].';font-family:Inter,Arial,sans-serif;line-height:1.6"><table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px"><table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:100%;max-width:600px;background:'.$school['cor_superficie'].';border-radius:16px"><tr><td style="padding:28px 24px;border-top:6px solid '.$color.'">'.($logo?'<img src="'.esc_url($logo).'" alt="'.$e($school['nome']).'" width="220" style="display:block;width:220px;max-width:100%;height:auto;margin-bottom:24px">':'<p>'.$e($school['nome']).'</p>').'<h1 style="font-size:24px;line-height:1.3">'.$e($title).'</h1><p>Olá, '.$e($data['nome_destinatario']).'.</p><p>'.$copy.'</p>'.$details.'<p>O recebimento do requerimento não garante vaga e não efetiva a matrícula.</p><p style="margin-top:28px;padding-top:16px;border-top:1px solid '.$school['cor_destaque'].'">'.$e($school['nome']).'<br>Equipe de atendimento</p></td></tr></table></td></tr></table></body></html>';
+    }
+}

@@ -1,18 +1,26 @@
 # Requerimento público de matrícula
 
-Versão 0.19.3 • Migração 36.
+Versão 0.19.21 • Migração 44.
 
 O formulário nativo foi construído a partir do JSON do Fluent Forms e do modelo HTML do PDF fornecidos. Não depende desses plugins para funcionar. Não importa submissões antigas automaticamente; a integração de requerimentos por API permanece em uma aba separada.
 
 ## Como começar
 
-1. Atualize o plugin e abra uma vez o painel WordPress como administrador para executar a migração 36 e criar a página publicada **Requerimento de matrícula**.
+1. Atualize o plugin e abra uma vez o painel WordPress como administrador para executar a migração 44 e preparar a página publicada **Requerimento de matrícula**.
 2. No ERP, selecione a coligada de trabalho e abra **Configurações → Requerimento público**. Copie o endereço exibido. Esse endereço já fixa o colégio do requerimento.
 3. Personalize apresentação, informação sobre uso dos dados e declaração do solicitante. A configuração **Recebimento** permite abrir ou encerrar os envios daquela coligada.
 4. Compartilhe o endereço com as famílias. O preenchimento é livre, sem usuário ou senha. Em outras páginas pode ser utilizado `[erp_requerimento coligada="1"]`.
 5. A equipe confere os envios em **Requerimentos → Formulário público**. As abas de pendentes, aprovados e rejeitados têm pesquisa e paginação. A importação existente está em **Importados por API**.
 
 A página pública recebe as cores e a logo configuradas no colégio. Não carrega o conjunto de scripts das telas administrativas nem exige login do portal.
+
+## Confirmação de recebimento e convites de senha
+
+Em **Configurações → Requerimento público → Configurar recebimento, e-mails e textos**, a seção **Confirmação do preenchimento por e-mail** permite ativar o aviso, escolher responsável acadêmico, financeiro ou ambos e informar os e-mails do comercial, um por linha. A configuração vale para a coligada selecionada. A confirmação vem ativada para ambos os responsáveis; o comercial recebe após o administrador cadastrar seus endereços.
+
+Novos requerimentos geram mensagens individuais depois da gravação. O e-mail leva nome do aluno, protocolo e recebimento sujeito à análise; o comercial também recebe os contatos dos responsáveis selecionados. Não são enviados dados de saúde, documentos ou anexos. Endereços repetidos recebem uma única notificação. Na conferência aparecem enviados, pendentes e falhas; o administrador pode tentar enviar novamente os pendentes. Consulte [o guia de confirmação](CONFIRMACAO-REQUERIMENTOS.md).
+
+Após aprovação, o ERP cria ou aproveita pessoas, contas WordPress e aluno. O e-mail de criação da senha permanece manual em **Usuários e acessos**, separado da confirmação do requerimento. A nova versão não envia confirmações de requerimentos antigos automaticamente.
 
 ## Etapas e destino dos dados
 

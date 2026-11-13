@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace EducacionalERP\Application;
 use EducacionalERP\Domain\{Store,Input,RuleViolation,AdmissionForm,StudentFiles};
-use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,StudentRecordPolicy,StudentDocumentFiles,Accounts};
+use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,StudentRecordPolicy,StudentDocumentFiles,Accounts,AdmissionNotifications};
 final class PublicAdmissions
 {
     private StudentFiles $files;
@@ -30,6 +30,7 @@ final class PublicAdmissions
             if($old){if(!hash_equals($old['hash_envio'],$hash))throw new RuleViolation('Este envio já foi utilizado com outros dados. Recarregue o formulário.');return ['protocolo'=>$old['protocolo'],'recebido'=>true];}
             $protocol='REQ-'.strtoupper(bin2hex(random_bytes(10)));$id=$this->db->insert('requerimentos_publicos',['codcoligada'=>Coligadas::current(),'protocolo'=>$protocol,'chave_envio'=>hash('sha256',$key),'hash_envio'=>$hash,'nome_aluno'=>$data['pessoas']['aluno']['nome'],'declaracao_texto'=>AdmissionSettings::read()['declaracao'],'privacidade_texto'=>AdmissionSettings::read()['privacidade'],'dados_json'=>wp_json_encode($data)]);
             foreach($hashes as $field=>$unused){$stored=$this->files->put($uploads[$field]);$this->db->onCompletion(function($ok)use($stored){if(!$ok)$this->files->delete($stored['arquivo_token']);});if($field==='foto'&&!in_array($stored['arquivo_mime'],['image/jpeg','image/png','image/webp'],true))throw new RuleViolation('A foto deve ser JPG, PNG ou WebP.');$this->db->insert('requerimento_arquivos',$stored+['idrequerimento'=>$id,'campo'=>$field]);}
+            (new AdmissionNotifications($this->db))->queue($id,$data,$protocol);
             $this->db->audit('requerimentos_publicos',$id,'receber',null,['status'=>'pendente','protocolo'=>$protocol],$key);return ['protocolo'=>$protocol,'recebido'=>true];
         });}finally{$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$lock]);}
     }
@@ -43,7 +44,7 @@ final class PublicAdmissions
     {
         $r=$this->request($id);$this->sensitive();$data=json_decode($r['aprovados_json']?:$r['dados_json'],true);$r['dados']=AdmissionForm::fromStored($data);$r['resultado']=json_decode($r['resultado_json']??'null',true);$suggestions=[];$t=$this->db->table('pessoas');
         foreach($data['pessoas'] as $slot=>$p){$args=[$p['nome'],$p['data_nascimento']];$where='(nome=%s AND data_nascimento=%s)';if(!empty($p['cpf'])){$where.=' OR cpf=%s';$args[]=$p['cpf'];}$suggestions[$slot]=$this->db->rows("SELECT codpessoa,codigo_pessoa,nome,data_nascimento FROM $t WHERE ativo=1 AND ($where) ORDER BY nome LIMIT 20",$args);}
-        $r['sugestoes']=$suggestions;$r['arquivos']=$this->db->rows('SELECT idarquivo,campo,arquivo_nome,arquivo_mime FROM '.$this->db->table('requerimento_arquivos').' WHERE idrequerimento=%d AND arquivo_token IS NOT NULL',[$id]);unset($r['dados_json'],$r['aprovados_json'],$r['resultado_json'],$r['hash_envio'],$r['chave_envio']);return $r;
+        $r['sugestoes']=$suggestions;$r['arquivos']=$this->db->rows('SELECT idarquivo,campo,arquivo_nome,arquivo_mime FROM '.$this->db->table('requerimento_arquivos').' WHERE idrequerimento=%d AND arquivo_token IS NOT NULL',[$id]);unset($r['dados_json'],$r['aprovados_json'],$r['resultado_json'],$r['hash_envio'],$r['chave_envio']);$r['confirmacao_email']=(new AdmissionNotifications($this->db))->summary($id);return $r;
     }
     private function approvalLock(callable $fn):array
     {

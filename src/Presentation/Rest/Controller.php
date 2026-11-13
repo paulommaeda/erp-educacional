@@ -57,8 +57,9 @@ final class Controller
         $admissionReview=fn()=>\EducacionalERP\Application\PublicAdmissions::canReview();
         $this->route('/configuracoes/requerimento-publico','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Application\AdmissionSettings::settings());
         $this->route('/configuracoes/requerimento-publico','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Application\AdmissionSettings::save($this->payload($r)));
+        $this->route('/requerimentos-publicos/'.$id.'/reenviar-confirmacao','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Infrastructure\WordPress\AdmissionNotifications($this->db))->retry((int)$r['id']));
         $this->route('/requerimentos-publicos','GET',$admissionReview,fn($r)=>$admissions->listing((string)($r->get_param('status')?:'pendente'),(int)($r->get_param('page')?:1),(string)$r->get_param('search')));
-        $this->route('/requerimentos-publicos/formulario','GET',$admissionReview,fn()=>['campos'=>\EducacionalERP\Domain\AdmissionForm::fields($this->db),'estados_civis'=>$this->db->rows('SELECT idestado_civil,nome FROM '.$this->db->table('estados_civis').' ORDER BY nome'),'configuracao'=>\EducacionalERP\Application\AdmissionSettings::read()]);
+        $this->route('/requerimentos-publicos/formulario','GET',$admissionReview,fn()=>['campos'=>\EducacionalERP\Domain\AdmissionForm::fields($this->db),'estados_civis'=>$this->db->rows('SELECT idestado_civil,nome FROM '.$this->db->table('estados_civis').' ORDER BY nome'),'configuracao'=>\EducacionalERP\Application\AdmissionSettings::publicData()]);
         $this->route('/requerimentos-publicos/'.$id,'GET',$admissionReview,fn($r)=>$admissions->detail((int)$r['id']));
         $this->route('/requerimentos-publicos/'.$id.'/aprovar','POST',$admissionReview,fn($r)=>$admissions->approve((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/requerimentos-publicos/'.$id.'/rejeitar','POST',$admissionReview,fn($r)=>$admissions->reject((int)$r['id'],$this->payload($r),$this->key($r)));

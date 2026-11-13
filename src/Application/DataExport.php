@@ -8,7 +8,7 @@ use EducacionalERP\Domain\RuleViolation;
 final class DataExport
 {
     public const GROUPS=[
-        'requerimentos_publicos'=>['nome'=>'Requerimentos públicos e arquivos de origem','tabelas'=>['requerimentos_publicos','requerimento_arquivos']],
+        'requerimentos_publicos'=>['nome'=>'Requerimentos públicos, confirmações e arquivos de origem','tabelas'=>['requerimentos_publicos','requerimento_arquivos','requerimento_notificacoes']],
         'documentos_alunos'=>['nome'=>'Documentos dos alunos (cadastros e conferências)','tabelas'=>['tipos_documento_aluno','aluno_documentos']],
         'pessoas'=>['nome'=>'Pessoas e endereços','tabelas'=>['pessoas','pessoa_enderecos','estados_civis','numeracao_pessoas','api_requerimentos','grupos_campos','campos_adicionais','pessoa_campos_adicionais']],
         'usuarios'=>['nome'=>'Usuários vinculados e acessos (sem senhas)','tabelas'=>['pessoa_usuarios','usuarios','usuario_acessos']],
