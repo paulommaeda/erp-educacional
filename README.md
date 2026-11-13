@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.22
+# ERP Educacional — 0.19.23
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.22.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.23.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 44**, acrescentando a fila de confirmações de requerimentos e mantendo os dados existentes. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -16,6 +16,12 @@ As turmas antigas ficam inicialmente sem plano, para não inventar preços. Cont
 Quando o backup contém anexos do chat sem mensagem válida na mesma coligada, os arquivos permanecem guardados com sua referência original. O administrador pode conferi-los em **ERP Educacional → Anexos preservados**. As mensagens e os anexos válidos continuam nas suas conversas; os arquivos pendentes são acessíveis somente ao administrador para conferência.
 
 Se uma movimentação aponta para uma matrícula ausente, a cópia integral do registro e a referência ao documento ficam em **ERP Educacional → Registros preservados**. A preservação é confirmada antes da retirada desse histórico da tabela operacional. Matrículas e movimentações válidas permanecem intactas. Outros vínculos inconsistentes são apresentados juntos em Configurações e precisam de conferência antes da conclusão.
+
+## Consultar requerimentos em outro sistema
+
+A API de leitura entrega os requerimentos do formulário nativo, com aluno, responsáveis, respostas, dados originais/conferidos, situação e anexos protegidos. Em **Configurações → Integração API**, copie o endereço de consulta. Crie no WordPress um usuário com o perfil **Integração: leitura de requerimentos**, autorize a coligada na edição da conta e gere uma **Senha de aplicativo**.
+
+As consultas ficam em **GET /wp-json/erp-educacional/v1/integracao/requerimentos**, com detalhe por ID, catálogo de campos e leitura de anexos. Há paginação e filtros por situação, protocolo, aluno e intervalo de atualização. O leitor não grava dados e só consulta a coligada autorizada. Veja [o guia da API de requerimentos](docs/API-REQUERIMENTOS.md) e a [especificação OpenAPI](docs/openapi.json). Schema 44 mantido.
 
 ## Editar meus dados
 

@@ -1,5 +1,15 @@
 # Validação
 
+## 0.19.23
+
+- `tests/admission-read-api.php`: 51 verificações com SQLite, requerimentos reais do serviço de recebimento e aprovação e arquivos simulados. Conferidos original versus conferido, referências ao aluno, responsáveis/respostas/listas, situação, protocolo, aluno, janela UTC inclusiva, cursor sem repetição e validação de filtros. A leitura não altera requerimentos, anexos, auditoria, fila ou contas.
+- `tests/wordpress-admission-read-api.php`: 33 verificações em WordPress 7.1.3/MariaDB 11.4.8 reais. Perfil com coligada explícita, atualização protegida da autorização, criação/autenticação/revogação de Senha de aplicativo nativa e despacho REST. Conferidos 401/403/404/422/503, ausência de escrita nas novas rotas, bloqueio nas APIs de gestão/aprovação/rejeição e anexo cifrado real com integridade. Revogar coligada bloqueia imediatamente; migração pendente mantém a edição do usuário WordPress disponível.
+- Novos requerimentos gravam criação/atualização em UTC explicitamente, independentemente do fuso do banco; o teste nativo compara com o relógio UTC. Nenhum registro antigo é recalculado.
+- Regressão nativa das confirmações: 46 verificações aprovadas em WordPress/MariaDB, com todos os transportes interceptados. Nenhuma mensagem externa foi enviada.
+- Oito suítes de serviço aprovadas: API de leitura, requerimento público, identidade do aluno no requerimento, detalhes de pessoas, conexões de API, conferência de requerimento importado, recursos administrativos e rotas do portal. Cinco suítes de interface aprovadas: instruções/endereço da consulta, conexões externas, conferência Fluent, formulário público e configuração das confirmações.
+- Chromium a 1440 e 390 px: tela de integração com scripts/CSS reais, URL selecionável e dados fictícios. Capturas inspecionadas e ausência de excesso horizontal conferida. Sintaxe PHP/JavaScript, referências internas do OpenAPI e pacote verificados.
+- Schema 44 mantido. Não houve instalação, tráfego autenticado no domínio do colégio ou conexão ao sistema consumidor. A consulta cobre o formulário nativo do ERP; a fila de importações de outros sistemas permanece no fluxo anterior. Exclusão definitiva exige reconciliação da lista completa no consumidor.
+
 ## 0.19.22
 
 - `tests/profile-personal-ui.cjs` abre o perfil com os scripts reais de formulário/modal e verifica a ordem CPF, RG, Nacionalidade, UF, Local e Raça/Etnia, CPF único dentro da seção, Brasil primeiro e preservação da nacionalidade existente.
