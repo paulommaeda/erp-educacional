@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "ERP Educacional — APIs de integração",
-    "version": "0.15.4",
-    "description": "Consultas e gravações autenticadas como administrador. Leia integracao-api.md. JSON monetário decimal string; autenticação nativa WordPress por senha de aplicativo sobre HTTPS."
+    "version": "0.19.23",
+    "description": "APIs autenticadas por Senha de aplicativo do WordPress sobre HTTPS. Gestão exige administrador. GET /requerimentos também aceita o perfil dedicado de leitura, com coligada autorizada. Consulte integracao-api.md e API-REQUERIMENTOS.md."
   },
   "servers": [
     {
@@ -1990,6 +1990,316 @@
           }
         }
       }
+    },
+    "/requerimentos": {
+      "get": {
+        "operationId": "consultarRequerimentos",
+        "summary": "Lista completa dos requerimentos nativos, somente leitura",
+        "description": "Requerimentos de outros sistemas na fila api-pessoas não fazem parte desta coleção. Paginação crescente por ID. Reinicie o cursor a cada janela de sincronização; não há tombstones de exclusão definitiva.",
+        "tags": [
+          "Requerimentos"
+        ],
+        "parameters": [
+          {
+            "name": "codcoligada",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,17}$"
+            },
+            "description": "Administrador pode escolher; leitor só aceita a coligada explicitamente autorizada."
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^(0|[1-9][0-9]{0,17})$",
+              "default": "0"
+            },
+            "description": "Continue com next_cursor enquanto não for null."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "description": "Quantidade por página."
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "todos",
+                "pendente",
+                "aprovado",
+                "rejeitado"
+              ],
+              "default": "todos"
+            },
+            "description": "Situação atual."
+          },
+          {
+            "name": "protocolo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 32
+            },
+            "description": "Protocolo exato."
+          },
+          {
+            "name": "idaluno",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,17}$"
+            },
+            "description": "ID de aluno vinculado após aprovação."
+          },
+          {
+            "name": "atualizado_desde",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "UTC com Z e precisão de segundos; inclusivo."
+          },
+          {
+            "name": "atualizado_ate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "description": "UTC com Z e precisão de segundos; inclusivo."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta autenticada concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColecaoRequerimentos"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticação necessária"
+          },
+          "403": {
+            "description": "Perfil ou coligada sem autorização"
+          },
+          "404": {
+            "description": "Registro ausente no escopo autorizado"
+          },
+          "422": {
+            "description": "Parâmetro inválido"
+          },
+          "500": {
+            "description": "Falha de consulta ou integridade"
+          },
+          "503": {
+            "description": "Banco do ERP indisponível"
+          }
+        }
+      }
+    },
+    "/requerimentos/campos": {
+      "get": {
+        "operationId": "camposRequerimentos",
+        "summary": "Catálogo de campos e opções do requerimento",
+        "tags": [
+          "Requerimentos"
+        ],
+        "parameters": [
+          {
+            "name": "codcoligada",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,17}$"
+            },
+            "description": "Administrador pode escolher; leitor só aceita a coligada explicitamente autorizada."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta autenticada concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogoRequerimentos"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticação necessária"
+          },
+          "403": {
+            "description": "Perfil ou coligada sem autorização"
+          },
+          "404": {
+            "description": "Registro ausente no escopo autorizado"
+          },
+          "422": {
+            "description": "Parâmetro inválido"
+          },
+          "500": {
+            "description": "Falha de consulta ou integridade"
+          },
+          "503": {
+            "description": "Banco do ERP indisponível"
+          }
+        }
+      }
+    },
+    "/requerimentos/{idrequerimento}": {
+      "get": {
+        "operationId": "consultarRequerimento",
+        "summary": "Dados recebidos e conferidos de um requerimento",
+        "tags": [
+          "Requerimentos"
+        ],
+        "parameters": [
+          {
+            "name": "idrequerimento",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,17}$"
+            }
+          },
+          {
+            "name": "codcoligada",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,17}$"
+            },
+            "description": "Administrador pode escolher; leitor só aceita a coligada explicitamente autorizada."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta autenticada concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetalheRequerimento"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticação necessária"
+          },
+          "403": {
+            "description": "Perfil ou coligada sem autorização"
+          },
+          "404": {
+            "description": "Registro ausente no escopo autorizado"
+          },
+          "422": {
+            "description": "Parâmetro inválido"
+          },
+          "500": {
+            "description": "Falha de consulta ou integridade"
+          },
+          "503": {
+            "description": "Banco do ERP indisponível"
+          }
+        }
+      }
+    },
+    "/requerimentos/{idrequerimento}/arquivos/{idarquivo}": {
+      "get": {
+        "operationId": "consultarArquivoRequerimento",
+        "summary": "Anexo privado em base64, com vínculo e integridade verificados",
+        "tags": [
+          "Requerimentos"
+        ],
+        "parameters": [
+          {
+            "name": "idrequerimento",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,17}$"
+            }
+          },
+          {
+            "name": "idarquivo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,17}$"
+            }
+          },
+          {
+            "name": "codcoligada",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "pattern": "^[1-9][0-9]{0,17}$"
+            },
+            "description": "Administrador pode escolher; leitor só aceita a coligada explicitamente autorizada."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Consulta autenticada concluída",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConteudoArquivoRequerimento"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Autenticação necessária"
+          },
+          "403": {
+            "description": "Perfil ou coligada sem autorização"
+          },
+          "404": {
+            "description": "Registro ausente no escopo autorizado"
+          },
+          "422": {
+            "description": "Parâmetro inválido"
+          },
+          "500": {
+            "description": "Falha de consulta ou integridade"
+          },
+          "503": {
+            "description": "Banco do ERP indisponível"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -1997,7 +2307,7 @@
       "WordPressApplicationPassword": {
         "type": "http",
         "scheme": "basic",
-        "description": "Usuário WordPress administrador + Senha de Aplicativo, somente sobre HTTPS"
+        "description": "Usuário WordPress e Senha de aplicativo sobre HTTPS. Gestão: administrador. Leitura de requerimentos: administrador ou perfil erp_leitor_requerimentos com erp_ler_requerimentos e coligada explícita."
       }
     },
     "schemas": {
@@ -4605,6 +4915,575 @@
             ]
           }
         }
+      },
+      "PessoaRequerimento": {
+        "type": "object",
+        "properties": {
+          "nome": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "data_nascimento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cpf": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rg": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "email": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "telefone": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "sexo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "idestado_civil": {
+            "type": [
+              "integer",
+              "string",
+              "null"
+            ]
+          },
+          "local_nascimento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "uf_nascimento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "raca_etnia": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "nacionalidade": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "grau_instrucao": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "profissao": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "religiao": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "igreja": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "rua": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "numero": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "complemento": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "bairro": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cep": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "cidade": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "estado": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "pais": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "empresa": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "parentesco": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "additionalProperties": false
+      },
+      "ContatoRequerimento": {
+        "type": "object",
+        "properties": {
+          "pessoa": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "telefone": {
+            "type": "string"
+          },
+          "parentesco": {
+            "type": "string"
+          },
+          "cpf": {
+            "type": "string"
+          },
+          "rg": {
+            "type": "string"
+          },
+          "observacoes": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DadosRequerimento": {
+        "type": "object",
+        "properties": {
+          "pessoas": {
+            "type": "object",
+            "properties": {
+              "aluno": {
+                "$ref": "#/components/schemas/PessoaRequerimento"
+              },
+              "pai": {
+                "$ref": "#/components/schemas/PessoaRequerimento"
+              },
+              "mae": {
+                "$ref": "#/components/schemas/PessoaRequerimento"
+              },
+              "academico": {
+                "$ref": "#/components/schemas/PessoaRequerimento"
+              },
+              "financeiro": {
+                "$ref": "#/components/schemas/PessoaRequerimento"
+              }
+            },
+            "additionalProperties": false
+          },
+          "campos": {
+            "type": "object",
+            "additionalProperties": {
+              "anyOf": [
+                {
+                  "type": [
+                    "string",
+                    "null"
+                  ]
+                },
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              ]
+            }
+          },
+          "responsavel_academico": {
+            "type": "string"
+          },
+          "responsavel_financeiro": {
+            "type": "string"
+          },
+          "retiradas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContatoRequerimento"
+            }
+          },
+          "contatos_emergencia": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContatoRequerimento"
+            }
+          },
+          "declaracao": {
+            "type": "boolean"
+          },
+          "declaracao_nome": {
+            "type": "string"
+          },
+          "declaracao_versao": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ArquivoRequerimento": {
+        "type": "object",
+        "properties": {
+          "idarquivo": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,17}$"
+          },
+          "campo": {
+            "type": "string"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "tamanho": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "disponivel": {
+            "type": "boolean"
+          },
+          "rota": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "idarquivo",
+          "campo",
+          "nome",
+          "mime",
+          "tamanho",
+          "disponivel",
+          "rota"
+        ],
+        "additionalProperties": false
+      },
+      "Requerimento": {
+        "type": "object",
+        "properties": {
+          "idrequerimento": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,17}$"
+          },
+          "codcoligada": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,17}$"
+          },
+          "protocolo": {
+            "type": "string"
+          },
+          "nome_aluno": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "pendente",
+              "aprovado",
+              "rejeitado"
+            ]
+          },
+          "versao": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,17}$"
+          },
+          "idaluno": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "motivo": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "criado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "atualizado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "conferido_em": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "origem": {
+            "const": "formulario_publico"
+          },
+          "fonte_dados": {
+            "enum": [
+              "recebidos",
+              "conferidos"
+            ]
+          },
+          "dados_recebidos": {
+            "$ref": "#/components/schemas/DadosRequerimento"
+          },
+          "dados": {
+            "$ref": "#/components/schemas/DadosRequerimento"
+          },
+          "resultado": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "description": "Referências de aluno, RA e pessoas após aprovação; sem dados de conta WordPress."
+          },
+          "declaracao_texto": {
+            "type": "string"
+          },
+          "privacidade_texto": {
+            "type": "string"
+          },
+          "arquivos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ArquivoRequerimento"
+            }
+          }
+        },
+        "required": [
+          "idrequerimento",
+          "codcoligada",
+          "protocolo",
+          "status",
+          "versao",
+          "origem",
+          "fonte_dados",
+          "dados_recebidos",
+          "dados",
+          "arquivos"
+        ],
+        "additionalProperties": false
+      },
+      "ColecaoRequerimentos": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          },
+          "gerado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "codcoligada": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,17}$"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Requerimento"
+            }
+          },
+          "next_cursor": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          }
+        },
+        "required": [
+          "schema_version",
+          "gerado_em",
+          "codcoligada",
+          "items",
+          "next_cursor",
+          "limit"
+        ],
+        "additionalProperties": false
+      },
+      "DetalheRequerimento": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          },
+          "gerado_em": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "item": {
+            "$ref": "#/components/schemas/Requerimento"
+          }
+        },
+        "required": [
+          "schema_version",
+          "gerado_em",
+          "item"
+        ],
+        "additionalProperties": false
+      },
+      "CatalogoRequerimentos": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          },
+          "codcoligada": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,17}$"
+          },
+          "pessoas": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "campos_pessoa": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "campos": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "estados_civis": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "situacoes": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "pendente",
+                "aprovado",
+                "rejeitado"
+              ]
+            }
+          }
+        },
+        "required": [
+          "schema_version",
+          "codcoligada",
+          "pessoas",
+          "campos_pessoa",
+          "campos",
+          "estados_civis",
+          "situacoes"
+        ]
+      },
+      "ConteudoArquivoRequerimento": {
+        "type": "object",
+        "properties": {
+          "schema_version": {
+            "const": "1.0"
+          },
+          "idrequerimento": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,17}$"
+          },
+          "idarquivo": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,17}$"
+          },
+          "nome": {
+            "type": "string"
+          },
+          "mime": {
+            "type": "string"
+          },
+          "tamanho": {
+            "type": "integer"
+          },
+          "codificacao": {
+            "const": "base64"
+          },
+          "conteudo": {
+            "type": "string",
+            "contentEncoding": "base64"
+          }
+        },
+        "required": [
+          "schema_version",
+          "idrequerimento",
+          "idarquivo",
+          "nome",
+          "mime",
+          "tamanho",
+          "codificacao",
+          "conteudo"
+        ],
+        "additionalProperties": false
       }
     }
   }

@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.22
+Stable tag: 0.19.23
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.23 =
+* API de leitura dos requerimentos do formulário nativo: coleção paginada, consulta individual, catálogo de campos e anexos protegidos.
+* Consultas por situação, protocolo, aluno e intervalo de atualização. Respostas separam dados originais e conferidos, mantendo referências do cadastro aprovado.
+* Novo perfil Integração: leitura de requerimentos com coligada autorizada explicitamente pelo administrador na edição do usuário. Autenticação por Senha de aplicativo do WordPress; revogação da coligada ou da senha interrompe o acesso.
+* Configurações → Integração API mostra o endereço da consulta e orientações de conexão. JSON não revela credenciais, chaves de envio ou tokens de arquivos.
+* Novos requerimentos gravam horários técnicos explicitamente em UTC para sincronização, sem recalcular dados antigos. Schema 44 mantido.
 
 = 0.19.22 =
 * Editar meus dados move CPF para Documentos e informações pessoais e organiza o início da seção em CPF, RG, Nacionalidade, UF de nascimento, Local de nascimento e Raça/Etnia.

@@ -1,4 +1,4 @@
-> As regras da seção 0.7.0 ao final substituem os exemplos anteriores de valor manual, matrícula somente acadêmica e geração automática na rematrícula.
+> A API de leitura de requerimentos da versão 0.19.23 está documentada em [API-REQUERIMENTOS.md](API-REQUERIMENTOS.md), com autenticação, coligada, filtros, paginação e anexos. As regras da seção 0.7.0 ao final substituem os exemplos anteriores de valor manual, matrícula somente acadêmica e geração automática na rematrícula.
 
 # API — versão 0.5.0
 

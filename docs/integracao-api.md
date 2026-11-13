@@ -1,4 +1,4 @@
-# APIs de integração — versão 0.10.0
+# APIs de integração — versão 0.19.23
 
 Base: `https://SEU-DOMINIO/wp-json/erp-educacional/v1/integracao`.
 
@@ -8,7 +8,11 @@ Estas APIs permitem que outro sistema leia e grave dados no ERP. GET entrega JSO
 
 Use HTTPS e uma **Senha de Aplicativo do WordPress**, gerada no perfil do administrador em Usuários → Perfil → Senhas de aplicativo. Envie `Authorization: Basic BASE64(usuario:senha_de_aplicativo)`. Não use a senha pessoal nem a data de nascimento. Sessões no próprio WordPress também podem usar cookie e `X-WP-Nonce`.
 
-Nesta versão, todas as rotas `/integracao` exigem administrador WordPress, mantendo a regra de edição exclusiva do administrador e protegendo os dados completos de outros alunos. Usuários aluno/responsável/secretaria não têm acesso global às rotas. Senhas, hashes e tokens de documentos privados não são retornados.
+As rotas de gestão `/integracao` exigem administrador WordPress. As quatro consultas GET de `/integracao/requerimentos` também aceitam o perfil dedicado **Integração: leitura de requerimentos**, com uma coligada autorizada explicitamente pelo administrador na edição do usuário. Esse leitor não ganha acesso às gravações de integração ou à conferência administrativa. Usuários aluno/responsável/secretaria não têm acesso global às rotas. Senhas, hashes e tokens de documentos privados não são retornados.
+
+## Leitura dos requerimentos nativos
+
+GET `/requerimentos` lista os requerimentos do formulário do ERP; GET `/requerimentos/{idrequerimento}` retorna o detalhe; GET `/requerimentos/campos` descreve as respostas; GET `/requerimentos/{idrequerimento}/arquivos/{idarquivo}` entrega um anexo autorizado em base64. Há filtros de situação, protocolo, aluno e janela de atualização UTC, com cursor por ID e limite de 50 itens. Os dados recebidos permanecem separados dos dados conferidos. Veja [API-REQUERIMENTOS.md](API-REQUERIMENTOS.md) para configurar o usuário, gerar a Senha de aplicativo e sincronizar sem perder aprovações de requerimentos antigos.
 
 POST/PATCH exigem `Content-Type: application/json` e `Idempotency-Key` (16–100 caracteres: letras, números, `_`, `-`). Gere uma chave nova por operação e reutilize a mesma chave e corpo ao repetir após falha de conexão. Alterações com PATCH exigem a `versao` obtida na consulta mais recente. Transferências/resultados/cancelamentos também devem enviar versão. Operações ficam auditadas com usuário, data/hora e mudanças.
 

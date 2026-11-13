@@ -1,8 +1,8 @@
 # Recuperar o ERP após restaurar um backup
 
-O backup pode conter uma versão anterior do banco. O número **36** exibido em Banco de dados é a versão da estrutura; o plugin atual usa a estrutura **44**. Esse número é diferente da versão do plugin, **0.19.22**.
+O backup pode conter uma versão anterior do banco. O número **36** exibido em Banco de dados é a versão da estrutura; o plugin atual usa a estrutura **44**. Esse número é diferente da versão do plugin, **0.19.23**.
 
-1. Em **Plugins → ERP Educacional → Verificar atualizações**, consulte e instale a versão **0.19.22** ou posterior.
+1. Em **Plugins → ERP Educacional → Verificar atualizações**, consulte e instale a versão **0.19.23** ou posterior.
 2. Abra o painel WordPress como administrador. A nova versão faz uma tentativa de migração, mesmo se houver um erro de versão anterior salvo.
 3. Entre em **ERP Educacional → Configurações**. Se a atualização estiver pendente, a tela apresenta as versões do banco, o diagnóstico da última tentativa e **Verificar/aplicar migrações**. O mesmo recurso está disponível em Configurações no portal.
 4. Clique em **Verificar/aplicar migrações**. Ao concluir, o banco passa a **44** e as configurações voltam a carregar.

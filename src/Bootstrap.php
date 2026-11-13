@@ -23,6 +23,7 @@ final class Bootstrap
         \EducacionalERP\Infrastructure\WordPress\SchoolIdentity::register();
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::register();
         $db=new Database($wpdb); $ops=new Operations($db); $access=new Access($db); $academic=new AcademicService($db,$ops);
+        (new \EducacionalERP\Infrastructure\WordPress\AdmissionReadAccess($db))->register();
         \EducacionalERP\Infrastructure\WordPress\AccountInvitations::register($db);
         \EducacionalERP\Infrastructure\WordPress\AdmissionNotifications::register($db);
         \EducacionalERP\Infrastructure\WordPress\UserAccessLog::register($db);
@@ -33,6 +34,7 @@ final class Bootstrap
         $controller=new Controller($db,$access,$academic,$catalog,new FinanceService($db,$ops),new ExportService($db),new RenewalService($db,$ops,$academic,$access),new StudentWorkflow($db,$ops,$catalog,$academic));
         add_action('rest_api_init',[$controller,'register']);
         $admissions=new \EducacionalERP\Presentation\Rest\AdmissionController($db,new \EducacionalERP\Application\PublicAdmissions($db,$catalog));add_action('rest_api_init',[$admissions,'register']);
+        $reader=new \EducacionalERP\Presentation\Rest\AdmissionReadController($db,new \EducacionalERP\Application\AdmissionReadService($db));add_action('rest_api_init',[$reader,'register']);
         \EducacionalERP\Presentation\Portal\Admissions::register();
         $chat=new \EducacionalERP\Presentation\Rest\ChatController(new \EducacionalERP\Application\ChatService($db));add_action('rest_api_init',[$chat,'register']);
         add_filter('get_avatar_data', [new \EducacionalERP\Infrastructure\WordPress\Avatar($db),'filter'],10,2);
