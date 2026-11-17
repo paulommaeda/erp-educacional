@@ -1,5 +1,14 @@
 # Validação
 
+## 0.19.24
+
+- `tests/materials-sync.php`: 39 verificações com SQLite e receptor de contrato simulado a partir de API-ALUNOS.md. Exercitados configuração por coligada/período, senha cifrada, URLs REST/subdiretório/rest_route, escopo, seleção das matrículas, todos os responsáveis vigentes, CPF pendente/inválido, RA e telefone com zeros e JSON com apenas os campos aceitos pelo K8.
+- O receptor simulado exige modo atualizar e booleano real validar_apenas. Validação não modifica sua lista; atualização conserva o ID por RA e substitui a lista completa de responsáveis. Conferidos lotes de 200 + 3 alunos sem dividir um RA, recusa de conferência desatualizada, chave reutilizada, erro do destino, timeout e ausência de reenvio automático da mesma tentativa incerta.
+- `tests/wordpress-materials-sync.php`: 27 verificações com WordPress 7.1.3/MariaDB 11.4.8 reais e todas as chamadas externas interceptadas. REST bloqueia anônimo/secretaria, protege configuração e histórico, envia Basic Auth por HTTPS sem redirecionamento e preserva o aviso de base externa recebido. Conferidos transporte de validação versus gravação, substituição total recusada, escopo por coligada, erro/timeout e bloqueio de migração pendente. Nenhum cadastro ERP foi modificado pelo envio nem houve e-mail externo.
+- Cinco suítes de serviço aprovadas: materiais, leitura de requerimentos, conexões de API, recursos administrativos e rotas do portal. Três suítes de interface aprovadas: materiais, leitura de requerimentos e conexões externas. A interface exige validar todos os lotes antes de liberar gravação, informa interrupção parcial e impede alterar campos/fechar durante a operação.
+- Chromium a 1440 e 390 px com scripts/CSS reais, dados fictícios e HTTP simulado. Capturas do diálogo inspecionadas; conferência, avisos e controles sem excesso horizontal. Sintaxe e pacote verificados.
+- Schema 44 mantido. Integração de envio manual para o contrato do K8 informado pelo usuário, sem uma nova API pública de consulta por CPF no ERP. Não foi realizada conexão autenticada com um K8 real, instalação no site do colégio ou envio externo de alunos. Destino, login e Senha de aplicação devem ser configurados pelo administrador.
+
 ## 0.19.23
 
 - `tests/admission-read-api.php`: 51 verificações com SQLite, requerimentos reais do serviço de recebimento e aprovação e arquivos simulados. Conferidos original versus conferido, referências ao aluno, responsáveis/respostas/listas, situação, protocolo, aluno, janela UTC inclusiva, cursor sem repetição e validação de filtros. A leitura não altera requerimentos, anexos, auditoria, fila ou contas.

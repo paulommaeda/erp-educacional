@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.23
+Stable tag: 0.19.24
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,14 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.24 =
+* Configurações → Integração API permite enviar alunos do ERP à API de importação já existente do K8 Produtos.
+* Conexão por coligada, com URL HTTPS, login administrativo do K8, Senha de aplicação cifrada e seleção do período letivo.
+* Envio de RA, nome, CPF opcional do aluno, turma e todos os responsáveis vigentes com nome, CPF e telefone, no formato JSON do K8.
+* Conferência mostra alunos sem turma apta e responsáveis sem CPF. CPF inválido ou múltiplas turmas incompatíveis impedem o preparo.
+* Validação sem gravação antes do envio pela interface, modo atualizar e lotes que mantêm todos os responsáveis do RA juntos. Consulta por CPF permanece no sistema de materiais.
+* Transporte sem redirecionamentos, controle de tentativas, proteção contra conferência desatualizada e histórico de resultados sem credenciais. Schema 44 mantido.
 
 = 0.19.23 =
 * API de leitura dos requerimentos do formulário nativo: coleção paginada, consulta individual, catálogo de campos e anexos protegidos.

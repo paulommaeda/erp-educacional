@@ -1,8 +1,12 @@
-# APIs de integração — versão 0.19.23
+# APIs de integração — versão 0.19.24
 
 Base: `https://SEU-DOMINIO/wp-json/erp-educacional/v1/integracao`.
 
 Estas APIs permitem que outro sistema leia e grave dados no ERP. GET entrega JSON ao consumidor. POST/PATCH recebe JSON. Esta versão não envia webhooks automaticamente.
+
+## Envio de alunos ao K8 Produtos
+
+O ERP também envia alunos para a API de importação do sistema de materiais. Essa conexão é configurada em **Configurações → Integração API → Abrir envio ao K8**, com URL do receptor, login administrativo, Senha de aplicação e período letivo. O formato utiliza modo atualizar, validar_apenas booleano e a lista de alunos com RA, nome, CPF opcional, turma e todos os responsáveis. Veja [MATERIAIS-K8.md](MATERIAIS-K8.md) para conferir, validar e enviar. A consulta do responsável pelo CPF permanece no K8.
 
 ## Autenticação e permissões
 
