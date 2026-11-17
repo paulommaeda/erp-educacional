@@ -99,6 +99,11 @@ final class Controller
         $this->route('/educbank/processar','POST',fn()=>Access::isAdmin(),fn()=>$educbank->process(\EducacionalERP\Application\Coligadas::current(),3));
         $this->route('/educbank/fila/'.$id.'/reprocessar','POST',fn()=>Access::isAdmin(),fn($r)=>$educbank->retry((int)$r['id']));
         $external=new \EducacionalERP\Application\ExternalPeopleApi($this->db,$this->catalog);
+        $materials=new \EducacionalERP\Application\MaterialsSync($this->db);
+        $this->route('/materiais/configuracao','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Infrastructure\Materials\Settings::publicData($this->db));
+        $this->route('/materiais/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Infrastructure\Materials\Settings::save($this->db,$this->payload($r)));
+        $this->route('/materiais/conferencia','GET',fn()=>Access::isAdmin(),fn()=>$materials->preview());
+        $this->route('/materiais/enviar','POST',fn()=>Access::isAdmin(),fn($r)=>$materials->send($this->payload($r),$this->key($r)));
         $this->route('/api-pessoas/configuracao','GET',fn()=>Access::isAdmin(),fn()=>$external->settings());
         $this->route('/api-pessoas/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>$external->save($this->payload($r),$this->key($r)));
         $this->route('/api-pessoas/modelo-requerimento','POST',fn()=>Access::isAdmin(),fn($r)=>$external->applyAdmissionTemplate((string)($this->payload($r)['idconexao']??'principal'),$this->key($r)));

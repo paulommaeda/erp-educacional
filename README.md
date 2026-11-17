@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.23
+# ERP Educacional — 0.19.24
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.23.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.24.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 44**, acrescentando a fila de confirmações de requerimentos e mantendo os dados existentes. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -16,6 +16,12 @@ As turmas antigas ficam inicialmente sem plano, para não inventar preços. Cont
 Quando o backup contém anexos do chat sem mensagem válida na mesma coligada, os arquivos permanecem guardados com sua referência original. O administrador pode conferi-los em **ERP Educacional → Anexos preservados**. As mensagens e os anexos válidos continuam nas suas conversas; os arquivos pendentes são acessíveis somente ao administrador para conferência.
 
 Se uma movimentação aponta para uma matrícula ausente, a cópia integral do registro e a referência ao documento ficam em **ERP Educacional → Registros preservados**. A preservação é confirmada antes da retirada desse histórico da tabela operacional. Matrículas e movimentações válidas permanecem intactas. Outros vínculos inconsistentes são apresentados juntos em Configurações e precisam de conferência antes da conclusão.
+
+## Enviar alunos ao sistema de materiais (K8)
+
+Em **Configurações → Integração API → Abrir envio ao K8**, configure a URL de importação do sistema de materiais, o login administrativo do K8, sua Senha de aplicação e o período dos alunos. Confira os dados, valide sem gravar e envie. O ERP utiliza o contrato de importação já existente do K8, com RA, nome, CPF opcional do aluno, turma e todos os responsáveis vigentes por RA. A busca por CPF é feita no K8 após a importação.
+
+O envio utiliza o modo atualizar e mantém todos os responsáveis de um RA no mesmo lote. Há indicação de alunos sem turma apta, CPFs pendentes, progresso por lote e falhas sem confirmação. A conexão fica isolada por coligada. Veja [o guia de envio ao K8](docs/MATERIAIS-K8.md). Schema 44 mantido.
 
 ## Consultar requerimentos em outro sistema
 
