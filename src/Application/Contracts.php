@@ -37,7 +37,7 @@ final class Contracts
     public function update(int $id,array $data,string $key):array
     {
         Access::requireAdmin();
-        if(array_diff(array_keys($data),['versao','motivo','numero','data_contrato','termo','versao_termo','idmodelo','modelo_versao','valor_original_total','desconto_incondicional_total','quantidade_parcelas','primeiro_vencimento']))throw new RuleViolation('Campo de contrato inválido.');
+        if(array_diff(array_keys($data),['versao','motivo','numero','data_contrato','termo','versao_termo','idmodelo','modelo_versao','valor_original_total','desconto_incondicional_total','mensalidade_base_total','desconto_base_total','quantidade_parcelas','primeiro_vencimento']))throw new RuleViolation('Campo de contrato inválido.');
         $reason=Input::text($data['motivo']??null,2000);$version=Input::id($data['versao']??null);
         return $this->db->atomic(fn()=>$this->ops->run($key,'editar_contrato',['idcontrato'=>$id]+$data,function()use($id,$data,$version,$reason,$key){
             $c=$this->contract($id,true);if((int)$c['versao']!==$version)throw new RuleViolation('Contrato alterado. Reabra a edição.');
@@ -45,17 +45,25 @@ final class Contracts
             foreach(['numero'=>100,'versao_termo'=>40] as $field=>$max)if(isset($data[$field]))$fields[$field]=Input::text($data[$field],$max);
             if(isset($data['data_contrato']))$fields['data_contrato']=Input::date($data['data_contrato']);
             if(isset($fields['numero'])&&$this->db->row('SELECT idcontrato FROM '.$this->db->table('contratos').' WHERE codcoligada=%d AND numero=%s AND idcontrato<>%d',[$c['codcoligada'],$fields['numero'],$id]))throw new RuleViolation('Número de contrato já utilizado.');
-            $financial=['valor_original_total','desconto_incondicional_total','quantidade_parcelas','primeiro_vencimento'];$changed=false;
+            $newPricing=$c['mensalidade_base_total']!==null;
+            if($newPricing){foreach(['valor_original_total','desconto_incondicional_total'] as $derived)if(isset($data[$derived])&&Money::cents($data[$derived])!==Money::cents($c[$derived]))throw new RuleViolation('Edite a anuidade-base e o desconto manual. Os totais com bolsas são calculados pelo sistema.');}
+            elseif(isset($data['mensalidade_base_total'])||isset($data['desconto_base_total']))throw new RuleViolation('Este contrato mantém a regra de valores anterior.');
+            $financial=[...($newPricing?['mensalidade_base_total','desconto_base_total']:['valor_original_total','desconto_incondicional_total']),'quantidade_parcelas','primeiro_vencimento'];$changed=false;
             foreach($financial as $field)if(isset($data[$field])&&(string)$data[$field]!== (string)$c[$field])$changed=true;
             if($changed){
                 if((int)$c['parcelas_geradas']||$this->db->row('SELECT idparcela FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d LIMIT 1 FOR UPDATE',[$id]))throw new RuleViolation('As parcelas já foram geradas. Ajuste os lançamentos na Gestão financeira.');
-                $original=Money::positive($data['valor_original_total']??$c['valor_original_total']);$discount=Money::cents($data['desconto_incondicional_total']??$c['desconto_incondicional_total']);$count=Input::id($data['quantidade_parcelas']??$c['quantidade_parcelas']);
+                $baseField=$newPricing?'mensalidade_base_total':'valor_original_total';$manualField=$newPricing?'desconto_base_total':'desconto_incondicional_total';$original=Money::positive($data[$baseField]??$c[$baseField]);$discount=Money::cents($data[$manualField]??$c[$manualField]);$count=Input::id($data['quantidade_parcelas']??$c['quantidade_parcelas']);
                 if($discount<0||$discount>=$original)throw new RuleViolation('Bolsa deve ser menor que o valor original e não pode ser negativa.');Money::split($original-$discount,$count);
                 $fields+=['valor_original_total'=>Money::format($original),'desconto_incondicional_total'=>Money::format($discount),'valor_liquido_total'=>Money::format($original-$discount),'quantidade_parcelas'=>$count,'primeiro_vencimento'=>Input::date($data['primeiro_vencimento']??$c['primeiro_vencimento'])];
+                if($newPricing){
+                    foreach($this->db->rows('SELECT regras_json FROM '.$this->db->table('contrato_bolsas').' WHERE idcontrato=%d AND ativo=1',[$id]) as $grant)foreach(json_decode($grant['regras_json'],true,64,JSON_THROW_ON_ERROR) as $version)if(!empty($version['regra']['habilitado'])&&(int)$version['regra']['parcela_fim']>$count)throw new RuleViolation('A quantidade de parcelas é menor que a faixa de uma bolsa. Confira as concessões antes de alterar.');
+                    $fields+=['mensalidade_base_total'=>Money::format($original),'desconto_base_total'=>Money::format($discount)];
+                }
             }
             if(isset($data['termo'])&&$data['termo']!==$c['termo_snapshot']&&($fields['versao_termo']??$c['versao_termo'])===$c['versao_termo']&&empty($data['idmodelo']))throw new RuleViolation('Informe uma nova versão do termo ao alterar o texto.');
             if(!$fields&&!isset($data['termo'])&&empty($data['idmodelo']))throw new RuleViolation('Informe os campos que deseja editar.');
             if($fields)$this->db->update('contratos',$id,$fields);
+            if($changed&&$newPricing)(new Scholarships($this->db))->totalsInside($id);
             if((array_key_exists('termo',$data)&&$data['termo']!==$c['termo_snapshot'])||!empty($data['idmodelo']))(new ContractTemplates($this->db,$this->ops))->applyInside($id,$data);
             $after=$this->db->get('contratos',$id);$this->db->audit('contratos',$id,'editar',$c,['dados'=>$after,'motivo'=>$reason],$key);return $after;
         }));

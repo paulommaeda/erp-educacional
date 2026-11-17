@@ -40,7 +40,7 @@ final class EducbankPayload
         $original=Money::cents($title['valor_original']);$discount=Money::cents($title['desconto_incondicional']);$net=Money::cents($title['valor_liquido']);
         if($original-$discount!==$net||$discount<0||$net<=0)throw new RuleViolation('Valores do lançamento inconsistentes ou sem valor a cobrar.');
         if(Money::cents($title['valor_baixa'])>0||Money::cents($title['desconto_condicional_aplicado'])>0||Money::cents($title['juros_aplicados'])>0||Money::cents($title['multa_aplicada'])>0)throw new RuleViolation('Lançamento com baixa ou encargos aplicados exige conciliação antes do envio ao Educbank.');
-        $conditional=min($net,Money::cents(Coligadas::within((int)$c['m']['codcoligada'],fn()=>get_option(Coligadas::option('ederp_pontualidade'),'0.00'))));
+        $conditional=min($net,ContractDiscounts::punctuality($title));
         $detail=$this->discountText($title);
         $payload=['externalId'=>(string)$title['idlancamento'],'companyCnpj'=>$c['cnpj'],'payerDocument'=>$this->document($rf),'payer'=>['name'=>$rf['nome'],'cpfCnpj'=>$this->document($rf),'address'=>$this->address($rf),'phone'=>$rf['telefone'],'email'=>$rf['email']],
             'dueDate'=>Input::date($title['vencimento']),'referenceDate'=>substr($parcel['vencimento_original'],0,7),'closeInvoice'=>true,

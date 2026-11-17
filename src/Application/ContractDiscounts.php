@@ -6,11 +6,15 @@ use EducacionalERP\Infrastructure\WordPress\Access;
 final class ContractDiscounts
 {
     public function __construct(private Store $db,private Operations $ops){}
+    public static function punctuality(array $title):int
+    {
+        return Money::cents($title['pontualidade_snapshot']??Coligadas::within((int)($title['codcoligada']??Coligadas::current()),fn()=>get_option(Coligadas::option('ederp_pontualidade'),'0.00')));
+    }
     public static function conditional(array $title,?string $day=null):int
     {
         if(in_array($title['status'],['cancelado','quitado'],true)||($day??Input::today())>$title['vencimento'])return 0;
         if(Money::cents($title['desconto_condicional_aplicado']??'0.00')>0)return 0;
-        return min(Money::cents(Coligadas::within((int)($title['codcoligada']??Coligadas::current()),fn()=>get_option(Coligadas::option('ederp_pontualidade'),'0.00'))),max(0,Money::cents($title['valor_liquido'])-Money::cents($title['valor_baixa'])));
+        return min(self::punctuality($title),max(0,Money::cents($title['valor_liquido'])-Money::cents($title['valor_baixa'])));
     }
     public function settings():array{Access::requireAdmin();return ['valor'=>get_option(Coligadas::option('ederp_pontualidade'),'0.00')];}
     public function saveSettings(array $data,string $key):array
@@ -56,6 +60,10 @@ final class ContractDiscounts
     {
         if(!empty($d['regras_json'])){$rules=json_decode($d['regras_json'],true);if(!is_array($rules)||!$rules)throw new RuleViolation('Histórico de regras do desconto inválido.');return $rules;}
         return [['partir'=>1,'regra'=>array_intersect_key($d,array_flip(['nome','descricao','tipo','habilitado','idaluno_indicado','valor','parcela_inicio','parcela_fim']))]];
+    }
+    public function plannedAmount(array $contract,int $number):int
+    {
+        $sum=0;foreach($this->db->rows('SELECT * FROM '.$this->db->table('contrato_descontos').' WHERE idcontrato=%d AND ativo=1 ORDER BY iddesconto',[(int)$contract['idcontrato']]) as $row){$rule=null;foreach($this->rules($row) as $v)if((int)$v['partir']<=$number)$rule=$v['regra'];if($rule&&!empty($rule['habilitado'])&&$number>=(int)$rule['parcela_inicio']&&$number<=(int)$rule['parcela_fim']&&$this->eligible($rule,$contract))$sum+=Money::cents($rule['valor']);}return $sum;
     }
     private function indexTargets(array $d):void
     {
@@ -110,11 +118,12 @@ final class ContractDiscounts
             $this->changeTitle($title,$wanted-$previous,$key,'recalcular_desconto');$this->db->audit('desconto_lancamentos',(int)$map['idaplicacao'],'recalcular',$before,$this->db->get('desconto_lancamentos',(int)$map['idaplicacao']),$key);$count++;
         }
         if($phase>=0&&$d['tipo']==='indicacao')$this->db->update('contrato_descontos',(int)$d['iddesconto'],['indicacao_ativa'=>$eligible?1:0,'ultima_verificacao_em'=>gmdate('Y-m-d H:i:s')]);
+        if(!$titles)(new Scholarships($this->db))->totalsInside((int)$c['idcontrato']);
         return $count;
     }
     private function changeTitle(array $title,int $delta,string $key,string $action):void
     {
-        $discount=Money::cents($title['desconto_incondicional'])+$delta;$net=Money::cents($title['valor_original'])-$discount;$balance=$net-Money::cents($title['desconto_condicional_aplicado'])+Money::cents($title['juros_aplicados'])+Money::cents($title['multa_aplicada'])-Money::cents($title['valor_baixa']);if($discount<0||$net<0||$balance<0)throw new RuleViolation('A soma dos descontos ultrapassa o valor da parcela.');$id=(int)$title['idlancamento'];$this->db->update('lancamentos',$id,['desconto_incondicional'=>Money::format($discount),'valor_liquido'=>Money::format($net),'saldo_aberto'=>Money::format($balance),'status'=>$balance===0?'quitado':'aberto']);$this->db->audit('lancamentos',$id,$action,$title,$this->db->get('lancamentos',$id),$key);
+        $discount=Money::cents($title['desconto_incondicional'])+$delta;$net=Money::cents($title['valor_original'])-$discount;$balance=$net-Money::cents($title['desconto_condicional_aplicado'])+Money::cents($title['juros_aplicados'])+Money::cents($title['multa_aplicada'])-Money::cents($title['valor_baixa']);if($discount<0||$net<0||$balance<0)throw new RuleViolation('A soma dos descontos ultrapassa o valor da parcela.');$id=(int)$title['idlancamento'];$this->db->update('lancamentos',$id,['desconto_incondicional'=>Money::format($discount),'valor_liquido'=>Money::format($net),'saldo_aberto'=>Money::format($balance),'status'=>$balance===0?'quitado':'aberto']);(new Scholarships($this->db))->afterDiscountInside($this->db->get('lancamentos',$id),$key);$this->db->audit('lancamentos',$id,$action,$title,$this->db->get('lancamentos',$id),$key);
     }
     public function remove(int $id,array $data,string $key):array
     {
@@ -128,7 +137,7 @@ final class ContractDiscounts
     /** Only names/descriptions and actual applied values. Never expose the referred student's identity. */
     public function breakdown(array $title,?array $applied=null):array
     {
-        $rows=$applied??$this->db->rows('SELECT COALESCE(x.nome_snapshot,d.nome) AS nome,CASE WHEN x.nome_snapshot IS NOT NULL THEN x.descricao_snapshot ELSE d.descricao END AS descricao,COALESCE(x.tipo_snapshot,d.tipo) AS tipo,x.valor FROM '.$this->db->table('desconto_lancamentos').' x JOIN '.$this->db->table('contrato_descontos').' d ON d.iddesconto=x.iddesconto WHERE x.idlancamento=%d AND x.revertido_em IS NULL ORDER BY x.idaplicacao',[(int)$title['idlancamento']]);$sum=0;foreach($rows as $r)$sum+=Money::cents($r['valor']);$total=Money::cents($title['desconto_incondicional']);
+        $rows=$applied??$this->db->rows('SELECT COALESCE(x.nome_snapshot,d.nome) AS nome,CASE WHEN x.nome_snapshot IS NOT NULL THEN x.descricao_snapshot ELSE d.descricao END AS descricao,COALESCE(x.tipo_snapshot,d.tipo) AS tipo,x.valor FROM '.$this->db->table('desconto_lancamentos').' x JOIN '.$this->db->table('contrato_descontos').' d ON d.iddesconto=x.iddesconto WHERE x.idlancamento=%d AND x.revertido_em IS NULL ORDER BY x.idaplicacao',[(int)$title['idlancamento']]);foreach(json_decode($title['bolsas_json']??'[]',true)??[] as $grant)$rows[]=array_intersect_key($grant,array_flip(['nome','descricao','tipo','valor']));$sum=0;foreach($rows as $r)$sum+=Money::cents($r['valor']);$total=Money::cents($title['desconto_incondicional']);
         if($sum>$total)return $total>0?[['nome'=>'Desconto incondicional ajustado','descricao'=>null,'tipo'=>'comum','valor'=>Money::format($total)]]:[];
         if($sum<$total)$rows[]=['nome'=>'Desconto incondicional','descricao'=>null,'tipo'=>'comum','valor'=>Money::format($total-$sum)];return $rows;
     }

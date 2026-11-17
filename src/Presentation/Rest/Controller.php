@@ -148,6 +148,14 @@ final class Controller
         $discounts=new \EducacionalERP\Application\ContractDiscounts($this->db,new Operations($this->db));
         $this->route('/configuracoes/pontualidade','GET',fn()=>Access::isAdmin(),fn()=>$discounts->settings());
         $this->route('/configuracoes/pontualidade','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->saveSettings($this->payload($r),$this->key($r)));
+        $scholarships=new \EducacionalERP\Application\Scholarships($this->db);$scholarshipCatalog=new \EducacionalERP\Application\ScholarshipCatalog($this->db);
+        $this->route('/bolsas','GET',fn()=>Access::isAdmin(),fn()=>$scholarshipCatalog->listing());
+        $this->route('/bolsas','POST',fn()=>Access::isAdmin(),fn($r)=>$scholarshipCatalog->save($this->payload($r),$this->key($r)));
+        $this->route('/integracao/bolsas','GET',fn()=>Access::isAdmin(),fn()=>$scholarshipCatalog->listing());
+        $this->route('/contratos/'.$id.'/bolsas','GET',fn()=>Access::isAdmin(),fn($r)=>$scholarships->listing((int)$r['id']));
+        $this->route('/contratos/'.$id.'/bolsas','POST',fn()=>Access::isAdmin(),fn($r)=>$scholarships->add((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/bolsas-concedidas/'.$id.'/editar','POST',fn()=>Access::isAdmin(),fn($r)=>$scholarships->change((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/bolsas-concedidas/'.$id.'/retirar','POST',fn()=>Access::isAdmin(),fn($r)=>$scholarships->change((int)$r['id'],$this->payload($r),$this->key($r),true));
         $this->route('/alunos/'.$id.'/contratos','GET',fn()=>Access::isAdmin(),fn($r)=>$discounts->contracts((int)$r['id']));
         $this->route('/contratos/'.$id.'/descontos','GET',fn()=>Access::isAdmin(),fn($r)=>$discounts->list((int)$r['id']));
         $this->route('/contratos/'.$id.'/descontos','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->add((int)$r['id'],$this->payload($r),$this->key($r)));
@@ -473,7 +481,7 @@ final class Controller
         $l=$this->db->table('lancamentos'); $p=$this->db->table('parcelas'); $c=$this->db->table('contratos'); $m=$this->db->table('matriculas');
         $where=$period?' AND m.codperiodo=%d':''; $args=$period?[$student,$period]:[$student];
         if(!current_user_can('erp_consultar_financeiro')) { $where.=' AND l.codpessoa_rf_atual=%d'; $args[]=$this->access->person()??0; }
-        $rows=array_map([\EducacionalERP\Domain\FinancialStatus::class,'present'], $this->db->rows("SELECT l.versao,l.codcoligada,l.valor_cancelado,l.cancelado_em,l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND l.excluido_em IS NULL$where ORDER BY l.vencimento,l.idlancamento",$args));
+        $rows=array_map([\EducacionalERP\Domain\FinancialStatus::class,'present'], $this->db->rows("SELECT l.versao,l.codcoligada,l.pontualidade_snapshot,l.bolsa_aplicada,l.bolsas_json,l.valor_cancelado,l.cancelado_em,l.idlancamento,c.numero AS contrato,p.numero AS parcela,l.vencimento,l.valor_original,l.desconto_incondicional,l.valor_liquido,l.desconto_condicional_aplicado,l.juros_aplicados,l.multa_aplicada,l.valor_baixa,l.saldo_aberto,l.status FROM $l l JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND l.excluido_em IS NULL$where ORDER BY l.vencimento,l.idlancamento",$args));
         $rows=(new \EducacionalERP\Application\ContractDiscounts($this->db,new Operations($this->db)))->decorate($rows);
         return (new \EducacionalERP\Application\EducbankInvoiceStatus($this->db))->decorate($rows,current_user_can('erp_consultar_financeiro'));
     }

@@ -1,11 +1,11 @@
-# ERP Educacional — 0.19.24
+# ERP Educacional — 0.19.25
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.24.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 44**, acrescentando a fila de confirmações de requerimentos e mantendo os dados existentes. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.25.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 45**, acrescentando o cadastro e as concessões de bolsas, sem recalcular valores financeiros anteriores. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -17,17 +17,25 @@ Quando o backup contém anexos do chat sem mensagem válida na mesma coligada, o
 
 Se uma movimentação aponta para uma matrícula ausente, a cópia integral do registro e a referência ao documento ficam em **ERP Educacional → Registros preservados**. A preservação é confirmada antes da retirada desse histórico da tabela operacional. Matrículas e movimentações válidas permanecem intactas. Outros vínculos inconsistentes são apresentados juntos em Configurações e precisam de conferência antes da conclusão.
 
+## Bolsas na matrícula e nos contratos
+
+Em **Configurações → Bolsas**, o administrador encontra **Bolsa Integral** e **Bolsa 50%** e pode cadastrar outras em percentual ou valor fixo. Na matrícula, selecione várias bolsas e a faixa de parcelas. Percentuais somam sobre a mesma base: 50% + 10% = 60%.
+
+Para novos contratos, o plano contém a anuidade-base e o gerador acrescenta a pontualidade configurada por parcela. Com base de R$ 1.000 e pontualidade de R$ 103, a bolsa de 50% gera **R$ 603**, com **R$ 500 em dia**; 60% gera **R$ 503 / R$ 400**. Integral zera a mensalidade e o acréscimo, sem baixa fictícia.
+
+Na ficha do aluno → **Financeiro → Bolsas e descontos dos contratos → Bolsas cadastradas**, aplique, suspenda ou retire benefícios a partir da parcela escolhida. Parcelas, lançamentos e totais são recalculados juntos, preservando pagamentos, regras anteriores e identificadores das cobranças. Editar o catálogo vale para novas concessões. A migração não altera valores em lote; uma concessão explícita em contrato antigo adota a nova composição somente nas parcelas elegíveis da faixa. Veja [o guia de bolsas](docs/BOLSAS.md).
+
 ## Enviar alunos ao sistema de materiais (K8)
 
 Em **Configurações → Integração API → Abrir envio ao K8**, configure a URL de importação do sistema de materiais, o login administrativo do K8, sua Senha de aplicação e o período dos alunos. Confira os dados, valide sem gravar e envie. O ERP utiliza o contrato de importação já existente do K8, com RA, nome, CPF opcional do aluno, turma e todos os responsáveis vigentes por RA. A busca por CPF é feita no K8 após a importação.
 
-O envio utiliza o modo atualizar e mantém todos os responsáveis de um RA no mesmo lote. Há indicação de alunos sem turma apta, CPFs pendentes, progresso por lote e falhas sem confirmação. A conexão fica isolada por coligada. Veja [o guia de envio ao K8](docs/MATERIAIS-K8.md). Schema 44 mantido.
+O envio utiliza o modo atualizar e mantém todos os responsáveis de um RA no mesmo lote. Há indicação de alunos sem turma apta, CPFs pendentes, progresso por lote e falhas sem confirmação. A conexão fica isolada por coligada. Veja [o guia de envio ao K8](docs/MATERIAIS-K8.md).
 
 ## Consultar requerimentos em outro sistema
 
 A API de leitura entrega os requerimentos do formulário nativo, com aluno, responsáveis, respostas, dados originais/conferidos, situação e anexos protegidos. Em **Configurações → Integração API**, copie o endereço de consulta. Crie no WordPress um usuário com o perfil **Integração: leitura de requerimentos**, autorize a coligada na edição da conta e gere uma **Senha de aplicativo**.
 
-As consultas ficam em **GET /wp-json/erp-educacional/v1/integracao/requerimentos**, com detalhe por ID, catálogo de campos e leitura de anexos. Há paginação e filtros por situação, protocolo, aluno e intervalo de atualização. O leitor não grava dados e só consulta a coligada autorizada. Veja [o guia da API de requerimentos](docs/API-REQUERIMENTOS.md) e a [especificação OpenAPI](docs/openapi.json). Schema 44 mantido.
+As consultas ficam em **GET /wp-json/erp-educacional/v1/integracao/requerimentos**, com detalhe por ID, catálogo de campos e leitura de anexos. Há paginação e filtros por situação, protocolo, aluno e intervalo de atualização. O leitor não grava dados e só consulta a coligada autorizada. Veja [o guia da API de requerimentos](docs/API-REQUERIMENTOS.md) e a [especificação OpenAPI](docs/openapi.json).
 
 ## Editar meus dados
 

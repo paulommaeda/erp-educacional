@@ -12,7 +12,7 @@ final class FinancialStatus
     public static function present(array $title):array
     {
         $available=\EducacionalERP\Application\ContractDiscounts::conditional($title);$applied=Money::cents($title['desconto_condicional_aplicado']??'0.00');
-        $configured=Money::cents(\EducacionalERP\Application\Coligadas::within((int)($title['codcoligada']??\EducacionalERP\Application\Coligadas::current()),fn()=>get_option(\EducacionalERP\Application\Coligadas::option('ederp_pontualidade'),'0.00')));
+        $configured=\EducacionalERP\Application\ContractDiscounts::punctuality($title);
         $title['desconto_condicional_previsto']=Money::format(min(max(0,$configured),max(0,Money::cents($title['valor_liquido']))));
         $title['desconto_condicional_disponivel']=Money::format($available);
         $title['valor_liquido_contratual']=$title['valor_liquido'];

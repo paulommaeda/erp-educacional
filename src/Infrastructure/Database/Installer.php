@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '44';
+    public const VERSION = '45';
     public function __construct(private Database $db) {}
     public function install(): void
     {
@@ -132,6 +132,8 @@ final class Installer
             }
             if((int)get_option('ederp_schema_version',0)<29)(new \EducacionalERP\Application\AdditionalFields($this->db))->ensureStudentSections();
             if((int)get_option('ederp_schema_version',0)<36)\EducacionalERP\Domain\AdmissionForm::seed($this->db);
+            $stage = 'cadastro das bolsas padrão';
+            (new \EducacionalERP\Application\ScholarshipCatalog($this->db))->seedAll();
             $stage = 'confirmação da versão do banco';
             update_option('ederp_schema_version', self::VERSION, false);
             if(get_option('ederp_schema_version')!==self::VERSION)throw new \RuntimeException('Não foi possível registrar a versão do banco.');

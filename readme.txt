@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.24
+Stable tag: 0.19.25
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,15 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.25 =
+* Cadastro de bolsas por coligada com Integral e 50% padrão e outras bolsas em percentual ou valor fixo por parcela.
+* Seleção de várias bolsas e faixas durante a matrícula; percentuais somados sobre a mesma mensalidade-base.
+* Novos contratos acrescentam a pontualidade à base: base 1000, bolsa 50% e pontualidade 103 geram parcela 603 e pagamento em dia de 500.
+* Integral isenta também a pontualidade, gerando zero sem baixa fictícia e liberando a situação acadêmica pela primeira parcela isenta.
+* Aplicar, suspender ou retirar bolsas recalcula parcelas, lançamentos e totais juntos, preservando pagamentos, histórico e identificadores das cobranças.
+* Regras concedidas e pontualidade ficam guardadas; editar o catálogo não altera concessões anteriores. Educbank atualiza faturas existentes ou cancela as zeradas sem pagamento.
+* Schema 45 acrescenta cadastros e campos sem recalcular contratos anteriores; migração 44 → 45 e cálculos validados em WordPress/MariaDB locais.
 
 = 0.19.24 =
 * Configurações → Integração API permite enviar alunos do ERP à API de importação já existente do K8 Produtos.

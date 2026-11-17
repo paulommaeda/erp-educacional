@@ -1,0 +1,15 @@
+<?php
+declare(strict_types=1);
+function seedScholarships(\EducacionalERP\Domain\Store $db):array
+{
+    $period=$db->insert('periodos_letivos',['codigo'=>'BOLSA-2027','descricao'=>'Bolsas de teste','data_inicio'=>'2027-01-01','data_fim'=>'2027-12-31']);$plan=$db->insert('planos_pagamento',['codperiodo'=>$period,'codigo'=>'BOLSA-BASE','nome'=>'Mensalidade-base mil','valor_anuidade'=>'12000.00']);$course=$db->insert('cursos',['codigo'=>'BOLSA-EF','nome'=>'Fundamental']);$shift=$db->insert('turnos',['codigo'=>'BOLSA-M','nome'=>'Manhã']);$class=$db->insert('turmas',['codperiodo'=>$period,'idcurso'=>$course,'idturno'=>$shift,'idplano'=>$plan,'codigo'=>'BOLSA-A','nome'=>'TURMA BOLSAS','capacidade'=>1000]);$responsible=$db->insert('pessoas',['nome'=>'RESPONSÁVEL BOLSA','cpf'=>'52998224725','data_nascimento'=>'1980-01-01','email'=>'bolsa@example.test','pais'=>'BR','estado'=>'PR','cidade'=>'CURITIBA','cep'=>'80010000','rua'=>'Rua fictícia','numero'=>'10','bairro'=>'Centro']);
+    $catalog=new \EducacionalERP\Application\ScholarshipCatalog($db);$catalog->seed(1);$rows=$catalog->listing()['items'];$full=array_values(array_filter($rows,fn($r)=>$r['codigo_padrao']==='integral'))[0];$half=array_values(array_filter($rows,fn($r)=>$r['codigo_padrao']==='cinquenta'))[0];$custom=$catalog->save(['nome'=>'BOLSA COMPLEMENTAR','forma_calculo'=>'percentual','valor'=>'10.00','ativo'=>1],bin2hex(random_bytes(16)));$ten=$catalog->get((int)$custom['idbolsa']);
+    return compact('period','plan','course','shift','class','responsible','full','half','ten');
+}
+function scholarshipSelection(array $row,int $first=1,int $last=12):array {return ['idbolsa'=>$row['idbolsa'],'bolsa_versao'=>$row['versao'],'parcela_inicio'=>$first,'parcela_fim'=>$last];}
+function createScholarshipContract(\EducacionalERP\Domain\Store $db,array $fixture,string $ra,array $scholarships=[],bool $defer=false):array
+{
+    $person=$db->insert('pessoas',['nome'=>'ALUNO '.$ra,'data_nascimento'=>'2015-01-01']);$student=$db->insert('alunos',['codpessoa'=>$person,'ra'=>$ra]);$db->insert('aluno_responsaveis',['idaluno'=>$student,'codpessoa_responsavel'=>$fixture['responsible'],'parentesco'=>'mae','responsavel_financeiro'=>1,'inicio_vigencia'=>'2000-01-01 00:00:00']);$academic=new \EducacionalERP\Application\AcademicService($db,new \EducacionalERP\Application\Operations($db));$key=bin2hex(random_bytes(16));$data=['idaluno'=>$student,'idturma'=>$fixture['class'],'quantidade_parcelas'=>12,'primeiro_vencimento'=>(new DateTimeImmutable(\EducacionalERP\Domain\Input::today()))->modify('+30 days')->format('Y-m-d'),'bolsas'=>$scholarships,'termo'=>'CONTRATO FICTÍCIO'];
+    if(!$defer)$result=$academic->enroll($data,$key);else$result=$db->atomic(function()use($academic,$student,$fixture,$key,$data){$m=$academic->placeInside($student,$fixture['period'],$fixture['class'],$key);return $m+$academic->createContractInside((int)$m['idmatricula'],$data,$key,true);});
+    return $result+['idaluno'=>(string)$student,'codpessoa'=>(string)$person];
+}

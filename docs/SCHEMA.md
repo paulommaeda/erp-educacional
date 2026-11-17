@@ -1,4 +1,14 @@
-# Schema implementado — versão 2
+# Schema implementado
+
+## Versão 45 — bolsas cadastráveis
+
+Acrescenta `bolsas` (catálogo por coligada) e `contrato_bolsas` (concessões, cópias da regra e revisões por número de parcela). As referências de concessão exigem contrato e bolsa da mesma coligada. Os padrões Integral e 50% têm unicidade por coligada/código.
+
+`contratos` recebe `mensalidade_base_total`, `desconto_base_total` e `pontualidade_snapshot`, anuláveis para preservar a política anterior. `parcelas` e `lancamentos` recebem `pontualidade_acrescimo`, `pontualidade_snapshot`, `bolsa_aplicada` e `bolsas_json`. O acréscimo guarda a composição da face; o snapshot fixa a regra contratada; a bolsa aplicada e seu detalhamento permitem recálculo sem descontar novamente o benefício anterior.
+
+A migração não muda valores ou pagamentos existentes. NULL distingue o preço legado da nova composição base + pontualidade, inclusive quando o valor contratado é zero. Valores usam DECIMAL e cálculos em centavos inteiros. A especificação completa atual é `src/Infrastructure/Database/schema.json`; as seções abaixo documentam a evolução anterior.
+
+## Versão 2
 
 26 tabelas / 51 chaves estrangeiras. Prefixo: `$wpdb->prefix + "erp_"`. InnoDB. FKs RESTRICT.
 
