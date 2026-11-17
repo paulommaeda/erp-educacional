@@ -52,12 +52,15 @@ final class AcademicService
         $plan=$this->planForClass((int)$class['idturma'],true);
         if(isset($data['plano_versao'])&&(string)$data['plano_versao']!==(string)$plan['versao'])throw new RuleViolation('O plano de pagamento mudou. Confira os valores novamente.');
         if(isset($data['idplano'])&&(int)$data['idplano']!==(int)$plan['idplano'])throw new RuleViolation('O plano da turma mudou. Confira os valores novamente.');
-        $original=Money::positive($plan['valor_anuidade']);
+        $face=Money::positive($plan['valor_anuidade']);$count=Input::id($data['quantidade_parcelas']??null);Money::split($face,$count);
+        $punctuality=Money::cents($plan['pontualidade_valor']);if($punctuality<0)throw new RuleViolation('Confira o valor de pontualidade nas configurações.');
+        if(isset($data['pontualidade_valor'])&&($data['pontualidade_inclusa']??false)!==true)throw new RuleViolation('O cálculo de pontualidade foi atualizado. Recarregue a tela e confira a prévia antes de confirmar.');
+        if(isset($data['pontualidade_valor'])&&Money::cents($data['pontualidade_valor'])!==$punctuality)throw new RuleViolation('A pontualidade mudou. Confira os valores novamente.');
+        // Store the tuition component separately; each granted rule selects its percentage basis.
+        $original=$face-$punctuality*$count;
         $discount=Money::cents($data['desconto_incondicional_total']??'0.00');
-        if($discount<0||$discount>=$original)throw new RuleViolation('Bolsa deve ser menor que a anuidade e não pode ser negativa.');
-        $count=Input::id($data['quantidade_parcelas']??null);Money::split($original-$discount,$count);
-        $punctuality=Money::cents($plan['pontualidade_valor']);$face=$original+$punctuality*$count;
-        if($punctuality<0)throw new RuleViolation('Confira o valor de pontualidade nas configurações.');if(isset($data['pontualidade_valor'])&&Money::cents($data['pontualidade_valor'])!==$punctuality)throw new RuleViolation('A pontualidade mudou. Confira os valores novamente.');
+        if($original<=0||$discount<0||$discount>=$original)throw new RuleViolation('O valor do plano deve superar a pontualidade e os descontos manuais.');
+        Money::split($original-$discount,$count);
         $first=Input::date($data['primeiro_vencimento']??null);
         $contract=$this->db->insert('contratos',['numero'=>ContractNumbers::forEnrollment($this->db,$enrollment),'idmatricula'=>$enrollment,
             'codpessoa_rf_original'=>$person['codpessoa'],'codpessoa_rf_atual'=>$person['codpessoa'],'data_contrato'=>Input::today(),
@@ -80,7 +83,7 @@ final class AcademicService
         $plan=$this->db->get('planos_pagamento',(int)$class['idplano'],$lock);
         if(empty($plan['codperiodo'])||(int)$plan['codperiodo']!==(int)$class['codperiodo'])throw new RuleViolation('Plano sem período ou incompatível com o período da turma. Ajuste a estrutura acadêmica.');
         if(!(int)$plan['ativo'])throw new RuleViolation('Plano de pagamento inativo.');
-        $plan['pontualidade_valor']=Coligadas::within((int)$class['codcoligada'],fn()=>get_option(Coligadas::option('ederp_pontualidade'),'0.00'));return $plan;
+        $plan['pontualidade_valor']=Coligadas::within((int)$class['codcoligada'],fn()=>get_option(Coligadas::option('ederp_pontualidade'),'0.00'));$plan['pontualidade_inclusa']=true;return $plan;
     }
     public function generateInstallments(int $id,string $key):array
     {

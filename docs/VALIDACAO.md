@@ -1,5 +1,14 @@
 # Validação
 
+## 0.19.26
+
+- `tests/punctuality-plan.php`: 54 verificações, incluindo as 41 de bolsas. Plano anual 16236 em 12 parcelas mantém 1353/1250; 50% usa 1353 e gera 779,50/676,50; bolsa fixa 350 gera 1003/900. Conferidos combinação percentual/fixa, quitação, regra histórica guardada, cotação anterior recusada, pontualidade alterada, contrato legado pendente, limite e rollback.
+- `tests/wordpress-scholarships.php`: 37 verificações em WordPress 7.1.3/MariaDB 11.4.8. Conferidos os exemplos acima com DECIMAL/InnoDB, parcela e lançamento, contrato sem acréscimo duplicado, baixa de 900 com 103 de pontualidade, migração 44→45 repetível, manutenção dos dados de backup, permissões, isolamento, transações, idempotência, integral e geração posterior. Todos os transportes HTTP/e-mail foram interceptados.
+- `tests/educbank-scholarships.php`: 43 verificações com fornecedor simulado. Mantida a cobertura de registros legados; novas faturas e atualizações usam 1353 como original. Para 50%, 573,50 incondicionais + 103 condicionais produzem 779,50/676,50. Para 60%, o retorno confirma 541,20 recebidos. Bolsa fixa 350 mantém 350 incondicionais, 103 condicionais e confirma 900 recebidos em parcela de 1003. Integral cancela a cobrança sem pagamento e fatura paga bloqueia cancelamento para conciliação.
+- 26 suítes PHP e oito de interface aprovadas: preços/cotação, contratos, planos, descontos/indicação, Educbank, matrícula, exclusão financeira, coligadas, shortcodes, exportação, recursos administrativos, índices, K8 e consultas familiares. A interface verifica os dois critérios de bolsa, soma percentual, limite, payload, faixas, versão, repetição, falha recuperável e cotação da rematrícula.
+- Chromium a 1440/390 px com scripts/CSS reais e dados fictícios: prévia 1353/1250, bolsa 50% 779,50/676,50 e bolsa fixa 1003/900; telas e capturas inspecionadas sem excesso horizontal. Sintaxe PHP/JavaScript e pacote verificados.
+- Schema 45 mantido. Contratos, concessões emitidas e pagamentos não são recalculados em lote. Não houve instalação no site do colégio, alteração de dados reais ou envio de cobrança/e-mail. A conexão real e a instalação seguem a configuração do WordPress do site.
+
 ## 0.19.25
 
 - `tests/scholarships.php`: 37 verificações com SQLite. Padrões por coligada, base 1000 + pontualidade 103, bolsa 50% (603/500), soma 60% (503/400), integral zero sem baixa, liberação Cursando, retirada sem duplicação, faixas, regras anteriores, vencimento, pagamentos integrais/parciais, valores fixos, edição de catálogo, versão antiga, rollback acima de 100%, arredondamento e limite monetário. Contratos pendentes usam a base corrigida e aplicam descontos uma vez.

@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.25
+# ERP Educacional — 0.19.26
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.25.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.26.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 45**, acrescentando o cadastro e as concessões de bolsas, sem recalcular valores financeiros anteriores. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -21,7 +21,9 @@ Se uma movimentação aponta para uma matrícula ausente, a cópia integral do r
 
 Em **Configurações → Bolsas**, o administrador encontra **Bolsa Integral** e **Bolsa 50%** e pode cadastrar outras em percentual ou valor fixo. Na matrícula, selecione várias bolsas e a faixa de parcelas. Percentuais somam sobre a mesma base: 50% + 10% = 60%.
 
-Para novos contratos, o plano contém a anuidade-base e o gerador acrescenta a pontualidade configurada por parcela. Com base de R$ 1.000 e pontualidade de R$ 103, a bolsa de 50% gera **R$ 603**, com **R$ 500 em dia**; 60% gera **R$ 503 / R$ 400**. Integral zera a mensalidade e o acréscimo, sem baixa fictícia.
+O plano contém o valor anual **sem desconto de pontualidade**, com o componente já incluído. Plano de R$ 16.236 em 12 parcelas mantém **R$ 1.353 por parcela**, com **R$ 1.250 em dia** se a pontualidade for R$ 103. A geração não soma R$ 103 novamente.
+
+Bolsas percentuais usam a parcela integral: **50% sobre R$ 1.353** gera **R$ 779,50 sem pontualidade / R$ 676,50 em dia**. Uma bolsa fixa de **R$ 350** gera **R$ 1.003 / R$ 900**. Na percentual, a pontualidade compõe o benefício percentual total; na fixa, é adicional à redução em reais. Integral zera ambos os valores, sem baixa fictícia. Concessões anteriores mantêm a regra já gravada; novas concessões usam esta composição.
 
 Na ficha do aluno → **Financeiro → Bolsas e descontos dos contratos → Bolsas cadastradas**, aplique, suspenda ou retire benefícios a partir da parcela escolhida. Parcelas, lançamentos e totais são recalculados juntos, preservando pagamentos, regras anteriores e identificadores das cobranças. Editar o catálogo vale para novas concessões. A migração não altera valores em lote; uma concessão explícita em contrato antigo adota a nova composição somente nas parcelas elegíveis da faixa. Veja [o guia de bolsas](docs/BOLSAS.md).
 
