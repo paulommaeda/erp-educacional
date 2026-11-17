@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.25
+Stable tag: 0.19.26
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.26 =
+* Corrige a cotação e a geração: o plano já contém a pontualidade. Parcela cadastrada de 1353 permanece 1353 e cai para 1250 em dia com pontualidade 103.
+* Novas bolsas percentuais usam a parcela integral: 50% de 1353 gera 779,50 sem pontualidade e 676,50 em dia. Percentuais continuam somados sobre a mesma base.
+* Bolsa fixa de 350 sobre 1353 gera parcela 1003, com 900 em dia. Percentual, valor fixo e pontualidade têm composição financeira própria e são enviados assim ao Educbank.
+* Formulários com cotação anterior exigem recarregamento. Regras de concessões já emitidas e pagamentos permanecem preservados; schema 45 mantido.
 
 = 0.19.25 =
 * Cadastro de bolsas por coligada com Integral e 50% padrão e outras bolsas em percentual ou valor fixo por parcela.

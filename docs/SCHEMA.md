@@ -8,6 +8,8 @@ Acrescenta `bolsas` (catálogo por coligada) e `contrato_bolsas` (concessões, c
 
 A migração não muda valores ou pagamentos existentes. NULL distingue o preço legado da nova composição base + pontualidade, inclusive quando o valor contratado é zero. Valores usam DECIMAL e cálculos em centavos inteiros. A especificação completa atual é `src/Infrastructure/Database/schema.json`; as seções abaixo documentam a evolução anterior.
 
+Na **0.19.26**, schema 45 mantido: novas concessões guardam `base_percentual=valor_original` nas versões de `regras_json`. A ausência desse marcador preserva o cálculo emitido anteriormente. `mensalidade_base_total` continua como componente interno sem pontualidade; o valor original é recomposto antes de calcular os novos percentuais. `bolsas_json` registra valor calculado e composição da pontualidade para que o desconto incondicional e o condicional fechem com a quantia a pagar, sem aplicar a bolsa duas vezes.
+
 ## Versão 2
 
 26 tabelas / 51 chaves estrangeiras. Prefixo: `$wpdb->prefix + "erp_"`. InnoDB. FKs RESTRICT.
