@@ -56,13 +56,17 @@ final class AcademicService
         $discount=Money::cents($data['desconto_incondicional_total']??'0.00');
         if($discount<0||$discount>=$original)throw new RuleViolation('Bolsa deve ser menor que a anuidade e não pode ser negativa.');
         $count=Input::id($data['quantidade_parcelas']??null);Money::split($original-$discount,$count);
+        $punctuality=Money::cents($plan['pontualidade_valor']);$face=$original+$punctuality*$count;
+        if($punctuality<0)throw new RuleViolation('Confira o valor de pontualidade nas configurações.');if(isset($data['pontualidade_valor'])&&Money::cents($data['pontualidade_valor'])!==$punctuality)throw new RuleViolation('A pontualidade mudou. Confira os valores novamente.');
         $first=Input::date($data['primeiro_vencimento']??null);
         $contract=$this->db->insert('contratos',['numero'=>ContractNumbers::forEnrollment($this->db,$enrollment),'idmatricula'=>$enrollment,
             'codpessoa_rf_original'=>$person['codpessoa'],'codpessoa_rf_atual'=>$person['codpessoa'],'data_contrato'=>Input::today(),
-            'valor_original_total'=>Money::format($original),'desconto_incondicional_total'=>Money::format($discount),'valor_liquido_total'=>Money::format($original-$discount),
+            'valor_original_total'=>Money::format($face),'desconto_incondicional_total'=>Money::format($discount),'valor_liquido_total'=>Money::format($face-$discount),
+            'mensalidade_base_total'=>Money::format($original),'desconto_base_total'=>Money::format($discount),'pontualidade_snapshot'=>Money::format($punctuality),
             'quantidade_parcelas'=>$count,'primeiro_vencimento'=>$first,'versao_termo'=>Input::text($data['versao_termo']??'1',40),
             'termo_snapshot'=>Input::text($data['termo']??'Contrato registrado pela secretaria.',40000),
             'idplano'=>$plan['idplano'],'plano_nome_snapshot'=>$plan['nome'],'plano_versao_snapshot'=>$plan['versao'],'parcelas_geradas'=>0]);
+        $selected=$data['bolsas']??[];if(!is_array($selected))throw new RuleViolation('Selecione as bolsas do contrato.');(new Scholarships($this->db))->attachInside($contract,$selected,$key);
         (new ContractTemplates($this->db,$this->operations))->applyInside($contract,$data);
         $result=['idcontrato'=>(string)$contract,'quantidade_parcelas'=>$count,'valor_anuidade'=>Money::format($original),'parcelas_geradas'=>!$defer];
         $this->db->audit('contratos',$contract,'criar',null,$this->db->get('contratos',$contract),$key);
@@ -76,7 +80,7 @@ final class AcademicService
         $plan=$this->db->get('planos_pagamento',(int)$class['idplano'],$lock);
         if(empty($plan['codperiodo'])||(int)$plan['codperiodo']!==(int)$class['codperiodo'])throw new RuleViolation('Plano sem período ou incompatível com o período da turma. Ajuste a estrutura acadêmica.');
         if(!(int)$plan['ativo'])throw new RuleViolation('Plano de pagamento inativo.');
-        return $plan;
+        $plan['pontualidade_valor']=Coligadas::within((int)$class['codcoligada'],fn()=>get_option(Coligadas::option('ederp_pontualidade'),'0.00'));return $plan;
     }
     public function generateInstallments(int $id,string $key):array
     {
@@ -92,19 +96,20 @@ final class AcademicService
         if(!\EducacionalERP\Domain\EnrollmentStatus::open($m['status'])||$contract['status']!=='ativo')throw new RuleViolation('Matrícula e contrato devem estar ativos.');
         if($this->db->row('SELECT idparcela FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d FOR UPDATE',[$id]))throw new RuleViolation('Contrato com parcelas existentes e situação divergente. Procure o administrador.');
         $person=$this->db->get('pessoas',(int)$contract['codpessoa_rf_atual']);if(!(int)$person['ativo'])throw new RuleViolation('Responsável financeiro inativo.');
-        $count=(int)$contract['quantidade_parcelas'];$original=Money::positive($contract['valor_original_total']);$discount=Money::cents($contract['desconto_incondicional_total']);
+        $count=(int)$contract['quantidade_parcelas'];$original=Money::positive($contract['mensalidade_base_total']??$contract['valor_original_total']);$discount=Money::cents($contract['desconto_base_total']??$contract['desconto_incondicional_total']);$punctuality=$contract['pontualidade_snapshot']===null?0:Money::cents($contract['pontualidade_snapshot']);
         $originals=Money::split($original,$count);$discounts=array_pad($discount?Money::split($discount,min($count,$discount)):[],$count,0);
         $start=new \DateTimeImmutable(Input::date($contract['primeiro_vencimento']));
         for($i=0;$i<$count;$i++){
             $month=$start->modify('first day of this month')->modify("+$i months");$day=min((int)$start->format('d'),(int)$month->format('t'));
-            $due=$month->setDate((int)$month->format('Y'),(int)$month->format('m'),$day)->format('Y-m-d');$net=$originals[$i]-$discounts[$i];
+            $due=$month->setDate((int)$month->format('Y'),(int)$month->format('m'),$day)->format('Y-m-d');$net=$originals[$i]+$punctuality-$discounts[$i];
             if($net<=0)throw new RuleViolation('O parcelamento deve produzir parcelas líquidas positivas.');
-            $values=['valor_original'=>Money::format($originals[$i]),'desconto_incondicional'=>Money::format($discounts[$i]),'valor_liquido'=>Money::format($net)];
+            $values=['valor_original'=>Money::format($originals[$i]+$punctuality),'desconto_incondicional'=>Money::format($discounts[$i]),'valor_liquido'=>Money::format($net),'pontualidade_acrescimo'=>Money::format($punctuality),'pontualidade_snapshot'=>$contract['pontualidade_snapshot']];
             $parcel=$this->db->insert('parcelas',$values+['idcontrato'=>$id,'numero'=>$i+1,'competencia'=>$month->format('Y-m-01'),'vencimento_original'=>$due,'regra_desconto_condicional'=>'{"tipo":"nenhum"}','regra_encargos'=>'{"tipo":"manual_auditado"}']);
             $this->db->insert('lancamentos',$values+['idparcela'=>$parcel,'codpessoa_rf_original'=>$contract['codpessoa_rf_original'],'codpessoa_rf_atual'=>$contract['codpessoa_rf_atual'],
                 'descricao'=>'Parcela '.($i+1).' - RA '.$student['ra'],'emissao'=>Input::today(),'vencimento'=>$due,'saldo_aberto'=>Money::format($net)]);
         }
         (new ContractDiscounts($this->db,$this->operations))->applyInside($id,$key);
+        (new Scholarships($this->db))->repriceInside($id,1,$count,$key,false);
         $this->db->update('contratos',$id,['parcelas_geradas'=>1,'parcelas_geradas_em'=>gmdate('Y-m-d H:i:s')]);
         $result=['idcontrato'=>(string)$id,'quantidade_parcelas'=>$count,'ja_geradas'=>false];$this->db->audit('contratos',$id,'gerar_parcelas',null,$result,$key);return $result;
     }

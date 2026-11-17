@@ -24,7 +24,7 @@ final class Coligadas
             $fields=['nome'=>CadastroText::upper(Input::text($d['nome']??null)),'razao_social'=>CadastroText::upper(Input::text($d['razao_social']??null)),'cnpj'=>$cnpj];
             if(isset($d['ativo'])&&!in_array($d['ativo'],[0,1,'0','1'],true))throw new RuleViolation('Situação inválida.');$fields['ativo']=(int)($d['ativo']??1);
             if(!empty($d['codcoligada'])){$id=Input::id($d['codcoligada']);$old=$this->db->get('coligadas',$id,true);if((string)($d['versao']??'')!==(string)$old['versao'])throw new RuleViolation('Coligada alterada. Recarregue.');if(!$fields['ativo']&&$id===self::current())throw new RuleViolation('Selecione outra coligada antes de inativar esta.');$this->db->update('coligadas',$id,$fields);}else{$old=null;$id=$this->db->insert('coligadas',$fields);}
-            $this->db->audit('coligadas',$id,$old?'editar':'criar',$old,$fields,$key);return ['codcoligada'=>$id];
+            if($fields['ativo'])(new ScholarshipCatalog($this->db))->seed($id);$this->db->audit('coligadas',$id,$old?'editar':'criar',$old,$fields,$key);return ['codcoligada'=>$id];
         }));
     }
     public function nextPeriod(int $source,int $company):array {

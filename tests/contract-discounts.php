@@ -1,5 +1,6 @@
 <?php
 require __DIR__.'/payment-plans.php';
+require __DIR__.'/fixtures/legacy-pricing.php';makeLegacyPricing($db,$ct);
 use EducacionalERP\Application\{ContractDiscounts,FinanceService};
 use EducacionalERP\Domain\{Input,FinancialStatus};
 wp_set_current_user(1);$discounts=new ContractDiscounts($db,$ops);$finance=new FinanceService($db,$ops);$titles=$db->rows('SELECT l.* FROM '.$db->table('lancamentos').' l JOIN '.$db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d ORDER BY p.numero',[$ct]);$today=Input::today();$futureDate=(new DateTimeImmutable($today))->modify('+30 days')->format('Y-m-d');foreach($titles as $title)$db->update('lancamentos',(int)$title['idlancamento'],['vencimento'=>$futureDate]);

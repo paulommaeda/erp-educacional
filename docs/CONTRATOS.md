@@ -10,6 +10,8 @@ Na aba **Contratos dos alunos**, busque por nome, RA ou número. O filtro de sit
 
 Enquanto nenhuma parcela tiver sido gerada, também é possível corrigir valor original, bolsa total, quantidade e primeiro vencimento. O valor líquido é recalculado pelo servidor. Após a geração, use a Gestão financeira para os ajustes de lançamentos. Responsáveis e matrícula continuam sendo administrados pelos fluxos próprios do ERP.
 
+Na versão **0.19.25**, contratos novos usam os campos **Anuidade-base** e **Desconto manual total** nessa edição. Os totais são derivados da base, das bolsas e da pontualidade contratada. O gerador usa a base corrigida e aplica os benefícios uma única vez. Contratos anteriores mantêm seus campos de valores; parcelas existentes não são recalculadas pela instalação. Para bolsas percentuais, múltiplas concessões e alterações por faixa, veja [Bolsas cadastráveis](BOLSAS.md).
+
 ## Excluir
 
 1. Abra **Excluir** no contrato desejado.

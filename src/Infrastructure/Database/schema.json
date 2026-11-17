@@ -1233,7 +1233,10 @@
       "modelo_versao_snapshot": "bigint(20) unsigned DEFAULT NULL",
       "excluido_em": "datetime DEFAULT NULL",
       "excluido_por_wp_user_id": "bigint(20) unsigned DEFAULT NULL",
-      "motivo_exclusao": "text DEFAULT NULL"
+      "motivo_exclusao": "text DEFAULT NULL",
+      "mensalidade_base_total": "decimal(15,2) DEFAULT NULL",
+      "desconto_base_total": "decimal(15,2) DEFAULT NULL",
+      "pontualidade_snapshot": "decimal(15,2) DEFAULT NULL"
     },
     "unique": [
       [
@@ -1362,7 +1365,11 @@
       "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
       "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
       "versao": "bigint(20) unsigned NOT NULL DEFAULT 1",
-      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1"
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "pontualidade_acrescimo": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "pontualidade_snapshot": "decimal(15,2) DEFAULT NULL",
+      "bolsa_aplicada": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "bolsas_json": "longtext DEFAULT NULL"
     },
     "unique": [
       [
@@ -1441,7 +1448,11 @@
       "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
       "excluido_em": "datetime NULL",
       "excluido_por_wp_user_id": "bigint(20) unsigned NULL",
-      "motivo_exclusao": "text NULL"
+      "motivo_exclusao": "text NULL",
+      "pontualidade_acrescimo": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "pontualidade_snapshot": "decimal(15,2) DEFAULT NULL",
+      "bolsa_aplicada": "decimal(15,2) NOT NULL DEFAULT 0.00",
+      "bolsas_json": "longtext DEFAULT NULL"
     },
     "unique": [
       [
@@ -4485,6 +4496,125 @@
         "target": "pessoas",
         "references": [
           "codpessoa"
+        ]
+      }
+    ]
+  },
+  "bolsas": {
+    "pk": [
+      "idbolsa"
+    ],
+    "columns": {
+      "idbolsa": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "codigo_padrao": "varchar(30) DEFAULT NULL",
+      "nome": "varchar(191) NOT NULL",
+      "descricao": "text DEFAULT NULL",
+      "forma_calculo": "varchar(20) NOT NULL",
+      "valor": "decimal(15,2) NOT NULL",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idbolsa"
+      ],
+      [
+        "codcoligada",
+        "codigo_padrao"
+      ]
+    ],
+    "indexes": [
+      [
+        "codcoligada",
+        "ativo"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      }
+    ]
+  },
+  "contrato_bolsas": {
+    "pk": [
+      "idconcessao"
+    ],
+    "columns": {
+      "idconcessao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "idbolsa": "bigint(20) unsigned NOT NULL",
+      "nome_snapshot": "varchar(191) NOT NULL",
+      "descricao_snapshot": "text DEFAULT NULL",
+      "forma_calculo": "varchar(20) NOT NULL",
+      "valor": "decimal(15,2) NOT NULL",
+      "bolsa_versao": "bigint(20) unsigned NOT NULL",
+      "parcela_inicio": "int unsigned NOT NULL",
+      "parcela_fim": "int unsigned NOT NULL",
+      "habilitado": "tinyint(1) NOT NULL DEFAULT 1",
+      "ativo": "tinyint(1) NOT NULL DEFAULT 1",
+      "regras_json": "longtext NOT NULL",
+      "excluido_em": "datetime DEFAULT NULL",
+      "ator_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idconcessao"
+      ]
+    ],
+    "indexes": [
+      [
+        "idcontrato",
+        "ativo"
+      ],
+      [
+        "idbolsa"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "codcoligada",
+          "idcontrato"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idbolsa"
+        ],
+        "target": "bolsas",
+        "references": [
+          "codcoligada",
+          "idbolsa"
         ]
       }
     ]

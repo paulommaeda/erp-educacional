@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';
+require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';require __DIR__.'/fixtures/legacy-pricing.php';
 use EducacionalERP\Infrastructure\Database\{Database,Installer};
 use EducacionalERP\Infrastructure\WordPress\Access;
 use EducacionalERP\Infrastructure\Educbank\Settings;
@@ -40,7 +40,7 @@ $config=['ativo'=>1,'ambiente'=>'sandbox','sandbox'=>['tenant'=>'escola-teste','
 ec(!str_contains(json_encode($public),'secret-token')&&!str_contains(json_encode(get_option('ederp_educbank')),'secret-token'),'Tokens criptografados e ausentes do retorno público');er(fn()=>$integration->save($config),'Versão antiga não sobrescreve configuração');
 $connection=$integration->test();ec($connection['consultas']===['matriculas'=>true,'faturas'=>true]&&count($GLOBALS['eb_requests'])===2,'Teste exercita as consultas de matrícula e fatura sem criar registros');foreach($GLOBALS['eb_requests'] as [$url,$args]){parse_str(parse_url($url,PHP_URL_QUERY),$params);$flag=str_contains($url,'/invoice')?'showCanceledInvoices':'showCanceledEnrollments';ec($params[$flag]==='true','Filtro booleano no teste usa true, nunca 1');}ec($GLOBALS['eb_remote']['enrollment']===[]&&$GLOBALS['eb_remote']['invoice']===[],'Teste de consulta não emite matrícula ou fatura');$beforeEnrollment=count($GLOBALS['eb_requests']);
 $initial=$flow->batch(['codperiodo'=>$period,'idturma'=>$class,'alunos'=>[$student],'quantidade_parcelas'=>2,'primeiro_vencimento'=>'2028-01-10'],ek())['items'][0];$enrollment=(int)$initial['idmatricula'];$contract=(int)$initial['idcontrato'];ec(count(jobs('matricula'))===1&&count(jobs('fatura'))===2,'Matrícula e cada mensalidade entram na mesma fila transacional sem duplicar');ec(count($GLOBALS['eb_requests'])===$beforeEnrollment,'Gravar matrícula não chama rede');
-(new ContractDiscounts($db,$ops))->add($contract,['nome'=>'Bolsa','valor'=>'100.00','parcela_inicio'=>1,'parcela_fim'=>2],ek());update_option('ederp_pontualidade','50.00');
+makeLegacyPricing($db,$contract);(new ContractDiscounts($db,$ops))->add($contract,['nome'=>'Bolsa','valor'=>'100.00','parcela_inicio'=>1,'parcela_fim'=>2],ek());update_option('ederp_pontualidade','50.00');
 $GLOBALS['eb_http_error']=['code'=>400,'body'=>json_encode(['title'=>'One or more validation errors occurred.','errors'=>['showCanceledEnrollments'=>["The value '1' is not valid."]]])];$integration->process(1,1);$failed=jobs('matricula')[0];ec($failed['status']==='erro'&&str_contains($failed['erro'],'ao consultar matrículas')&&str_contains($failed['erro'],'showCanceledEnrollments'),'Fila persiste o campo e motivo devolvidos pelo HTTP 400');ec($GLOBALS['eb_remote']['enrollment']===[]&&count(jobs('fatura'))===2,'Erro de consulta não cria matrícula remota e preserva as mensalidades locais');$integration->retry((int)$failed['idintegracao']);
 // A valid format does not prove a CEP exists in the provider's postal database.
 $GLOBALS['eb_rejected_zip']='80240091';$db->update('pessoas',$rf,['cep'=>'80240-091']);$integration->process(1,10);$failed=jobs('matricula')[0];$payerCode=$db->get('pessoas',$rf)['codigo_pessoa'];
