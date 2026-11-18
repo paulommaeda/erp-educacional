@@ -11,7 +11,7 @@ final class Coligadas
     public static function current():int {return self::$context??max(1,(function_exists('get_user_meta')?(int)get_user_meta(get_current_user_id(),'ederp_coligada',true):0)?: (int)get_option('ederp_default_company',1));}
     public static function option(string $key):string {return self::current()===1?$key:$key.'_coligada_'.self::current();}
     public static function within(int $id,callable $work):mixed {$old=self::$context;self::$context=$id;try{return $work();}finally{self::$context=$old;}}
-    public static function management():bool {return Access::isAdmin()||current_user_can('erp_gerenciar_academico')||current_user_can('erp_gerenciar_pessoas')||current_user_can('erp_consultar_financeiro');}
+    public static function management():bool {return Access::canReadContracts()||Access::isAdmin()||current_user_can('erp_gerenciar_academico')||current_user_can('erp_gerenciar_pessoas')||current_user_can('erp_consultar_financeiro');}
     public function listing():array {return ['codcoligada'=>self::current(),'items'=>$this->db->rows('SELECT * FROM '.$this->db->table('coligadas').' ORDER BY nome,codcoligada')];}
     public function choose(array $data):array {
         if(!self::management())throw new RuleViolation('Somente a equipe pode selecionar a coligada de trabalho.');

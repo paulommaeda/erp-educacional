@@ -1,6 +1,6 @@
 # Contratos e modelos — 0.19.15
 
-O menu **Contratos** está disponível para administradores do WordPress no portal e no wp-admin. Também há atalhos na Gestão financeira e na área Financeiro da ficha do aluno. A coligada de trabalho e o período da consulta são respeitados.
+O menu **Contratos** está disponível para administradores e perfis liberados em **Perfis e acessos → Editar acessos → Contratos**. Também há atalhos na Gestão financeira e na área Financeiro da ficha do aluno. **Bolsas e descontos dos contratos** é uma permissão independente, com uma lista própria para localizar contratos e administrar benefícios. A coligada de trabalho e o período da consulta são respeitados. Veja [o guia das permissões](PERFIS-CONTRATOS.md).
 
 ## Consultar e editar
 

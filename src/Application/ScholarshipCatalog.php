@@ -16,7 +16,7 @@ final class ScholarshipCatalog
     public function seedAll():void {foreach($this->db->rows('SELECT codcoligada FROM '.$this->db->table('coligadas').' WHERE ativo=1') as $c)$this->seed((int)$c['codcoligada']);}
     public function listing():array
     {
-        Access::requireAdmin();$this->seed(Coligadas::current());return ['items'=>$this->db->rows('SELECT * FROM '.$this->db->table('bolsas').' WHERE codcoligada=%d ORDER BY ativo DESC,idbolsa',[Coligadas::current()])];
+        Access::requireManageDiscounts();$this->seed(Coligadas::current());return ['items'=>$this->db->rows('SELECT * FROM '.$this->db->table('bolsas').' WHERE codcoligada=%d ORDER BY ativo DESC,idbolsa',[Coligadas::current()])];
     }
     public function get(int $id,bool $lock=false):array
     {

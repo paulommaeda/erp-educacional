@@ -4,7 +4,7 @@
 
 Atualize em **Plugins → ERP Educacional → Verificar atualizações**. Abra o painel como administrador e aguarde a migração para o banco **45**. Se houver uma pendência, use **ERP Educacional → Configurações → Verificar/aplicar migrações**.
 
-Em **Configurações → Bolsas**, cada coligada recebe **Bolsa Integral (100%)** e **Bolsa 50%**. Use **Cadastrar bolsa** para criar outras condições em percentual da mensalidade-base ou em valor fixo por parcela. As bolsas padrão mantêm seus percentuais; podem ser inativadas. Os cadastros e as concessões são administrados pelo administrador do WordPress.
+Em **Configurações → Bolsas**, cada coligada recebe **Bolsa Integral (100%)** e **Bolsa 50%**. O administrador pode usar **Cadastrar bolsa** para criar outras condições em percentual da mensalidade-base ou em valor fixo por parcela. As bolsas padrão mantêm seus percentuais; podem ser inativadas. Desde a **0.19.27**, as concessões e os descontos dos contratos também podem ser administrados pelos perfis liberados em **Perfis e acessos → Editar acessos → Bolsas e descontos dos contratos**. Veja [como conceder esse acesso](PERFIS-CONTRATOS.md).
 
 Em **Configurações → Pontualidade**, informe o valor por parcela, por exemplo **R$ 103,00**. O plano de pagamento contém o **valor anual sem desconto de pontualidade**, com esse componente já incluído. Para 12 parcelas de R$ 1.353, cadastre **R$ 16.236** no plano. Sem bolsa, o pagamento em dia será de R$ 1.250 por parcela. O sistema não soma R$ 103 novamente ao valor cadastrado.
 

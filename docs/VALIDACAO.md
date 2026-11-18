@@ -1,5 +1,14 @@
 # Validação
 
+## 0.19.27
+
+- `tests/contract-permissions.php`: 46 verificações com SQLite. Matriz com duas opções independentes, padrão sem concessão a funcionários, contrato/modelo separado de benefícios, perfil com ambos, capacidades e menus conferidos juntos, serviço protegido após revogação, resumo sem termo/RF, bolsas e desconto comum recalculados e isolamento por coligada.
+- `tests/wordpress-contract-permissions.php`: 53 verificações em WordPress 7.1.3/MariaDB 11.4.8 reais. Administrador cria/configura perfis pela REST; contas fictícias sem acesso, só contratos, só benefícios e com ambos exercitam as operações. Conferidos consulta/edição/exclusão validada, modelos/prévia, bolsas/descontos/indicação, aliases, impedimento de autoelevação e de acesso a configurações globais, baixa/exclusão definitiva, resumo sem termo, seleção de coligada e bloqueio após revogação inclusive para chave já confirmada. HTML real do portal gerado para conferência. HTTP/e-mail interceptados.
+- `tests/contract-permissions-ui.cjs` carrega os scripts reais de perfis, contratos, modal e benefícios. Conferidos checkboxes independentes e seus envios de concessão/revogação; modelo/edição apenas no perfil correspondente; seleção do contrato correto; desconto comum e bolsa cadastrada pelo editor compartilhado, sem exigir consulta à ficha do aluno.
+- 18 suítes PHP de serviço/regressão aprovadas: permissões novas, contratos, descontos, revisões/indicação, preços/pontualidade, políticas/rotas/renderização do portal, tema, ficha do aluno, recursos administrativos, coligadas, contas/convites, Educbank, exportação e visão familiar. Onze suítes de interface aprovadas, incluindo concessão na matrícula, editor de bolsas, perfis, conta, financeiro e gestão de usuários.
+- Chromium a 1440/390 px com o HTML real do portal, scripts/CSS reais e API fictícia. Matriz de perfis e área de benefícios sem excesso horizontal; capturas inspecionadas. Rodapé apresenta o crédito solicitado com link HTTPS e versão. Sintaxe PHP/JavaScript e pacote verificados.
+- Schema 45 mantido. As novas permissões são opcionais, exigem escolha do administrador e não alteram valores, pagamentos ou dados em lote. Não houve instalação no site do colégio nem envio externo. A instalação segue a configuração do WordPress do site.
+
 ## 0.19.26
 
 - `tests/punctuality-plan.php`: 54 verificações, incluindo as 41 de bolsas. Plano anual 16236 em 12 parcelas mantém 1353/1250; 50% usa 1353 e gera 779,50/676,50; bolsa fixa 350 gera 1003/900. Conferidos combinação percentual/fixa, quitação, regra histórica guardada, cotação anterior recusada, pontualidade alterada, contrato legado pendente, limite e rollback.
