@@ -8,7 +8,7 @@ use EducacionalERP\Infrastructure\WordPress\Access;
 final class Contracts
 {
     public function __construct(private Store $db,private Operations $ops) {}
-    public static function summary(array $contract):array {return array_intersect_key($contract,array_flip(['idcontrato','numero','codcoligada','status','quantidade_parcelas','primeiro_vencimento','valor_liquido_total','parcelas_geradas','versao']));}
+    public static function summary(array $contract):array {return array_intersect_key($contract,array_flip(['idcontrato','numero','codcoligada','status','quantidade_parcelas','primeiro_vencimento','valor_liquido_total','parcelas_geradas','versao','assinado_em']));}
     public function listing(array $query):array
     {
         Access::requireReadContracts();$page=max(1,min(100000,(int)($query['page']??1)));$period=SchoolSettings::resolve($query['codperiodo']??null);
@@ -20,7 +20,7 @@ final class Contracts
         $status=(string)($query['status']??'');if($status!==''&&!in_array($status,['ativo','cancelado','pendente'],true))throw new RuleViolation('Situação de contrato inválida.');
         if($status==='pendente')$from.=" AND c.status='ativo' AND c.parcelas_geradas=0";elseif($status!==''){$from.=' AND c.status=%s';$args[]=$status;}
         $total=(int)$this->db->row('SELECT COUNT(*) AS n'.$from,$args)['n'];
-        return ['items'=>$this->db->rows('SELECT c.idcontrato,c.numero,c.versao,c.status,c.parcelas_geradas,c.valor_liquido_total,c.quantidade_parcelas,c.primeiro_vencimento,a.idaluno,a.ra,p.nome AS aluno,t.nome AS turma,pl.codigo AS periodo'.$from.' ORDER BY c.idcontrato DESC LIMIT 20 OFFSET %d',[...$args,($page-1)*20]),'total'=>$total,'page'=>$page];
+        return ['items'=>$this->db->rows('SELECT c.idcontrato,c.numero,c.versao,c.status,c.assinado_em,c.parcelas_geradas,c.valor_liquido_total,c.quantidade_parcelas,c.primeiro_vencimento,a.idaluno,a.ra,p.nome AS aluno,t.nome AS turma,pl.codigo AS periodo'.$from.' ORDER BY c.idcontrato DESC LIMIT 20 OFFSET %d',[...$args,($page-1)*20]),'total'=>$total,'page'=>$page];
     }
     private function contract(int $id,bool $lock=false):array
     {
@@ -40,7 +40,9 @@ final class Contracts
         Access::requireManageContracts();
         if(array_diff(array_keys($data),['versao','motivo','numero','data_contrato','termo','versao_termo','idmodelo','modelo_versao','valor_original_total','desconto_incondicional_total','mensalidade_base_total','desconto_base_total','quantidade_parcelas','primeiro_vencimento']))throw new RuleViolation('Campo de contrato inválido.');
         $reason=Input::text($data['motivo']??null,2000);$version=Input::id($data['versao']??null);
-        return $this->db->atomic(fn()=>$this->ops->run($key,'editar_contrato',['idcontrato'=>$id]+$data,function()use($id,$data,$version,$reason,$key){
+        return ContractTextLock::run($this->db,fn()=>$this->db->atomic(function()use($id,$data,$version,$reason,$key){
+            $current=$this->contract($id,true);if(\EducacionalERP\Domain\ContractText::signed($current)&&array_intersect(array_keys($data),['termo','versao_termo','idmodelo','modelo_versao']))\EducacionalERP\Domain\ContractText::requireEditable($current);
+            return $this->ops->run($key,'editar_contrato',['idcontrato'=>$id]+$data,function()use($id,$data,$version,$reason,$key){
             $c=$this->contract($id,true);if((int)$c['versao']!==$version)throw new RuleViolation('Contrato alterado. Reabra a edição.');
             if($c['status']!=='ativo')throw new RuleViolation('Somente contratos ativos podem ser editados.');$fields=[];
             foreach(['numero'=>100,'versao_termo'=>40] as $field=>$max)if(isset($data[$field]))$fields[$field]=Input::text($data[$field],$max);
@@ -67,7 +69,24 @@ final class Contracts
             if($changed&&$newPricing)(new Scholarships($this->db))->totalsInside($id);
             if((array_key_exists('termo',$data)&&$data['termo']!==$c['termo_snapshot'])||!empty($data['idmodelo']))(new ContractTemplates($this->db,$this->ops))->applyInside($id,$data);
             $after=$this->db->get('contratos',$id);$this->db->audit('contratos',$id,'editar',$c,['dados'=>$after,'motivo'=>$reason],$key);return $after;
-        }));
+        });}));
+    }
+    public function sign(int $id,array $data,string $key):array
+    {
+        Access::requireManageContracts();
+        if(array_diff(array_keys($data),['versao','confirmado'])||($data['confirmado']??false)!==true)throw new RuleViolation('Confirme que este contrato foi assinado. O bloqueio do texto será permanente.');
+        $version=Input::id($data['versao']??null);
+        return ContractTextLock::run($this->db,fn()=>$this->db->atomic(function()use($id,$data,$version,$key){$this->contract($id,true);return $this->ops->run($key,'assinar_texto_contrato',['idcontrato'=>$id]+$data,function()use($id,$version,$key){
+            $c=$this->contract($id,true);
+            if(\EducacionalERP\Domain\ContractText::signed($c))return ['idcontrato'=>(string)$id,'assinado_em'=>$c['assinado_em'],'ja_assinado'=>true];
+            if((int)$c['versao']!==$version)throw new RuleViolation('O contrato mudou. Reabra e confira o texto antes de registrar a assinatura.');
+            if($c['status']!=='ativo')throw new RuleViolation('Somente o texto de um contrato ativo pode ser marcado como assinado.');
+            $name=trim(strip_tags((string)(wp_get_current_user()->display_name??'')));
+            $name=$name!==''&&preg_match('/^.{1,191}/us',$name,$parts)?$parts[0]:'Usuário '.get_current_user_id();
+            $fields=['assinado_em'=>gmdate('Y-m-d H:i:s'),'assinado_por_wp_user_id'=>get_current_user_id(),'assinado_por_nome'=>$name,'assinatura_texto_hash'=>hash('sha256',$c['termo_snapshot']),'assinatura_numero_snapshot'=>$c['numero']];
+            EducbankOutbox::without(fn()=>$this->db->update('contratos',$id,$fields));$this->db->audit('contratos',$id,'registrar_assinatura_texto',['versao'=>$c['versao'],'idmodelo'=>$c['idmodelo'],'modelo_versao'=>$c['modelo_versao_snapshot']],$fields,$key);
+            return ['idcontrato'=>(string)$id]+$fields+['ja_assinado'=>false];
+        });}));
     }
     public function remove(int $id,array $data,string $key):array
     {

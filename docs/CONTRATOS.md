@@ -36,7 +36,7 @@ Abra **Shortcodes disponíveis** e clique em um campo para inseri-lo na posiçã
 
 Pode haver um único modelo padrão ativo por coligada. Marcar outro como padrão desmarca o anterior. A secretaria pode escolher qualquer modelo ativo na matrícula ou optar por texto personalizado. O modelo escolhido e sua versão são conferidos antes da emissão. Cada aluno recebe um texto preenchido individualmente, inclusive em matrículas em lote.
 
-O contrato guarda o texto preenchido, nome do modelo, versão do modelo e versão do termo. Editar, inativar ou excluir o modelo não modifica contratos emitidos. A revisão do conteúdo exige uma nova versão do texto e motivo. Os termos explícitos já apresentados e aceitos no fluxo de rematrícula prevalecem sobre o modelo padrão.
+O contrato guarda o texto preenchido, nome do modelo, versão do modelo e versão do termo. Editar o modelo atualiza os contratos vinculados ainda não assinados. Textos assinados ficam preservados permanentemente. Excluir o modelo não apaga os textos gerados. A revisão do conteúdo exige uma nova versão do texto e motivo. Os termos explícitos já apresentados e aceitos no fluxo de rematrícula prevalecem sobre o modelo padrão.
 
 ## Shortcodes
 
@@ -68,7 +68,7 @@ A versão 0.19.14 acrescenta os metadados de exclusão em `matriculas` (schema 3
 
 ## API autenticada
 
-Todas as rotas ficam em `/wp-json/erp-educacional/v1`. Mutações usam `POST`, nonce REST e `Idempotency-Key`. As rotas de gestão são exclusivas do administrador; a consulta de modelos ativos também permite a equipe com acesso acadêmico autorizado.
+Todas as rotas ficam em `/wp-json/erp-educacional/v1`. Mutações usam `POST`, nonce REST e `Idempotency-Key`. As rotas de gestão permitem administradores e perfis liberados para Contratos; a consulta de modelos ativos também permite a equipe com acesso acadêmico autorizado. Registrar a assinatura usa `POST /contratos/{id}/assinar`, com `versao` e `confirmado: true`.
 
 | Rota | Método | Uso |
 | --- | --- | --- |
@@ -81,3 +81,7 @@ Todas as rotas ficam em `/wp-json/erp-educacional/v1`. Mutações usam `POST`, n
 | `/modelos-contrato/previa` | POST | Prévia sem persistência com `idcontrato` e `texto` |
 
 Na emissão de contrato, envie `idmodelo` e `modelo_versao` para escolher um modelo ou `termo` para fornecer texto personalizado. Quando nenhum dos dois é enviado, o modelo padrão ativo da coligada é usado, se existir. Sem modelo padrão, permanece o texto de cadastro padrão do ERP.
+
+## Contrato assinado
+
+Em **Ver contrato**, marque **Contrato assinado** e use **Registrar contrato assinado** após conferir o texto. A marcação é permanente. Texto, versão e vínculo com o modelo ficam bloqueados inclusive para administradores. Alterações no modelo atualizam os contratos vinculados ainda não assinados. Bolsas, descontos e operações financeiras seguem disponíveis conforme suas permissões. Veja [o guia do texto assinado](CONTRATO-ASSINADO.md).

@@ -1236,7 +1236,12 @@
       "motivo_exclusao": "text DEFAULT NULL",
       "mensalidade_base_total": "decimal(15,2) DEFAULT NULL",
       "desconto_base_total": "decimal(15,2) DEFAULT NULL",
-      "pontualidade_snapshot": "decimal(15,2) DEFAULT NULL"
+      "pontualidade_snapshot": "decimal(15,2) DEFAULT NULL",
+      "assinado_em": "datetime DEFAULT NULL",
+      "assinado_por_wp_user_id": "bigint(20) unsigned DEFAULT NULL",
+      "assinado_por_nome": "varchar(191) DEFAULT NULL",
+      "assinatura_texto_hash": "char(64) DEFAULT NULL",
+      "assinatura_numero_snapshot": "varchar(100) DEFAULT NULL"
     },
     "unique": [
       [
@@ -1260,6 +1265,11 @@
         "codcoligada",
         "excluido_em",
         "idmatricula"
+      ],
+      [
+        "codcoligada",
+        "idmodelo",
+        "assinado_em"
       ]
     ],
     "fks": [

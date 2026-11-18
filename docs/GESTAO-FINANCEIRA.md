@@ -8,7 +8,7 @@ Como administrador, abra **Perfis e acessos → perfil desejado → Editar acess
 
 ## Filtros
 
-Selecione a coligada de trabalho e o período no topo do portal. No painel, combine **competência inicial/final**, **turma** e **aluno**. Competências vazias incluem todas as competências do período consultado. Use **Buscar**, **Anterior** e **Próxima** para localizar turmas e alunos; os alunos podem ser pesquisados por nome ou RA. Clique em **Aplicar filtros**. **Limpar filtros** retorna à consulta de todas as turmas/alunos/competências dentro da coligada e do período.
+Selecione a coligada de trabalho e o período no topo do portal. Trocar o período da consulta atualiza o painel imediatamente e limpa competências, turma e aluno para evitar filtros do período anterior. A seleção acompanha os links de navegação, sem alterar o período vigente da escola. No painel, combine **competência inicial/final**, **turma** e **aluno**. Competências vazias incluem todas as competências do período consultado. Use **Buscar**, **Anterior** e **Próxima** para localizar turmas e alunos; os alunos podem ser pesquisados por nome ou RA. Clique em **Aplicar filtros**. **Limpar filtros** retorna à consulta de todas as turmas/alunos/competências dentro da coligada e do período.
 
 O mês é a competência da parcela. Os recebimentos seguem a competência da parcela à qual pertencem. O painel usa os valores atuais e a turma atual da matrícula. A linha de identificação da consulta mostra os filtros aplicados e a data de referência.
 
@@ -34,6 +34,6 @@ Saldos cancelados ou excluídos ficam fora da previsão e do atraso. Valores já
 
 ## Atualização
 
-Versão 0.19.28, schema 45 mantido. Consulte a atualização em **Plugins → ERP Educacional → Verificar atualizações**. As telas operacionais continuam em `erp_tela=financeiro`; o novo painel usa `erp_tela=gestao_financeira`. O shortcode `[erp_gestao_financeira]` abre o painel e `[erp_operacoes_financeiras]` abre o Financeiro. `[erp_financeiro]` continua sendo a visão financeira familiar.
+Disponível desde 0.19.28; atualização 0.19.29 com schema 46 e acompanhamento do período da consulta. Consulte a atualização em **Plugins → ERP Educacional → Verificar atualizações**. As telas operacionais continuam em `erp_tela=financeiro`; o novo painel usa `erp_tela=gestao_financeira`. O shortcode `[erp_gestao_financeira]` abre o painel e `[erp_operacoes_financeiras]` abre o Financeiro. `[erp_financeiro]` continua sendo a visão financeira familiar.
 
 Veja [as verificações realizadas](VALIDACAO.md) e [as próximas etapas registradas](PLANEJAMENTO-FINANCEIRO.md).

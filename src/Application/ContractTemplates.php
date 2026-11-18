@@ -43,15 +43,15 @@ final class ContractTemplates
         foreach(['padrao','ativo'] as $field){if(!in_array($data[$field]??null,[0,1,'0','1'],true))throw new RuleViolation('Situação do modelo inválida.');$fields[$field]=(int)$data[$field];}
         if($fields['padrao']&&!$fields['ativo'])throw new RuleViolation('O modelo padrão precisa estar ativo.');
         $reason=$id?Input::text($data['motivo']??null,2000):'Cadastro do modelo';
-        return $this->db->atomic(fn()=>$this->ops->run($key,'salvar_modelo_contrato',['idmodelo'=>$id]+$data,function()use($id,$data,$fields,$reason,$key){
+        return ContractTextLock::run($this->db,fn()=>$this->db->atomic(fn()=>$this->ops->run($key,'salvar_modelo_contrato',['idmodelo'=>$id]+$data,function()use($id,$data,$fields,$reason,$key){
             // Serialize default selection for each company, including new models.
             $this->db->get('coligadas',Coligadas::current(),true);$before=$id?$this->model($id,true):null;
             if($before&&(int)$before['versao']!==Input::id($data['versao']??null))throw new RuleViolation('Modelo alterado. Reabra a edição.');
             if($before&&$before['texto']!==$fields['texto']&&$before['versao_texto']===$fields['versao_texto'])throw new RuleViolation('Informe uma nova versão do texto ao alterar o modelo.');
             if($fields['padrao'])foreach($this->db->rows('SELECT * FROM '.$this->db->table('modelos_contrato').' WHERE codcoligada=%d AND padrao=1 AND excluido_em IS NULL FOR UPDATE',[Coligadas::current()]) as $old){if((int)$old['idmodelo']===$id)continue;$this->db->update('modelos_contrato',(int)$old['idmodelo'],['padrao'=>0]);$this->db->audit('modelos_contrato',(int)$old['idmodelo'],'trocar_padrao',$old,['padrao'=>0],$key);}
             if($id)$this->db->update('modelos_contrato',$id,$fields);else $id=$this->db->insert('modelos_contrato',$fields);
-            $after=$this->db->get('modelos_contrato',$id);$this->db->audit('modelos_contrato',$id,$before?'editar':'criar',$before,['dados'=>$after,'motivo'=>$reason],$key);return $after;
-        }));
+            $after=$this->db->get('modelos_contrato',$id);$this->db->audit('modelos_contrato',$id,$before?'editar':'criar',$before,['dados'=>$after,'motivo'=>$reason],$key);return $after+['contratos_atualizados'=>$this->syncUnsignedInside($after,$key)];
+        })));
     }
 
     public function remove(int $id,array $data,string $key):array
@@ -61,6 +61,20 @@ final class ContractTemplates
             $this->db->get('coligadas',Coligadas::current(),true);$before=$this->model($id,true);if((int)$before['versao']!==$version)throw new RuleViolation('Modelo alterado. Atualize a tela.');
             $this->db->update('modelos_contrato',$id,['excluido_em'=>gmdate('Y-m-d H:i:s'),'ativo'=>0,'padrao'=>0]);$this->db->audit('modelos_contrato',$id,'excluir',$before,['dados'=>$this->db->get('modelos_contrato',$id),'motivo'=>$reason],$key);return ['excluido'=>true,'idmodelo'=>(string)$id];
         }));
+    }
+
+    /** Runs inside the model transaction, after the shared text lock was acquired. */
+    private function syncUnsignedInside(array $model,string $key):int
+    {
+        $rows=$this->db->rows('SELECT idcontrato FROM '.$this->db->table('contratos').' WHERE codcoligada=%d AND idmodelo=%d AND assinado_em IS NULL AND excluido_em IS NULL ORDER BY idcontrato FOR UPDATE',[(int)$model['codcoligada'],(int)$model['idmodelo']]);$count=0;
+        foreach($rows as $row){
+            $id=(int)$row['idcontrato'];$before=$this->db->get('contratos',$id,true);
+            if(\EducacionalERP\Domain\ContractText::signed($before)||!empty($before['excluido_em']))continue;
+            $fields=['termo_snapshot'=>strtr($model['texto'],$this->values($before)),'versao_termo'=>$model['versao_texto'],'modelo_nome_snapshot'=>$model['nome'],'modelo_versao_snapshot'=>$model['versao']];
+            $changed=false;foreach($fields as $field=>$value)if((string)$before[$field]!==(string)$value)$changed=true;if(!$changed)continue;
+            EducbankOutbox::without(fn()=>$this->db->update('contratos',$id,$fields));$this->db->audit('contratos',$id,'sincronizar_modelo_texto',['termo_hash'=>hash('sha256',$before['termo_snapshot']),'modelo_versao'=>$before['modelo_versao_snapshot']],['termo_hash'=>hash('sha256',$fields['termo_snapshot']),'idmodelo'=>$model['idmodelo'],'modelo_versao'=>$model['versao']],$key);$count++;
+        }
+        return $count;
     }
 
     private function model(int $id,bool $lock=false):array
@@ -76,10 +90,10 @@ final class ContractTemplates
         return ['texto'=>strtr(self::text($data['texto']??null),$this->values($c))];
     }
 
-    /** Caller owns the contract transaction. Existing issued texts are never updated by model edits. */
+    /** Caller owns the contract transaction. Signed texts cannot be replaced. */
     public function applyInside(int $contract,array $data):void
     {
-        $c=$this->db->get('contratos',$contract);
+        $c=$this->db->get('contratos',$contract);\EducacionalERP\Domain\ContractText::requireEditable($c);
         Coligadas::within((int)$c['codcoligada'],function()use($c,$contract,$data){
             $model=null;
             if(!empty($data['idmodelo'])){
