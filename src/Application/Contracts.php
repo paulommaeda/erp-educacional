@@ -71,6 +71,7 @@ final class Contracts
             if($fields)$this->db->update('contratos',$id,$fields);
             if($changed&&$newPricing)(new Scholarships($this->db))->totalsInside($id);
             if($textChanged||!empty($data['idmodelo']))(new ContractTemplates($this->db,$this->ops))->applyInside($id,$data);
+            elseif($changed)(new ContractTemplates($this->db,$this->ops))->refreshInside($id);
             $after=$this->db->get('contratos',$id);$this->db->audit('contratos',$id,'editar',$c,['dados'=>$after,'motivo'=>$reason],$key);return $after;
         });}));
     }

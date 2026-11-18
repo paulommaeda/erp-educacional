@@ -16,6 +16,7 @@ final class ContractTemplates
         'pai_nome'=>'Nome do pai','pai_cpf'=>'CPF do pai','mae_nome'=>'Nome da mãe','mae_cpf'=>'CPF da mãe',
         'colegio_nome'=>'Nome do colégio','colegio_razao_social'=>'Razão social do colégio','colegio_cnpj'=>'CNPJ do colégio','colegio_endereco'=>'Endereço do colégio','colegio_email'=>'E-mail do colégio','colegio_telefone'=>'Telefone do colégio',
         'contrato_numero'=>'Número do contrato','contrato_data'=>'Data do contrato','contrato_valor_original'=>'Valor original total','contrato_desconto'=>'Bolsa total','contrato_valor_liquido'=>'Valor líquido total','contrato_parcelas'=>'Quantidade de parcelas','contrato_primeiro_vencimento'=>'Primeiro vencimento',
+        'contrato_valor_total'=>'Valor total contratado para o aluno, após bolsas/descontos e sem descontar pontualidade','contrato_valor_parcela'=>'Valor da parcela do aluno; discrimina as faixas quando os valores são diferentes','contrato_parcelamento'=>'Parcelamento do aluno com quantidades e valores, incluindo faixas diferentes','contrato_dia_vencimento'=>'Somente o dia de vencimento das parcelas (01 a 31)',
         'matricula_id'=>'Número da matrícula','periodo_codigo'=>'Período letivo','curso_nome'=>'Curso','turma_nome'=>'Turma','turno_nome'=>'Turno','plano_nome'=>'Plano de pagamento'
     ];
     public function __construct(private Store $db,private Operations $ops) {}
@@ -120,6 +121,32 @@ final class ContractTemplates
         });
     }
 
+    /** Refresh a linked unsigned model after editing its agreed financial conditions. */
+    public function refreshInside(int $contract):void
+    {
+        $c=$this->db->get('contratos',$contract);if(\EducacionalERP\Domain\ContractText::signed($c)||empty($c['idmodelo']))return;
+        $model=$this->db->get('modelos_contrato',(int)$c['idmodelo']);if((int)$model['codcoligada']!==(int)$c['codcoligada']||!empty($model['excluido_em']))return;
+        Coligadas::within((int)$c['codcoligada'],function()use($c,$model,$contract){
+            $format=$model['formato_texto']??'texto';$fields=['termo_snapshot'=>$this->render($model['texto'],$format,$c),'formato_texto'=>$format,'versao_termo'=>$model['versao_texto'],'modelo_nome_snapshot'=>$model['nome'],'modelo_versao_snapshot'=>$model['versao']];
+            foreach($fields as $field=>$value)if((string)$c[$field]!==(string)$value){EducbankOutbox::without(fn()=>$this->db->update('contratos',$contract,$fields));break;}
+        });
+    }
+
+    private static function currency(int $cents):string {return 'R$ '.number_format($cents/100,2,',','.');}
+    private function installmentTokens(array $c):array
+    {
+        $parcels=$this->db->rows('SELECT numero,valor_original,desconto_incondicional,valor_liquido FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d ORDER BY numero',[(int)$c['idcontrato']]);
+        if(!$parcels)$parcels=(new Scholarships($this->db))->plannedInstallments($c);
+        $groups=[];$totals=['valor_original'=>0,'desconto_incondicional'=>0,'valor_liquido'=>0];
+        foreach($parcels as $p){foreach($totals as $field=>$_)$totals[$field]+=Money::cents($p[$field]);$value=Money::cents($p['valor_liquido']);$number=(int)$p['numero'];$last=count($groups)-1;
+            if($last>=0&&$groups[$last]['valor']===$value&&$groups[$last]['fim']+1===$number){$groups[$last]['fim']=$number;$groups[$last]['quantidade']++;}
+            else $groups[]=['valor'=>$value,'inicio'=>$number,'fim'=>$number,'quantidade'=>1];
+        }
+        $amounts=[];$description=[];$varied=count($groups)>1;
+        foreach($groups as $g){$amount=self::currency($g['valor']);$range=$g['inicio']===$g['fim']?'parcela '.$g['inicio']:'parcelas '.$g['inicio'].' a '.$g['fim'];$amounts[]=$amount.($varied?' ('.$range.')':'');$description[]=$g['quantidade'].($g['quantidade']===1?' parcela de ':' parcelas de ').$amount.($varied?' ('.$range.')':'');}
+        return ['contrato_valor_original'=>self::currency($totals['valor_original']),'contrato_desconto'=>self::currency($totals['desconto_incondicional']),'contrato_valor_liquido'=>self::currency($totals['valor_liquido']),'contrato_valor_total'=>self::currency($totals['valor_liquido']),'contrato_valor_parcela'=>implode('; ',$amounts),'contrato_parcelamento'=>implode('; ',$description),'contrato_dia_vencimento'=>substr((string)$c['primeiro_vencimento'],8,2)];
+    }
+
     private static function date(?string $date):string {return $date?implode('/',array_reverse(explode('-',substr($date,0,10)))):'';}
     private static function address(array $person,bool $includeCountry=false):string
     {
@@ -137,8 +164,8 @@ final class ContractTemplates
             'colegio_nome'=>$school['nome'],'colegio_razao_social'=>$company['razao_social']?:$school['razao_social'],'colegio_cnpj'=>($company['cnpj']??'')?:$school['cnpj'],'colegio_endereco'=>self::address($school),'colegio_email'=>$school['email'],'colegio_telefone'=>$school['telefone'],
             'contrato_numero'=>$c['numero'],'contrato_data'=>self::date($c['data_contrato']),'contrato_parcelas'=>(string)$c['quantidade_parcelas'],'contrato_primeiro_vencimento'=>self::date($c['primeiro_vencimento']),
             'matricula_id'=>(string)$m['idmatricula'],'periodo_codigo'=>$period['codigo'],'curso_nome'=>$course['nome'],'turma_nome'=>$class['nome'],'turno_nome'=>$shift['nome'],'plano_nome'=>$c['plano_nome_snapshot']??''];
+        $values+=$this->installmentTokens($c);
         foreach(['rua','numero','complemento','bairro','cidade','estado','cep','pais'] as $field)$values['responsavel_'.$field]=(string)($rf[$field]??'');
-        foreach(['contrato_valor_original'=>'valor_original_total','contrato_desconto'=>'desconto_incondicional_total','contrato_valor_liquido'=>'valor_liquido_total'] as $token=>$field)$values[$token]='R$ '.number_format(Money::cents($c[$field])/100,2,',','.');
         foreach(['pai','mae'] as $relationship){$parent=$this->db->row('SELECT p.nome,p.cpf FROM '.$this->db->table('aluno_responsaveis').' r JOIN '.$this->db->table('pessoas').' p ON p.codpessoa=r.codpessoa_responsavel WHERE r.idaluno=%d AND r.parentesco=%s AND r.fim_vigencia IS NULL AND r.inicio_vigencia<=UTC_TIMESTAMP() ORDER BY r.idvinculo DESC LIMIT 1',[(int)$a['idaluno'],$relationship]);$values[$relationship.'_nome']=$parent['nome']??'';$values[$relationship.'_cpf']=$parent['cpf']??'';}
         $out=[];foreach(self::TOKENS as $token=>$_)$out['['.$token.']']=(string)($values[$token]??'');return $out;
     }
