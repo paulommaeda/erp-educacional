@@ -1,4 +1,4 @@
-# Contratos e modelos — 0.19.15
+# Contratos e modelos — 0.19.30
 
 O menu **Contratos** está disponível para administradores e perfis liberados em **Perfis e acessos → Editar acessos → Contratos**. Também há atalhos no Financeiro e na área Financeiro da ficha do aluno. **Bolsas e descontos dos contratos** é uma permissão independente, com uma lista própria para localizar contratos e administrar benefícios. A coligada de trabalho e o período da consulta são respeitados. Veja [o guia das permissões](PERFIS-CONTRATOS.md).
 
@@ -30,7 +30,7 @@ As filas Educbank antigas ficam ignoradas e não são recriadas por reprocessame
 
 ## Cadastrar modelos
 
-Em **Modelos de contrato → Novo modelo**, informe nome, versão do texto, conteúdo e situação. O texto inicial é um exemplo: substitua pelo conteúdo completo usado pelo colégio. O editor usa texto simples com quebras de linha.
+Em **Modelos de contrato → Novo modelo**, informe nome, versão do texto, conteúdo e situação. O texto inicial é um exemplo: substitua pelo conteúdo completo usado pelo colégio. O editor aceita texto simples ou HTML de formatação, identificado automaticamente. O seletor de formato permite escolher explicitamente HTML ou texto simples. Veja [HTML e impressão](CONTRATOS-HTML-IMPRESSAO.md).
 
 Abra **Shortcodes disponíveis** e clique em um campo para inseri-lo na posição do cursor. **Prévia com dados de um contrato** permite escolher um dos 20 contratos mais recentes da coligada, sem restrição de período, e conferir o preenchimento. A prévia não salva alterações no contrato de referência.
 
@@ -58,7 +58,7 @@ Estado civil, profissão e endereço vêm do cadastro em **Pessoas** do respons�
 
 Os novos campos são válidos na prévia e nas próximas emissões. Alterar os dados da pessoa ou trocar o responsável financeiro não modifica o texto já salvo nos contratos; use a edição do contrato para aplicar explicitamente um modelo atualizado, com motivo, quando necessário.
 
-Os shortcodes são substituições de texto de uma lista fixa. Não executam shortcodes de plugins, HTML ou código WordPress. O conteúdo tem limite de 40.000 bytes antes do preenchimento; nome e versão têm limites de 191 e 40 bytes, respectivamente.
+Os shortcodes são substituições de texto de uma lista fixa. Não executam shortcodes de plugins ou código WordPress. Em HTML, os valores são escapados e a marcação é filtrada para preservar a formatação segura. O conteúdo tem limite de 40.000 bytes antes do preenchimento; nome e versão têm limites de 191 e 40 bytes, respectivamente.
 
 ## Atualização
 
@@ -74,6 +74,7 @@ Todas as rotas ficam em `/wp-json/erp-educacional/v1`. Mutações usam `POST`, n
 | --- | --- | --- |
 | `/contratos` | GET | Lista paginada; filtros `search`, `codperiodo`, `status`, `idaluno`, `page` |
 | `/contratos/{id}` | GET / POST | Consulta ou edição com `versao` e `motivo` |
+| `/contratos/{id}/pdf` | GET | PDF privado com nome, MIME e conteúdo em Base64 |
 | `/contratos/{id}/excluir` | POST | Exclusão com `versao`, `motivo` e `confirmado: true` |
 | `/modelos-contrato` | GET / POST | Consulta de ativos ou cadastro; `todos=1` inclui inativos para o administrador |
 | `/modelos-contrato/{id}` | POST | Edição com versão de concorrência e motivo |

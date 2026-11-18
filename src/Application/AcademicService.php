@@ -67,7 +67,7 @@ final class AcademicService
             'valor_original_total'=>Money::format($face),'desconto_incondicional_total'=>Money::format($discount),'valor_liquido_total'=>Money::format($face-$discount),
             'mensalidade_base_total'=>Money::format($original),'desconto_base_total'=>Money::format($discount),'pontualidade_snapshot'=>Money::format($punctuality),
             'quantidade_parcelas'=>$count,'primeiro_vencimento'=>$first,'versao_termo'=>Input::text($data['versao_termo']??'1',40),
-            'termo_snapshot'=>Input::text($data['termo']??'Contrato registrado pela secretaria.',40000),
+            'termo_snapshot'=>\EducacionalERP\Domain\ContractMarkup::prepare($data['termo']??'Contrato registrado pela secretaria.',$data['formato_texto']??'auto')['texto'],
             'idplano'=>$plan['idplano'],'plano_nome_snapshot'=>$plan['nome'],'plano_versao_snapshot'=>$plan['versao'],'parcelas_geradas'=>0]);
         $selected=$data['bolsas']??[];if(!is_array($selected))throw new RuleViolation('Selecione as bolsas do contrato.');(new Scholarships($this->db))->attachInside($contract,$selected,$key);
         (new ContractTemplates($this->db,$this->operations))->applyInside($contract,$data);

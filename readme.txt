@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.29
+Stable tag: 0.19.30
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.30 =
+* Textos e modelos de contrato aceitam HTML de formatação, com títulos, destaques, listas, tabelas e estilos seguros; shortcodes são preenchidos sem executar conteúdo.
+* Impressão em PDF A4 segue o modelo visual: logo configurada no cabeçalho da primeira página, rodapé com endereço/contatos do colégio e numeração em todas as páginas.
+* PDF privado exige acesso a Contratos e respeita a coligada atual, sem guardar o documento em uploads públicos.
+* Schema 47 adiciona o formato do texto, preservando contratos e modelos anteriores como texto simples, assinaturas, hashes e cobranças.
 
 = 0.19.29 =
 * Contratos permitem registrar a assinatura com confirmação, data e autor; a marcação não pode ser desfeita e o texto/origem ficam bloqueados para todos os perfis.
