@@ -49,6 +49,7 @@ final class Controller
         $models=new \EducacionalERP\Application\ContractTemplates($this->db,new Operations($this->db));
         $this->route('/contratos','GET',fn()=>Access::canReadContracts(),fn($r)=>$contracts->listing($r->get_query_params()));
         $this->route('/contratos/'.$id,'GET',fn()=>Access::canManageContracts(),fn($r)=>$contracts->detail((int)$r['id']));
+        $this->route('/contratos/'.$id.'/pdf','GET',fn()=>Access::canManageContracts(),fn($r)=>(new \EducacionalERP\Application\ContractPrint($this->db,$contracts))->download((int)$r['id']));
         $this->route('/contratos/'.$id,'POST',fn()=>Access::canManageContracts(),fn($r)=>$contracts->update((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/contratos/'.$id.'/assinar','POST',fn()=>Access::canManageContracts(),fn($r)=>$contracts->sign((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/contratos/'.$id.'/excluir','POST',fn()=>Access::canManageContracts(),fn($r)=>$contracts->remove((int)$r['id'],$this->payload($r),$this->key($r)));

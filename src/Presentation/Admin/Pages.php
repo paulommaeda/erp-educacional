@@ -23,7 +23,8 @@ final class Pages
         if(Access::isAdmin()){wp_enqueue_script('ederp-permanent-deletion',plugins_url('assets/permanent-deletion.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);wp_enqueue_style('ederp-permanent-deletion',plugins_url('assets/permanent-deletion.css',EDERP_FILE),['ederp'],EDERP_VERSION);}
         wp_enqueue_script('ederp-financial-dashboard',plugins_url('assets/financial-dashboard.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_style('ederp-financial-dashboard',plugins_url('assets/financial-dashboard.css',EDERP_FILE),['ederp'],EDERP_VERSION);
-        wp_enqueue_script('ederp-contracts',plugins_url('assets/contracts.js',EDERP_FILE),['ederp','ederp-workflow'],EDERP_VERSION,true);
+        wp_enqueue_script('ederp-contract-document',plugins_url('assets/contract-document.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
+        wp_enqueue_script('ederp-contracts',plugins_url('assets/contracts.js',EDERP_FILE),['ederp','ederp-workflow','ederp-contract-document'],EDERP_VERSION,true);
         wp_enqueue_style('ederp-contracts',plugins_url('assets/contracts.css',EDERP_FILE),['ederp'],EDERP_VERSION);
         wp_enqueue_script('ederp-family',plugins_url('assets/family-students.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_style('ederp-family',plugins_url('assets/family-students.css',EDERP_FILE),['ederp'],EDERP_VERSION);

@@ -38,10 +38,10 @@ final class Contracts
     public function update(int $id,array $data,string $key):array
     {
         Access::requireManageContracts();
-        if(array_diff(array_keys($data),['versao','motivo','numero','data_contrato','termo','versao_termo','idmodelo','modelo_versao','valor_original_total','desconto_incondicional_total','mensalidade_base_total','desconto_base_total','quantidade_parcelas','primeiro_vencimento']))throw new RuleViolation('Campo de contrato inválido.');
+        if(array_diff(array_keys($data),['versao','motivo','numero','data_contrato','termo','formato_texto','versao_termo','idmodelo','modelo_versao','valor_original_total','desconto_incondicional_total','mensalidade_base_total','desconto_base_total','quantidade_parcelas','primeiro_vencimento']))throw new RuleViolation('Campo de contrato inválido.');
         $reason=Input::text($data['motivo']??null,2000);$version=Input::id($data['versao']??null);
         return ContractTextLock::run($this->db,fn()=>$this->db->atomic(function()use($id,$data,$version,$reason,$key){
-            $current=$this->contract($id,true);if(\EducacionalERP\Domain\ContractText::signed($current)&&array_intersect(array_keys($data),['termo','versao_termo','idmodelo','modelo_versao']))\EducacionalERP\Domain\ContractText::requireEditable($current);
+            $current=$this->contract($id,true);if(\EducacionalERP\Domain\ContractText::signed($current)&&array_intersect(array_keys($data),['termo','formato_texto','versao_termo','idmodelo','modelo_versao']))\EducacionalERP\Domain\ContractText::requireEditable($current);
             return $this->ops->run($key,'editar_contrato',['idcontrato'=>$id]+$data,function()use($id,$data,$version,$reason,$key){
             $c=$this->contract($id,true);if((int)$c['versao']!==$version)throw new RuleViolation('Contrato alterado. Reabra a edição.');
             if($c['status']!=='ativo')throw new RuleViolation('Somente contratos ativos podem ser editados.');$fields=[];
@@ -63,11 +63,13 @@ final class Contracts
                     $fields+=['mensalidade_base_total'=>Money::format($original),'desconto_base_total'=>Money::format($discount)];
                 }
             }
-            if(isset($data['termo'])&&$data['termo']!==$c['termo_snapshot']&&($fields['versao_termo']??$c['versao_termo'])===$c['versao_termo']&&empty($data['idmodelo']))throw new RuleViolation('Informe uma nova versão do termo ao alterar o texto.');
-            if(!$fields&&!isset($data['termo'])&&empty($data['idmodelo']))throw new RuleViolation('Informe os campos que deseja editar.');
+            $textChanged=(isset($data['termo'])&&$data['termo']!==$c['termo_snapshot'])||(isset($data['formato_texto'])&&$data['formato_texto']!==($c['formato_texto']??'texto'));
+            if(isset($data['formato_texto'])&&!in_array($data['formato_texto'],['texto','html'],true))throw new RuleViolation('Formato do contrato inválido.');
+            if($textChanged&&($fields['versao_termo']??$c['versao_termo'])===$c['versao_termo']&&empty($data['idmodelo']))throw new RuleViolation('Informe uma nova versão do termo ao alterar o texto.');
+            if(!$fields&&!$textChanged&&empty($data['idmodelo']))throw new RuleViolation('Informe os campos que deseja editar.');
             if($fields)$this->db->update('contratos',$id,$fields);
             if($changed&&$newPricing)(new Scholarships($this->db))->totalsInside($id);
-            if((array_key_exists('termo',$data)&&$data['termo']!==$c['termo_snapshot'])||!empty($data['idmodelo']))(new ContractTemplates($this->db,$this->ops))->applyInside($id,$data);
+            if($textChanged||!empty($data['idmodelo']))(new ContractTemplates($this->db,$this->ops))->applyInside($id,$data);
             $after=$this->db->get('contratos',$id);$this->db->audit('contratos',$id,'editar',$c,['dados'=>$after,'motivo'=>$reason],$key);return $after;
         });}));
     }

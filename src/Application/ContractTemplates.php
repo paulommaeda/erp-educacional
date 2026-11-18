@@ -2,10 +2,10 @@
 declare(strict_types=1);
 namespace EducacionalERP\Application;
 
-use EducacionalERP\Domain\{Store,Input,Money,RuleViolation};
+use EducacionalERP\Domain\{Store,Input,Money,RuleViolation,ContractMarkup};
 use EducacionalERP\Infrastructure\WordPress\{Access,SchoolIdentity};
 
-/** A fixed text vocabulary; contract models never execute WordPress shortcodes or HTML. */
+/** A fixed token vocabulary, with sanitized HTML formatting and no executable shortcodes. */
 final class ContractTemplates
 {
     public const TOKENS=[
@@ -27,19 +27,26 @@ final class ContractTemplates
         return ['items'=>$this->db->rows('SELECT * FROM '.$this->db->table('modelos_contrato').' WHERE codcoligada=%d AND excluido_em IS NULL'.($all?'':' AND ativo=1').' ORDER BY padrao DESC,nome,idmodelo',[Coligadas::current()]),'shortcodes'=>self::TOKENS];
     }
 
-    public static function text(mixed $text):string
+    public static function text(mixed $text,mixed $format='auto'):string
     {
-        $text=Input::text($text,40000);
+        $text=ContractMarkup::prepare($text,$format)['texto'];
         preg_match_all('/\[([^\]\r\n]+)\]/u',$text,$matches);
         foreach($matches[1] as $token)if(!isset(self::TOKENS[$token]))throw new RuleViolation('Shortcode desconhecido: ['.$token.']. Use os campos disponíveis.');
         return $text;
     }
 
+    private function render(string $text,string $format,array $contract):string
+    {
+        $values=$this->values($contract);if($format==='html')$values=array_map([ContractMarkup::class,'escape'],$values);
+        $rendered=strtr($text,$values);return $format==='html'?ContractMarkup::html($rendered):$rendered;
+    }
+
     public function save(?int $id,array $data,string $key):array
     {
         Access::requireManageContracts();
-        if(array_diff(array_keys($data),['nome','texto','versao_texto','padrao','ativo','versao','motivo']))throw new RuleViolation('Campo de modelo inválido.');
-        $fields=['nome'=>Input::text($data['nome']??null,191),'texto'=>self::text($data['texto']??null),'versao_texto'=>Input::text($data['versao_texto']??null,40)];
+        if(array_diff(array_keys($data),['nome','texto','formato_texto','versao_texto','padrao','ativo','versao','motivo']))throw new RuleViolation('Campo de modelo inválido.');
+        $markup=ContractMarkup::prepare($data['texto']??null,$data['formato_texto']??'auto');
+        $fields=['nome'=>Input::text($data['nome']??null,191),'texto'=>self::text($markup['texto'],$markup['formato_texto']),'formato_texto'=>$markup['formato_texto'],'versao_texto'=>Input::text($data['versao_texto']??null,40)];
         foreach(['padrao','ativo'] as $field){if(!in_array($data[$field]??null,[0,1,'0','1'],true))throw new RuleViolation('Situação do modelo inválida.');$fields[$field]=(int)$data[$field];}
         if($fields['padrao']&&!$fields['ativo'])throw new RuleViolation('O modelo padrão precisa estar ativo.');
         $reason=$id?Input::text($data['motivo']??null,2000):'Cadastro do modelo';
@@ -47,7 +54,8 @@ final class ContractTemplates
             // Serialize default selection for each company, including new models.
             $this->db->get('coligadas',Coligadas::current(),true);$before=$id?$this->model($id,true):null;
             if($before&&(int)$before['versao']!==Input::id($data['versao']??null))throw new RuleViolation('Modelo alterado. Reabra a edição.');
-            if($before&&$before['texto']!==$fields['texto']&&$before['versao_texto']===$fields['versao_texto'])throw new RuleViolation('Informe uma nova versão do texto ao alterar o modelo.');
+            if($before&&$data['texto']===$before['texto']&&!isset($data['formato_texto'])){$fields['texto']=$before['texto'];$fields['formato_texto']=$before['formato_texto']??'texto';}
+            if($before&&($before['texto']!==$fields['texto']||($before['formato_texto']??'texto')!==$fields['formato_texto'])&&$before['versao_texto']===$fields['versao_texto'])throw new RuleViolation('Informe uma nova versão do texto ao alterar o modelo.');
             if($fields['padrao'])foreach($this->db->rows('SELECT * FROM '.$this->db->table('modelos_contrato').' WHERE codcoligada=%d AND padrao=1 AND excluido_em IS NULL FOR UPDATE',[Coligadas::current()]) as $old){if((int)$old['idmodelo']===$id)continue;$this->db->update('modelos_contrato',(int)$old['idmodelo'],['padrao'=>0]);$this->db->audit('modelos_contrato',(int)$old['idmodelo'],'trocar_padrao',$old,['padrao'=>0],$key);}
             if($id)$this->db->update('modelos_contrato',$id,$fields);else $id=$this->db->insert('modelos_contrato',$fields);
             $after=$this->db->get('modelos_contrato',$id);$this->db->audit('modelos_contrato',$id,$before?'editar':'criar',$before,['dados'=>$after,'motivo'=>$reason],$key);return $after+['contratos_atualizados'=>$this->syncUnsignedInside($after,$key)];
@@ -70,7 +78,8 @@ final class ContractTemplates
         foreach($rows as $row){
             $id=(int)$row['idcontrato'];$before=$this->db->get('contratos',$id,true);
             if(\EducacionalERP\Domain\ContractText::signed($before)||!empty($before['excluido_em']))continue;
-            $fields=['termo_snapshot'=>strtr($model['texto'],$this->values($before)),'versao_termo'=>$model['versao_texto'],'modelo_nome_snapshot'=>$model['nome'],'modelo_versao_snapshot'=>$model['versao']];
+            $format=$model['formato_texto']??'texto';
+            $fields=['termo_snapshot'=>$this->render($model['texto'],$format,$before),'formato_texto'=>$format,'versao_termo'=>$model['versao_texto'],'modelo_nome_snapshot'=>$model['nome'],'modelo_versao_snapshot'=>$model['versao']];
             $changed=false;foreach($fields as $field=>$value)if((string)$before[$field]!==(string)$value)$changed=true;if(!$changed)continue;
             EducbankOutbox::without(fn()=>$this->db->update('contratos',$id,$fields));$this->db->audit('contratos',$id,'sincronizar_modelo_texto',['termo_hash'=>hash('sha256',$before['termo_snapshot']),'modelo_versao'=>$before['modelo_versao_snapshot']],['termo_hash'=>hash('sha256',$fields['termo_snapshot']),'idmodelo'=>$model['idmodelo'],'modelo_versao'=>$model['versao']],$key);$count++;
         }
@@ -87,7 +96,8 @@ final class ContractTemplates
     {
         Access::requireManageContracts();$c=$this->db->get('contratos',Input::id($data['idcontrato']??null));
         if((int)$c['codcoligada']!==Coligadas::current()||!empty($c['excluido_em']))throw new RuleViolation('Contrato indisponível nesta coligada.');
-        return ['texto'=>strtr(self::text($data['texto']??null),$this->values($c))];
+        $markup=ContractMarkup::prepare($data['texto']??null,$data['formato_texto']??'auto');
+        return ['texto'=>$this->render(self::text($markup['texto'],$markup['formato_texto']),$markup['formato_texto'],$c),'formato_texto'=>$markup['formato_texto']];
     }
 
     /** Caller owns the contract transaction. Signed texts cannot be replaced. */
@@ -104,8 +114,9 @@ final class ContractTemplates
                 if($selected){$model=$this->model((int)$selected['idmodelo'],true);if(!$model['padrao'])throw new RuleViolation('O modelo padrão mudou. Tente novamente.');}
             }
             if($model&&!(int)$model['ativo'])throw new RuleViolation('Modelo de contrato inativo.');
-            $text=self::text($model['texto']??($data['termo']??$c['termo_snapshot']));
-            $this->db->update('contratos',$contract,['termo_snapshot'=>strtr($text,$this->values($c)),'versao_termo'=>$model['versao_texto']??($data['versao_termo']??$c['versao_termo']),'idmodelo'=>$model['idmodelo']??null,'modelo_nome_snapshot'=>$model['nome']??null,'modelo_versao_snapshot'=>$model['versao']??null]);
+            $markup=ContractMarkup::prepare($model['texto']??($data['termo']??$c['termo_snapshot']),$model['formato_texto']??($data['formato_texto']??(array_key_exists('termo',$data)?'auto':($c['formato_texto']??'texto'))));
+            $text=self::text($markup['texto'],$markup['formato_texto']);
+            $this->db->update('contratos',$contract,['termo_snapshot'=>$this->render($text,$markup['formato_texto'],$c),'formato_texto'=>$markup['formato_texto'],'versao_termo'=>$model['versao_texto']??($data['versao_termo']??$c['versao_termo']),'idmodelo'=>$model['idmodelo']??null,'modelo_nome_snapshot'=>$model['nome']??null,'modelo_versao_snapshot'=>$model['versao']??null]);
         });
     }
 
