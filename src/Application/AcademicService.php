@@ -61,7 +61,7 @@ final class AcademicService
         $discount=Money::cents($data['desconto_incondicional_total']??'0.00');
         if($original<=0||$discount<0||$discount>=$original)throw new RuleViolation('O valor do plano deve superar a pontualidade e os descontos manuais.');
         Money::split($original-$discount,$count);
-        $first=Input::date($data['primeiro_vencimento']??null);
+        $first=\EducacionalERP\Domain\EnrollmentDueDate::validate($data['primeiro_vencimento']??null);
         $contract=$this->db->insert('contratos',['numero'=>ContractNumbers::forEnrollment($this->db,$enrollment),'idmatricula'=>$enrollment,
             'codpessoa_rf_original'=>$person['codpessoa'],'codpessoa_rf_atual'=>$person['codpessoa'],'data_contrato'=>Input::today(),
             'valor_original_total'=>Money::format($face),'desconto_incondicional_total'=>Money::format($discount),'valor_liquido_total'=>Money::format($face-$discount),

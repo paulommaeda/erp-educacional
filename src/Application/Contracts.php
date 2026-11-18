@@ -54,6 +54,7 @@ final class Contracts
             $financial=[...($newPricing?['mensalidade_base_total','desconto_base_total']:['valor_original_total','desconto_incondicional_total']),'quantidade_parcelas','primeiro_vencimento'];$changed=false;
             foreach($financial as $field)if(isset($data[$field])&&(string)$data[$field]!== (string)$c[$field])$changed=true;
             if($changed){
+                if(isset($data['primeiro_vencimento'])&&$data['primeiro_vencimento']!==$c['primeiro_vencimento'])\EducacionalERP\Domain\EnrollmentDueDate::validate($data['primeiro_vencimento']);
                 if((int)$c['parcelas_geradas']||$this->db->row('SELECT idparcela FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d LIMIT 1 FOR UPDATE',[$id]))throw new RuleViolation('As parcelas já foram geradas. Ajuste os lançamentos na Gestão financeira.');
                 $baseField=$newPricing?'mensalidade_base_total':'valor_original_total';$manualField=$newPricing?'desconto_base_total':'desconto_incondicional_total';$original=Money::positive($data[$baseField]??$c[$baseField]);$discount=Money::cents($data[$manualField]??$c[$manualField]);$count=Input::id($data['quantidade_parcelas']??$c['quantidade_parcelas']);
                 if($discount<0||$discount>=$original)throw new RuleViolation('Bolsa deve ser menor que o valor original e não pode ser negativa.');Money::split($original-$discount,$count);

@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.30
+Stable tag: 0.19.31
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.31 =
+* Primeira parcela de novas matrículas e contratos deve vencer hoje ou em data futura, com validação no formulário e no servidor usando a data local do WordPress.
+* Secretaria pode enviar documentos recebidos por WhatsApp, e-mail ou presencialmente, com permissão, origem registrada e armazenamento privado criptografado.
+* Modelos de e-mail e destinatários por coligada: recebimento pela equipe, aprovação/rejeição aos responsáveis e lembretes de pendências a cada 48 horas.
+* Início mostra documentos obrigatórios ausentes e documentos a reenviar, com link direto para envio. Arquivos aguardando análise não geram cobrança.
+* Schema 48 preserva arquivos e dados anteriores, registra notificações e controla os ciclos de lembretes sem recalcular parcelas.
 
 = 0.19.30 =
 * Textos e modelos de contrato aceitam HTML de formatação, com títulos, destaques, listas, tabelas e estilos seguros; shortcodes são preenchidos sem executar conteúdo.

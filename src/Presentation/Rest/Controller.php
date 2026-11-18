@@ -8,7 +8,7 @@ use EducacionalERP\Domain\{Input,RuleViolation,UsernameRequired};
 final class Controller
 {
     public const NS='erp-educacional/v1';
-    public function __construct(private Database $db,private Access $access,private AcademicService $academic,private CatalogService $catalog,private FinanceService $finance,private ExportService $export,private RenewalService $renewal,private StudentWorkflow $workflow) {}
+    public function __construct(private Database $db,private Access $access,private AcademicService $academic,private CatalogService $catalog,private FinanceService $finance,private ExportService $export,private RenewalService $renewal,private StudentWorkflow $workflow,private ?\EducacionalERP\Domain\StudentFiles $documentFiles=null) {}
     private function route(string $path,string $method,callable $permission,callable $handler): void
     {
         register_rest_route(self::NS,$path,['methods'=>$method,'permission_callback'=>function($r)use($permission,$path,$method){
@@ -75,17 +75,25 @@ final class Controller
         $this->route('/retiradas-alunos/'.$id.'/requerimentos','GET',fn()=>\EducacionalERP\Application\PublicAdmissions::canReview(),fn($r)=>$admissions->studentRequests((int)$r['id']));
         $receipts=new \EducacionalERP\Application\PaymentReceipt($this->db,$this->access);
         $this->route('/lancamentos/'.$id.'/recibo','GET',fn()=>MenuPolicy::any(['financeiro','meu_financeiro','alunos']),fn($r)=>$receipts->download((int)$r['id']));
-        $family=new \EducacionalERP\Application\FamilyStudents($this->db);$documents=new \EducacionalERP\Application\StudentDocuments($this->db);
+        $family=new \EducacionalERP\Application\FamilyStudents($this->db);$documents=new \EducacionalERP\Application\StudentDocuments($this->db,$this->documentFiles);
         $this->route('/familia/alunos/'.$id.'/contato','GET',fn()=>true,fn($r)=>$family->detail((int)$r['id']));
         $this->route('/familia/alunos/'.$id.'/contato','POST',fn()=>true,fn($r)=>$family->update((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/familia/alunos/'.$id.'/documentos','GET',fn()=>true,fn($r)=>$documents->listing((int)$r['id']));
+        $this->route('/familia/documentos/avisos','GET',fn()=>true,fn()=>(new \EducacionalERP\Application\DocumentChecklist($this->db))->homeAlerts());
         $this->route('/familia/alunos/'.$id.'/documentos/(?P<tipo>[1-9][0-9]{0,17})','POST',fn()=>true,fn($r)=>$documents->upload((int)$r['id'],(int)$r['tipo'],$r->get_file_params()['documento']??[],$this->key($r)));
         $this->route('/familia/documentos/'.$id.'/arquivo','GET',fn()=>true,fn($r)=>$documents->download((int)$r['id']));
         $this->route('/configuracoes/documentos-alunos','GET',fn()=>Access::isAdmin(),fn()=>$documents->types());
         $this->route('/configuracoes/documentos-alunos','POST',fn()=>Access::isAdmin(),fn($r)=>$documents->saveType($this->payload($r),$this->key($r)));
         $this->route('/configuracoes/documentos-alunos/'.$id.'/excluir','POST',fn()=>Access::isAdmin(),fn($r)=>$documents->removeType((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/configuracoes/documentos-emails','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Application\DocumentMailSettings::payload());
+        $this->route('/configuracoes/documentos-emails','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Application\DocumentMailSettings::save($this->payload($r)));
+        $documentMail=new \EducacionalERP\Infrastructure\WordPress\DocumentNotifications($this->db);
+        $this->route('/configuracoes/documentos-emails/historico','GET',fn()=>Access::isAdmin(),fn($r)=>$documentMail->listing((int)($r->get_param('page')?:1)));
+        $this->route('/configuracoes/documentos-emails/'.$id.'/tentar','POST',fn()=>Access::isAdmin(),fn($r)=>$documentMail->retry((int)$r['id']));
         $this->route('/documentos-alunos','GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->queue((string)($r->get_param('status')?:'pendente'),(string)$r->get_param('search'),(int)($r->get_param('page')?:1),(int)$r->get_param('idtipo_documento')));
         $this->route('/documentos-alunos/alunos/'.$id,'GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->listing((int)$r['id'],true));
+        $this->route('/documentos-alunos/buscar-alunos','GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->searchStudents((string)($r->get_param('search')??''),(int)($r->get_param('page')?:1)));
+        $this->route('/documentos-alunos/alunos/'.$id.'/(?P<tipo>[1-9][0-9]{0,17})','POST',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->upload((int)$r['id'],(int)$r['tipo'],$r->get_file_params()['documento']??[],$this->key($r),true));
         $this->route('/documentos-alunos/'.$id.'/arquivo','GET',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->download((int)$r['id'],true));
         $this->route('/documentos-alunos/'.$id.'/conferir','POST',fn()=>\EducacionalERP\Application\StudentDocuments::canReview(),fn($r)=>$documents->review((int)$r['id'],$this->payload($r),$this->key($r)));
         $returns=new \EducacionalERP\Application\EducbankReturns($this->db);
@@ -314,7 +322,7 @@ final class Controller
             $cards[]=['menu'=>$menu,'titulo'=>$title,'total'=>(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table($table).($where?' WHERE '.implode(' AND ',$where):''),$args)['n']];
         }
         $students=(new \EducacionalERP\Application\FamilyOverview($this->db))->decorate($this->access->students());
-        return ['cards'=>$cards,'alunos'=>$students];
+        return ['cards'=>$cards,'alunos'=>$students,'avisos_documentos'=>(new \EducacionalERP\Application\DocumentChecklist($this->db))->homeAlerts(),'documentos_em_analise'=>\EducacionalERP\Application\StudentDocuments::canReview()?(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table('aluno_documentos')." WHERE codcoligada=%d AND status='pendente'",[\EducacionalERP\Application\Coligadas::current()])['n']:0];
     }
     private function uploadPhoto(\WP_REST_Request $r):array
     {

@@ -55,7 +55,7 @@ final class wpdb
 $GLOBALS['test_user']=1;
 $GLOBALS['test_options']=[];
 function wp_json_encode(mixed $v): string {return json_encode($v,JSON_THROW_ON_ERROR);}
-function wp_date(string $f): string {return date($f);}
+function wp_date(string $f,?int $timestamp=null): string {return date($f,$timestamp??($GLOBALS['ederp_fixture_time']??time()));}
 function wp_timezone(): DateTimeZone {return new DateTimeZone('UTC');}
 function get_current_user_id(): int {return $GLOBALS['test_user'];}
 function wp_set_current_user(int $id): void {$GLOBALS['test_user']=$id;}
