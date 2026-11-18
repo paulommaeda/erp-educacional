@@ -71,7 +71,7 @@ final class Authentication
         }
         if(($_SERVER['REQUEST_METHOD']??'GET')!=='POST'||!isset($_POST['erp_auth']))return;
         $action=self::text('erp_auth',$_POST);self::$message=self::process($action,$_POST);
-        if(in_array(self::$message,['login_ok','reset_ok'],true)){wp_safe_redirect(self::$message==='login_ok'?Portal::url():add_query_arg('senha_alterada','1',Portal::url()));exit;}
+        if(in_array(self::$message,['login_ok','reset_ok'],true)){$target=self::$message==='login_ok'?Portal::url():add_query_arg('senha_alterada','1',Portal::url());$documentStudent=self::text('documentos_aluno',$_POST);if(self::$message==='login_ok'&&preg_match('/^[1-9][0-9]{0,17}$/D',$documentStudent))$target=add_query_arg('documentos_aluno',$documentStudent,$target);$staffDocument=self::text('aluno_documentos',$_POST);if(self::$message==='login_ok'&&preg_match('/^[1-9][0-9]{0,17}$/D',$staffDocument))$target=add_query_arg('aluno_documentos',$staffDocument,Portal::url('documentos'));wp_safe_redirect($target);exit;}
     }
     public static function render(string $logo,string $view):string
     {
@@ -97,6 +97,8 @@ final class Authentication
         if($reset&&is_wp_error(check_password_reset_key($key,$login)))return $html.'<p role="alert" class="erp-login-notice">Link inválido ou expirado.</p><a href="'.esc_url(Portal::url('recuperar_senha')).'">Solicitar outro link</a>'.$footer;
         $url=$reset?add_query_arg(['erp_key'=>$key,'erp_login'=>$login]+($first?['erp_primeiro_acesso'=>'1']:[]),Portal::url($view)):Portal::url($recover?'recuperar_senha':'inicio');
         $html.='<form method="post" action="'.esc_url($url).'" class="erp-login-form">'.wp_nonce_field('ederp_auth_'.$action,'_wpnonce',false,false).'<input type="hidden" name="erp_auth" value="'.$action.'">';
+        $documentStudent=self::text('documentos_aluno',$_GET)?:self::text('documentos_aluno',$_POST);if(!$reset&&!$recover&&preg_match('/^[1-9][0-9]{0,17}$/D',$documentStudent))$html.='<input type="hidden" name="documentos_aluno" value="'.esc_attr($documentStudent).'">';
+        $staffDocument=self::text('aluno_documentos',$_GET)?:self::text('aluno_documentos',$_POST);if(!$reset&&!$recover&&preg_match('/^[1-9][0-9]{0,17}$/D',$staffDocument))$html.='<input type="hidden" name="aluno_documentos" value="'.esc_attr($staffDocument).'">';
         if($reset)$html.='<input type="hidden" name="login" value="'.esc_attr($login).'"><input type="hidden" name="key" value="'.esc_attr($key).'">';
         else $html.='<label for="erp-login-user">E-mail ou usuário</label><input id="erp-login-user" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" value="'.esc_attr($login).'" required>';
         if(!$recover){

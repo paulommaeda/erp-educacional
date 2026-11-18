@@ -3815,6 +3815,7 @@
       "tamanho": "int unsigned NOT NULL",
       "sha256": "varchar(64) NOT NULL",
       "enviado_por_wp_user_id": "bigint(20) unsigned NOT NULL",
+      "origem_envio": "varchar(20) NOT NULL DEFAULT 'familia'",
       "enviado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
       "revisado_por_wp_user_id": "bigint(20) unsigned DEFAULT NULL",
       "revisado_em": "datetime DEFAULT NULL",
@@ -3825,6 +3826,7 @@
       "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
     },
     "unique": [
+      ["codcoligada", "iddocumento"],
       [
         "codcoligada",
         "idaluno",
@@ -4627,6 +4629,129 @@
         "references": [
           "codcoligada",
           "idbolsa"
+        ]
+      }
+    ]
+  },
+  "documento_notificacoes": {
+    "pk": [
+      "idnotificacao"
+    ],
+    "columns": {
+      "idnotificacao": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "iddocumento": "bigint(20) unsigned DEFAULT NULL",
+      "tipo": "varchar(20) NOT NULL",
+      "destinatario": "varchar(191) NOT NULL",
+      "chave": "char(64) NOT NULL",
+      "status": "varchar(20) NOT NULL DEFAULT 'pendente'",
+      "tentativas": "int unsigned NOT NULL DEFAULT 0",
+      "proxima_tentativa": "datetime NOT NULL",
+      "ultima_tentativa_em": "datetime DEFAULT NULL",
+      "enviado_em": "datetime DEFAULT NULL",
+      "assunto_enviado": "text DEFAULT NULL",
+      "ultimo_erro": "varchar(500) DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "chave"
+      ]
+    ],
+    "indexes": [
+      [
+        "status",
+        "proxima_tentativa"
+      ],
+      [
+        "codcoligada",
+        "idnotificacao"
+      ],
+      [
+        "idaluno",
+        "tipo"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "iddocumento"
+        ],
+        "target": "aluno_documentos",
+        "references": [
+          "codcoligada",
+          "iddocumento"
+        ]
+      }
+    ]
+  },
+  "documento_lembretes": {
+    "pk": [
+      "idlembrete"
+    ],
+    "columns": {
+      "idlembrete": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL",
+      "idaluno": "bigint(20) unsigned NOT NULL",
+      "proximo_envio_em": "datetime DEFAULT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "codcoligada",
+        "idaluno"
+      ]
+    ],
+    "indexes": [
+      [
+        "proximo_envio_em"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idaluno"
+        ],
+        "target": "alunos",
+        "references": [
+          "codcoligada",
+          "idaluno"
         ]
       }
     ]

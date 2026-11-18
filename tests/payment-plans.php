@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';
+require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';require_once __DIR__.'/fixtures/historical-clock.php';
 use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Infrastructure\WordPress\{Access,Accounts,MenuPolicy};
 use EducacionalERP\Application\{Operations,CatalogService,AcademicService,StudentWorkflow,SchoolSettings,RenewalService,FinanceService,DeletionService};
@@ -30,7 +30,7 @@ deniedP(fn()=>$cat->edit('periodos_letivos',$period,['codperiodo_proximo'=>null]
 $cat->edit('planos_pagamento',$futurePlan,['valor_anuidade'=>'1500.00'],keyP());
 $rf=addP('pessoas',['email'=>'fixture-payment-plans-3@example.test','nome'=>'Responsavel Plano','data_nascimento'=>'1980-01-01']);$rf2=addP('pessoas',['email'=>'fixture-payment-plans-2@example.test','nome'=>'Outro Responsavel','data_nascimento'=>'1981-01-01']);$a=$flow->createStudent(['email'=>'fixture-payment-plans-1@example.test','nome'=>'Aluno Plano','data_nascimento'=>'2015-01-01','ra'=>'00077'],keyP());$student=(int)$a['idaluno'];
 $cat->link($student,['codpessoa_responsavel'=>$rf,'parentesco'=>'mae','responsavel_financeiro'=>1,'responsavel_academico'=>1,'pode_rematricular'=>1],keyP());$cat->link($student,['codpessoa_responsavel'=>$rf2,'parentesco'=>'pai','responsavel_academico'=>1],keyP());
-$initial=$flow->batch(['codperiodo'=>$period,'idturma'=>$t,'alunos'=>[$student],'quantidade_parcelas'=>3,'primeiro_vencimento'=>'2026-01-31','valor_original_total'=>'0.01','idplano'=>$plan,'plano_versao'=>1],keyP())['items'][0];$ct=(int)$initial['idcontrato'];$snapshot=$db->get('contratos',$ct);$parcels=parcelsP($ct);
+$initial=atHistoricalDate('2026-01-01',fn()=>$flow->batch(['codperiodo'=>$period,'idturma'=>$t,'alunos'=>[$student],'quantidade_parcelas'=>3,'primeiro_vencimento'=>'2026-01-31','valor_original_total'=>'0.01','idplano'=>$plan,'plano_versao'=>1],keyP()))['items'][0];$ct=(int)$initial['idcontrato'];$snapshot=$db->get('contratos',$ct);$parcels=parcelsP($ct);
 testP($snapshot['valor_original_total']==='1000.01','anuidade vem do plano mesmo se cliente envia valor diferente');
 testP(count($parcels)===3&&$parcels[0]['valor_original']==='333.34'&&$parcels[2]['valor_original']==='333.33','número escolhido divide anuidade preservando centavos');
 testP($parcels[1]['vencimento_original']==='2026-02-28','parcelas respeitam fim do mês');

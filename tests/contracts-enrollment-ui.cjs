@@ -3,7 +3,7 @@ const wait=()=>new Promise(r=>setTimeout(r,40));
 async function run(withModel,manual=false){
  const errors=[],calls=[],vc=new VirtualConsole();vc.on('jsdomError',e=>{if(!e.message.includes('navigation'))errors.push(e);});
  const dom=new JSDOM('<main class="ederp"><section data-erp-screen="matriculas"></section></main>',{url:'https://school.test/portal?erp_tela=matriculas&novo=1',runScripts:'dangerously',virtualConsole:vc}),w=dom.window,d=w.document;
- w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.EDERP={root:'https://school.test/api/',front:true,portal:'https://school.test/portal',period:7,nonce:'fixture',caps:{academic:true,people:true,admin:true}};
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.EDERP={root:'https://school.test/api/',front:true,portal:'https://school.test/portal',period:7,nonce:'fixture',today:'2026-11-18',caps:{academic:true,people:true,admin:true}};
  w.fetch=async(raw,options={})=>{const u=new URL(raw),route=u.pathname.slice(5),body=options.body&&JSON.parse(options.body);calls.push({route,body,options});let result;
    if(body)result={total:1};
    else if(route==='modelos-contrato')result={items:withModel?[{idmodelo:'3',nome:'Modelo anual',versao_texto:'2',versao:'5',ativo:'1',padrao:'1'}]:[]};
@@ -20,8 +20,8 @@ async function run(withModel,manual=false){
  const model=d.querySelector('dialog [name=idmodelo]');assert.equal(model.required,false,'texto personalizado deve continuar disponível sem selecionar modelo');
  if(manual){model.value='';model.dispatchEvent(new w.Event('change'));d.querySelector('dialog [name=termo]').value='Texto personalizado para [aluno_nome].';}
  else if(withModel){assert.equal(model.value,'3');assert(d.querySelector('dialog [name=termo]').parentElement.hidden);}
- d.querySelector('dialog [name=primeiro_vencimento]').value='2027-01-31';[...d.querySelectorAll('button')].find(b=>b.textContent==='Selecionar alunos desta página').click();d.querySelector('dialog form').requestSubmit();await wait();
- const post=calls.find(c=>c.route==='matriculas/lote'&&c.body);assert(post,'o formulário de matrícula deve enviar a confirmação');assert.equal(post.body.idplano,'4');assert.deepEqual(post.body.alunos,['2']);
+ const first=d.querySelector('dialog [name=primeiro_vencimento]'),form=d.querySelector('dialog form');assert.equal(first.min,'2026-11-18');first.value='2026-11-17';[...d.querySelectorAll('button')].find(b=>b.textContent==='Selecionar alunos desta página').click();form.requestSubmit();await wait();assert.equal(first.validity.rangeUnderflow,true);assert.equal(calls.some(c=>c.route==='matriculas/lote'&&c.body),false);form.noValidate=true;form.reportValidity=()=>true;form.requestSubmit();await wait();assert.equal(calls.some(c=>c.route==='matriculas/lote'&&c.body),false);assert.match(d.querySelector('dialog').textContent,/hoje ou uma data futura/);form.noValidate=false;delete form.reportValidity;first.value='2026-11-18';form.requestSubmit();await wait();
+ const post=calls.find(c=>c.route==='matriculas/lote'&&c.body);assert(post,'o formulário de matrícula deve enviar a confirmação');assert.equal(post.body.primeiro_vencimento,'2026-11-18');assert.equal(post.body.idplano,'4');assert.deepEqual(post.body.alunos,['2']);
  if(withModel&&!manual){assert.equal(post.body.idmodelo,'3');assert.equal(post.body.modelo_versao,'5');assert.equal(post.body.termo,undefined);}else{assert.equal(post.body.idmodelo,undefined);assert.match(post.body.termo,/personalizado|prestação de serviços/);}
  assert.equal(errors.length,0);assert.equal(d.querySelector('dialog[open]'),null);dom.window.close();
 }

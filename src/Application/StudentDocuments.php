@@ -41,6 +41,13 @@ final class StudentDocuments
     }
     private function version(array $row,array $data):void {if(!isset($data['versao'])||(string)$data['versao']!==(string)$row['versao'])throw new RuleViolation('Registro alterado. Atualize a tela antes de continuar.');}
     private function publicRow(array $row):array {unset($row['arquivo_token'],$row['sha256']);return $row;}
+    public function searchStudents(string $search,int $page=1):array
+    {
+        $this->staff();$page=max(1,min(100000,$page));if(strlen($search)>191)throw new RuleViolation('Busca muito longa.');
+        $from=' FROM '.$this->db->table('alunos').' a JOIN '.$this->db->table('pessoas').' p ON p.codpessoa=a.codpessoa WHERE a.codcoligada=%d AND a.ativo=1 AND p.ativo=1';$args=[Coligadas::current()];
+        if(trim($search)!==''){$from.=' AND (p.nome LIKE %s OR a.ra LIKE %s)';$term='%'.addcslashes(trim($search),'_%\\').'%';array_push($args,$term,$term);}
+        return ['items'=>$this->db->rows('SELECT a.idaluno,a.ra,p.nome'.$from.' ORDER BY p.nome,a.idaluno LIMIT 20 OFFSET %d',[...$args,($page-1)*20]),'page'=>$page,'total'=>(int)$this->db->row('SELECT COUNT(*) AS n'.$from,$args)['n']];
+    }
     public function listing(int $student,bool $staff=false):array
     {
         $a=$this->student($student,$staff);$ids=$staff?[$student]:(new FamilyAccess($this->db))->localStudents($student);$out=[];
@@ -51,15 +58,16 @@ final class StudentDocuments
             }
         }return $out;
     }
-    public function upload(int $student,int $type,array $file,string $key):array
+    public function upload(int $student,int $type,array $file,string $key,bool $staff=false):array
     {
-        $a=$this->student($student,false);$result=Coligadas::within((int)$a['codcoligada'],fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'enviar_documento_aluno',['idaluno'=>$student,'idtipo_documento'=>$type,'nome'=>(string)($file['name']??''),'hash'=>!empty($file['tmp_name'])&&is_file($file['tmp_name'])?hash_file('sha256',$file['tmp_name']):''],function()use($student,$type,$file,$key){
-            $a=$this->student($student,false,true);$t=$this->db->get('tipos_documento_aluno',$type,true);
+        $a=$this->student($student,$staff);$result=Coligadas::within((int)$a['codcoligada'],fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'enviar_documento_aluno',['idaluno'=>$student,'idtipo_documento'=>$type,'origem'=>$staff?'secretaria':'familia','nome'=>(string)($file['name']??''),'hash'=>!empty($file['tmp_name'])&&is_file($file['tmp_name'])?hash_file('sha256',$file['tmp_name']):''],function()use($student,$type,$file,$key,$staff){
+            $a=$this->student($student,$staff,true);if(!(int)$a['ativo']||!(int)$this->db->get('pessoas',(int)$a['codpessoa'])['ativo'])throw new RuleViolation('Aluno inativo.');$t=$this->db->get('tipos_documento_aluno',$type,true);
             if((int)$t['codcoligada']!==(int)$a['codcoligada']||!(int)$t['ativo'])throw new RuleViolation('Documento não solicitado por este colégio.');
             $slot=$this->db->row('SELECT iddocumento FROM '.$this->db->table('aluno_documentos').' WHERE idaluno=%d AND idtipo_documento=%d AND ativo_unico=1 FOR UPDATE',[$student,$type]);if($slot)throw new RuleViolation('Este documento já foi enviado e está aguardando conferência ou foi aprovado.');
             $stored=$this->files->put($file);$this->db->onCompletion(function($committed)use($stored){if(!$committed)$this->files->delete($stored['arquivo_token']);});
-            $id=$this->db->insert('aluno_documentos',$stored+['codcoligada'=>$a['codcoligada'],'idaluno'=>$student,'idtipo_documento'=>$type,'enviado_por_wp_user_id'=>get_current_user_id()]);
-            $this->db->audit('aluno_documentos',$id,'enviar',null,['idaluno'=>$student,'idtipo_documento'=>$type,'arquivo_nome'=>$stored['arquivo_nome'],'status'=>'pendente'],$key);return ['iddocumento'=>$id,'status'=>'pendente'];
+            $id=$this->db->insert('aluno_documentos',$stored+['codcoligada'=>$a['codcoligada'],'idaluno'=>$student,'idtipo_documento'=>$type,'origem_envio'=>$staff?'secretaria':'familia','enviado_por_wp_user_id'=>get_current_user_id(),'enviado_em'=>gmdate('Y-m-d H:i:s')]);
+            (new \EducacionalERP\Infrastructure\WordPress\DocumentNotifications($this->db))->refreshReminder($student);
+            $this->db->audit('aluno_documentos',$id,'enviar',null,['idaluno'=>$student,'idtipo_documento'=>$type,'arquivo_nome'=>$stored['arquivo_nome'],'status'=>'pendente','origem_envio'=>$staff?'secretaria':'familia'],$key);if(!$staff)(new \EducacionalERP\Infrastructure\WordPress\DocumentNotifications($this->db))->document($id,'recebido');return ['iddocumento'=>$id,'status'=>'pendente'];
         })));return $result;
     }
     public function queue(string $status,string $search,int $page=1,int $type=0):array
@@ -81,7 +89,7 @@ final class StudentDocuments
             $reason=$status==='rejeitado'?trim(sanitize_textarea_field(Input::text($data['motivo']??null,1000))):null;if($status==='rejeitado'&&$reason==='')throw new RuleViolation('Informe o motivo da rejeição para orientar o responsável.');
             $valid=['status'=>$status,'motivo'=>$reason,'ativo_unico'=>$status==='aprovado'?1:null,'revisado_por_wp_user_id'=>get_current_user_id(),'revisado_em'=>gmdate('Y-m-d H:i:s')];
             if($status==='aprovado'){$bytes=$this->files->read((string)$row['arquivo_token']);if(!hash_equals($row['sha256'],hash('sha256',$bytes)))throw new RuleViolation('Arquivo sem integridade. Rejeite o documento e solicite um novo envio.');}
-            $this->db->update('aluno_documentos',$id,$valid);$this->db->audit('aluno_documentos',$id,'conferir',['status'=>$row['status']],$valid,$key);return ['iddocumento'=>$id,'status'=>$status];
+            $this->db->update('aluno_documentos',$id,$valid);$this->db->audit('aluno_documentos',$id,'conferir',['status'=>$row['status']],$valid,$key);(new \EducacionalERP\Infrastructure\WordPress\DocumentNotifications($this->db))->document($id,$status);return ['iddocumento'=>$id,'status'=>$status];
         }));try{$this->cleanupRejected();}catch(\Throwable $ignored){}return $result;
     }
     public function download(int $id,bool $staff=false):array

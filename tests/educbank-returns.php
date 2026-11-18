@@ -1,6 +1,6 @@
 <?php
 declare(strict_types=1);
-require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';require __DIR__.'/fixtures/legacy-pricing.php';
+require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';require_once __DIR__.'/fixtures/historical-clock.php';require __DIR__.'/fixtures/legacy-pricing.php';
 use EducacionalERP\Infrastructure\Database\{Database,Installer};
 use EducacionalERP\Infrastructure\WordPress\Access;
 use EducacionalERP\Infrastructure\Educbank\{Settings,ReturnSettings,Webhook,Cron};
@@ -33,7 +33,7 @@ $db->update('coligadas',1,['cnpj'=>'11222333000181']);update_option('ederp_schem
 $period=add('periodos_letivos',['codigo'=>'2026','descricao'=>'Ano letivo','data_inicio'=>'2026-01-01','data_fim'=>'2026-12-31']);$course=add('cursos',['codigo'=>'EF','nome'=>'Fundamental']);$shift=add('turnos',['codigo'=>'M','nome'=>'Manhã']);$plan=add('planos_pagamento',['codperiodo'=>$period,'codigo'=>'A','nome'=>'Anual','valor_anuidade'=>'6000.00']);$class=add('turmas',['codperiodo'=>$period,'idcurso'=>$course,'idturno'=>$shift,'idplano'=>$plan,'capacidade'=>30,'codigo'=>'6ANO','nome'=>'6º Ano']);
 $rf=add('pessoas',['nome'=>'Maria Retorno','data_nascimento'=>'1980-01-01','cpf'=>'52998224725','email'=>'maria@example.test','pais'=>'BR','estado'=>'PR','cidade'=>'Curitiba','rua'=>'Rua Escola','numero'=>'10','cep'=>'80010000']);$person=add('pessoas',['email'=>'fixture-educbank-returns-0@example.test','nome'=>'Aluno Retorno','data_nascimento'=>'2015-01-01']);$student=add('alunos',['codpessoa'=>$person,'ra'=>'000123']);$cat->link($student,['codpessoa_responsavel'=>$rf,'parentesco'=>'mae','responsavel_financeiro'=>1],keyid());
 $config=['ativo'=>1,'ambiente'=>'sandbox','sandbox'=>['tenant'=>'school','token'=>'test-api-secret'],'producao'=>['tenant'=>'school-prod','token'=>'prod-api-secret'],'plano'=>'Gateway','item_nome'=>'mensalidade','multa'=>'2.00','juros_diarios'=>'0.03','periodos'=>[$period=>['ano'=>2026,'semestre'=>null]],'turmas'=>[$class=>'EF:6'],'versao'=>0];$integration->save($config);
-$m=$flow->batch(['codperiodo'=>$period,'idturma'=>$class,'alunos'=>[$student],'quantidade_parcelas'=>6,'primeiro_vencimento'=>'2026-01-10'],keyid())['items'][0];makeLegacyPricing($db,(int)$m['idcontrato']);(new ContractDiscounts($db,$ops))->add((int)$m['idcontrato'],['nome'=>'Bolsa','valor'=>'100.00','parcela_inicio'=>1,'parcela_fim'=>6],keyid());update_option('ederp_pontualidade','50.00');$integration->process(1,10);
+$m=atHistoricalDate('2026-01-01',fn()=>$flow->batch(['codperiodo'=>$period,'idturma'=>$class,'alunos'=>[$student],'quantidade_parcelas'=>6,'primeiro_vencimento'=>'2026-01-10'],keyid()))['items'][0];makeLegacyPricing($db,(int)$m['idcontrato']);(new ContractDiscounts($db,$ops))->add((int)$m['idcontrato'],['nome'=>'Bolsa','valor'=>'100.00','parcela_inicio'=>1,'parcela_fim'=>6],keyid());update_option('ederp_pontualidade','50.00');$integration->process(1,10);
 $jobs=$db->rows('SELECT * FROM '.$db->table('educbank_fila')." WHERE tipo='fatura' ORDER BY idintegracao");ck(count($jobs)===6,'Faturas sincronizadas para teste');
 $j=$jobs[0];$id=(int)$j['idlancamento'];$remote=invoice($j);
 $raRemote=$remote;$remote['items'][0]['studentExternalId']=(string)$m['idmatricula'];
