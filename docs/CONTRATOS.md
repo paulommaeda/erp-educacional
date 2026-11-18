@@ -1,10 +1,10 @@
-# Contratos e modelos — 0.19.30
+# Contratos e modelos — 0.19.32
 
 O menu **Contratos** está disponível para administradores e perfis liberados em **Perfis e acessos → Editar acessos → Contratos**. Também há atalhos no Financeiro e na área Financeiro da ficha do aluno. **Bolsas e descontos dos contratos** é uma permissão independente, com uma lista própria para localizar contratos e administrar benefícios. A coligada de trabalho e o período da consulta são respeitados. Veja [o guia das permissões](PERFIS-CONTRATOS.md).
 
 ## Consultar e editar
 
-Na aba **Contratos dos alunos**, busque por nome, RA ou número. O filtro de situação permite localizar contratos ativos, cancelados e aguardando parcelas. **Ver contrato** exibe o texto guardado no momento da emissão; **Imprimir contrato** abre a impressão do navegador, que também permite salvar em PDF.
+Na aba **Contratos dos alunos**, busque por nome, RA ou número. O filtro de situação permite localizar contratos ativos, cancelados e aguardando parcelas. **Ver contrato** exibe o texto guardado no momento da emissão; **Imprimir contrato** prepara o PDF A4 para impressão no leitor do navegador.
 
 **Editar** permite corrigir número, data e texto, com motivo obrigatório. Ao mudar o texto manualmente, informe uma nova versão do termo. Selecionar um modelo na edição substitui o texto daquele contrato pela versão atual do modelo, preenchida com os dados atuais.
 
@@ -47,10 +47,36 @@ O contrato guarda o texto preenchido, nome do modelo, versão do modelo e versã
 | Endereço do assinante | `[responsavel_endereco_completo]`, `[responsavel_rua]`, `[responsavel_numero]`, `[responsavel_complemento]`, `[responsavel_bairro]`, `[responsavel_cidade]`, `[responsavel_estado]`, `[responsavel_cep]`, `[responsavel_pais]`, `[responsavel_endereco]` |
 | Pai e mãe com vínculo vigente | `[pai_nome]`, `[pai_cpf]`, `[mae_nome]`, `[mae_cpf]` |
 | Colégio | `[colegio_nome]`, `[colegio_razao_social]`, `[colegio_cnpj]`, `[colegio_endereco]`, `[colegio_email]`, `[colegio_telefone]` |
-| Contrato | `[contrato_numero]`, `[contrato_data]`, `[contrato_valor_original]`, `[contrato_desconto]`, `[contrato_valor_liquido]`, `[contrato_parcelas]`, `[contrato_primeiro_vencimento]` |
+| Contrato | `[contrato_numero]`, `[contrato_data]`, `[contrato_valor_original]`, `[contrato_desconto]`, `[contrato_valor_liquido]`, `[contrato_valor_total]`, `[contrato_parcelas]`, `[contrato_valor_parcela]`, `[contrato_parcelamento]`, `[contrato_dia_vencimento]`, `[contrato_primeiro_vencimento]` |
 | Acadêmico | `[matricula_id]`, `[periodo_codigo]`, `[curso_nome]`, `[turma_nome]`, `[turno_nome]`, `[plano_nome]` |
 
 Datas são preenchidas como `DD/MM/AAAA` e valores como `R$ 12.000,00`. Dados opcionais ausentes ficam em branco. A razão social e o CNPJ vêm prioritariamente da coligada proprietária do contrato; os demais dados institucionais usam a identidade configurada nessa coligada.
+
+### Plano de pagamento do aluno
+
+Os valores usam as condições do plano adotado na matrícula daquele aluno, a quantidade escolhida e o primeiro vencimento registrado no contrato. Depois da geração, o valor de cada parcela vem das parcelas contratuais; antes dela, o ERP usa o mesmo cálculo financeiro da geração, com divisão exata dos centavos e bolsas/descontos por faixa. Não são usados saldo em aberto, juros, multas ou valor de baixas.
+
+| Campo | Resultado |
+| --- | --- |
+| `[contrato_valor_original]` | Total original contratado, antes das bolsas e descontos incondicionais |
+| `[contrato_valor_total]` ou `[contrato_valor_liquido]` | Total contratado após bolsas/descontos incondicionais, sem antecipar o desconto condicional de pontualidade |
+| `[contrato_parcelas]` | Quantidade de parcelas do aluno, como `12` |
+| `[contrato_valor_parcela]` | Valor, como `R$ 1.353,00`; se variar, informa cada valor e sua faixa de parcelas |
+| `[contrato_parcelamento]` | Quantidade e valor, como `12 parcelas de R$ 1.353,00`; discrimina faixas quando necessário |
+| `[contrato_dia_vencimento]` | Somente o dia com dois dígitos, como `05`, `10` ou `31` |
+| `[contrato_primeiro_vencimento]` | Data completa do primeiro vencimento, como `10/01/2027` |
+
+Exemplo para o modelo:
+
+```text
+O valor total do contrato é [contrato_valor_total], em [contrato_parcelamento],
+com vencimento todo dia [contrato_dia_vencimento].
+O primeiro vencimento será em [contrato_primeiro_vencimento].
+```
+
+Um plano de R$ 16.236,00 em 12 parcelas, sem bolsa, preenche total R$ 16.236,00 e parcelas de R$ 1.353,00. Com a bolsa de 50% do exemplo do colégio, as parcelas são R$ 779,50 antes da pontualidade e o total é R$ 9.354,00. O desconto de R$ 103,00 por pagamento em dia segue sua condição própria. Se a bolsa valer somente das parcelas 1 a 6, o parcelamento discrimina essas seis parcelas de R$ 779,50 e as seis seguintes de R$ 1.353,00. Pequenas diferenças de centavos também são discriminadas, sem usar uma média que não corresponda à cobrança.
+
+O dia é o do primeiro vencimento contratado; em meses sem esse dia, a cobrança continua ajustada ao último dia do mês. Alterar depois o preço no catálogo de planos não troca o valor já contratado. A edição permitida das condições de um contrato pendente atualiza os campos de seu modelo vinculado, desde que o texto ainda não esteja assinado. Textos personalizados e modelos excluídos são preservados. Para incluir os novos campos em contratos existentes, edite o modelo, informe uma nova versão do texto e salve; somente contratos vinculados não assinados serão atualizados.
 
 Estado civil, profissão e endereço vêm do cadastro em **Pessoas** do responsável financeiro atual do contrato, que será o assinante. O estado civil é preenchido pelo nome cadastrado em **Configurações → Estados civis**, com suporte ao texto legado. Não são usados os dados do aluno ou de um responsável que tenha somente atribuição acadêmica.
 
@@ -61,6 +87,8 @@ Os novos campos são válidos na prévia e nas próximas emissões. Alterar os d
 Os shortcodes são substituições de texto de uma lista fixa. Não executam shortcodes de plugins ou código WordPress. Em HTML, os valores são escapados e a marcação é filtrada para preservar a formatação segura. O conteúdo tem limite de 40.000 bytes antes do preenchimento; nome e versão têm limites de 191 e 40 bytes, respectivamente.
 
 ## Atualização
+
+A versão 0.19.32 acrescenta os campos de valores, parcelamento e dia de vencimento. Mantém o schema 48, sem atualização em lote de textos, recálculo de cobranças ou alteração de assinaturas.
 
 A versão 0.19.13 adiciona a tabela `modelos_contrato` e campos opcionais de origem do texto e exclusão em `contratos` (schema 38). A migração é aditiva e preserva o texto e a versão dos contratos anteriores. A exportação administrativa do grupo Financeiro inclui modelos, contratos excluídos e seus metadados.
 

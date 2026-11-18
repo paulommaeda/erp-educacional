@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.31
+Stable tag: 0.19.32
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.32 =
+* Campos do contrato preenchem o total, valor das parcelas e parcelamento com as condições contratadas para cada aluno, incluindo bolsas por faixa e divisão exata dos centavos.
+* Novo shortcode [contrato_dia_vencimento] retorna somente o dia, para cláusulas como vencimento todo dia 10.
+* Edição das condições de um contrato pendente atualiza os campos do modelo vinculado. Textos assinados permanecem bloqueados.
+* Sem mudança de schema ou recálculo automático de cobranças existentes.
 
 = 0.19.31 =
 * Primeira parcela de novas matrículas e contratos deve vencer hoje ou em data futura, com validação no formulário e no servidor usando a data local do WordPress.

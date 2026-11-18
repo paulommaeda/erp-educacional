@@ -81,11 +81,26 @@ final class Scholarships
         $values=['valor_original'=>Money::format($quote['original']),'desconto_incondicional'=>Money::format($quote['desconto']),'valor_liquido'=>Money::format($quote['liquido']),'pontualidade_acrescimo'=>Money::format($punctuality),'pontualidade_snapshot'=>Money::format($punctuality),'bolsa_aplicada'=>Money::format($quote['bolsa']),'bolsas_json'=>wp_json_encode($quote['aplicacoes'])];$changes=$values+['saldo_aberto'=>Money::format($balance),'status'=>$balance===0?'quitado':'aberto'];$different=false;foreach($changes as $field=>$value)if((string)$title[$field]!==$value){$different=true;break;}$p=$this->db->get('parcelas',(int)$title['idparcela']);$parcelValues=$values+['desconto_condicional_previsto'=>Money::format(min($punctuality,$quote['liquido'])),'limite_desconto_condicional'=>$title['vencimento']];$parcelChanged=false;foreach($parcelValues as $field=>$value)if((string)$p[$field]!==$value){$parcelChanged=true;break;}if(!$different&&!$parcelChanged)return false;
         if($different){$this->db->update('lancamentos',(int)$title['idlancamento'],$changes);$this->db->audit('lancamentos',(int)$title['idlancamento'],'recalcular_bolsas',$title,$this->db->get('lancamentos',(int)$title['idlancamento']),$key);}if($parcelChanged){$this->db->update('parcelas',(int)$p['idparcela'],$parcelValues);$this->db->audit('parcelas',(int)$p['idparcela'],'recalcular_bolsas',$p,$this->db->get('parcelas',(int)$p['idparcela']),$key);}return true;
     }
+    /** The agreed contract plan, before generating charges; also used by contract shortcodes. */
+    public function plannedInstallments(array $c):array
+    {
+        $count=(int)$c['quantidade_parcelas'];$newPricing=$c['mensalidade_base_total']!==null;
+        $base=Money::split(Money::positive($c['mensalidade_base_total']??$c['valor_original_total']),$count);
+        $manual=Money::cents($c['desconto_base_total']??$c['desconto_incondicional_total']);$parts=array_pad($manual?Money::split($manual,min($count,$manual)):[],$count,0);
+        $rows=$newPricing?$this->concessions((int)$c['idcontrato']):[];$discounts=new ContractDiscounts($this->db,new Operations($this->db));$out=[];
+        for($i=0;$i<$count;$i++){
+            $discount=$parts[$i]+$discounts->plannedAmount($c,$i+1);
+            if(!$newPricing&&$discount>$base[$i])throw new RuleViolation('Os descontos superam o valor da parcela do contrato.');
+            $quote=$newPricing?ScholarshipPricing::quote($base[$i],$discount,Money::cents($c['pontualidade_snapshot']),$this->activeRules($rows,$i+1)):['original'=>$base[$i],'desconto'=>$discount,'liquido'=>$base[$i]-$discount];
+            $out[]=['numero'=>$i+1,'valor_original'=>Money::format($quote['original']),'desconto_incondicional'=>Money::format($quote['desconto']),'valor_liquido'=>Money::format($quote['liquido'])];
+        }
+        return $out;
+    }
     public function totalsInside(int $id):void
     {
         $c=$this->db->get('contratos',$id);$parcels=$this->db->rows('SELECT valor_original,desconto_incondicional,valor_liquido FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d ORDER BY numero',[$id]);$totals=['valor_original_total'=>0,'desconto_incondicional_total'=>0,'valor_liquido_total'=>0];
         if($parcels)foreach($parcels as $p){$totals['valor_original_total']+=Money::cents($p['valor_original']);$totals['desconto_incondicional_total']+=Money::cents($p['desconto_incondicional']);$totals['valor_liquido_total']+=Money::cents($p['valor_liquido']);}
-        elseif($c['mensalidade_base_total']!==null){$count=(int)$c['quantidade_parcelas'];$base=Money::split(Money::positive($c['mensalidade_base_total']),$count);$manual=Money::cents($c['desconto_base_total']);$parts=array_pad($manual?Money::split($manual,min($count,$manual)):[],$count,0);$rows=$this->concessions($id);$discounts=new ContractDiscounts($this->db,new Operations($this->db));for($i=0;$i<$count;$i++){$quote=ScholarshipPricing::quote($base[$i],$parts[$i]+$discounts->plannedAmount($c,$i+1),Money::cents($c['pontualidade_snapshot']),$this->activeRules($rows,$i+1));$totals['valor_original_total']+=$quote['original'];$totals['desconto_incondicional_total']+=$quote['desconto'];$totals['valor_liquido_total']+=$quote['liquido'];}}
+        elseif($c['mensalidade_base_total']!==null)foreach($this->plannedInstallments($c) as $p)foreach($totals as $field=>$_)$totals[$field]+=Money::cents($p[str_replace('_total','',$field)]);
         else return;
         $values=array_map(fn($amount)=>Money::format($amount),$totals);$changed=false;foreach($values as $field=>$value)if($c[$field]!==$value)$changed=true;if($changed)EducbankOutbox::without(fn()=>$this->db->update('contratos',$id,$values));
     }

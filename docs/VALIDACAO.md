@@ -1,5 +1,14 @@
 # Validação
 
+## 0.19.32
+
+- `tests/contract-plan-shortcodes.php`: 41 verificações SQLite. Total original, bolsas e total líquido usam o parcelamento do aluno, com quatro novos campos: total, valor da parcela, parcelamento e dia de vencimento. Conferidos alunos com quantidades/dias próprios, antes/depois da geração, bolsas de 50%/integral/fixa/por faixa, divisão exata dos centavos, dia 31 em fevereiro, edição posterior do catálogo, condições pendentes, contratos legados com descontos por faixa e pagamentos parciais. Prévia/modelo em HTML, permissões, coligada, assinatura, integridade e preservação das cobranças também validados.
+- 13 suítes PHP aprovadas: campos do plano, contratos/modelos, assinatura, HTML, dados do assinante, descontos, bolsas, pontualidade, planos, permissões, gestão financeira, ciclo da matrícula e Educbank/bolsas. Sintaxe conferida nos seis PHP e dois JavaScript envolvidos.
+- Quatro suítes de interface aprovadas: contratos, assinatura, matrícula com modelo e HTML/impressão. O editor oferece os novos campos, insere-os na posição do cursor e usa total/parcelamento/dia no texto inicial de novos modelos.
+- `tests/wordpress-contract-html.php`: 27 verificações no WordPress 7.1.3/MariaDB 11.4.8. Campos disponíveis pela REST autorizada, valores DECIMAL, dia isolado, bolsa por faixa com pontualidade de R$ 103, correspondência entre plano previsto e parcelas geradas, PDF privado, duas coligadas e proteção dos textos assinados. Regressão nativa de assinatura também aprovada (29 verificações). Transportes externos interceptados, sem envio de e-mail ou alteração no site do colégio.
+- PDF gerado pela aplicação real teve os valores, quantidade e dia extraídos/conferidos e a página A4 renderizada/inspecionada, incluindo cabeçalho, tabela e rodapé.
+- Schema permanece 48. A instalação não reescreve textos em lote nem recalcula cobranças; o modelo precisa ser editado/salvo para incluir os campos nos contratos não assinados. A edição de condições de um contrato pendente atualiza somente o texto de seu modelo vinculado ainda não assinado.
+
 ## 0.19.31
 
 - `tests/document-notifications.php`: 56 verificações SQLite. D-1 recusado, hoje/futuro aceitos, rollback da matrícula, proteção ao editar o primeiro vencimento, envio da secretaria sem vínculo familiar, bloqueio de substituição, aprovação/rejeição e e-mails idempotentes. Conferidos modelos/destinatários, autorização familiar, avisos iniciais, 48 horas, cron atrasado sem acumular ciclos, cancelamento após envio/revogação/desativação, cinco falhas, nova tentativa administrativa, isolamento por coligada e bloqueio durante migração. Uma fila interrompida é reaproveitada ao retomar o cron, sem acumular outra mensagem para o mesmo aluno/destinatário.
