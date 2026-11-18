@@ -94,7 +94,7 @@ Não foram usadas credenciais reais nem emitidas cobranças no Educbank. Migraç
 
 ## Indicador nas parcelas — 0.16.1
 
-Na Gestão financeira e na aba Financeiro da ficha do aluno, a situação de pagamento permanece acompanhada de um indicador separado:
+No Financeiro e na aba Financeiro da ficha do aluno, a situação de pagamento permanece acompanhada de um indicador separado:
 
 - **Integrado (verde):** existe um UUID da fatura e a última sincronização foi confirmada para a coligada, tenant e ambiente selecionados.
 - **Não integrado (vermelho):** não há envio neste ambiente, há erro/conferência, atualização pendente ou falta confirmação do UUID.
@@ -141,7 +141,7 @@ Validação com HTTP simulado: recusa 404 no POST de matrícula, espera das fatu
 
 O botão **Pagar** abre em nova aba a URL da fatura salva na integração, para parcelas em aberto ou vencidas com vínculo e última sincronização confirmados. Faturas sem URL válida ou com atualização pendente exibem Aguardando fatura. Parcelas pagas/canceladas e faturas que o parceiro já informou como Paid/Canceled não oferecem novo pagamento ao responsável.
 
-Na **Gestão financeira**, o menu de ações de cada linha inclui **Abrir fatura**. O link também aparece nos detalhes do lançamento e na aba Financeiro da ficha do aluno. A gestão pode consultar o link já conhecido inclusive quando há uma atualização pendente ou o lançamento está encerrado, como na checagem da integração.
+Na **Financeiro**, o menu de ações de cada linha inclui **Abrir fatura**. O link também aparece nos detalhes do lançamento e na aba Financeiro da ficha do aluno. A gestão pode consultar o link já conhecido inclusive quando há uma atualização pendente ou o lançamento está encerrado, como na checagem da integração.
 
 O endpoint financeiro acrescenta `url_fatura` (HTTPS válido ou null) somente aos lançamentos que a autorização e o filtro do responsável já permitem consultar. O vínculo é buscado em lote, pela coligada proprietária, tenant e ambiente selecionados. O portal familiar continua sem o objeto técnico `educbank`, erros da fila ou UUID remoto. As leituras usam o banco local, sem requisições ao parceiro, criação de cobrança ou envio de credenciais ao navegador.
 

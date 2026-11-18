@@ -1,6 +1,6 @@
 # Contratos e modelos — 0.19.15
 
-O menu **Contratos** está disponível para administradores e perfis liberados em **Perfis e acessos → Editar acessos → Contratos**. Também há atalhos na Gestão financeira e na área Financeiro da ficha do aluno. **Bolsas e descontos dos contratos** é uma permissão independente, com uma lista própria para localizar contratos e administrar benefícios. A coligada de trabalho e o período da consulta são respeitados. Veja [o guia das permissões](PERFIS-CONTRATOS.md).
+O menu **Contratos** está disponível para administradores e perfis liberados em **Perfis e acessos → Editar acessos → Contratos**. Também há atalhos no Financeiro e na área Financeiro da ficha do aluno. **Bolsas e descontos dos contratos** é uma permissão independente, com uma lista própria para localizar contratos e administrar benefícios. A coligada de trabalho e o período da consulta são respeitados. Veja [o guia das permissões](PERFIS-CONTRATOS.md).
 
 ## Consultar e editar
 
@@ -8,14 +8,14 @@ Na aba **Contratos dos alunos**, busque por nome, RA ou número. O filtro de sit
 
 **Editar** permite corrigir número, data e texto, com motivo obrigatório. Ao mudar o texto manualmente, informe uma nova versão do termo. Selecionar um modelo na edição substitui o texto daquele contrato pela versão atual do modelo, preenchida com os dados atuais.
 
-Enquanto nenhuma parcela tiver sido gerada, também é possível corrigir valor original, bolsa total, quantidade e primeiro vencimento. O valor líquido é recalculado pelo servidor. Após a geração, use a Gestão financeira para os ajustes de lançamentos. Responsáveis e matrícula continuam sendo administrados pelos fluxos próprios do ERP.
+Enquanto nenhuma parcela tiver sido gerada, também é possível corrigir valor original, bolsa total, quantidade e primeiro vencimento. O valor líquido é recalculado pelo servidor. Após a geração, use o Financeiro para os ajustes de lançamentos. Responsáveis e matrícula continuam sendo administrados pelos fluxos próprios do ERP.
 
 Na versão **0.19.26**, o plano de pagamento contém a anuidade sem desconto de pontualidade. Em contratos novos, a edição separa **Anuidade sem o componente de pontualidade** e **Desconto manual total**: o primeiro campo representa a composição interna sem esse componente, e o sistema recompõe o valor bruto e as bolsas. A geração não acrescenta pontualidade novamente ao valor cadastrado no plano. Contratos anteriores mantêm suas regras e a instalação não recalcula parcelas em lote. Para bolsas percentuais sobre a parcela integral, bolsas em reais e alterações por faixa, veja [Bolsas cadastráveis](BOLSAS.md).
 
 ## Excluir
 
 1. Abra **Excluir** no contrato desejado.
-2. Se houver lançamentos vinculados, abra **Gestão financeira**, localize o aluno e exclua os lançamentos desse contrato. A exclusão em lote pode ser usada. Lançamentos cancelados ainda disponíveis também devem ser excluídos.
+2. Se houver lançamentos vinculados, abra **Financeiro**, localize o aluno e exclua os lançamentos desse contrato. A exclusão em lote pode ser usada. Lançamentos cancelados ainda disponíveis também devem ser excluídos.
 3. Volte ao contrato, informe o motivo e marque a confirmação com o número do contrato.
 
 O contrato sai das consultas operacionais. Seu registro, texto, parcelas e baixas permanecem no banco para auditoria e exportação administrativa. A matrícula é preservada. A ação não cancela nem estorna faturas no Educbank. Se for preciso emitir outro contrato, a ficha do aluno volta a oferecer **Configurar contrato**; o novo contrato recebe outro número, preservando o anterior no histórico.

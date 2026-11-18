@@ -18,7 +18,7 @@ final class EnrollmentDirectory
         if(!empty($data['data_inicio'])&&!empty($data['data_fim'])&&$data['data_inicio']>$data['data_fim'])throw new RuleViolation('A data inicial deve ser anterior à final.');
         $joins.=' WHERE '.implode(' AND ',$where);$page=max(1,min(100000,(int)($data['page']??1)));
         $total=(int)$this->db->row('SELECT COUNT(*) AS n'.$joins,$args)['n'];
-        $rows=$this->db->rows('SELECT m.idmatricula,m.codcoligada,m.idaluno,m.versao,m.codperiodo,a.ra,p.nome AS aluno,t.nome AS turma,u.nome AS turno,c.nome AS curso,l.codigo AS periodo,m.status,a.tipo_aluno,m.data_matricula,m.origem'.$joins.' ORDER BY p.nome,m.idmatricula LIMIT 20 OFFSET %d',[...$args,($page-1)*20]);
+        $rows=$this->db->rows('SELECT m.idmatricula,m.codcoligada,m.idaluno,m.versao,m.codperiodo,a.ra,p.nome AS aluno,t.nome AS turma,u.nome AS turno,u.codigo AS turno_codigo,c.nome AS curso,c.codigo AS curso_codigo,l.codigo AS periodo,m.status,a.tipo_aluno,m.data_matricula,m.origem'.$joins.' ORDER BY p.nome,m.idmatricula LIMIT 20 OFFSET %d',[...$args,($page-1)*20]);
         return ['items'=>$rows,'total'=>$total,'page'=>$page,'codperiodo'=>$period];
     }
 }

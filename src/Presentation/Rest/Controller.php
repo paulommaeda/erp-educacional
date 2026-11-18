@@ -42,6 +42,9 @@ final class Controller
     public function register(): void
     {
         $id='(?P<id>[1-9][0-9]{0,17})';
+        $dashboard=new \EducacionalERP\Application\FinancialDashboard($this->db);
+        $this->route('/gestao-financeira','GET',fn()=>Access::canViewFinancialDashboard(),fn($r)=>$dashboard->read($r->get_query_params()));
+        $this->route('/gestao-financeira/filtros','GET',fn()=>Access::canViewFinancialDashboard(),fn($r)=>$dashboard->options($r->get_query_params()));
         $contracts=new \EducacionalERP\Application\Contracts($this->db,new Operations($this->db));
         $models=new \EducacionalERP\Application\ContractTemplates($this->db,new Operations($this->db));
         $this->route('/contratos','GET',fn()=>Access::canReadContracts(),fn($r)=>$contracts->listing($r->get_query_params()));

@@ -21,8 +21,8 @@ final class UserPermissions
     public static function portalTarget(\WP_User $user):bool {
         $allowed=['subscriber','erp_pessoa','erp_aluno','erp_responsavel','erp_responsavel_academico','erp_responsavel_financeiro'];
         if(!$user->roles||array_diff($user->roles,$allowed))return false;
-        foreach(['manage_options','edit_users','promote_users','edit_posts','delete_users','create_users','install_plugins','activate_plugins','edit_theme_options','manage_network','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_gerenciar_contratos','erp_gerenciar_bolsas_descontos'] as $cap)if(user_can($user,$cap))return false;
-        foreach($user->roles as $role){if(self::forRole($role))return false;foreach(get_option('ederp_menu_policy',[])[$role]??MenuPolicy::defaults($role) as $menu)if(in_array($menu,['usuarios','pessoas','alunos','academico','matriculas','financeiro','contratos','bolsas','rematriculas'],true))return false;}
+        foreach(['manage_options','edit_users','promote_users','edit_posts','delete_users','create_users','install_plugins','activate_plugins','edit_theme_options','manage_network','erp_gerenciar_pessoas','erp_gerenciar_academico','erp_consultar_financeiro','erp_gerenciar_contratos','erp_gerenciar_bolsas_descontos','erp_consultar_gestao_financeira'] as $cap)if(user_can($user,$cap))return false;
+        foreach($user->roles as $role){if(self::forRole($role))return false;foreach(get_option('ederp_menu_policy',[])[$role]??MenuPolicy::defaults($role) as $menu)if(in_array($menu,['usuarios','pessoas','alunos','academico','matriculas','financeiro','gestao_financeira','contratos','bolsas','rematriculas'],true))return false;}
         return !is_super_admin($user->ID);
     }
 }

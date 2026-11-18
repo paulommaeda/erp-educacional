@@ -39,3 +39,5 @@ A consulta exige a permissão **Consultar histórico de acessos**. Administrador
 Ao excluir uma pessoa sem dependências, o ERP exclui também a conta WordPress vinculada e seus convites/metadados. Posts e links do WordPress são transferidos ao administrador que confirmou a exclusão. Históricos do ERP e registros de acessos permanecem preservados.
 
 Uma falha na gravação reverte pessoa, conta e alterações de autoria na mesma operação. A própria conta da sessão não pode ser excluída por esse caminho. Pessoas vinculadas a alunos, contratos ou outros registros protegidos continuam exigindo a resolução dessas dependências. Contas de uma rede WordPress exigem atuação do administrador da rede.
+
+A nova **Gestão financeira** tem permissão independente, liberada em **Editar acessos**. A consulta de indicadores não concede acesso às operações de **Financeiro**. Veja [o guia do painel](GESTAO-FINANCEIRA.md).
