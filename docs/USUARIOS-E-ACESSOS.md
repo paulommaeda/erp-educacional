@@ -2,6 +2,8 @@
 
 Criar ou importar uma pessoa cria também a conta WordPress, com senha aleatória. O convite fica **Não enviado**. O cadastro, novos vínculos e a atualização do plugin não autorizam o envio automático de convites.
 
+Desde a **0.19.27**, em **Perfis e acessos → Editar acessos**, é possível conceder **Contratos** e **Bolsas e descontos dos contratos** de forma independente. Veja [as operações e os limites dessas permissões](PERFIS-CONTRATOS.md).
+
 ## Enviar os convites
 
 1. Abra **Usuários** no portal ou **ERP Educacional → Usuários e acessos** no WordPress.

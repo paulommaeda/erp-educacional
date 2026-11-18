@@ -22,8 +22,8 @@ final class ContractTemplates
 
     public function listing(bool $all=false):array
     {
-        if($all)Access::requireAdmin();
-        elseif(!Access::isAdmin()&&!current_user_can('erp_gerenciar_academico'))throw new RuleViolation('Sem permissão para consultar modelos de contrato.');
+        if($all)Access::requireManageContracts();
+        elseif(!Access::canManageContracts()&&!current_user_can('erp_gerenciar_academico'))throw new RuleViolation('Sem permissão para consultar modelos de contrato.');
         return ['items'=>$this->db->rows('SELECT * FROM '.$this->db->table('modelos_contrato').' WHERE codcoligada=%d AND excluido_em IS NULL'.($all?'':' AND ativo=1').' ORDER BY padrao DESC,nome,idmodelo',[Coligadas::current()]),'shortcodes'=>self::TOKENS];
     }
 
@@ -37,7 +37,7 @@ final class ContractTemplates
 
     public function save(?int $id,array $data,string $key):array
     {
-        Access::requireAdmin();
+        Access::requireManageContracts();
         if(array_diff(array_keys($data),['nome','texto','versao_texto','padrao','ativo','versao','motivo']))throw new RuleViolation('Campo de modelo inválido.');
         $fields=['nome'=>Input::text($data['nome']??null,191),'texto'=>self::text($data['texto']??null),'versao_texto'=>Input::text($data['versao_texto']??null,40)];
         foreach(['padrao','ativo'] as $field){if(!in_array($data[$field]??null,[0,1,'0','1'],true))throw new RuleViolation('Situação do modelo inválida.');$fields[$field]=(int)$data[$field];}
@@ -56,7 +56,7 @@ final class ContractTemplates
 
     public function remove(int $id,array $data,string $key):array
     {
-        Access::requireAdmin();$reason=Input::text($data['motivo']??null,2000);$version=Input::id($data['versao']??null);
+        Access::requireManageContracts();$reason=Input::text($data['motivo']??null,2000);$version=Input::id($data['versao']??null);
         return $this->db->atomic(fn()=>$this->ops->run($key,'excluir_modelo_contrato',['idmodelo'=>$id]+$data,function()use($id,$version,$reason,$key){
             $this->db->get('coligadas',Coligadas::current(),true);$before=$this->model($id,true);if((int)$before['versao']!==$version)throw new RuleViolation('Modelo alterado. Atualize a tela.');
             $this->db->update('modelos_contrato',$id,['excluido_em'=>gmdate('Y-m-d H:i:s'),'ativo'=>0,'padrao'=>0]);$this->db->audit('modelos_contrato',$id,'excluir',$before,['dados'=>$this->db->get('modelos_contrato',$id),'motivo'=>$reason],$key);return ['excluido'=>true,'idmodelo'=>(string)$id];
@@ -71,7 +71,7 @@ final class ContractTemplates
 
     public function preview(array $data):array
     {
-        Access::requireAdmin();$c=$this->db->get('contratos',Input::id($data['idcontrato']??null));
+        Access::requireManageContracts();$c=$this->db->get('contratos',Input::id($data['idcontrato']??null));
         if((int)$c['codcoligada']!==Coligadas::current()||!empty($c['excluido_em']))throw new RuleViolation('Contrato indisponível nesta coligada.');
         return ['texto'=>strtr(self::text($data['texto']??null),$this->values($c))];
     }

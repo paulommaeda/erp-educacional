@@ -77,5 +77,5 @@ foreach(['/contratos'=>['GET'],'/contratos/(?P<id>[1-9][0-9]{0,17})'=>['GET','PO
     wp_set_current_user(1);checkC($route['permission_callback'](null)===true,'rota de gestão permite administrador');
 }
 wp_set_current_user($secretary);checkC($GLOBALS['contract_routes']['/modelos-contrato']['GET']['permission_callback'](null)===true,'secretaria pode carregar modelos na matrícula');wp_set_current_user(1);
-checkC(!in_array('contratos',\EducacionalERP\Infrastructure\WordPress\MenuPolicy::defaults('erp_financeiro'),true),'gestão de contratos fica reservada ao administrador');
+checkC(!in_array('contratos',\EducacionalERP\Infrastructure\WordPress\MenuPolicy::defaults('erp_financeiro'),true),'perfil Financeiro depende de liberação explícita para gerenciar contratos');
 echo "PASS: $checks verificações de contratos e modelos\n";

@@ -26,7 +26,7 @@ final class ReferralDiscounts
     }
     public function retry(int $contract):array
     {
-        Access::requireAdmin();$c=$this->db->get('contratos',$contract);if((int)$c['codcoligada']!==Coligadas::current())throw new RuleViolation('Contrato de outra coligada.');$this->enqueue($contract,(int)$c['codcoligada']);return $this->process(5);
+        Access::requireManageDiscounts();$c=$this->db->get('contratos',$contract);if((int)$c['codcoligada']!==Coligadas::current())throw new RuleViolation('Contrato de outra coligada.');$this->enqueue($contract,(int)$c['codcoligada']);return $this->process(5);
     }
     public function process(int $limit=5):array
     {

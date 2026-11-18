@@ -8,9 +8,10 @@ use EducacionalERP\Infrastructure\WordPress\Access;
 final class Contracts
 {
     public function __construct(private Store $db,private Operations $ops) {}
+    public static function summary(array $contract):array {return array_intersect_key($contract,array_flip(['idcontrato','numero','codcoligada','status','quantidade_parcelas','primeiro_vencimento','valor_liquido_total','parcelas_geradas','versao']));}
     public function listing(array $query):array
     {
-        Access::requireAdmin();$page=max(1,min(100000,(int)($query['page']??1)));$period=SchoolSettings::resolve($query['codperiodo']??null);
+        Access::requireReadContracts();$page=max(1,min(100000,(int)($query['page']??1)));$period=SchoolSettings::resolve($query['codperiodo']??null);
         $from=' FROM '.$this->db->table('contratos').' c JOIN '.$this->db->table('matriculas').' m ON m.idmatricula=c.idmatricula JOIN '.$this->db->table('alunos').' a ON a.idaluno=m.idaluno JOIN '.$this->db->table('pessoas').' p ON p.codpessoa=a.codpessoa JOIN '.$this->db->table('turmas').' t ON t.idturma=m.idturma_atual JOIN '.$this->db->table('periodos_letivos').' pl ON pl.codperiodo=m.codperiodo WHERE c.codcoligada=%d AND c.excluido_em IS NULL';$args=[Coligadas::current()];
         if($period){$from.=' AND m.codperiodo=%d';$args[]=$period;}
         $search=trim((string)($query['search']??''));if(strlen($search)>191)throw new RuleViolation('Busca muito longa.');
@@ -29,14 +30,14 @@ final class Contracts
     }
     public function detail(int $id):array
     {
-        Access::requireAdmin();$c=$this->contract($id);$m=$this->db->get('matriculas',(int)$c['idmatricula']);$a=$this->db->get('alunos',(int)$m['idaluno']);$p=$this->db->get('pessoas',(int)$a['codpessoa']);$rf=$this->db->get('pessoas',(int)$c['codpessoa_rf_atual']);
+        Access::requireManageContracts();$c=$this->contract($id);$m=$this->db->get('matriculas',(int)$c['idmatricula']);$a=$this->db->get('alunos',(int)$m['idaluno']);$p=$this->db->get('pessoas',(int)$a['codpessoa']);$rf=$this->db->get('pessoas',(int)$c['codpessoa_rf_atual']);
         $c['aluno']=$p['nome'];$c['ra']=$a['ra'];$c['idaluno']=$a['idaluno'];$c['responsavel']=$rf['nome'];$c['periodo']=$this->db->get('periodos_letivos',(int)$m['codperiodo'])['codigo'];$c['turma']=$this->db->get('turmas',(int)$m['idturma_atual'])['nome'];
         $c['total_parcelas']=(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d',[$id])['n'];
         $c['lancamentos_ativos']=(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table('lancamentos').' l JOIN '.$this->db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND l.excluido_em IS NULL',[$id])['n'];return $c;
     }
     public function update(int $id,array $data,string $key):array
     {
-        Access::requireAdmin();
+        Access::requireManageContracts();
         if(array_diff(array_keys($data),['versao','motivo','numero','data_contrato','termo','versao_termo','idmodelo','modelo_versao','valor_original_total','desconto_incondicional_total','mensalidade_base_total','desconto_base_total','quantidade_parcelas','primeiro_vencimento']))throw new RuleViolation('Campo de contrato inválido.');
         $reason=Input::text($data['motivo']??null,2000);$version=Input::id($data['versao']??null);
         return $this->db->atomic(fn()=>$this->ops->run($key,'editar_contrato',['idcontrato'=>$id]+$data,function()use($id,$data,$version,$reason,$key){
@@ -70,7 +71,7 @@ final class Contracts
     }
     public function remove(int $id,array $data,string $key):array
     {
-        Access::requireAdmin();if(array_diff(array_keys($data),['versao','motivo','confirmado']))throw new RuleViolation('Dados de exclusão inválidos.');
+        Access::requireManageContracts();if(array_diff(array_keys($data),['versao','motivo','confirmado']))throw new RuleViolation('Dados de exclusão inválidos.');
         if(($data['confirmado']??false)!==true)throw new RuleViolation('Confirme a exclusão do contrato.');$reason=Input::text($data['motivo']??null,2000);$version=Input::id($data['versao']??null);
         return $this->db->atomic(fn()=>$this->ops->run($key,'excluir_contrato',['idcontrato'=>$id]+$data,function()use($id,$reason,$version,$key){
             $c=$this->contract($id,true);if((int)$c['versao']!==$version)throw new RuleViolation('Contrato alterado. Atualize a tela.');

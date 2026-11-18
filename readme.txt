@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.26
+Stable tag: 0.19.27
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.27 =
+* Perfis e acessos permite liberar Contratos e Bolsas e descontos dos contratos separadamente, inclusive para perfis personalizados.
+* A permissão de contratos inclui consulta, edição, exclusão validada e modelos. A de benefícios inclui bolsas, descontos comuns e indicação, com lista própria por aluno, RA ou contrato.
+* Telas, atalhos, serviços e REST aplicam as mesmas permissões. Revogação impede novas operações; dados seguem isolados por coligada e a gestão de benefícios utiliza resumo do contrato.
+* Rodapé do portal com Desenvolvido por Paulo Maeda e link para https://paulomaeda.com, mantendo a versão do sistema.
+* Schema 45 mantido; atualização não libera as novas áreas automaticamente aos funcionários nem altera os cálculos financeiros.
 
 = 0.19.26 =
 * Corrige a cotação e a geração: o plano já contém a pontualidade. Parcela cadastrada de 1353 permanece 1353 e cai para 1250 em dia com pontualidade 103.
