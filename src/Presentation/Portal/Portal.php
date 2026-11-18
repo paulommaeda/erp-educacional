@@ -37,7 +37,8 @@ final class Portal
         foreach(MenuPolicy::MENUS as $key=>$label)add_shortcode('erp_'.$key,fn()=>$this->render($key));
         add_shortcode('erp_dados_academicos',fn()=>$this->render('meus_estudos'));
         add_shortcode('erp_financeiro',fn()=>$this->render('meu_financeiro'));
-        add_shortcode('erp_gestao_financeira',fn()=>$this->render('financeiro'));
+        add_shortcode('erp_gestao_financeira',fn()=>$this->render('gestao_financeira'));
+        add_shortcode('erp_operacoes_financeiras',fn()=>$this->render('financeiro'));
         add_shortcode('erp_rematricula',fn()=>$this->render('renovacao'));
         add_shortcode('erp_menu',function(){Pages::assets();wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);return $this->nav();});
     }
@@ -63,8 +64,8 @@ final class Portal
         if(!MenuPolicy::can($view))echo '<section class="ederp-card"><h1>Acesso indisponível</h1><p>Seu perfil não tem acesso a esta área.</p><a href="'.esc_url(self::url()).'">Voltar ao início</a></section>';
         elseif($view==='documentos')echo '<section data-erp-documents><p role="status">Carregando documentos...</p></section>';
         elseif($view==='chat')echo '<section data-erp-chat><p role="status">Carregando conversas...</p></section>';
-        elseif(in_array($view,['pessoas','alunos','professores','academico','matriculas','financeiro','contratos','bolsas','rematriculas','exportacao','importacao','requerimentos','configuracoes'],true)){
-            $caps=['pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','professores'=>'erp_gerenciar_academico','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro','contratos'=>'erp_gerenciar_contratos','bolsas'=>'erp_gerenciar_bolsas_descontos','rematriculas'=>'erp_gerenciar_academico','exportacao'=>'manage_options','requerimentos'=>'erp_gerenciar_pessoas','importacao'=>'manage_options','configuracoes'=>'manage_options'];
+        elseif(in_array($view,['pessoas','alunos','professores','academico','matriculas','financeiro','gestao_financeira','contratos','bolsas','rematriculas','exportacao','importacao','requerimentos','configuracoes'],true)){
+            $caps=['pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','professores'=>'erp_gerenciar_academico','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro','gestao_financeira'=>'erp_consultar_gestao_financeira','contratos'=>'erp_gerenciar_contratos','bolsas'=>'erp_gerenciar_bolsas_descontos','rematriculas'=>'erp_gerenciar_academico','exportacao'=>'manage_options','requerimentos'=>'erp_gerenciar_pessoas','importacao'=>'manage_options','configuracoes'=>'manage_options'];
             (new Pages())->screen($view,MenuPolicy::MENUS[$view],$caps[$view]);
         }elseif(in_array($view,['meus_estudos','meu_financeiro','renovacao'],true))echo '<section data-ederp-portal="'.esc_attr(['meus_estudos'=>'academic','meu_financeiro'=>'finance','renovacao'=>'renew'][$view]).'"><p role="status">Carregando...</p></section>';
         else echo '<section data-journey-view="'.esc_attr($view).'"><p role="status">Carregando...</p></section>';

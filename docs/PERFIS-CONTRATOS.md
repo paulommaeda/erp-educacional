@@ -21,7 +21,7 @@ Os dois acessos são independentes e podem ser concedidos aos perfis existentes 
 
 **Bolsas e descontos dos contratos** abre uma lista própria com busca por aluno, RA ou contrato. Clique em **Bolsas e descontos** no contrato desejado para usar o mesmo editor disponível na ficha do aluno. Esse caminho permite trabalhar com benefícios mesmo sem acesso à ficha completa ou à gestão financeira.
 
-Quando as duas áreas estiverem liberadas, a lista de contratos também oferece o atalho dos benefícios. Na ficha do aluno e na Gestão financeira, os atalhos acompanham as permissões concedidas.
+Quando as duas áreas estiverem liberadas, a lista de contratos também oferece o atalho dos benefícios. Na ficha do aluno e no Financeiro, os atalhos acompanham as permissões concedidas.
 
 A pessoa autorizada a administrar apenas benefícios recebe o resumo necessário do contrato, sem consultar o termo completo por esse acesso. Para consultar e editar o termo, libere também **Contratos**.
 

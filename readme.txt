@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.27
+Stable tag: 0.19.28
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,13 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.28 =
+* Nova Gestão financeira com previsto, realizado e inadimplência bruta/líquida por competência, turma e aluno, com permissão própria nos perfis.
+* Bolsas e descontos incondicionais ficam fora das bases; inadimplência bruta sem pontualidade e líquida com projeção da pontualidade restante. Baixas parciais, estornos e encargos têm composição separada.
+* Menu operacional renomeado para Financeiro e atalhos de contratos/benefícios alinhados.
+* Matrículas exibem códigos de turno/curso e situações com bordas e fundos em tons pastéis.
+* Schema 45 mantido; painel somente de consulta, sem alterar cobranças ou pagamentos.
 
 = 0.19.27 =
 * Perfis e acessos permite liberar Contratos e Bolsas e descontos dos contratos separadamente, inclusive para perfis personalizados.

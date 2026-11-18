@@ -1,5 +1,15 @@
 # Validação
 
+## 0.19.28
+
+- `tests/financial-dashboard.php`: 47 verificações SQLite. Bases após bolsas/incondicionais, pontualidade guardada e legado com configuração, integral, pagamentos parciais em mais de uma baixa, estorno, cancelamento com recebimento preservado, encargos separados, competência/turma/aluno combinados, taxas sobre base vencida, vencimento de hoje, zeros, filtros inválidos e isolamento por coligada. Permissão própria, ausência de concessão automática, menu e capacidade juntos, revogação e impedimento de operações financeiras.
+- `tests/wordpress-financial-dashboard.php`: 43 verificações em WordPress 7.1.3/MariaDB 11.4.8 reais. Conferidos os valores DECIMAL e o agrupamento mensal com a mesma composição, filtros REST, consultas sem cache compartilhado, busca literal, contas sem acesso, perfil Financeiro sem acesso automático, perfil só do painel, controles de coligada/período, separação de operações e administração, ausência de escrita, renderização e revogação. HTTP/e-mail interceptados.
+- 19 suítes PHP aprovadas: painel, gestão financeira operacional, ciclo/exclusão de matrícula, contratos, permissões de contratos, políticas/rotas/renderização/tema do portal, recursos administrativos, coligadas, ficha do aluno, exclusão financeira, contas/convites, exportação e visão familiar.
+- 12 suítes de interface aprovadas, incluindo o novo painel, identificação/cores de matrícula, ações de matrícula, financeiro/paginação/operações, permissões de contratos, portal, contratos, descontos, bolsas e ficha do aluno. Verificados filtros combinados, buscas, paginação mantendo a seleção, recuperação de erro, conteúdo textual seguro e seletores de coligada/período para operador sem o Financeiro.
+- Chromium com HTML real do WordPress e scripts/CSS reais a 1440/390 px: indicadores, matrículas, Financeiro e matriz de perfis. Capturas inspecionadas, sem excesso horizontal. Atalhos financeiros com a mesma posição vertical e altura; códigos e situações com tons pastéis. Sintaxe aprovada em 292 arquivos PHP e 23 JavaScript; pacote conferido.
+- A suíte antiga `tests/academic-management.php` usa um cadastro de plano sem o período hoje obrigatório e interrompe antes dos cenários. A mesma falha foi reproduzida em uma cópia integral da versão 0.19.27 publicada, sem as alterações desta entrega. Ela não é contada entre as suítes aprovadas. Consulta de matrículas/códigos e filtros desta entrega foram cobertos pelos novos testes de serviço, REST e interface.
+- Schema 45 mantido. O painel usa saldos atuais e a competência da parcela; a projeção líquida não concede descontos em títulos vencidos. Não houve instalação no site do colégio, envio externo ou recálculo de cobranças reais. Contas a pagar, centros de custo, LTV e CAC estão apenas registrados no planejamento.
+
 ## 0.19.27
 
 - `tests/contract-permissions.php`: 46 verificações com SQLite. Matriz com duas opções independentes, padrão sem concessão a funcionários, contrato/modelo separado de benefícios, perfil com ambos, capacidades e menus conferidos juntos, serviço protegido após revogação, resumo sem termo/RF, bolsas e desconto comum recalculados e isolamento por coligada.
