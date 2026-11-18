@@ -1,11 +1,11 @@
-# ERP Educacional — 0.19.28
+# ERP Educacional — 0.19.29
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.28.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 45**, acrescentando o cadastro e as concessões de bolsas, sem recalcular valores financeiros anteriores. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.29.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 46**, acrescentando o registro de assinatura e preservando os textos e valores anteriores. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -16,6 +16,12 @@ As turmas antigas ficam inicialmente sem plano, para não inventar preços. Cont
 Quando o backup contém anexos do chat sem mensagem válida na mesma coligada, os arquivos permanecem guardados com sua referência original. O administrador pode conferi-los em **ERP Educacional → Anexos preservados**. As mensagens e os anexos válidos continuam nas suas conversas; os arquivos pendentes são acessíveis somente ao administrador para conferência.
 
 Se uma movimentação aponta para uma matrícula ausente, a cópia integral do registro e a referência ao documento ficam em **ERP Educacional → Registros preservados**. A preservação é confirmada antes da retirada desse histórico da tabela operacional. Matrículas e movimentações válidas permanecem intactas. Outros vínculos inconsistentes são apresentados juntos em Configurações e precisam de conferência antes da conclusão.
+
+## Texto do contrato assinado
+
+Em **Contratos → Ver contrato**, confira o texto, marque **Contrato assinado** e confirme o registro. A marcação é permanente; redação, versão e origem do modelo ficam protegidas para todos os perfis. Antes do registro, alterações no modelo atualizam os contratos vinculados. Bolsas, descontos e operações financeiras seguem disponíveis. Veja [o guia do texto assinado](docs/CONTRATO-ASSINADO.md).
+
+A **Gestão financeira** acompanha o período letivo da consulta e limpa os filtros locais ao trocar de período. A seleção também é mantida nos links de navegação.
 
 ## Gestão financeira e apresentação das matrículas
 
@@ -71,7 +77,7 @@ Ao escolher um aluno, marque **Excluir também o cadastro da pessoa e a conta Wo
 
 O administrador encontra a gestão no menu **Contratos**, no portal e no WordPress. A Gestão financeira e a ficha do aluno também oferecem um atalho. Consulte por nome, RA, número, período ou situação, visualize/imprima o texto e abra **Editar** ou **Excluir**.
 
-Em **Contratos → Modelos de contrato**, cadastre o texto, a versão e os shortcodes. Há inserção por clique e prévia com dados de um contrato. Defina um modelo padrão ou escolha o modelo na matrícula. Cada emissão guarda seu texto preenchido; revisar um modelo não altera contratos anteriores. Os termos já aceitos nas ofertas de rematrícula continuam sendo respeitados.
+Em **Contratos → Modelos de contrato**, cadastre o texto, a versão e os shortcodes. Há inserção por clique e prévia com dados de um contrato. Defina um modelo padrão ou escolha o modelo na matrícula. Cada emissão guarda seu texto preenchido; revisar um modelo atualiza apenas os contratos vinculados ainda não assinados. Os termos já aceitos nas ofertas de rematrícula continuam sendo respeitados.
 
 Para qualificar o responsável financeiro como assinante, use `[responsavel_estado_civil]`, `[responsavel_profissao]` e `[responsavel_endereco_completo]`. Rua, número, complemento, bairro, cidade, estado/UF, CEP e país também estão disponíveis separadamente no editor. Os dados vêm do cadastro da pessoa definida como responsável financeiro atual do contrato.
 

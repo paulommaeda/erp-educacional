@@ -13,9 +13,9 @@
   result.setAttribute('aria-live','polite');apply.type='submit';
   const field=(name,label,type)=>{const node=el('label',label),input=el('input');input.name=name;input.type=type;node.append(input);return {node,input};};
   const from=field('competencia_inicio','Competência inicial','month'),to=field('competencia_fim','Competência final','month');
-  const period=String(EDERP.period||EDERP.currentPeriod||'todos');let reportSerial=0;
+  const consultationPeriod=()=>String(new URLSearchParams(location.search).get('erp_periodo')||EDERP.period||EDERP.currentPeriod||'todos');let reportSerial=0;
   let classroom,student;
-  const query=()=>({codperiodo:period,competencia_inicio:from.input.value,competencia_fim:to.input.value,idturma:classroom?.select.value||'',idaluno:student?.select.value||''});
+  const query=()=>({codperiodo:consultationPeriod(),competencia_inicio:from.input.value,competencia_fim:to.input.value,idturma:classroom?.select.value||'',idaluno:student?.select.value||''});
   function lookup(type,label){
     const box=el('fieldset',undefined,'erp-dashboard-lookup'),legend=el('legend',label),search=field(type+'_busca','Buscar por '+(type==='turmas'?'código ou nome':'nome ou RA'),'search'),selectLabel=el('label','Selecionar '+(type==='turmas'?'turma':'aluno')),select=el('select');select.name=type==='turmas'?'idturma':'idaluno';
     const empty=()=>new Option(type==='turmas'?'Todas as turmas':'Todos os alunos','');select.append(empty());selectLabel.append(select);
@@ -74,5 +74,7 @@
     catch(error){if(turn===reportSerial)result.replaceChildren(el('p',error.message,'erp-feedback error'),button('Tentar novamente',load));}
     finally{if(turn===reportSerial){result.removeAttribute('aria-busy');apply.disabled=false;}}
   }
+  function refreshPeriod(){const period=consultationPeriod(),choice=document.querySelector('.erp-period-bar select');EDERP.period=period;window.EDERPConsultationPeriod?.(period);if(choice)choice.value=period;from.input.value=to.input.value='';classroom.select.value=student.select.value='';classroom.search.value=student.search.value='';classroom.load(1);student.load(1);load();}
+  window.addEventListener('ederp:period-changed',refreshPeriod);window.addEventListener('popstate',refreshPeriod);
   form.addEventListener('submit',event=>{event.preventDefault();load();});classroom.load(1);student.load(1);load();
 })();

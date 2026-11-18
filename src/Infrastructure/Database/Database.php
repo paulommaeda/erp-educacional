@@ -48,7 +48,10 @@ final class Database implements \EducacionalERP\Domain\Store
     }
     public function update(string $table, int $id, array $data): void
     {
-        $data=Ownership::apply($this,$table,$data,$this->get($table,$id));
+        if($table==='contratos'&&!$this->transaction){$this->atomic(fn()=>$this->update($table,$id,$data));return;}
+        $before=$this->get($table,$id,$table==='contratos');
+        if($table==='contratos')\EducacionalERP\Domain\ContractText::assertUpdate($before,$data);
+        $data=Ownership::apply($this,$table,$data,$before);
         $data['atualizado_em'] = gmdate('Y-m-d H:i:s');
         $this->validateColumns($table, $data);
         $pk = $this->schema[$table]['pk'][0];

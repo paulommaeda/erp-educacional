@@ -8,7 +8,8 @@ final class Portal
     public static function url(string $view='inicio'):string
     {
         $id=(int)get_option('ederp_portal_page',0);$url=$id?get_permalink($id):home_url('/portal-journey/');
-        return add_query_arg('erp_tela',$view,$url?:home_url('/portal-journey/'));
+        $url=add_query_arg('erp_tela',$view,$url?:home_url('/portal-journey/'));$period=$_GET['erp_periodo']??null;
+        return is_string($period)&&($period==='todos'||preg_match('/^[1-9][0-9]{0,17}$/D',$period))?add_query_arg('erp_periodo',$period,$url):$url;
     }
     public static function setup():void
     {

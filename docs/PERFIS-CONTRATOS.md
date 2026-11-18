@@ -39,4 +39,4 @@ O portal apresenta **Desenvolvido por Paulo Maeda**, com link para [paulomaeda.c
 
 ## Entrega e verificação
 
-Schema 45 mantido, sem recálculo dos contratos ou alteração em lote dos perfis. Testes de permissões, telas e operações realizados em ambiente local, incluindo WordPress/MariaDB e transporte externo bloqueado. A instalação no site segue a configuração do WordPress. Veja [o registro de validação](VALIDACAO.md).
+Permissões introduzidas no schema 45 e mantidas no schema 46, sem alteração em lote dos perfis. O acesso Contratos também permite registrar a assinatura do texto; veja [o guia do texto assinado](CONTRATO-ASSINADO.md). Testes de permissões, telas e operações realizados em ambiente local, incluindo WordPress/MariaDB e transporte externo bloqueado. A instalação no site segue a configuração do WordPress. Veja [o registro de validação](VALIDACAO.md).

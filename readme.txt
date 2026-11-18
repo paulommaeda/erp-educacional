@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.28
+Stable tag: 0.19.29
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.29 =
+* Contratos permitem registrar a assinatura com confirmação, data e autor; a marcação não pode ser desfeita e o texto/origem ficam bloqueados para todos os perfis.
+* Alterações do modelo atualizam os contratos vinculados ainda não assinados, preservando textos assinados e financeiros. Bolsas, descontos, pagamentos e estornos continuam disponíveis.
+* Gestão financeira acompanha o período letivo da consulta, atualiza filtros ao trocar o período e mantém a seleção na navegação.
+* Schema 46 acrescenta os dados do registro de assinatura e preserva os textos anteriores, sem presumir assinaturas nem recalcular cobranças.
 
 = 0.19.28 =
 * Nova Gestão financeira com previsto, realizado e inadimplência bruta/líquida por competência, turma e aluno, com permissão própria nos perfis.

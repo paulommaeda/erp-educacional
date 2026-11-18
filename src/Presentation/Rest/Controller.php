@@ -50,6 +50,7 @@ final class Controller
         $this->route('/contratos','GET',fn()=>Access::canReadContracts(),fn($r)=>$contracts->listing($r->get_query_params()));
         $this->route('/contratos/'.$id,'GET',fn()=>Access::canManageContracts(),fn($r)=>$contracts->detail((int)$r['id']));
         $this->route('/contratos/'.$id,'POST',fn()=>Access::canManageContracts(),fn($r)=>$contracts->update((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route('/contratos/'.$id.'/assinar','POST',fn()=>Access::canManageContracts(),fn($r)=>$contracts->sign((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/contratos/'.$id.'/excluir','POST',fn()=>Access::canManageContracts(),fn($r)=>$contracts->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/modelos-contrato','GET',fn()=>Access::canManageContracts()||current_user_can('erp_gerenciar_academico'),fn($r)=>$models->listing($r->get_param('todos')==='1'));
         $this->route('/modelos-contrato','POST',fn()=>Access::canManageContracts(),fn($r)=>$models->save(null,$this->payload($r),$this->key($r)));
