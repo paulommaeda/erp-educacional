@@ -56,6 +56,7 @@ final class Controller
         $this->route('/modelos-contrato','GET',fn()=>Access::canManageContracts()||current_user_can('erp_gerenciar_academico'),fn($r)=>$models->listing($r->get_param('todos')==='1'));
         $this->route('/modelos-contrato','POST',fn()=>Access::canManageContracts(),fn($r)=>$models->save(null,$this->payload($r),$this->key($r)));
         $this->route('/modelos-contrato/previa','POST',fn()=>Access::canManageContracts(),fn($r)=>$models->preview($this->payload($r)));
+        $this->route('/modelos-contrato/shortcodes-externos','POST',fn()=>Access::isAdmin(),fn($r)=>$models->saveExternalShortcodes($this->payload($r)));
         $this->route('/modelos-contrato/'.$id,'POST',fn()=>Access::canManageContracts(),fn($r)=>$models->save((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/modelos-contrato/'.$id.'/excluir','POST',fn()=>Access::canManageContracts(),fn($r)=>$models->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $admissions=new \EducacionalERP\Application\PublicAdmissions($this->db,$this->catalog);$pickup=new \EducacionalERP\Application\StudentPickup($this->db);

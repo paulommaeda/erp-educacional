@@ -3,9 +3,9 @@ declare(strict_types=1);
 namespace EducacionalERP\Application;
 
 use EducacionalERP\Domain\{Store,Input,Money,RuleViolation,ContractMarkup};
-use EducacionalERP\Infrastructure\WordPress\{Access,SchoolIdentity};
+use EducacionalERP\Infrastructure\WordPress\{Access,ContractShortcodes,SchoolIdentity};
 
-/** A fixed token vocabulary, with sanitized HTML formatting and no executable shortcodes. */
+/** Contract fields and text supplied by the current company’s WordPress integrations. */
 final class ContractTemplates
 {
     public const TOKENS=[
@@ -26,21 +26,27 @@ final class ContractTemplates
     {
         if($all)Access::requireManageContracts();
         elseif(!Access::canManageContracts()&&!current_user_can('erp_gerenciar_academico'))throw new RuleViolation('Sem permissão para consultar modelos de contrato.');
-        return ['items'=>$this->db->rows('SELECT * FROM '.$this->db->table('modelos_contrato').' WHERE codcoligada=%d AND excluido_em IS NULL'.($all?'':' AND ativo=1').' ORDER BY padrao DESC,nome,idmodelo',[Coligadas::current()]),'shortcodes'=>self::TOKENS];
+        return ['items'=>$this->db->rows('SELECT * FROM '.$this->db->table('modelos_contrato').' WHERE codcoligada=%d AND excluido_em IS NULL'.($all?'':' AND ativo=1').' ORDER BY padrao DESC,nome,idmodelo',[Coligadas::current()]),'shortcodes'=>self::TOKENS,'shortcodes_externos'=>ContractShortcodes::configured()];
     }
 
     public static function text(mixed $text,mixed $format='auto'):string
     {
-        $text=ContractMarkup::prepare($text,$format)['texto'];
-        preg_match_all('/\[([^\]\r\n]+)\]/u',$text,$matches);
-        foreach($matches[1] as $token)if(!isset(self::TOKENS[$token]))throw new RuleViolation('Shortcode desconhecido: ['.$token.']. Use os campos disponíveis.');
-        return $text;
+        return ContractMarkup::prepare($text,$format)['texto'];
+    }
+
+    public function saveExternalShortcodes(array $data):array
+    {
+        return ContractTextLock::run($this->db,static fn()=>ContractShortcodes::save($data));
     }
 
     private function render(string $text,string $format,array $contract):string
     {
-        $values=$this->values($contract);if($format==='html')$values=array_map([ContractMarkup::class,'escape'],$values);
-        $rendered=strtr($text,$values);return $format==='html'?ContractMarkup::html($rendered):$rendered;
+        $native=$this->values($contract);
+        $external=ContractShortcodes::configured();
+        $replace=$external ? ContractShortcodes::substitute($native,$external) : static fn(string $s):string=>strtr($s,$native);
+        $rendered=$format==='html' ? ContractMarkup::html($text,$replace,$native) : $replace($text);
+        if(strlen($rendered)>400000)throw new RuleViolation('Conteúdo do contrato muito extenso.');
+        return $rendered;
     }
 
     public function save(?int $id,array $data,string $key):array
@@ -48,7 +54,7 @@ final class ContractTemplates
         Access::requireManageContracts();
         if(array_diff(array_keys($data),['nome','texto','formato_texto','versao_texto','padrao','ativo','versao','motivo']))throw new RuleViolation('Campo de modelo inválido.');
         $markup=ContractMarkup::prepare($data['texto']??null,$data['formato_texto']??'auto');
-        $fields=['nome'=>Input::text($data['nome']??null,191),'texto'=>self::text($markup['texto'],$markup['formato_texto']),'formato_texto'=>$markup['formato_texto'],'versao_texto'=>Input::text($data['versao_texto']??null,40)];
+        $fields=['nome'=>Input::text($data['nome']??null,191),'texto'=>$markup['texto'],'formato_texto'=>$markup['formato_texto'],'versao_texto'=>Input::text($data['versao_texto']??null,40)];
         foreach(['padrao','ativo'] as $field){if(!in_array($data[$field]??null,[0,1,'0','1'],true))throw new RuleViolation('Situação do modelo inválida.');$fields[$field]=(int)$data[$field];}
         if($fields['padrao']&&!$fields['ativo'])throw new RuleViolation('O modelo padrão precisa estar ativo.');
         $reason=$id?Input::text($data['motivo']??null,2000):'Cadastro do modelo';
@@ -99,26 +105,26 @@ final class ContractTemplates
         Access::requireManageContracts();$c=$this->db->get('contratos',Input::id($data['idcontrato']??null));
         if((int)$c['codcoligada']!==Coligadas::current()||!empty($c['excluido_em']))throw new RuleViolation('Contrato indisponível nesta coligada.');
         $markup=ContractMarkup::prepare($data['texto']??null,$data['formato_texto']??'auto');
-        return ['texto'=>$this->render(self::text($markup['texto'],$markup['formato_texto']),$markup['formato_texto'],$c),'formato_texto'=>$markup['formato_texto']];
+        return ['texto'=>$this->render($markup['texto'],$markup['formato_texto'],$c),'formato_texto'=>$markup['formato_texto']];
     }
 
     /** Caller owns the contract transaction. Signed texts cannot be replaced. */
-    public function applyInside(int $contract,array $data):void
+    public function applyInside(int $contract,array $data,bool $reuseSnapshot=false):void
     {
         $c=$this->db->get('contratos',$contract);\EducacionalERP\Domain\ContractText::requireEditable($c);
-        Coligadas::within((int)$c['codcoligada'],function()use($c,$contract,$data){
+        Coligadas::within((int)$c['codcoligada'],function()use($c,$contract,$data,$reuseSnapshot){
             $model=null;
             if(!empty($data['idmodelo'])){
                 $model=$this->model(Input::id($data['idmodelo']),true);
                 if(isset($data['modelo_versao'])&&(int)$model['versao']!==Input::id($data['modelo_versao']))throw new RuleViolation('Modelo alterado. Selecione o modelo novamente.');
-            }elseif(!array_key_exists('termo',$data)){
+            }elseif(!$reuseSnapshot&&!array_key_exists('termo',$data)){
                 $selected=$this->db->row('SELECT idmodelo FROM '.$this->db->table('modelos_contrato').' WHERE codcoligada=%d AND ativo=1 AND padrao=1 AND excluido_em IS NULL',[Coligadas::current()]);
                 if($selected){$model=$this->model((int)$selected['idmodelo'],true);if(!$model['padrao'])throw new RuleViolation('O modelo padrão mudou. Tente novamente.');}
             }
             if($model&&!(int)$model['ativo'])throw new RuleViolation('Modelo de contrato inativo.');
             $markup=ContractMarkup::prepare($model['texto']??($data['termo']??$c['termo_snapshot']),$model['formato_texto']??($data['formato_texto']??(array_key_exists('termo',$data)?'auto':($c['formato_texto']??'texto'))));
-            $text=self::text($markup['texto'],$markup['formato_texto']);
-            $this->db->update('contratos',$contract,['termo_snapshot'=>$this->render($text,$markup['formato_texto'],$c),'formato_texto'=>$markup['formato_texto'],'versao_termo'=>$model['versao_texto']??($data['versao_termo']??$c['versao_termo']),'idmodelo'=>$model['idmodelo']??null,'modelo_nome_snapshot'=>$model['nome']??null,'modelo_versao_snapshot'=>$model['versao']??null]);
+            $text=$reuseSnapshot?$markup['texto']:$this->render($markup['texto'],$markup['formato_texto'],$c);
+            $this->db->update('contratos',$contract,['termo_snapshot'=>$text,'formato_texto'=>$markup['formato_texto'],'versao_termo'=>$model['versao_texto']??($data['versao_termo']??$c['versao_termo']),'idmodelo'=>$model['idmodelo']??null,'modelo_nome_snapshot'=>$model['nome']??null,'modelo_versao_snapshot'=>$model['versao']??null]);
         });
     }
 

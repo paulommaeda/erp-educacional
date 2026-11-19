@@ -2,7 +2,7 @@
 
 Em **Contratos → Modelos de contrato → Novo modelo/Editar modelo**, cadastre o conteúdo completo no campo **Texto com shortcodes**. Você pode colar HTML de formatação. O formato é identificado automaticamente; para preservar tags como texto literal, escolha **Texto simples**. A edição individual do contrato oferece as mesmas opções.
 
-São aceitos parágrafos e quebras de linha, títulos, negrito, itálico, sublinhado, listas, tabelas, links e estilos de fonte, alinhamento, espaçamento e borda. Use **Prévia com dados de um contrato** para conferir o preenchimento antes de salvar. Scripts, formulários, folhas de estilo e recursos externos são retirados. Os shortcodes continuam sendo os campos da lista do ERP; dados preenchidos são tratados como texto, inclusive quando contêm sinais de HTML.
+São aceitos parágrafos e quebras de linha, títulos, negrito, itálico, sublinhado, listas, tabelas, links e estilos de fonte, alinhamento, espaçamento e borda. Use **Prévia com dados de um contrato** para conferir o preenchimento antes de salvar. Scripts, formulários, folhas de estilo e recursos externos são retirados. O corpo do contrato aceita campos do ERP e shortcodes informativos de outros plugins ou do tema selecionados pela coligada. A prévia e o PDF mostram o texto retornado. Um marcador sem provedor ativo permanece visível entre colchetes. Veja [como configurar os shortcodes externos](CONTRATOS.md#shortcodes-de-outros-plugins-ou-do-tema).
 
 ```html
 <h1>CONTRATO DE PRESTAÇÃO DE SERVIÇOS EDUCACIONAIS</h1>

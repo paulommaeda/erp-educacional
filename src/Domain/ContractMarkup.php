@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace EducacionalERP\Domain;
 
-/** Contract formatting only. No WordPress shortcode, script, stylesheet or external resource runs. */
+/** Serializes document formatting and escapes every text replacement. */
 final class ContractMarkup
 {
     private const TAGS=['p','div','span','br','hr','strong','b','em','i','u','s','strike','sub','sup','h1','h2','h3','h4','h5','h6','blockquote','pre','ul','ol','li','table','caption','thead','tbody','tfoot','tr','th','td','a'];
@@ -20,7 +20,7 @@ final class ContractMarkup
 
     public static function escape(string $value):string {return htmlspecialchars($value,ENT_QUOTES|ENT_SUBSTITUTE|ENT_HTML5,'UTF-8');}
 
-    public static function html(string $source):string
+    public static function html(string $source,?callable $replaceText=null,array $linkFields=[]):string
     {
         if(strlen($source)>400000)throw new RuleViolation('Conteúdo do contrato muito extenso.');
         if(!class_exists(\DOMDocument::class))throw new RuleViolation('Habilite a extensão DOM do PHP para formatar contratos em HTML.');
@@ -29,17 +29,17 @@ final class ContractMarkup
         finally{libxml_clear_errors();libxml_use_internal_errors($previous);}
         if(!$ok)throw new RuleViolation('Não foi possível ler o HTML do contrato.');
         $body=$doc->getElementsByTagName('body')->item(0);$count=0;$out='';
-        if($body)foreach($body->childNodes as $node)$out.=self::node($node,0,$count);
+        if($body)foreach($body->childNodes as $node)$out.=self::node($node,0,$count,$replaceText,$linkFields);
         return trim($out);
     }
 
-    private static function node(\DOMNode $node,int $depth,int &$count):string
+    private static function node(\DOMNode $node,int $depth,int &$count,?callable $replaceText,array $linkFields):string
     {
         if(++$count>12000||$depth>48)throw new RuleViolation('Simplifique a estrutura HTML do contrato.');
-        if($node instanceof \DOMText)return self::escape($node->nodeValue??'');
+        if($node instanceof \DOMText){$value=$node->nodeValue??'';return self::escape($replaceText?$replaceText($value):$value);}
         if(!$node instanceof \DOMElement)return '';
         $tag=strtolower($node->tagName);if(in_array($tag,self::DROP,true))return '';
-        $inner='';foreach($node->childNodes as $child)$inner.=self::node($child,$depth+1,$count);
+        $inner='';foreach($node->childNodes as $child)$inner.=self::node($child,$depth+1,$count,$replaceText,$linkFields);
         if(!in_array($tag,self::TAGS,true))return $inner;
         $attrs='';$style=self::style($node->getAttribute('style'));
         $align=strtolower($node->getAttribute('align'));if(in_array($align,['left','center','right','justify'],true))$style.='text-align:'.$align.';';
@@ -51,8 +51,8 @@ final class ContractMarkup
         }
         if($tag==='ol'){$v=$node->getAttribute('start');if(preg_match('/^-?[0-9]{1,4}$/D',$v))$attrs.=' start="'.$v.'"';$v=$node->getAttribute('type');if(in_array($v,['1','a','A','i','I'],true))$attrs.=' type="'.$v.'"';}
         if($tag==='a'){
-            $href=trim($node->getAttribute('href'));if(preg_match('~^(?:https?://|mailto:|tel:)[^\s<>"\x00-\x1f]+$~iu',$href))$attrs.=' href="'.self::escape($href).'"';
-            if($node->hasAttribute('title'))$attrs.=' title="'.self::escape($node->getAttribute('title')).'"';
+            $href=trim(strtr($node->getAttribute('href'),$linkFields));if(preg_match('~^(?:https?://|mailto:|tel:)[^\s<>"\x00-\x1f]+$~iu',$href))$attrs.=' href="'.self::escape($href).'"';
+            if($node->hasAttribute('title'))$attrs.=' title="'.self::escape(strtr($node->getAttribute('title'),$linkFields)).'"';
         }
         return '<'.$tag.$attrs.'>'.(in_array($tag,['br','hr'],true)?'':$inner.'</'.$tag.'>');
     }

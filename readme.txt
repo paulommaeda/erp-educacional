@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.34
+Stable tag: 0.19.35
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,10 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.35 =
+* Modelos e textos personalizados aceitam marcadores externos. O administrador pode disponibilizar shortcodes de texto de outros plugins ou do tema por coligada, inclusive com parâmetros fixos.
+* O editor insere as expressões selecionadas no cursor. A prévia e a emissão mostram o texto do provedor. Marcadores desconhecidos continuam visíveis entre colchetes.
 
 = 0.19.34 =
 * O texto sugerido para novos modelos de contrato inclui a cláusula de anuidade com o total e o parcelamento originais de cada aluno.
