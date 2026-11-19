@@ -11,14 +11,15 @@ function planOK(bool $ok,string $label):void{global $checks;if(!$ok)throw new Ru
 function planDeny(callable $fn,string $label):void{try{$fn();}catch(RuleViolation){planOK(true,$label);return;}throw new RuntimeException('Permitiu: '.$label);}
 function planPreview(int $id,string $text):string{global $models;return $models->preview(['idcontrato'=>$id,'texto'=>$text])['texto'];}
 function planContract(string $ra,array $bolsas=[],bool $defer=true,array $extra=[]):array{global $db,$f,$model;return createScholarshipContract($db,$f,$ra,$bolsas,$defer,array_replace(['idmodelo'=>$model['idmodelo'],'primeiro_vencimento'=>'2027-01-10'],$extra));}
-$source='Total [contrato_valor_total] / Original [contrato_valor_original] / Líquido [contrato_valor_liquido] / [contrato_parcelas] / [contrato_valor_parcela] / [contrato_parcelamento] / Vencimento todo dia [contrato_dia_vencimento] / Primeiro [contrato_primeiro_vencimento] / Plano [plano_nome]';
+$source='Total [contrato_valor_total] / Original [contrato_valor_original] / Líquido [contrato_valor_liquido] / [contrato_parcelas] / [contrato_valor_parcela] / [contrato_parcelamento] / Vencimento todo dia [contrato_dia_vencimento] / Primeiro [contrato_primeiro_vencimento] / Plano [plano_nome] / Parcela original [contrato_valor_parcela_original] / Parcelamento original [contrato_parcelamento_original]';
 $model=$models->save(null,['nome'=>'Plano individual do aluno','texto'=>$source,'versao_texto'=>'1','padrao'=>1,'ativo'=>1],planKey());
-foreach(['contrato_valor_total','contrato_valor_parcela','contrato_parcelamento','contrato_dia_vencimento'] as $token)planOK(isset($models->listing()['shortcodes'][$token]),'editor disponibiliza ['.$token.']');
+foreach(['contrato_valor_total','contrato_valor_parcela','contrato_parcelamento','contrato_dia_vencimento','contrato_valor_parcela_original','contrato_parcelamento_original'] as $token)planOK(isset($models->listing()['shortcodes'][$token]),'editor disponibiliza ['.$token.']');
 $a=planContract('PLANO-A');$id=(int)$a['idcontrato'];$c=$db->get('contratos',$id);$before=$c;$text=$c['termo_snapshot'];
 planOK(str_contains($text,'Total R$ 16.236,00 / Original R$ 16.236,00 / Líquido R$ 16.236,00'),'total vem do plano contratado pelo aluno');
 planOK(str_contains($text,'/ 12 / R$ 1.353,00 / 12 parcelas de R$ 1.353,00 /'),'quantidade e valor vêm do parcelamento registrado');
 planOK(str_contains($text,'Vencimento todo dia 10 / Primeiro 10/01/2027'),'dia isolado e primeiro vencimento têm formatos próprios');
 planOK(!str_contains($text,'[')&&str_contains($text,'Plano Mensalidade-base mil'),'emissão resolve todos os campos e identifica o plano');
+planOK(str_contains($text,'Parcela original R$ 1.353,00 / Parcelamento original 12 parcelas de R$ 1.353,00'),'emissão preenche os campos explícitos dos valores originais');
 planOK(planPreview($id,$source)===$text&&$db->get('contratos',$id)===$before,'prévia de contrato pendente usa os mesmos valores sem alterar dados');
 $academic->generateInstallments($id,planKey());planOK(planPreview($id,$source)===$text,'parcelas geradas coincidem com a prévia do plano');
 $b=planContract('PLANO-B',[],false,['quantidade_parcelas'=>6,'primeiro_vencimento'=>'2027-02-05']);$bid=(int)$b['idcontrato'];
@@ -26,16 +27,23 @@ planOK(planPreview($bid,'[contrato_valor_total]|[contrato_parcelas]|[contrato_va
 planOK(planPreview($id,'[contrato_parcelas]|[contrato_dia_vencimento]')==='12|10','outro aluno não altera o contrato anterior');
 $half=planContract('PLANO-MEIA',[scholarshipSelection($f['half'])]);$halfId=(int)$half['idcontrato'];
 planOK(planPreview($halfId,'[contrato_valor_total]|[contrato_valor_parcela]|[contrato_parcelamento]')==='R$ 9.354,00|R$ 779,50|12 parcelas de R$ 779,50','bolsa 50% mantém valor contratado antes do desconto condicional de pontualidade');
+$grossSource='[contrato_valor_original]|[contrato_valor_parcela_original]|[contrato_parcelamento_original]';$grossExpected='R$ 16.236,00|R$ 1.353,00|12 parcelas de R$ 1.353,00';
+planOK(planPreview($halfId,$grossSource)===$grossExpected,'bolsa 50% não deduz nada dos campos originais nem acrescenta pontualidade novamente');
 $halfText=planPreview($halfId,$source);$academic->generateInstallments($halfId,planKey());planOK(planPreview($halfId,$source)===$halfText,'bolsa e pontualidade não são descontadas outra vez ao gerar parcelas');
+planOK(planPreview($halfId,$grossSource)===$grossExpected,'valores originais com bolsa 50% permanecem iguais após a geração');
 $full=planContract('PLANO-INTEGRAL',[scholarshipSelection($f['full'])]);$fullId=(int)$full['idcontrato'];
 planOK(planPreview($fullId,'[contrato_valor_total]|[contrato_valor_parcela]|[contrato_parcelamento]')==='R$ 0,00|R$ 0,00|12 parcelas de R$ 0,00','bolsa integral aceita parcelas zeradas no texto');
+planOK(planPreview($fullId,$grossSource)===$grossExpected,'bolsa integral mantém o total e a parcela originais sem zerar os novos campos');
 $academic->generateInstallments($fullId,planKey());planOK(planPreview($fullId,'[contrato_valor_total]|[contrato_valor_parcela]')==='R$ 0,00|R$ 0,00','integral preserva os valores após geração');
+planOK(planPreview($fullId,$grossSource)===$grossExpected,'original da integral permanece após a geração das parcelas zeradas');
 $fixed=(new ScholarshipCatalog($db))->save(['nome'=>'Bolsa fixa 350','forma_calculo'=>'valor','valor'=>'350.00','ativo'=>1],planKey());$fixed=(new ScholarshipCatalog($db))->get((int)$fixed['idbolsa']);
 $fixedContract=planContract('PLANO-FIXA',[scholarshipSelection($fixed)],false);planOK(planPreview((int)$fixedContract['idcontrato'],'[contrato_valor_parcela]')==='R$ 1.003,00','bolsa fixa 350 informa parcela 1003 sem antecipar pontualidade');
+planOK(planPreview((int)$fixedContract['idcontrato'],$grossSource)===$grossExpected,'bolsa fixa não reduz os valores originais');
 $varied=planContract('PLANO-FAIXAS',[scholarshipSelection($f['half'],1,6)]);$variedId=(int)$varied['idcontrato'];
 planOK(planPreview($variedId,'[contrato_valor_total]')==='R$ 12.795,00','total considera bolsa somente na faixa concedida');
 planOK(planPreview($variedId,'[contrato_valor_parcela]')==='R$ 779,50 (parcelas 1 a 6); R$ 1.353,00 (parcelas 7 a 12)','valor da parcela discrimina faixas em vez de inventar uma média');
 $variedText=planPreview($variedId,'[contrato_parcelamento]');planOK($variedText==='6 parcelas de R$ 779,50 (parcelas 1 a 6); 6 parcelas de R$ 1.353,00 (parcelas 7 a 12)','resumo mostra quantidade, valor e sequência de cada faixa');
+planOK(planPreview($variedId,$grossSource)===$grossExpected,'faixas de bolsa não criam faixas no parcelamento original uniforme');
 $academic->generateInstallments($variedId,planKey());planOK(planPreview($variedId,'[contrato_parcelamento]')===$variedText,'faixas previstas e geradas são idênticas');
 $c=$db->get('contratos',$bid);$day31=planContract('PLANO-DIA31',[],false,['primeiro_vencimento'=>'2027-01-31']);$day31id=(int)$day31['idcontrato'];
 planOK(planPreview($day31id,'[contrato_dia_vencimento]')==='31','dia 31 é mantido como dia contratado');
@@ -43,6 +51,7 @@ $feb=$db->row('SELECT vencimento_original FROM '.$db->table('parcelas').' WHERE 
 update_option('ederp_pontualidade','0.00');$db->update('planos_pagamento',$f['plan'],['valor_anuidade'=>'10000.00']);
 $rounded=planContract('PLANO-CENTAVOS',[],true,['quantidade_parcelas'=>3]);$roundedId=(int)$rounded['idcontrato'];
 $roundText=planPreview($roundedId,'[contrato_valor_total]|[contrato_parcelamento]');planOK($roundText==='R$ 10.000,00|1 parcela de R$ 3.333,34 (parcela 1); 2 parcelas de R$ 3.333,33 (parcelas 2 a 3)','resto dos centavos segue a divisão financeira exata');
+planOK(planPreview($roundedId,'[contrato_parcelamento_original]')==='1 parcela de R$ 3.333,34 (parcela 1); 2 parcelas de R$ 3.333,33 (parcelas 2 a 3)','parcelamento original mantém as diferenças reais de centavos');
 $academic->generateInstallments($roundedId,planKey());planOK(planPreview($roundedId,'[contrato_valor_total]|[contrato_parcelamento]')===$roundText,'geração preserva centavos sem arredondar um valor único');
 planOK(planPreview($id,'[contrato_valor_total]|[contrato_valor_parcela]')==='R$ 16.236,00|R$ 1.353,00','editar o catálogo não troca o plano já contratado por outro valor');
 $editable=planContract('PLANO-EDITAR',[],true,['quantidade_parcelas'=>10]);$editId=(int)$editable['idcontrato'];$e=$db->get('contratos',$editId);
@@ -58,6 +67,7 @@ planOK(planPreview($legacyId,'[contrato_valor_total]|[contrato_parcelamento]')==
 (new ContractDiscounts($db,$ops))->add($legacyId,['nome'=>'Acordo legado','valor'=>'50.00','parcela_inicio'=>2,'parcela_fim'=>3,'tipo'=>'comum','habilitado'=>1],planKey());
 $legacyText=planPreview($legacyId,'[contrato_valor_total]|[contrato_valor_liquido]|[contrato_desconto]|[contrato_parcelamento]');planOK($legacyText==='R$ 10.700,00|R$ 10.700,00|R$ 1.300,00|1 parcela de R$ 900,00 (parcela 1); 2 parcelas de R$ 850,00 (parcelas 2 a 3); 9 parcelas de R$ 900,00 (parcelas 4 a 12)','legado pendente inclui descontos por faixa em todos os campos de totais');
 $academic->generateInstallments($legacyId,planKey());planOK(planPreview($legacyId,'[contrato_valor_total]|[contrato_valor_liquido]|[contrato_desconto]|[contrato_parcelamento]')===$legacyText,'contrato legado informa os mesmos valores antes e depois da geração');
+planOK(planPreview($legacyId,$grossSource)==='R$ 12.000,00|R$ 1.000,00|12 parcelas de R$ 1.000,00','legado com descontos mantém o total e a parcela originais');
 $html=$models->preview(['idcontrato'=>$id,'texto'=>'<p>Total <strong>[contrato_valor_total]</strong>, em [contrato_parcelamento]. Vencimento todo dia [contrato_dia_vencimento].</p>']);planOK($html['formato_texto']==='html'&&str_contains($html['texto'],'<strong>R$ 16.236,00</strong>')&&str_contains($html['texto'],'todo dia 10.'),'novos campos respeitam a formatação HTML');
 planDeny(fn()=>$models->preview(['idcontrato'=>$id,'texto'=>'[dia_de_vencimento_inventado]']),'campos desconhecidos continuam bloqueados');
 $balances=$db->rows('SELECT * FROM '.$db->table('lancamentos').' ORDER BY idlancamento');$model=$models->save((int)$model['idmodelo'],['nome'=>$model['nome'],'texto'=>'Revisado: '.$source,'versao_texto'=>'2','padrao'=>1,'ativo'=>1,'versao'=>$model['versao'],'motivo'=>'Incluir cláusula de pagamento'],planKey());
