@@ -1,4 +1,4 @@
-# Contratos e modelos — 0.19.33
+# Contratos e modelos — 0.19.34
 
 O menu **Contratos** está disponível para administradores e perfis liberados em **Perfis e acessos → Editar acessos → Contratos**. Também há atalhos no Financeiro e na área Financeiro da ficha do aluno. **Bolsas e descontos dos contratos** é uma permissão independente, com uma lista própria para localizar contratos e administrar benefícios. A coligada de trabalho e o período da consulta são respeitados. Veja [o guia das permissões](PERFIS-CONTRATOS.md).
 
@@ -68,11 +68,11 @@ Os valores usam as condições do plano adotado na matrícula daquele aluno, a q
 | `[contrato_dia_vencimento]` | Somente o dia com dois dígitos, como `05`, `10` ou `31` |
 | `[contrato_primeiro_vencimento]` | Data completa do primeiro vencimento, como `10/01/2027` |
 
-Exemplo para o modelo:
+A cláusula de anuidade já aparece em novos modelos. Em um modelo existente, selecione o trecho que quer substituir ou posicione o cursor no ponto de inserção. Clique em **Inserir cláusula de anuidade**. O botão insere a frase abaixo, até o fim da primeira sentença. Os vencimentos têm campos próprios.
 
 ```text
-O valor original do contrato é [contrato_valor_original], em [contrato_parcelamento_original],
-com vencimento todo dia [contrato_dia_vencimento].
+A CONTRATANTE pagará a anuidade escolar de [contrato_valor_original], dividida em [contrato_parcelamento_original].
+Vencimento no dia [contrato_dia_vencimento] de cada mês.
 O primeiro vencimento será em [contrato_primeiro_vencimento].
 ```
 

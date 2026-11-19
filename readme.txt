@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.33
+Stable tag: 0.19.34
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,10 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.34 =
+* O texto sugerido para novos modelos de contrato inclui a cláusula de anuidade com o total e o parcelamento originais de cada aluno.
+* Ao editar um modelo, use Inserir cláusula de anuidade para inserir a frase na posição do cursor ou substituir o trecho selecionado. Confira a prévia e a nova versão do texto antes de salvar.
 
 = 0.19.33 =
 * Novos campos [contrato_valor_parcela_original] e [contrato_parcelamento_original] mostram os valores antes de qualquer bolsa ou desconto, junto ao total [contrato_valor_original].

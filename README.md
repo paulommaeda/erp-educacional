@@ -1,10 +1,10 @@
-# ERP Educacional — 0.19.33
+# ERP Educacional — 0.19.34
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.33.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.34.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 48**, acrescentando a origem dos envios e o controle de notificações/lembretes, preservando documentos, assinaturas e valores. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
@@ -25,7 +25,7 @@ O administrador configura destinatários, assuntos e mensagens em **Configuraç�
 
 ## Contratos em HTML e impressão
 
-No modelo, use `[contrato_valor_original]`, `[contrato_parcelamento_original]` e `[contrato_dia_vencimento]` para preencher o total e as parcelas originais do plano do aluno, sem deduzir nenhuma bolsa ou desconto, e somente o dia de vencimento. `[contrato_valor_parcela_original]` informa o valor original da parcela. Diferenças reais de centavos são discriminadas; bolsas por faixa não alteram esses campos originais. Veja [os campos e exemplos](docs/CONTRATOS.md). A versão 0.19.33 mantém o schema 48 e não recalcula cobranças existentes.
+Novos modelos já trazem a frase “A CONTRATANTE pagará a anuidade escolar de…”, preenchida com o total e o parcelamento originais de cada aluno, antes de bolsas ou descontos. Em **Contratos → Modelos de contrato → Editar modelo**, selecione a redação a substituir e clique em **Inserir cláusula de anuidade**. Confira a prévia e informe uma nova versão do texto ao salvar. Veja [os campos e exemplos](docs/CONTRATOS.md).
 
 O cadastro de modelos e a edição do texto aceitam HTML de formatação. A prévia respeita parágrafos, títulos, destaques, listas, tabelas e estilos seguros. **Imprimir contrato** prepara um PDF A4 com a logo configurada na primeira página e rodapé com endereço, telefone, site, e-mail e numeração em todas as páginas. Os dados vêm de **Configurações → Colégio e cores** da coligada do contrato. Veja [o guia de HTML e impressão](docs/CONTRATOS-HTML-IMPRESSAO.md).
 
