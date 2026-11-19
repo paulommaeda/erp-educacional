@@ -13,7 +13,7 @@
   const link=(text,view,params={})=>{const a=h('a',text,'erp-link-button'),u=new URL(EDERP.front?EDERP.portal:EDERP.admin,location.href);u.searchParams.set(EDERP.front?'erp_tela':'page',EDERP.front?view:'ederp-'+view);for(const [key,value]of Object.entries(params))u.searchParams.set(key,value);a.href=u.href;return a;};
   async function api(path,data,key){const r=await fetch(EDERP.root+path,{method:data?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:{'X-WP-Nonce':EDERP.nonce,...(data?{'Content-Type':'application/json','Idempotency-Key':key||uuid()}:{})},...(data?{body:JSON.stringify(data)}:{})});let body;try{body=await r.json();}catch{throw Error('O servidor não respondeu como esperado. Tente novamente.');}if(!r.ok)throw Error(body.message||'Não foi possível concluir.');return body;}
   const contractText=(text,format)=>window.EDERPContractDocument?.render(text,format)||h('pre',text,'erp-contract-text');
-  const htmlHint='Aceita HTML de formatação: parágrafos, títulos, negrito, itálico, listas e tabelas, com estilos de fonte, alinhamento e borda. Use [contrato_valor_original] e [contrato_parcelamento_original] para os valores antes de qualquer bolsa ou desconto. Use [contrato_dia_vencimento] para mostrar somente o dia. A logo e o rodapé são incluídos na impressão a partir das configurações do colégio. Use a prévia para conferir.';
+  const htmlHint='Aceita HTML de formatação: parágrafos, títulos, negrito, itálico, listas e tabelas, com estilos de fonte, alinhamento e borda. Use [contrato_valor_original] e [contrato_parcelamento_original] para os valores antes de qualquer bolsa ou desconto. Use [contrato_dia_vencimento] para mostrar somente o dia. A logo e o rodapé são incluídos na impressão a partir das configurações do colégio. Shortcodes externos ativos aparecem na lista de inserção. Outros marcadores ficam entre colchetes na prévia e no contrato.';
   const tuitionClause='A CONTRATANTE pagará a anuidade escolar de [contrato_valor_original], dividida em [contrato_parcelamento_original].';
   const defaultModelText=[
     'CONTRATO DE PRESTAÇÃO DE SERVIÇOS EDUCACIONAIS',
@@ -21,7 +21,7 @@
     tuitionClause+' Vencimento no dia [contrato_dia_vencimento] de cada mês. Primeiro vencimento: [contrato_primeiro_vencimento].',
     '[contrato_data]'
   ].join('\n\n');
-  let models=[],tokens={},page=1,generation=0,active='contracts',rows=[];
+  let models=[],tokens={},externalTokens=[],page=1,generation=0,active='contracts',rows=[];
   const params=new URLSearchParams(location.search),student=params.get('aluno');
   root.replaceChildren(h('h1',canContracts?'Contratos':'Bolsas e descontos dos contratos'),h('p',canContracts?'Consulte os contratos dos alunos e cadastre os modelos usados pela secretaria.':'Busque o aluno, RA ou contrato para aplicar e gerenciar bolsas, descontos e indicações.'));
   const notice=feedback(),tabs=h('nav',undefined,'erp-tabs'),listTab=button('Contratos dos alunos',()=>switchTab('contracts')),modelsTab=button('Modelos de contrato',()=>switchTab('models')),listPanel=h('section'),modelPanel=h('section');
@@ -70,7 +70,19 @@
   function removeContract(id){return getContract(id,'Excluir contrato',(c,m)=>{m.content.append(h('h3',c.numero),summary(c));if(c.lancamentos_ativos){m.content.append(h('p','Há '+c.lancamentos_ativos+' lançamentos vinculados. Exclua esses lançamentos na Gestão financeira antes de excluir o contrato.'),link('Abrir Gestão financeira','financeiro'));return;}
     const form=h('form',undefined,'ederp-form'),reason=field('motivo','Motivo da exclusão','','textarea'),check=h('label',undefined,'ederp-check'),confirm=h('input');confirm.type='checkbox';confirm.name='confirmado';confirm.required=true;check.append(confirm,h('span','Confirmo a exclusão do contrato '+c.numero+'.'));reason.input.maxLength=2000;form.append(h('p','O contrato será retirado das consultas. Os textos, parcelas, pagamentos e a auditoria serão preservados. Esta ação não cancela faturas no Educbank.'),reason.node,check);m.content.append(form);bind(m,form,'contratos/'+id+'/excluir',()=>({versao:c.versao,motivo:reason.input.value,confirmado:confirm.checked}),async()=>{notice.textContent='Contrato excluído.';await load();});form.querySelector('button').textContent='Excluir contrato';form.querySelector('button').classList.add('erp-contract-danger');
   });}
-  async function loadModels(){modelPanel.replaceChildren(h('p','Carregando modelos...'));try{const d=await api('modelos-contrato?todos=1');models=d.items;tokens=d.shortcodes;modelPanel.replaceChildren(h('p','Os modelos preenchem os dados de cada aluno. Alterações em modelos atualizam os textos dos contratos ainda não assinados. Textos assinados ficam preservados permanentemente.'),button('Novo modelo',()=>editModel()),h('div',undefined,'erp-contract-model-grid'));const grid=modelPanel.lastChild;if(!models.length)grid.append(h('p','Nenhum modelo cadastrado. Cadastre um texto e marque-o como padrão para novas emissões.'));for(const model of models){const card=h('article',undefined,'ederp-card');card.append(h('h2',model.nome),h('p','Versão '+model.versao_texto+' · '+(Number(model.ativo)?'Ativo':'Inativo')+(Number(model.padrao)?' · Padrão':'')),h('p',model.texto.slice(0,160)+(model.texto.length>160?'…':'')),button('Editar modelo',()=>editModel(model)),button('Excluir modelo',()=>removeModel(model),'erp-contract-danger'));grid.append(card);}}catch(e){modelPanel.replaceChildren(h('p',e.message),button('Tentar novamente',loadModels));}}
+  async function loadModels(){modelPanel.replaceChildren(h('p','Carregando modelos...'));try{const d=await api('modelos-contrato?todos=1');models=d.items;tokens=d.shortcodes;externalTokens=d.shortcodes_externos||[];modelPanel.replaceChildren(h('p','Os modelos preenchem os dados de cada aluno. Alterações em modelos atualizam os textos dos contratos ainda não assinados. Textos assinados ficam preservados permanentemente.'),button('Novo modelo',()=>editModel()),h('div',undefined,'erp-contract-model-grid'));const grid=modelPanel.lastChild;if(EDERP.caps?.admin)grid.before(button('Shortcodes externos',editExternalTokens));if(!models.length)grid.append(h('p','Nenhum modelo cadastrado. Cadastre um texto e marque-o como padrão para novas emissões.'));for(const model of models){const card=h('article',undefined,'ederp-card');card.append(h('h2',model.nome),h('p','Versão '+model.versao_texto+' · '+(Number(model.ativo)?'Ativo':'Inativo')+(Number(model.padrao)?' · Padrão':'')),h('p',model.texto.slice(0,160)+(model.texto.length>160?'…':'')),button('Editar modelo',()=>editModel(model)),button('Excluir modelo',()=>removeModel(model),'erp-contract-danger'));grid.append(card);}}catch(e){modelPanel.replaceChildren(h('p',e.message),button('Tentar novamente',loadModels));}}
+  function editExternalTokens(){
+    const m=modal('Shortcodes externos da coligada'),form=h('form',undefined,'ederp-form erp-contract-form');
+    const previous=[...externalTokens];
+    const entry=field('expressoes','Shortcodes para usar nos contratos',previous.join('\n'),'textarea',false);
+    entry.input.placeholder='[unidade_escolar]\n[unidade_escolar campus="centro"]';
+    form.append(h('p','Use um shortcode informativo por linha, exatamente como ele será inserido no contrato, incluindo os parâmetros fixos. O plugin ou tema que fornece o texto deve estar ativo.'),entry.node);
+    m.content.append(form);
+    bind(m,form,'modelos-contrato/shortcodes-externos',()=>({
+      expressoes:entry.input.value.split(/\r?\n/).map(line=>line.trim()).filter(Boolean),
+      anteriores:previous
+    }),async()=>{notice.textContent='Shortcodes externos salvos para esta coligada.';await loadModels();});
+  }
   function insertText(textarea,value){
     textarea.setRangeText(value,textarea.selectionStart,textarea.selectionEnd,'end');
     textarea.focus();
@@ -92,6 +104,7 @@
       action.title=label;
       items.append(action);
     }
+    for(const token of externalTokens)items.append(button(token,()=>insertText(textarea,token)));
     return details;
   }
   function editModel(model){const m=modal(model?'Editar modelo de contrato':'Novo modelo de contrato'),form=h('form',undefined,'ederp-form erp-contract-form'),name=field('nome','Nome do modelo',model?.nome||''),version=field('versao_texto','Versão do texto',model?.versao_texto||'1'),text=field('texto','Texto com shortcodes',model?.texto||defaultModelText,'textarea'),enabled=choice('ativo','Situação',[['1','Ativo'],['0','Inativo']]),standard=choice('padrao','Usar como padrão',[['0','Não'],['1','Sim']]);name.input.maxLength=191;version.input.maxLength=40;text.input.maxLength=40000;enabled.input.value=String(model?.ativo??1);standard.input.value=String(model?.padrao??0);form.append(name.node,version.node,text.node,tuitionClauseButton(text.input),insertTokens(text.input),h('p',htmlHint),enabled.node,standard.node);

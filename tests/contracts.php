@@ -24,7 +24,8 @@ function fixtureC(string $suffix='',array $term=[]):array{
 $modelData=['nome'=>'Matrícula anual','texto'=>'[colegio_nome] / [aluno_nome] / RA [aluno_ra] / [responsavel_nome] / [mae_nome] / [periodo_codigo] / [turma_nome] / [contrato_numero] / [contrato_valor_liquido] / [contrato_parcelas] / [contrato_primeiro_vencimento]','versao_texto'=>'1','ativo'=>1,'padrao'=>1];
 $key=ck();$model=$models->save(null,$modelData,$key);checkC($models->save(null,$modelData,$key)===$model,'cadastro de modelo idempotente');
 denyC(fn()=>$models->save(null,$modelData+['invasao'=>'x'],ck()),'campos de modelo estranhos bloqueados');
-denyC(fn()=>$models->save(null,array_replace($modelData,['texto'=>'[wp_shortcode]']),ck()),'shortcode fora da lista bloqueado');
+$literal=$models->save(null,array_replace($modelData,['nome'=>'Modelo com marcador','texto'=>'Referência [campo_externo]','padrao'=>0,'ativo'=>0]),ck());
+checkC($literal['texto']==='Referência [campo_externo]','modelo aceita marcador externo sem provedor');
 denyC(fn()=>$models->save(null,array_replace($modelData,['ativo'=>0]),ck()),'padrão inativo bloqueado');
 [$created,$student,$period]=fixtureC();$id=(int)$created['idcontrato'];$original=$db->get('contratos',$id);$text=$original['termo_snapshot'];
 checkC(str_contains($text,'ALUNO CONTRATOS')&&str_contains($text,'MARIA CONTRATOS')&&str_contains($text,'R$ 12.000,00')&&str_contains($text,'31/01/2027'),'modelo preenche aluno, responsável, moeda e data');
@@ -33,7 +34,7 @@ checkC($contracts->listing(['codperiodo'=>'todos','search'=>'Aluno Contratos'])[
 checkC($contracts->listing(['codperiodo'=>'todos','search'=>$original['numero']])['total']===1,'busca por número do contrato');checkC($contracts->listing(['codperiodo'=>'todos','page'=>2])['items']===[],'paginação não repete resultados');
 checkC($contracts->detail($id)['lancamentos_ativos']===0&&$contracts->detail($id)['responsavel']==='MARIA CONTRATOS','detalhe identifica responsável e títulos vinculados');
 $preview=$models->preview(['idcontrato'=>$id,'texto'=>'Aluno: [aluno_nome]\n[contrato_valor_liquido]']);checkC(str_contains($preview['texto'],'12.000,00')&&$db->get('contratos',$id)===$original,'prévia não altera contrato');
-denyC(fn()=>$models->preview(['idcontrato'=>$id,'texto'=>'[erp_app]']),'prévia bloqueia shortcode executável');
+checkC($models->preview(['idcontrato'=>$id,'texto'=>'[erp_app]'])['texto']==='[erp_app]','marcador não selecionado aparece como texto na prévia');
 denyC(fn()=>$models->save((int)$model['idmodelo'],array_replace($modelData,['texto'=>'Novo [aluno_nome]','versao'=>$model['versao'],'motivo'=>'Novo texto']),ck()),'alteração de texto exige nova versão');
 $model=$models->save((int)$model['idmodelo'],array_replace($modelData,['texto'=>'Novo [aluno_nome] [contrato_valor_liquido]','versao_texto'=>'2','versao'=>$model['versao'],'motivo'=>'Novo texto']),ck());$synced=$db->get('contratos',$id);checkC(str_starts_with($synced['termo_snapshot'],'Novo')&&$synced['valor_liquido_total']===$original['valor_liquido_total'],'edição do modelo atualiza texto não assinado e preserva valores');$original=$synced;
 denyC(fn()=>$contracts->update($id,['versao'=>$original['versao'],'idmodelo'=>$model['idmodelo'],'modelo_versao'=>1,'motivo'=>'Reaplicar'],ck()),'modelo selecionado com versão antiga bloqueado');

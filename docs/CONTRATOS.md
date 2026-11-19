@@ -88,7 +88,13 @@ Estado civil, profissão e endereço vêm do cadastro em **Pessoas** do respons�
 
 Os novos campos são válidos na prévia e nas próximas emissões. Alterar os dados da pessoa ou trocar o responsável financeiro não modifica o texto já salvo nos contratos; use a edição do contrato para aplicar explicitamente um modelo atualizado, com motivo, quando necessário.
 
-Os shortcodes são substituições de texto de uma lista fixa. Não executam shortcodes de plugins ou código WordPress. Em HTML, os valores são escapados e a marcação é filtrada para preservar a formatação segura. O conteúdo tem limite de 40.000 bytes antes do preenchimento; nome e versão têm limites de 191 e 40 bytes, respectivamente.
+### Shortcodes de outros plugins ou do tema
+
+O editor aceita marcadores que não fazem parte do ERP. Para preencher um shortcode informativo que já funciona no WordPress, o administrador abre **Contratos → Modelos de contrato → Shortcodes externos** na coligada desejada. Cole a expressão completa, uma por linha, e salve. Por exemplo, se o tema fornece `[unidade_escolar campus="centro"]`, inclua essa expressão com os mesmos parâmetros usados no modelo.
+
+Ao editar um modelo, clique na expressão em **Shortcodes disponíveis** ou digite-a no corpo do texto. Use **Prévia com dados de um contrato** para conferir o resultado. O ERP usa o texto devolvido pelo provedor na emissão. A formatação vem do modelo. O preenchimento aceita chamadas independentes com parâmetros fixos. Uma expressão sem provedor ativo ou fora da seleção permanece visível com os colchetes. Para exibir uma expressão selecionada literalmente, use colchetes duplos.
+
+Cada coligada tem sua própria seleção. A impressão lê o texto gravado no contrato. O modelo aceita até 40.000 bytes antes do preenchimento, o nome até 191 e a versão até 40.
 
 ## Atualização
 
@@ -114,6 +120,7 @@ Todas as rotas ficam em `/wp-json/erp-educacional/v1`. Mutações usam `POST`, n
 | `/modelos-contrato/{id}` | POST | Edição com versão de concorrência e motivo |
 | `/modelos-contrato/{id}/excluir` | POST | Exclusão com versão e motivo |
 | `/modelos-contrato/previa` | POST | Prévia sem persistência com `idcontrato` e `texto` |
+| `/modelos-contrato/shortcodes-externos` | POST | Administrador atualiza a seleção da coligada com as listas `expressoes` e `anteriores`. A consulta de modelos devolve `shortcodes_externos`. |
 
 Na emissão de contrato, envie `idmodelo` e `modelo_versao` para escolher um modelo ou `termo` para fornecer texto personalizado. Quando nenhum dos dois é enviado, o modelo padrão ativo da coligada é usado, se existir. Sem modelo padrão, permanece o texto de cadastro padrão do ERP.
 

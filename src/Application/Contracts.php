@@ -70,7 +70,10 @@ final class Contracts
             if(!$fields&&!$textChanged&&empty($data['idmodelo']))throw new RuleViolation('Informe os campos que deseja editar.');
             if($fields)$this->db->update('contratos',$id,$fields);
             if($changed&&$newPricing)(new Scholarships($this->db))->totalsInside($id);
-            if($textChanged||!empty($data['idmodelo']))(new ContractTemplates($this->db,$this->ops))->applyInside($id,$data);
+            if($textChanged||!empty($data['idmodelo'])){
+                $reuseSnapshot=empty($data['idmodelo'])&&($data['termo']??$c['termo_snapshot'])===$c['termo_snapshot'];
+                (new ContractTemplates($this->db,$this->ops))->applyInside($id,$data,$reuseSnapshot);
+            }
             elseif($changed)(new ContractTemplates($this->db,$this->ops))->refreshInside($id);
             $after=$this->db->get('contratos',$id);$this->db->audit('contratos',$id,'editar',$c,['dados'=>$after,'motivo'=>$reason],$key);return $after;
         });}));

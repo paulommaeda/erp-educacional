@@ -1,5 +1,12 @@
 # Validação
 
+## 0.19.35
+
+- Em WordPress 7.1.3, PHP 8.4.27 e MariaDB 11.4.8 locais, `tests/wordpress-contract-html.php` passou nas 43 verificações. Um shortcode de teste, registrado pela API do WordPress, forneceu texto para um modelo HTML e para um contrato personalizado. A suíte verificou parâmetros fixos, permissões, isolamento por coligada, retirada do provedor, impressão e preservação do contrato assinado.
+- A extração do texto do PDF confirmou o nome da unidade e o marcador sem provedor exatamente como apareceram na prévia. A suíte independente de impressão também gerou o PDF de referência.
+- As seis suítes PHP/SQLite de contratos, HTML, campos do responsável, plano, permissões e assinatura passaram nas 299 verificações. As cinco suítes de interface de contratos, HTML, permissões, assinatura e matrícula passaram com a API simulada, incluindo a seleção do shortcode pela administração e a inserção no cursor.
+- A instalação no site do colégio e a conferência com o plugin externo usado pela escola dependem da atualização local e do provedor escolhido.
+
 ## 0.19.34
 
 - Chrome em 1366 e 390 px, com o script do editor e a API simulada. A tela de novo modelo abriu com uma única cláusula de anuidade e os dois campos de vencimento. Em modelo existente, foram testadas a substituição da seleção e a inserção no cursor, a ocultação do botão enquanto a cláusula estiver presente e sua reapresentação após a remoção.

@@ -5,13 +5,14 @@ const fixture={idcontrato:'1',idmatricula:'10',idaluno:'20',numero:'1234-2027',a
 const model={idmodelo:'3',nome:'Modelo anual',texto:'Aluno: [aluno_nome] / [contrato_valor_liquido]',versao_texto:'2',versao:'5',ativo:'1',padrao:'1'};
 async function setup(options={}){
  const calls=[],errors=[],vc=new VirtualConsole();vc.on('jsdomError',e=>errors.push(e));const dom=new JSDOM('<main class="ederp"><section data-erp-contracts></section></main>',{url:'https://school.test/portal?erp_tela=contratos',runScripts:'dangerously',virtualConsole:vc}),w=dom.window,d=w.document;
- w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.EDERP={root:'https://school.test/api/',nonce:'contracts-nonce',period:7,currentPeriod:7,front:true,portal:'https://school.test/portal',admin:'https://school.test/wp-admin/admin.php',caps:{admin:true}};
- let fail=false,current={...fixture,...options.contract},models=[{...model}];
+ w.HTMLDialogElement.prototype.showModal=function(){this.open=true;};w.HTMLDialogElement.prototype.close=function(){this.open=false;this.dispatchEvent(new w.Event('close'));};w.EDERP={root:'https://school.test/api/',nonce:'contracts-nonce',period:7,currentPeriod:7,front:true,portal:'https://school.test/portal',admin:'https://school.test/wp-admin/admin.php',caps:options.caps||{admin:true}};
+ let fail=false,current={...fixture,...options.contract},models=[{...model}],externalTokens=[];
  w.fetch=async(raw,request={})=>{const u=new URL(raw),route=u.pathname.slice(5),body=request.body&&JSON.parse(request.body);calls.push({route,query:u.searchParams,body,headers:request.headers});
    if(body&&fail){fail=false;return {ok:false,json:async()=>({message:'Falha temporária. Tente novamente.'})};}
    let result;
    if(route==='modelos-contrato/previa')result={texto:'PRÉVIA: ALUNO TESTE\n<img src=x onerror="window.compromised=true">'};
-   else if(route==='modelos-contrato'&&!body)result={items:models,shortcodes:{aluno_nome:'Nome do aluno',contrato_valor_liquido:'Total líquido',contrato_valor_total:'Total contratado',contrato_valor_parcela:'Valor das parcelas',contrato_parcelamento:'Parcelamento contratado',contrato_dia_vencimento:'Somente o dia de vencimento',contrato_valor_original:'Total original',contrato_valor_parcela_original:'Parcela original',contrato_parcelamento_original:'Parcelamento original'}};
+   else if(route==='modelos-contrato'&&!body)result={items:models,shortcodes_externos:externalTokens,shortcodes:{aluno_nome:'Nome do aluno',contrato_valor_liquido:'Total líquido',contrato_valor_total:'Total contratado',contrato_valor_parcela:'Valor das parcelas',contrato_parcelamento:'Parcelamento contratado',contrato_dia_vencimento:'Somente o dia de vencimento',contrato_valor_original:'Total original',contrato_valor_parcela_original:'Parcela original',contrato_parcelamento_original:'Parcelamento original'}};
+   else if(route==='modelos-contrato/shortcodes-externos'&&body){externalTokens=body.expressoes;result={shortcodes_externos:externalTokens};}
    else if(route==='contratos'&&!body)result={items:Number(u.searchParams.get('page')||1)===1?[current]:[],total:options.total||1,page:Number(u.searchParams.get('page')||1)};
    else if(route==='contratos/1'&&!body)result=current;
    else if(route==='contratos/1'&&body){current={...current,...body,versao:'5'};result=current;}
@@ -42,5 +43,17 @@ async function test(){
  assert.equal(x.calls.filter(call=>call.body).length,0);
  modelText.value=model.texto;modelText.dispatchEvent(new x.w.Event('input',{bubbles:true}));
  assert(!insertClause.hidden);x.dom.window.close();console.log('PASS: substitui só o texto selecionado e oferece a cláusula uma única vez');
+ x=await setup();button(x.d,'Modelos de contrato').click();await tick();button(x.d,'Shortcodes externos').click();
+ dialog=x.d.querySelector('dialog');form=dialog.querySelector('form');
+ const external='[unidade_escolar campus="centro"]';
+ form.querySelector('[name=expressoes]').value='  '+external+'  \n';form.requestSubmit();await tick();
+ const configCall=x.calls.find(c=>c.route==='modelos-contrato/shortcodes-externos');
+ assert.deepEqual(configCall.body,{expressoes:[external],anteriores:[]});
+ button(x.d,'Novo modelo').click();form=x.d.querySelector('dialog form');
+ const template=form.querySelector('[name=texto]');template.value='Unidade ';template.setSelectionRange(8,8);
+ button(form,external).click();assert.equal(template.value,'Unidade '+external);x.dom.window.close();
+ x=await setup({caps:{contracts:true}});button(x.d,'Modelos de contrato').click();await tick();
+ assert.equal(button(x.d,'Shortcodes externos'),undefined);x.dom.window.close();
+ console.log('PASS: administrador seleciona o shortcode externo e o editor insere a expressão no cursor');
 }
 module.exports={fixture,model,setup};if(require.main===module)test().catch(e=>{console.error(e);process.exit(1);});
