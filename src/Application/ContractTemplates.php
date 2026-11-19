@@ -16,7 +16,8 @@ final class ContractTemplates
         'pai_nome'=>'Nome do pai','pai_cpf'=>'CPF do pai','mae_nome'=>'Nome da mãe','mae_cpf'=>'CPF da mãe',
         'colegio_nome'=>'Nome do colégio','colegio_razao_social'=>'Razão social do colégio','colegio_cnpj'=>'CNPJ do colégio','colegio_endereco'=>'Endereço do colégio','colegio_email'=>'E-mail do colégio','colegio_telefone'=>'Telefone do colégio',
         'contrato_numero'=>'Número do contrato','contrato_data'=>'Data do contrato','contrato_valor_original'=>'Valor original total','contrato_desconto'=>'Bolsa total','contrato_valor_liquido'=>'Valor líquido total','contrato_parcelas'=>'Quantidade de parcelas','contrato_primeiro_vencimento'=>'Primeiro vencimento',
-        'contrato_valor_total'=>'Valor total contratado para o aluno, após bolsas/descontos e sem descontar pontualidade','contrato_valor_parcela'=>'Valor da parcela do aluno; discrimina as faixas quando os valores são diferentes','contrato_parcelamento'=>'Parcelamento do aluno com quantidades e valores, incluindo faixas diferentes','contrato_dia_vencimento'=>'Somente o dia de vencimento das parcelas (01 a 31)',
+        'contrato_valor_total'=>'Valor líquido total após bolsas e descontos incondicionais','contrato_valor_parcela'=>'Valor líquido da parcela após bolsas e descontos; discrimina as faixas diferentes','contrato_parcelamento'=>'Parcelamento líquido após bolsas e descontos, incluindo faixas diferentes','contrato_dia_vencimento'=>'Somente o dia de vencimento das parcelas (01 a 31)',
+        'contrato_valor_parcela_original'=>'Valor original da parcela, antes de qualquer bolsa ou desconto','contrato_parcelamento_original'=>'Quantidade e valores originais das parcelas, antes de qualquer bolsa ou desconto',
         'matricula_id'=>'Número da matrícula','periodo_codigo'=>'Período letivo','curso_nome'=>'Curso','turma_nome'=>'Turma','turno_nome'=>'Turno','plano_nome'=>'Plano de pagamento'
     ];
     public function __construct(private Store $db,private Operations $ops) {}
@@ -137,14 +138,22 @@ final class ContractTemplates
     {
         $parcels=$this->db->rows('SELECT numero,valor_original,desconto_incondicional,valor_liquido FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d ORDER BY numero',[(int)$c['idcontrato']]);
         if(!$parcels)$parcels=(new Scholarships($this->db))->plannedInstallments($c);
-        $groups=[];$totals=['valor_original'=>0,'desconto_incondicional'=>0,'valor_liquido'=>0];
-        foreach($parcels as $p){foreach($totals as $field=>$_)$totals[$field]+=Money::cents($p[$field]);$value=Money::cents($p['valor_liquido']);$number=(int)$p['numero'];$last=count($groups)-1;
+        $totals=['valor_original'=>0,'desconto_incondicional'=>0,'valor_liquido'=>0];
+        foreach($parcels as $p)foreach($totals as $field=>$_)$totals[$field]+=Money::cents($p[$field]);
+        $original=self::installmentDescription($parcels,'valor_original');$net=self::installmentDescription($parcels,'valor_liquido');
+        return ['contrato_valor_original'=>self::currency($totals['valor_original']),'contrato_desconto'=>self::currency($totals['desconto_incondicional']),'contrato_valor_liquido'=>self::currency($totals['valor_liquido']),'contrato_valor_total'=>self::currency($totals['valor_liquido']),'contrato_valor_parcela'=>$net['valor'],'contrato_parcelamento'=>$net['parcelamento'],'contrato_valor_parcela_original'=>$original['valor'],'contrato_parcelamento_original'=>$original['parcelamento'],'contrato_dia_vencimento'=>substr((string)$c['primeiro_vencimento'],8,2)];
+    }
+
+    private static function installmentDescription(array $parcels,string $field):array
+    {
+        $groups=[];
+        foreach($parcels as $p){$value=Money::cents($p[$field]);$number=(int)$p['numero'];$last=count($groups)-1;
             if($last>=0&&$groups[$last]['valor']===$value&&$groups[$last]['fim']+1===$number){$groups[$last]['fim']=$number;$groups[$last]['quantidade']++;}
             else $groups[]=['valor'=>$value,'inicio'=>$number,'fim'=>$number,'quantidade'=>1];
         }
         $amounts=[];$description=[];$varied=count($groups)>1;
         foreach($groups as $g){$amount=self::currency($g['valor']);$range=$g['inicio']===$g['fim']?'parcela '.$g['inicio']:'parcelas '.$g['inicio'].' a '.$g['fim'];$amounts[]=$amount.($varied?' ('.$range.')':'');$description[]=$g['quantidade'].($g['quantidade']===1?' parcela de ':' parcelas de ').$amount.($varied?' ('.$range.')':'');}
-        return ['contrato_valor_original'=>self::currency($totals['valor_original']),'contrato_desconto'=>self::currency($totals['desconto_incondicional']),'contrato_valor_liquido'=>self::currency($totals['valor_liquido']),'contrato_valor_total'=>self::currency($totals['valor_liquido']),'contrato_valor_parcela'=>implode('; ',$amounts),'contrato_parcelamento'=>implode('; ',$description),'contrato_dia_vencimento'=>substr((string)$c['primeiro_vencimento'],8,2)];
+        return ['valor'=>implode('; ',$amounts),'parcelamento'=>implode('; ',$description)];
     }
 
     private static function date(?string $date):string {return $date?implode('/',array_reverse(explode('-',substr($date,0,10)))):'';}

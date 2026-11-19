@@ -1,5 +1,13 @@
 # Validação
 
+## 0.19.33
+
+- `tests/contract-plan-shortcodes.php`: 52 verificações SQLite. Novos campos de parcela e parcelamento originais conferidos na emissão e na prévia, antes/depois da geração e com bolsas de 50%, integral, fixa ou por faixa. Total e parcela originais permanecem em R$ 16.236,00/R$ 1.353,00, sem deduzir benefícios nem acrescentar pontualidade novamente. Conferidos também centavos, legado com descontos, campos líquidos anteriores, pagamentos parciais, HTML, permissões, coligada, assinatura e preservação das cobranças.
+- Seis suítes PHP aprovadas: plano/shortcodes, contratos/modelos, assinatura, HTML, dados do assinante e permissões. Sintaxe dos PHP alterados conferida. Três suítes de interface aprovadas: contratos, HTML/impressão e matrícula com modelo. O exemplo inicial usa os campos originais e os botões inserem os novos campos na posição do cursor.
+- `tests/wordpress-contract-html.php`: 29 verificações no WordPress 7.1.3/MariaDB 11.4.8. REST autorizada oferece campos originais e líquidos, confere DECIMAL e garante total/parcela originais uniformes com bolsa por faixa. Geração, PDF privado, identidade de duas coligadas e texto assinado preservados. E-mails e HTTP interceptados; nenhuma instalação no site do colégio.
+- PDF real teve total e parcelas originais extraídos/conferidos e página A4 renderizada/inspecionada, sem cortes ou sobreposições no cabeçalho, corpo ou rodapé.
+- Schema permanece 48. A atualização não muda preços, benefícios, pagamentos ou textos assinados; modelos existentes precisam ser editados/salvos para usar os campos originais.
+
 ## 0.19.32
 
 - `tests/contract-plan-shortcodes.php`: 41 verificações SQLite. Total original, bolsas e total líquido usam o parcelamento do aluno, com quatro novos campos: total, valor da parcela, parcelamento e dia de vencimento. Conferidos alunos com quantidades/dias próprios, antes/depois da geração, bolsas de 50%/integral/fixa/por faixa, divisão exata dos centavos, dia 31 em fevereiro, edição posterior do catálogo, condições pendentes, contratos legados com descontos por faixa e pagamentos parciais. Prévia/modelo em HTML, permissões, coligada, assinatura, integridade e preservação das cobranças também validados.

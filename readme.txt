@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.32
+Stable tag: 0.19.33
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,12 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.33 =
+* Novos campos [contrato_valor_parcela_original] e [contrato_parcelamento_original] mostram os valores antes de qualquer bolsa ou desconto, junto ao total [contrato_valor_original].
+* O exemplo inicial de novos modelos usa valores originais. A lista de campos identifica explicitamente os campos líquidos com benefícios.
+* Valores originais são preservados mesmo com bolsa integral ou parcial; diferenças reais de centavos continuam discriminadas.
+* Mantém schema 48, textos assinados e cobranças existentes.
 
 = 0.19.32 =
 * Campos do contrato preenchem o total, valor das parcelas e parcelamento com as condições contratadas para cada aluno, incluindo bolsas por faixa e divisão exata dos centavos.
