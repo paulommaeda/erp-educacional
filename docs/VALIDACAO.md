@@ -1,5 +1,11 @@
 # Validação
 
+## 0.19.34
+
+- Chrome em 1366 e 390 px, com o script do editor e a API simulada. A tela de novo modelo abriu com uma única cláusula de anuidade e os dois campos de vencimento. Em modelo existente, foram testadas a substituição da seleção e a inserção no cursor, a ocultação do botão enquanto a cláusula estiver presente e sua reapresentação após a remoção.
+- A prévia com dados fictícios exibiu anuidade de R$ 16.236,00 em 12 parcelas de R$ 1.353,00. A requisição de gravação ocorreu somente ao salvar, com o texto, a versão e o motivo da alteração. Os campos usados foram conferidos no catálogo de shortcodes do servidor.
+- Sintaxe de `assets/contracts.js` e `tests/contracts-ui.cjs` conferida com Node. Validação desta entrega limitada ao editor, sem execução em WordPress/MySQL. Schema 48.
+
 ## 0.19.33
 
 - `tests/contract-plan-shortcodes.php`: 52 verificações SQLite. Novos campos de parcela e parcelamento originais conferidos na emissão e na prévia, antes/depois da geração e com bolsas de 50%, integral, fixa ou por faixa. Total e parcela originais permanecem em R$ 16.236,00/R$ 1.353,00, sem deduzir benefícios nem acrescentar pontualidade novamente. Conferidos também centavos, legado com descontos, campos líquidos anteriores, pagamentos parciais, HTML, permissões, coligada, assinatura e preservação das cobranças.
