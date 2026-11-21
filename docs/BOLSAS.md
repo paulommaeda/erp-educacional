@@ -1,4 +1,23 @@
-# Bolsas cadastráveis — 0.19.26
+# Bolsas do aluno e do contrato
+
+## Cadastrar uma bolsa para o aluno
+
+Em **Alunos → ficha do aluno → Bolsas do aluno**, selecione **Cadastrar bolsa do aluno**. Também é possível localizar o aluno pelo nome ou RA em **Bolsas e descontos dos contratos → Bolsas por aluno**, mesmo antes da primeira matrícula. O acesso é concedido em **Perfis e acessos → Editar acessos → Bolsas e descontos dos contratos**.
+
+Informe **Título**, **Descrição**, **Percentual da parcela original (%)** e **Situação**. Uma bolsa ativa acompanha todos os contratos ativos do aluno na coligada, de qualquer período letivo, inclusive os que ainda aguardam geração das parcelas. Novos contratos de matrícula ou rematrícula herdam as bolsas ativas. A consulta do contrato mostra o título, a descrição e o percentual. O campo `[bolsas_do_aluno]` inclui esses dados no texto do modelo e na impressão.
+
+Ao alterar o percentual ou inativar uma bolsa, o ERP recalcula as parcelas abertas e vencidas que ainda não receberam pagamento. Parcelas com baixa total ou parcial conservam os valores registrados. Contratos cancelados e textos já assinados conservam seu histórico. A soma dos percentuais aplicáveis a cada parcela precisa respeitar o limite de 100%. Se houver incompatibilidade, a operação é desfeita em todos os contratos e a mensagem identifica qual precisa de ajuste.
+
+### Exemplo de pontualidade
+
+| Composição da parcela | Valor |
+| --- | ---: |
+| Valor original | R$ 1.500,00 |
+| Benefício de 10% sobre o original | R$ 150,00 |
+| Parte incondicional da bolsa | R$ 47,00 |
+| Valor do lançamento após o desconto incondicional | R$ 1.453,00 |
+| Desconto de pontualidade previsto no contrato | R$ 103,00 |
+| Valor para pagamento em dia | R$ 1.350,00 |
 
 ## Preparar e cadastrar
 

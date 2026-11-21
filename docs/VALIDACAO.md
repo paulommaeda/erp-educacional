@@ -1,5 +1,11 @@
 # Validação
 
+## 0.19.36
+
+- WordPress 7.1.3, PHP 8.4.27 e MariaDB 11.4.8. As suítes nativas de bolsas do aluno, concessões do contrato e texto/impressão passaram, respectivamente, em 38, 37 e 43 verificações. A migração do schema 48 para o 49 foi aplicada duas vezes sobre dados históricos. A API conferiu permissões, coligada, prévia desatualizada e matrícula por operador acadêmico.
+- Em SQLite, a suíte de bolsas do aluno passou em 25 verificações, incluindo a baixa de R$ 1.350,00, contratos futuros, redação assinada, pagamentos parciais, desativação e reversão integral em caso de conflito. As suítes de descontos, Educbank, matrícula, contratos, exportação e rematrícula também passaram. Foram exercitadas as transições do 5º para o 6º ano e do 9º ano para o ensino médio com a bolsa ativa.
+- Em JSDOM, foram validados o cadastro antes do primeiro contrato, a edição na ficha, a apresentação de título e descrição e as prévias individual e em lote. O teste legado `workflow-ui.cjs` já interrompia na versão 0.19.35 ao buscar o seletor de responsável antes de clicar em Vincular pai. A suíte atual da ficha do aluno cobre o fluxo.
+
 ## 0.19.35
 
 - Em WordPress 7.1.3, PHP 8.4.27 e MariaDB 11.4.8 locais, `tests/wordpress-contract-html.php` passou nas 43 verificações. Um shortcode de teste, registrado pela API do WordPress, forneceu texto para um modelo HTML e para um contrato personalizado. A suíte verificou parâmetros fixos, permissões, isolamento por coligada, retirada do provedor, impressão e preservação do contrato assinado.

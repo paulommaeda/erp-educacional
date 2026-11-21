@@ -1,11 +1,11 @@
-# ERP Educacional — 0.19.35
+# ERP Educacional — 0.19.36
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.35.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 48**, acrescentando a origem dos envios e o controle de notificações/lembretes, preservando documentos, assinaturas e valores. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.36.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 49**, que cria o cadastro de bolsas do aluno e a cópia dos benefícios em cada contrato. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.
@@ -22,6 +22,10 @@ Se uma movimentação aponta para uma matrícula ausente, a cópia integral do r
 Novas matrículas e contratos aceitam o primeiro vencimento em **hoje ou data futura**, conforme a data local do WordPress. A secretaria pode enviar arquivos em **Documentos dos alunos → Enviar documento para aluno**, ou na aba Documentos da ficha. Os arquivos seguem para conferência.
 
 O administrador configura destinatários, assuntos e mensagens em **Configurações → Documentos dos alunos → Configurar e-mails e lembretes**. Há avisos à equipe sobre envios familiares, retorno aos responsáveis sobre aprovação/rejeição e lembretes a cada dois dias. O início da família exibe um link para documentos ausentes ou rejeitados; arquivos em análise não são cobrados. Veja [o guia de documentos](docs/FAMILIA-DOCUMENTOS.md).
+
+## Bolsas do aluno
+
+Na ficha do aluno, abra **Bolsas do aluno → Cadastrar bolsa do aluno** e informe o título, a descrição e o percentual. O mesmo cadastro está disponível em **Bolsas e descontos dos contratos → Bolsas por aluno**, inclusive antes da primeira matrícula. A bolsa ativa acompanha os contratos do aluno na coligada. Sobre R$ 1.500,00, uma bolsa de 10% com R$ 103,00 de pontualidade resulta em R$ 1.453,00 no lançamento e R$ 1.350,00 para pagamento em dia. Veja [as regras e os exemplos](docs/BOLSAS.md).
 
 ## Contratos em HTML e impressão
 

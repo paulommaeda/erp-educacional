@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.35
+Stable tag: 0.19.36
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,10 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.36 =
+* O cadastro de bolsas por aluno aceita título, descrição e percentual sobre a parcela original. Bolsas ativas acompanham os contratos ativos e as novas matrículas do aluno na coligada.
+* O financeiro combina a bolsa com a pontualidade em cada parcela sem pagamento. O contrato guarda o título e a descrição, disponíveis para impressão com [bolsas_do_aluno].
 
 = 0.19.35 =
 * Modelos e textos personalizados aceitam marcadores externos. O administrador pode disponibilizar shortcodes de texto de outros plugins ou do tema por coligada, inclusive com parâmetros fixos.

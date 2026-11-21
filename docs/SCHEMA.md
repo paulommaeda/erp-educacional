@@ -1,5 +1,9 @@
 # Schema implementado
 
+## Versão 49 — bolsas do aluno
+
+`aluno_bolsas` armazena título, descrição, percentual e situação de cada bolsa do estudante. `contrato_bolsas_aluno` guarda a cópia aplicada ao contrato, com uma única linha por contrato e bolsa de origem. As chaves estrangeiras incluem a coligada. O detalhamento de uma parcela recalculada registra `origem=aluno` e `idbolsa_aluno` em `bolsas_json`. A migração cria as duas tabelas vazias e conserva os valores emitidos anteriormente.
+
 ## Versão 45 — bolsas cadastráveis
 
 Acrescenta `bolsas` (catálogo por coligada) e `contrato_bolsas` (concessões, cópias da regra e revisões por número de parcela). As referências de concessão exigem contrato e bolsa da mesma coligada. Os padrões Integral e 50% têm unicidade por coligada/código.

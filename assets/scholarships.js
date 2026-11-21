@@ -22,11 +22,73 @@ function summary(plan,count,manual,rules=[]){const n=Number(count);if(!Number.is
 async function settings(root){const card=h('section',undefined,'ederp-card erp-scholarship-catalog');root.append(card);async function load(){const data=await api('bolsas');card.replaceChildren(h('h2','Cadastro de bolsas'),h('p','Bolsas integral e 50% são padrões. Cadastre outras condições em percentual ou valor fixo por parcela. A edição do cadastro vale para novas concessões; benefícios já aplicados mantêm sua regra.'),button('Cadastrar bolsa',()=>edit()));for(const row of data.items){const article=h('article',undefined,'erp-scholarship-card');article.append(h('h3',row.nome),h('p',labelRule(row)+' · '+(Number(row.ativo)?'Ativa':'Inativa')));if(row.descricao)article.append(h('p',row.descricao));article.append(button('Editar bolsa',()=>edit(row)));card.append(article);}}
  function edit(row){const ui=dialog(row?'Editar bolsa':'Cadastrar bolsa'),name=field(ui.f,'Nome da bolsa',row?.nome||''),description=field(ui.f,'Descrição',row?.descricao||'','textarea'),type=select(ui.f,'Forma de cálculo',[['percentual','Percentual da parcela total'],['valor','Valor fixo por parcela']],row?.forma_calculo||'percentual'),value=field(ui.f,'Percentual (%) ou valor por parcela (R$)',row?.valor||''),active=select(ui.f,'Situação',[['1','Ativa'],['0','Inativa']],row?.ativo??1);description.required=false;if(row?.codigo_padrao){type.disabled=true;value.readOnly=true;ui.f.append(h('p','O percentual desta bolsa padrão é fixo. Para outra condição, cadastre uma nova bolsa.'));}submit(ui,'Salvar bolsa','bolsas',()=>({nome:name.value,descricao:description.value,forma_calculo:type.value,valor:money(value.value),ativo:active.value,...(row?{idbolsa:row.idbolsa,versao:row.versao}:{})}),load);}
  await load();}
-async function manage(contract,changed=async()=>{}){const ui=dialog('Bolsas cadastradas · '+contract.numero),area=h('div',undefined,'erp-scholarship-management');area.style.gridColumn='1 / -1';ui.f.append(area);ui.f.onsubmit=e=>e.preventDefault();let catalogue=[];async function load(result){const [data,definitions]=await Promise.all([api('contratos/'+contract.idcontrato+'/bolsas'),api('bolsas')]);contract=data.contrato;catalogue=definitions.items;area.replaceChildren(h('p','Escolha as parcelas para cada bolsa. Parcelas e lançamentos sem pagamento serão recalculados juntos; baixas e encargos registrados são preservados.'),button('Aplicar bolsa cadastrada',()=>edit()));if(result)area.append(h('p',(result.parcelas_alteradas||0)+' parcelas recalculadas; '+(result.parcelas_preservadas||0)+' com pagamento preservadas.'));area.append(h('p','Total atual do contrato: R$ '+br(cents(contract.valor_liquido_total))));for(const row of data.items){const article=h('article',undefined,'erp-scholarship-card');article.append(h('h3',row.nome_snapshot),h('p',labelRule(row)+' · Parcelas '+row.parcela_inicio+' a '+row.parcela_fim+' · '+(!Number(row.ativo)?'Retirada':Number(row.habilitado)?'Habilitada':'Suspensa a partir da alteração')));if(Number(row.ativo))article.append(button('Editar faixa e situação',()=>edit(row)),button('Retirar bolsa',()=>remove(row)));area.append(article);}}
+async function manage(contract,changed=async()=>{}){const ui=dialog('Bolsas cadastradas · '+contract.numero),area=h('div',undefined,'erp-scholarship-management');area.style.gridColumn='1 / -1';ui.f.append(area);ui.f.onsubmit=e=>e.preventDefault();let catalogue=[];async function load(result){const [data,definitions]=await Promise.all([api('contratos/'+contract.idcontrato+'/bolsas'),api('bolsas')]);contract=data.contrato;catalogue=definitions.items;area.replaceChildren(h('p','Escolha as parcelas para cada bolsa. Parcelas e lançamentos sem pagamento serão recalculados juntos; baixas e encargos registrados são preservados.'),button('Aplicar bolsa cadastrada',()=>edit()));if(result)area.append(h('p',(result.parcelas_alteradas||0)+' parcelas recalculadas; '+(result.parcelas_preservadas||0)+' com pagamento preservadas.'));area.append(h('p','Total atual do contrato: R$ '+br(cents(contract.valor_liquido_total))));if(data.bolsas_aluno?.length)area.append(contractStudentGrants(data.bolsas_aluno));for(const row of data.items){const article=h('article',undefined,'erp-scholarship-card');article.append(h('h3',row.nome_snapshot),h('p',labelRule(row)+' · Parcelas '+row.parcela_inicio+' a '+row.parcela_fim+' · '+(!Number(row.ativo)?'Retirada':Number(row.habilitado)?'Habilitada':'Suspensa a partir da alteração')));if(Number(row.ativo))article.append(button('Editar faixa e situação',()=>edit(row)),button('Retirar bolsa',()=>remove(row)));area.append(article);}}
  async function done(result){await load(result);await changed();}
  function edit(row){const form=dialog(row?'Editar faixa e situação da bolsa':'Aplicar bolsa cadastrada');let choice;if(!row)choice=select(form.f,'Bolsa',[['','Selecione...'],...catalogue.filter(b=>Number(b.ativo)).map(b=>[String(b.idbolsa),b.nome+' · '+labelRule(b)])],'');else form.f.append(h('p',row.nome_snapshot+' · '+labelRule(row)));const first=field(form.f,'Da parcela',row?.parcela_inicio||1,'number'),last=field(form.f,'Até a parcela',row?.parcela_fim||contract.quantidade_parcelas,'number');first.max=last.max=String(contract.quantidade_parcelas);let enabled,from;if(row){enabled=select(form.f,'Situação da concessão',[['1','Habilitada'],['0','Suspensa']],row.habilitado);from=field(form.f,'Aplicar alterações a partir da parcela',1,'number');from.max=String(contract.quantidade_parcelas);form.f.append(h('p','Parcelas anteriores mantêm as regras já registradas.'));}
  submit(form,'Aplicar e recalcular',row?'bolsas-concedidas/'+row.idconcessao+'/editar':'contratos/'+contract.idcontrato+'/bolsas',()=>{const base={parcela_inicio:first.value,parcela_fim:last.value};if(row)return {...base,versao:row.versao,habilitado:enabled.value,aplicar_a_partir:from.value};const selected=catalogue.find(b=>String(b.idbolsa)===choice.value);if(!selected)throw Error('Selecione a bolsa.');return {...base,idbolsa:selected.idbolsa,bolsa_versao:selected.versao};},done);}
  function remove(row){const form=dialog('Retirar '+row.nome_snapshot),from=field(form.f,'Retirar a partir da parcela',1,'number');from.max=String(contract.quantidade_parcelas);form.f.append(h('p','Os lançamentos sem pagamento serão recalculados. Pagamentos existentes permanecerão intactos.'));submit(form,'Retirar e recalcular','bolsas-concedidas/'+row.idconcessao+'/retirar',()=>({versao:row.versao,aplicar_a_partir:from.value}),done);}
  await load();}
-window.EDERPScholarships={picker,summary,settings,manage};
+function contractStudentGrants(rows){
+ const section=h('section',undefined,'erp-scholarship-management');
+ if(rows?.length){
+  section.append(h('h3','Bolsas do aluno'));
+  for(const grant of rows){
+   const item=h('article',undefined,'erp-scholarship-card');
+   item.append(h('strong',grant.titulo),h('p',String(grant.percentual).replace('.',',')+'% · '+(Number(grant.ativo)?'Ativa':'Inativa')),h('p',grant.descricao));
+   section.append(item);
+  }
+ }
+ return section;
+}
+async function studentPanel(area,id,changed=async()=>{}){
+ const path='bolsas-alunos/'+id;
+ async function load(result){
+  const data=await api(path);
+  area.replaceChildren(h('h3',data.aluno.nome+' · RA '+data.aluno.ra),button('Cadastrar bolsa do aluno',()=>editGrant()));
+  if(result){
+   const count=(n,one,many)=>n+' '+(Number(n)===1?one:many);
+   const status=h('p',[count(result.contratos_atualizados,'contrato atualizado','contratos atualizados'),count(result.parcelas_alteradas,'parcela recalculada','parcelas recalculadas'),count(result.parcelas_preservadas,'parcela preservada','parcelas preservadas')].join(' · '));
+   status.setAttribute('role','status');area.append(status);
+  }
+  if(!data.items.length)area.append(h('p','Nenhuma bolsa cadastrada para este aluno.'));
+  for(const grant of data.items){
+   const article=h('article',undefined,'erp-scholarship-card');
+   article.append(h('h3',grant.titulo),h('p',String(grant.percentual).replace('.',',')+'% · '+(Number(grant.ativo)?'Ativa':'Inativa')),h('p',grant.descricao),button('Editar bolsa do aluno',()=>editGrant(grant)));
+   area.append(article);
+  }
+ }
+ function editGrant(grant){
+  const ui=dialog(grant?'Editar bolsa do aluno':'Cadastrar bolsa do aluno');
+  const title=field(ui.f,'Título',grant?.titulo),description=field(ui.f,'Descrição',grant?.descricao,'textarea'),percent=field(ui.f,'Percentual da parcela original (%)',String(grant?.percentual||'').replace('.',','));
+  title.maxLength=191;description.maxLength=2000;percent.inputMode='decimal';
+  const active=select(ui.f,'Situação',[['1','Ativa'],['0','Inativa']],grant?.ativo??1);
+  ui.f.append(h('p','A bolsa ativa acompanha os contratos atuais e futuros do aluno nesta coligada. Alterações recalculam as parcelas sem pagamento, inclusive vencidas.'));
+  submit(ui,'Salvar bolsa do aluno',grant?path+'/'+grant.idbolsa_aluno:path,()=>({titulo:title.value,descricao:description.value,percentual:money(percent.value),ativo:active.value,...(grant?{versao:grant.versao}:{})}),async result=>{await load(result);await changed();});
+ }
+ await load();
+}
+function chooseStudent(changed){
+ const ui=dialog('Bolsas por aluno'),query=field(ui.f,'Buscar por nome ou RA','','search'),results=h('div'),nav=h('nav');
+ let page=1,request=0;
+ const prev=button('Anterior',()=>{page--;search();}),next=button('Próxima',()=>{page++;search();});
+ query.required=false;query.maxLength=191;nav.append(prev,next);
+ const find=h('button','Buscar aluno');find.type='submit';ui.f.append(find,results,nav);
+ ui.f.onsubmit=e=>{e.preventDefault();page=1;search();};
+ async function search(){
+  const turn=++request;prev.disabled=next.disabled=true;
+  try{
+   const data=await api('bolsas-alunos?'+new URLSearchParams({search:query.value,page}));
+   if(turn!==request||!ui.d.isConnected)return;
+   ui.feedback.textContent='';results.replaceChildren();if(!data.items.length)results.append(h('p','Nenhum aluno encontrado.'));
+   for(const row of data.items)results.append(button(row.nome+' · RA '+row.ra,async()=>{
+    ui.d.close();const editor=dialog('Bolsas do aluno'),area=h('section',undefined,'erp-scholarship-management');
+    area.style.gridColumn='1 / -1';editor.f.append(area);editor.f.onsubmit=e=>e.preventDefault();
+    try{await studentPanel(area,row.idaluno,changed);}catch(error){editor.feedback.textContent=error.message;}
+   }));
+   prev.disabled=page===1;next.disabled=page*20>=data.total;nav.hidden=data.total<=20;
+  }catch(error){if(turn===request)ui.feedback.textContent=error.message;}
+ }
+ search();
+}
+window.EDERPScholarships={picker,summary,settings,manage,studentPanel,chooseStudent,contractStudentGrants};
 })();

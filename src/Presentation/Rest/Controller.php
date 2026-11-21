@@ -163,6 +163,11 @@ final class Controller
         $this->route('/configuracoes/pontualidade','GET',fn()=>Access::isAdmin(),fn()=>$discounts->settings());
         $this->route('/configuracoes/pontualidade','POST',fn()=>Access::isAdmin(),fn($r)=>$discounts->saveSettings($this->payload($r),$this->key($r)));
         $scholarships=new \EducacionalERP\Application\Scholarships($this->db);$scholarshipCatalog=new \EducacionalERP\Application\ScholarshipCatalog($this->db);
+        $studentGrants=new \EducacionalERP\Application\StudentScholarships($this->db);
+        $this->route('/bolsas-alunos','GET',fn()=>Access::canManageDiscounts(),fn($r)=>$this->studentDirectory($r,true));
+        $this->route('/bolsas-alunos/'.$id,'GET',fn()=>Access::canManageDiscounts(),fn($r)=>$studentGrants->listing((int)$r['id']));
+        $this->route('/bolsas-alunos/'.$id,'POST',fn()=>Access::canManageDiscounts(),fn($r)=>$studentGrants->save((int)$r['id'],null,$this->payload($r),$this->key($r)));
+        $this->route('/bolsas-alunos/'.$id.'/(?P<bolsa>[1-9][0-9]{0,17})','POST',fn()=>Access::canManageDiscounts(),fn($r)=>$studentGrants->save((int)$r['id'],(int)$r['bolsa'],$this->payload($r),$this->key($r)));
         $this->route('/bolsas','GET',fn()=>Access::canManageDiscounts(),fn()=>$scholarshipCatalog->listing());
         $this->route('/bolsas','POST',fn()=>Access::isAdmin(),fn($r)=>$scholarshipCatalog->save($this->payload($r),$this->key($r)));
         $this->route('/integracao/bolsas','GET',fn()=>Access::canManageDiscounts(),fn()=>$scholarshipCatalog->listing());
@@ -182,7 +187,11 @@ final class Controller
         $this->route('/integracao/descontos/'.$id.'/excluir','POST',fn()=>Access::canManageDiscounts(),fn($r)=>$discounts->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/descontos/'.$id.'/excluir','POST',fn()=>Access::canManageDiscounts(),fn($r)=>$discounts->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/turmas/'.$id.'/rematricula','POST',fn()=>Access::isAdmin(),fn($r)=>$this->catalog->classRenewal((int)$r['id'],$this->payload($r),$this->key($r)));
-        $this->route('/turmas/'.$id.'/plano','GET',$cap('erp_gerenciar_academico'),fn($r)=>$this->academic->planForClass((int)$r['id']));
+        $this->route('/turmas/'.$id.'/plano','GET',$cap('erp_gerenciar_academico'),function($r)use($studentGrants){
+            $plan=$this->academic->planForClass((int)$r['id']);
+            if($r->get_param('idaluno'))$plan['percentual_bolsa_aluno']=$studentGrants->activePercentage(Input::id($r->get_param('idaluno')));
+            return $plan;
+        });
         $this->route('/financeiro/pendentes','GET',fn()=>Access::canGenerate(),fn($r)=>$this->pendingContracts($r));
         $this->route('/contratos/'.$id.'/parcelas','POST',fn()=>Access::canGenerate(),fn($r)=>$this->academic->generateInstallments((int)$r['id'],$this->key($r)));
         $this->route('/estados-civis','GET',fn()=>true,fn()=>(new \EducacionalERP\Application\CivilStatus($this->db))->all());
@@ -298,7 +307,7 @@ final class Controller
         $payments=$this->db->rows("SELECT b.idbaixa,b.idlancamento,b.data_pagamento,b.valor_pago FROM $b b JOIN $l l ON l.idlancamento=b.idlancamento JOIN $p p ON p.idparcela=l.idparcela JOIN $c c ON c.idcontrato=p.idcontrato JOIN $m m ON m.idmatricula=c.idmatricula WHERE m.idaluno=%d AND l.excluido_em IS NULL AND NOT EXISTS (SELECT 1 FROM $e e WHERE e.idbaixa=b.idbaixa) ORDER BY b.idbaixa DESC",[$student]);
         return ['contratos'=>$contracts,'lancamentos'=>$this->financeView($student),'baixas'=>$payments,'responsaveis'=>$this->guardianView($student)];
     }
-    public function studentDirectory(\WP_REST_Request $r): array
+    public function studentDirectory(\WP_REST_Request $r,bool $benefitsOnly=false): array
     {
         $a=$this->db->table('alunos'); $p=$this->db->table('pessoas');
         $page=max(1,min(100000,(int)($r->get_param('page')?:1))); $where=''; $args=[];
@@ -306,7 +315,12 @@ final class Controller
         if($q!=='') { $where=' WHERE (p.nome LIKE %s OR a.ra LIKE %s)'; $term='%'.$this->db->wp->esc_like($q).'%'; $args=[$term,$term]; }
         $where.=($where?' AND ':' WHERE ').'a.codcoligada=%d';$args[]=\EducacionalERP\Application\Coligadas::current();
         $count=$this->db->row("SELECT COUNT(*) AS n FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa$where",$args);
-        return ['items'=>$this->db->rows("SELECT a.idaluno,a.codcoligada,a.ra,a.ativo,a.versao,p.nome,p.data_nascimento FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa$where ORDER BY p.nome,a.idaluno LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20])),'page'=>$page,'total'=>(int)$count['n']];
+        $fields=$benefitsOnly?'a.idaluno,a.ra,p.nome':'a.idaluno,a.codcoligada,a.ra,a.ativo,a.versao,p.nome,p.data_nascimento';
+        if(!$benefitsOnly&&$r->get_param('bolsas_aluno')==='1'&&current_user_can('erp_gerenciar_academico')&&MenuPolicy::can('matriculas')){
+            $grants=$this->db->table('aluno_bolsas');
+            $fields.=", (SELECT COALESCE(SUM(b.percentual),0) FROM $grants b WHERE b.idaluno=a.idaluno AND b.ativo=1) AS percentual_bolsa_aluno";
+        }
+        return ['items'=>$this->db->rows("SELECT $fields FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa$where ORDER BY p.nome,a.idaluno LIMIT 20 OFFSET %d",array_merge($args,[($page-1)*20])),'page'=>$page,'total'=>(int)$count['n']];
     }
     private function ownProfile():array
     {

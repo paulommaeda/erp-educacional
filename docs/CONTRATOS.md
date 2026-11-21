@@ -40,6 +40,8 @@ O contrato guarda o texto preenchido, nome do modelo, versão do modelo e versã
 
 ## Shortcodes
 
+Use `[bolsas_do_aluno]` para incluir o título, o percentual e a descrição de cada bolsa ativa do aluno aplicada ao contrato. O campo fica vazio quando o contrato não tem esse benefício. Ele já aparece no modelo sugerido. Para usá-lo em um modelo existente, insira o campo na posição desejada e salve a nova versão. O texto dos contratos assinados conserva a redação registrada no momento da assinatura.
+
 | Grupo | Campos |
 | --- | --- |
 | Aluno | `[aluno_nome]`, `[aluno_ra]`, `[aluno_cpf]`, `[aluno_nascimento]`, `[aluno_email]`, `[aluno_endereco]` |
