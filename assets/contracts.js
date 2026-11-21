@@ -19,6 +19,7 @@
     'CONTRATO DE PRESTAÇÃO DE SERVIÇOS EDUCACIONAIS',
     '[colegio_nome], CNPJ [colegio_cnpj], e [responsavel_nome], CPF [responsavel_cpf], responsável pelo(a) aluno(a) [aluno_nome], RA [aluno_ra], celebram o contrato [contrato_numero] para o período [periodo_codigo], turma [turma_nome].',
     tuitionClause+' Vencimento no dia [contrato_dia_vencimento] de cada mês. Primeiro vencimento: [contrato_primeiro_vencimento].',
+    '[bolsas_do_aluno]',
     '[contrato_data]'
   ].join('\n\n');
   let models=[],tokens={},externalTokens=[],page=1,generation=0,active='contracts',rows=[];
@@ -29,6 +30,7 @@
   const searchForm=h('form',undefined,'erp-contract-filters'),search=field('search','Buscar por aluno, RA ou contrato','','search',false),status=choice('status','Situação',[['','Todas'],['ativo','Ativos'],['pendente','Aguardando parcelas'],['cancelado','Cancelados']]),find=h('button','Buscar');find.type='submit';
   search.input.maxLength=191;searchForm.append(search.node,status.node,find);const list=h('div'),pagination=h('nav',undefined,'erp-contract-pagination'),pageInfo=h('span'),previous=button('Anterior',()=>{page--;load();}),next=button('Próxima',()=>{page++;load();});pagination.setAttribute('aria-label','Páginas de contratos');pagination.append(previous,pageInfo,next);listPanel.append(searchForm,list,pagination);
   searchForm.onsubmit=e=>{e.preventDefault();page=1;load();};status.input.onchange=()=>{page=1;load();};
+  if(canDiscounts&&window.EDERPScholarships)listPanel.prepend(button('Bolsas por aluno',()=>window.EDERPScholarships.chooseStudent(load)));
   if(student)listPanel.prepend(link('Ver todos os alunos',canContracts?'contratos':'bolsas'));
   function switchTab(view){if(view==='models'&&!canContracts)view='contracts';active=view;listPanel.hidden=view!=='contracts';modelPanel.hidden=view!=='models';listTab.setAttribute('aria-pressed',String(view==='contracts'));modelsTab.setAttribute('aria-pressed',String(view==='models'));listTab.classList.toggle('active',view==='contracts');modelsTab.classList.toggle('active',view==='models');if(view==='models')loadModels();else load();}
   async function load(){const turn=++generation;list.replaceChildren(h('p','Carregando contratos...'));previous.disabled=next.disabled=find.disabled=true;try{const q=new URLSearchParams({page:String(page),search:search.input.value,status:status.input.value,codperiodo:String(EDERP.period||EDERP.currentPeriod||'todos')});if(student)q.set('idaluno',student);const d=await api('contratos?'+q);if(turn!==generation)return;rows=d.items;list.replaceChildren();if(!rows.length)list.append(h('p','Nenhum contrato encontrado. Confira o período selecionado ou refine a busca.'));else{
@@ -52,6 +54,7 @@
   }
   function openContract(id){return getContract(id,'Contrato do aluno',(c,m)=>{
     m.content.append(h('h3',c.numero),summary(c),h('p','Versão do termo: '+c.versao_termo+(c.modelo_nome_snapshot?' · Modelo: '+c.modelo_nome_snapshot:'')),contractText(c.termo_snapshot,c.formato_texto));
+    if(c.bolsas_aluno?.length&&window.EDERPScholarships)m.content.append(window.EDERPScholarships.contractStudentGrants(c.bolsas_aluno));
     const signature=h('section',undefined,'erp-contract-signature'),label=h('label',undefined,'ederp-check'),check=h('input');check.type='checkbox';check.name='assinado';check.checked=!!c.assinado_em;check.disabled=!!c.assinado_em;label.append(check,h('span','Contrato assinado'));signature.append(label);
     if(c.assinado_em){signature.classList.add('signed');signature.append(h('p','Texto bloqueado permanentemente. Registro por '+(c.assinado_por_nome||'usuário autorizado')+' em '+new Date(c.assinado_em.replace(' ','T')+'Z').toLocaleString('pt-BR')+'.'));}
     else if(c.status==='ativo'){

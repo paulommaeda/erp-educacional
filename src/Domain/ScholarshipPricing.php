@@ -16,6 +16,10 @@ final class ScholarshipPricing
         foreach($rules as $rule){
             $value=Money::positive($rule['valor']);$isNew=($rule['base_percentual']??'')==='valor_original';$newRules=$newRules||$isNew;$index=count($rows);
             $row=['idconcessao'=>(string)($rule['idconcessao']??0),'idbolsa'=>(string)($rule['idbolsa']??0),'nome'=>$rule['nome'],'descricao'=>$rule['descricao']??null,'tipo'=>'bolsa','forma_calculo'=>$rule['forma_calculo'],'valor_regra'=>$rule['valor'],'valor'=>'0.00','pontualidade_isenta'=>'0.00'];
+            if(isset($rule['idbolsa_aluno'])){
+                unset($row['idconcessao'],$row['idbolsa']);
+                $row['origem']='aluno';$row['idbolsa_aluno']=(string)$rule['idbolsa_aluno'];
+            }
             if($rule['forma_calculo']==='percentual'){
                 if($value>10000||$percent>10000-$value)throw new RuleViolation('A soma das bolsas percentuais não pode superar 100%.');$percent+=$value;
                 $group=$isNew?'original':'base';$source=$isNew?$face:$base;$groups[$group]['points']+=$value;$amount=self::percent($source,$value,false);$groups[$group]['floor']+=$amount;$groups[$group]['remainders'][$index]=($source%10000)*$value%10000;

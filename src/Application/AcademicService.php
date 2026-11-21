@@ -69,7 +69,14 @@ final class AcademicService
             'quantidade_parcelas'=>$count,'primeiro_vencimento'=>$first,'versao_termo'=>Input::text($data['versao_termo']??'1',40),
             'termo_snapshot'=>\EducacionalERP\Domain\ContractMarkup::prepare($data['termo']??'Contrato registrado pela secretaria.',$data['formato_texto']??'auto')['texto'],
             'idplano'=>$plan['idplano'],'plano_nome_snapshot'=>$plan['nome'],'plano_versao_snapshot'=>$plan['versao'],'parcelas_geradas'=>0]);
-        $selected=$data['bolsas']??[];if(!is_array($selected))throw new RuleViolation('Selecione as bolsas do contrato.');(new Scholarships($this->db))->attachInside($contract,$selected,$key);
+        $selected=$data['bolsas']??[];
+        if(!is_array($selected))throw new RuleViolation('Selecione as bolsas do contrato.');
+        $expectedRates=$data['percentuais_bolsas_alunos']??[];
+        if(!is_array($expectedRates))throw new RuleViolation('Prévia das bolsas do aluno inválida.');
+        $inherited=(new StudentScholarships($this->db))->inheritInside($contract,(int)$student['idaluno'],$key,$expectedRates[$student['idaluno']]??null);
+        $scholarships=new Scholarships($this->db);
+        if($selected)$scholarships->attachInside($contract,$selected,$key);
+        elseif($inherited)$scholarships->totalsInside($contract);
         (new ContractTemplates($this->db,$this->operations))->applyInside($contract,$data);
         $result=['idcontrato'=>(string)$contract,'quantidade_parcelas'=>$count,'valor_anuidade'=>Money::format($original),'parcelas_geradas'=>!$defer];
         $this->db->audit('contratos',$contract,'criar',null,$this->db->get('contratos',$contract),$key);

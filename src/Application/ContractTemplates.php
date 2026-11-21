@@ -18,6 +18,7 @@ final class ContractTemplates
         'contrato_numero'=>'Número do contrato','contrato_data'=>'Data do contrato','contrato_valor_original'=>'Valor original total','contrato_desconto'=>'Bolsa total','contrato_valor_liquido'=>'Valor líquido total','contrato_parcelas'=>'Quantidade de parcelas','contrato_primeiro_vencimento'=>'Primeiro vencimento',
         'contrato_valor_total'=>'Valor líquido total após bolsas e descontos incondicionais','contrato_valor_parcela'=>'Valor líquido da parcela após bolsas e descontos; discrimina as faixas diferentes','contrato_parcelamento'=>'Parcelamento líquido após bolsas e descontos, incluindo faixas diferentes','contrato_dia_vencimento'=>'Somente o dia de vencimento das parcelas (01 a 31)',
         'contrato_valor_parcela_original'=>'Valor original da parcela, antes de qualquer bolsa ou desconto','contrato_parcelamento_original'=>'Quantidade e valores originais das parcelas, antes de qualquer bolsa ou desconto',
+        'bolsas_do_aluno'=>'Bolsas ativas do aluno neste contrato (título, percentual e descrição)',
         'matricula_id'=>'Número da matrícula','periodo_codigo'=>'Período letivo','curso_nome'=>'Curso','turma_nome'=>'Turma','turno_nome'=>'Turno','plano_nome'=>'Plano de pagamento'
     ];
     public function __construct(private Store $db,private Operations $ops) {}
@@ -180,6 +181,12 @@ final class ContractTemplates
             'contrato_numero'=>$c['numero'],'contrato_data'=>self::date($c['data_contrato']),'contrato_parcelas'=>(string)$c['quantidade_parcelas'],'contrato_primeiro_vencimento'=>self::date($c['primeiro_vencimento']),
             'matricula_id'=>(string)$m['idmatricula'],'periodo_codigo'=>$period['codigo'],'curso_nome'=>$course['nome'],'turma_nome'=>$class['nome'],'turno_nome'=>$shift['nome'],'plano_nome'=>$c['plano_nome_snapshot']??''];
         $values+=$this->installmentTokens($c);
+        $descriptions=[];
+        foreach((new StudentScholarships($this->db))->forContract((int)$c['idcontrato'],true) as $grant){
+            $percent=rtrim(rtrim(number_format((float)$grant['percentual'],2,',',''),'0'),',');
+            $descriptions[]=$grant['titulo'].' ('.$percent.'%) — '.$grant['descricao'];
+        }
+        $values['bolsas_do_aluno']=implode("\n",$descriptions);
         foreach(['rua','numero','complemento','bairro','cidade','estado','cep','pais'] as $field)$values['responsavel_'.$field]=(string)($rf[$field]??'');
         foreach(['pai','mae'] as $relationship){$parent=$this->db->row('SELECT p.nome,p.cpf FROM '.$this->db->table('aluno_responsaveis').' r JOIN '.$this->db->table('pessoas').' p ON p.codpessoa=r.codpessoa_responsavel WHERE r.idaluno=%d AND r.parentesco=%s AND r.fim_vigencia IS NULL AND r.inicio_vigencia<=UTC_TIMESTAMP() ORDER BY r.idvinculo DESC LIMIT 1',[(int)$a['idaluno'],$relationship]);$values[$relationship.'_nome']=$parent['nome']??'';$values[$relationship.'_cpf']=$parent['cpf']??'';}
         $out=[];foreach(self::TOKENS as $token=>$_)$out['['.$token.']']=(string)($values[$token]??'');return $out;
