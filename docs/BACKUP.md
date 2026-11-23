@@ -33,6 +33,18 @@ O retorno recupera o estado da escola na data escolhida. Para conciliar pagament
 - O completo cobre os arquivos locais sob a raiz do WordPress e o seu `wp-config.php`. Cache, diretórios de atualização, repositórios Git e pacotes em `wp-content/ai1wm-backups` ficam fora da cópia. Armazenamento externo, regras do servidor web, serviços externos, usuários do MySQL e tarefas configuradas fora do WordPress têm ciclo de backup próprio.
 - A assinatura do pacote usa a chave de `wp_salt('auth')` da origem. Para recuperação em outra instalação, prepare o recurso com as chaves originais. Quando a instalação delega as chaves ao ambiente ou ao banco, preserve esses segredos em separado. Sem a senha do ZIP não é possível descriptografar o conteúdo.
 
+## A tela avisa que um diretório está indisponível
+
+Na versão 0.19.38 esse aviso pode aparecer ao abrir a tela, antes de selecionar qualquer ZIP. A partir de 0.19.39, o diagnóstico indica a pasta que o PHP tentou localizar. Quando a hospedagem fornece uma raiz pública alternativa para todo o site, o ERP pode usá-la automaticamente.
+
+Se o aviso mencionar `DOCUMENT_ROOT` ou a criação da pasta de backup, escolha no painel da hospedagem uma pasta privada fora de todas as áreas públicas e acessível ao usuário do PHP. Use o caminho absoluto **da nova conta**, antes da linha final de configuração do `wp-config.php`. Por exemplo, se a hospedagem confirmar que `/home/conta/privado` é uma área privada gravável:
+
+```php
+define('EDERP_BACKUP_DIR', '/home/conta/privado/backups-erp');
+```
+
+Se essa definição já existir, edite a linha existente. Em uma migração, confira se o endereço ainda aponta para a conta antiga. Quando já houver backups nessa hospedagem, aponte para a pasta que guarda os arquivos de histórico e os ZIPs. Se a mensagem citar `WP_CONTENT_DIR` ou `ABSPATH`, confira o caminho indicado na configuração da instalação. Depois, recarregue **ERP Educacional → Backup e restauração**.
+
 ## WP-CLI
 
 Para sites maiores que os limites de upload e de duração de requisições da hospedagem, use o terminal no diretório da instalação. Carregue a senha do ZIP na variável de ambiente `EDERP_BACKUP_PASSWORD`. Para usar outro usuário MySQL no destino, carregue a senha dele em `EDERP_RESTORE_DB_PASSWORD`.

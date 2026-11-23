@@ -39,7 +39,13 @@ final class Backups
             $key='ederp_bkp_'.get_current_user_id().'_'.$token;$result=get_transient($key);
             if(is_array($result)){echo '<div class="notice notice-'.($result['ok']?'success':'error').'"><p>'.nl2br(esc_html($result['texto'])).'</p></div>';delete_transient($key);}
         }
-        try{$history=(new SiteBackup())->history();}catch(\Throwable $e){echo '<p>'.esc_html($e->getMessage()).'</p></div>';return;}
+        try{
+            $history=(new SiteBackup())->history();
+        }catch(\Throwable $e){
+            echo '<div class="notice notice-error inline"><p>'.esc_html($e->getMessage()).'</p></div>';
+            echo '<p><a href="https://github.com/paulommaeda/erp-educacional/blob/main/docs/BACKUP.md#a-tela-avisa-que-um-diretório-está-indisponível">Como configurar a pasta privada de backup</a></p></div>';
+            return;
+        }
         echo '<h2>Criar backup</h2><p>O banco inclui as coligadas, o financeiro, as contas do WordPress e as tabelas dos plugins desta instalação. A cópia completa também guarda os arquivos do site e a versão instalada do ERP. Guarde a senha e baixe o ZIP para uma cópia fora da hospedagem.</p>';
         self::form('criar');
         echo '<fieldset><legend>Conteúdo</legend><label><input type="radio" name="tipo" value="completo" checked> Completo · banco e arquivos</label><br><label><input type="radio" name="tipo" value="banco"> Somente banco de dados</label></fieldset>';
