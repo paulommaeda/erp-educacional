@@ -1,5 +1,12 @@
 # Validação
 
+## 0.19.38
+
+- Testes de criação e recuperação no WordPress 7.1.3 com PHP 8.4.27 e MariaDB 11.4.8, em uma instalação descartável. A suíte `tests/wordpress-backups.php` usa `EDERP_TEST_BOOTSTRAP`, `EDERP_BACKUP_TEST_ROOT` apontando para a raiz descartável e `EDERP_TEST_DATABASE=true`. O usuário MySQL do teste precisa poder criar bancos de teste.
+- Dois pontos no tempo recuperaram o texto do contrato de cada data, a baixa e o saldo da parcela. A cópia completa recuperou os arquivos da instalação, um upload, uma pasta vazia e a configuração original em separado. A cópia de banco recuperou os dados com tabelas InnoDB e MyISAM. Foram conferidos a coluna gerada, o conteúdo binário, NULL e o próximo valor de AUTO_INCREMENT.
+- O ERP recusou o banco ativo, um destino ocupado, a senha incorreta, um pacote com conteúdo alterado e um contrato com referência ausente. A importação repetida conservou um único pacote no histórico. A tela administrativa exibiu a criação, o download e a restauração.
+- A instalação e a troca de banco no ambiente da escola dependem da hospedagem. Os testes locais não incluíram MySQL 8, WP-CLI instalado nem o volume de dados de produção.
+
 ## 0.19.37
 
 - WordPress 7.1.3, PHP 8.4.27 e MariaDB 11.4.8 com o ZIP distribuído do Assinatura Eletrônica Educacional 1.1.0. O teste `tests/wordpress-contract-signatures.php` requer `EDERP_TEST_BOOTSTRAP`, a constante `EDERP_TEST_DATABASE=true` e `EDERP_TEST_SIGN_PLUGIN` apontando para o arquivo principal do assinador. Foram exercitadas as rotas reais dos dois plugins com dados fictícios. O transporte HTTP local encaminhou os pedidos à REST do WordPress, autenticou a senha de aplicativo e interceptou os e-mails.
