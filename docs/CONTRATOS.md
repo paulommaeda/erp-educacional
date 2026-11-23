@@ -38,6 +38,10 @@ Pode haver um único modelo padrão ativo por coligada. Marcar outro como padrã
 
 O contrato guarda o texto preenchido, nome do modelo, versão do modelo e versão do termo. Editar o modelo atualiza os contratos vinculados ainda não assinados. Textos assinados ficam preservados permanentemente. Excluir o modelo não apaga os textos gerados. A revisão do conteúdo exige uma nova versão do texto e motivo. Os termos explícitos já apresentados e aceitos no fluxo de rematrícula prevalecem sobre o modelo padrão.
 
+## Envio para assinatura eletrônica
+
+Em **Ver contrato → Enviar PDF para assinatura**, a equipe pode enviar o PDF ao responsável financeiro e acompanhar a revisão pela própria ficha. O administrador conecta o serviço em **Contratos → Configurar assinatura eletrônica**. Veja [configuração, envio e confirmação](ASSINATURA-ELETRONICA.md).
+
 ## Shortcodes
 
 Use `[bolsas_do_aluno]` para incluir o título, o percentual e a descrição de cada bolsa ativa do aluno aplicada ao contrato. O campo fica vazio quando o contrato não tem esse benefício. Ele já aparece no modelo sugerido. Para usá-lo em um modelo existente, insira o campo na posição desejada e salve a nova versão. O texto dos contratos assinados conserva a redação registrada no momento da assinatura.

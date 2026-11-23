@@ -30,6 +30,7 @@
   const searchForm=h('form',undefined,'erp-contract-filters'),search=field('search','Buscar por aluno, RA ou contrato','','search',false),status=choice('status','Situação',[['','Todas'],['ativo','Ativos'],['pendente','Aguardando parcelas'],['cancelado','Cancelados']]),find=h('button','Buscar');find.type='submit';
   search.input.maxLength=191;searchForm.append(search.node,status.node,find);const list=h('div'),pagination=h('nav',undefined,'erp-contract-pagination'),pageInfo=h('span'),previous=button('Anterior',()=>{page--;load();}),next=button('Próxima',()=>{page++;load();});pagination.setAttribute('aria-label','Páginas de contratos');pagination.append(previous,pageInfo,next);listPanel.append(searchForm,list,pagination);
   searchForm.onsubmit=e=>{e.preventDefault();page=1;load();};status.input.onchange=()=>{page=1;load();};
+  if(canContracts&&EDERP.caps?.admin)listPanel.prepend(button('Configurar assinatura eletrônica',signatureSettings));
   if(canDiscounts&&window.EDERPScholarships)listPanel.prepend(button('Bolsas por aluno',()=>window.EDERPScholarships.chooseStudent(load)));
   if(student)listPanel.prepend(link('Ver todos os alunos',canContracts?'contratos':'bolsas'));
   function switchTab(view){if(view==='models'&&!canContracts)view='contracts';active=view;listPanel.hidden=view!=='contracts';modelPanel.hidden=view!=='models';listTab.setAttribute('aria-pressed',String(view==='contracts'));modelsTab.setAttribute('aria-pressed',String(view==='models'));listTab.classList.toggle('active',view==='contracts');modelsTab.classList.toggle('active',view==='models');if(view==='models')loadModels();else load();}
@@ -61,8 +62,77 @@
       signature.append(h('p','Confirme que este texto já foi assinado. Após registrar, a marcação e o texto serão permanentes. Bolsas, descontos e operações financeiras continuam disponíveis.'));
       const requestKey=uuid(),record=button('Registrar contrato assinado',async()=>{if(!check.checked||m.dialog.dataset.busy==='1')return;m.dialog.dataset.busy='1';record.disabled=check.disabled=m.close.disabled=true;m.status.textContent='Registrando assinatura...';try{await api('contratos/'+id+'/assinar',{versao:c.versao,confirmado:true},requestKey);m.dialog.close();notice.textContent='Contrato marcado como assinado. O texto está bloqueado permanentemente.';await load();await openContract(id);}catch(error){m.status.textContent=error.message;}finally{m.dialog.dataset.busy='0';record.disabled=!check.checked;check.disabled=m.close.disabled=false;}});record.disabled=true;check.onchange=()=>{record.disabled=!check.checked;};signature.append(record);
     }else{check.disabled=true;signature.append(h('p','A assinatura é registrada em contratos ativos.'));}
-    const print=button('Imprimir contrato',()=>printContract(c,m,print));m.content.append(signature,print);
+    const print=button('Imprimir contrato',()=>printContract(c,m,print));m.content.append(signature,print);signaturePanel(c,m);
   });}
+
+  async function signatureSettings(){
+    const m=modal('Configurar assinatura eletrônica');
+    try{
+      const config=await api('assinatura-eletronica/configuracao');
+      if(!m.dialog.isConnected)return;
+      const form=h('form',undefined,'ederp-form erp-contract-form');
+      const base=field('base','URL HTTPS da API de assinatura',config.base,'url'),user=field('usuario','Login do gestor de contratos',config.usuario);
+      base.input.placeholder='https://assinaturas.exemplo.com.br/wp-json/edu-sign/v1';
+      const password=field('senha','Senha de aplicativo','','password',!config.tem_senha),secret=field('segredo','Segredo compartilhado do retorno','','password',false);
+      password.input.autocomplete=secret.input.autocomplete='new-password';secret.input.minLength=32;
+      if(config.tem_senha)password.input.placeholder='Preenchida. Deixe em branco para manter.';
+      if(config.tem_segredo)secret.input.placeholder='Preenchido. Deixe em branco para manter.';
+      const callback=field('retorno','URL de retorno do ERP',config.retorno,'text',false);callback.input.readOnly=true;
+      form.append(base.node,user.node,password.node,secret.node,callback.node,h('p','No site de assinaturas, cadastre esta URL e o mesmo segredo em Contratos educacionais → Configurações → Retorno ao ERP Educacional.'));
+      m.content.append(form);bind(m,form,'assinatura-eletronica/configuracao',()=>({base:base.input.value,usuario:user.input.value,senha:password.input.value,segredo:secret.input.value}),async()=>{notice.textContent='Integração de assinatura salva para esta coligada.';});
+    }catch(error){m.status.textContent=error.message;}
+  }
+  async function signaturePanel(c,m){
+    const section=h('section',undefined,'erp-contract-signature'),title=h('h3','Assinatura eletrônica'),body=h('div'),feedbackNode=feedback();
+    section.append(title,body,feedbackNode);m.content.append(section);
+    const path='contratos/'+c.idcontrato+'/assinatura',labels={preparado:'Envio a confirmar',draft:'Rascunho',sent:'Convite solicitado',viewed:'Visualizado',signed:'Assinado',cancelled:'Cancelado',expired:'Expirado',rejeitado:'Envio recusado'};
+    let busy=false,sendKey=uuid();
+    async function run(fn){
+      if(busy)return;busy=true;const buttons=[...body.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
+      feedbackNode.textContent='Consultando o envio...';
+      try{await fn();feedbackNode.textContent='';}
+      catch(error){feedbackNode.textContent=error.message;}
+      finally{busy=false;buttons.forEach(b=>b.disabled=false);}
+    }
+    async function refresh(data){
+      if(data.items.some(r=>r.situacao==='signed'&&Number(r.vinculado))&&!c.assinado_em){m.dialog.close();await load();await openContract(c.idcontrato);return;}
+      paint(data);
+    }
+    function paint(data){
+      body.replaceChildren();
+      const rows=data.items||[],latest=rows[0];
+      if(!data.configurado&&!rows.length){body.append(h('p','A integração de assinatura ainda precisa ser configurada para esta coligada.'));return;}
+      const open=latest&&['preparado','draft','sent','viewed'].includes(latest.situacao);
+      if(data.configurado&&!c.assinado_em&&c.status==='ativo'&&(!open||latest.situacao==='preparado')){
+        if(!open)sendKey=uuid();
+        body.append(h('p','O responsável financeiro '+c.responsavel+(c.responsavel_email?' ('+c.responsavel_email+')':'')+' receberá o convite por e-mail.'),
+          button(open?'Retomar envio':'Enviar PDF para assinatura',()=>run(async()=>refresh(await api(path+'/enviar',{versao:c.versao},sendKey)))));
+      }
+      for(const row of rows){
+        const item=h('article',undefined,'erp-scholarship-card'),ref=path+'/'+row.idenvio;
+        item.append(h('strong','Revisão '+row.revisao+' · '+(labels[row.situacao]||row.situacao)),h('p','Referência '+row.referencia));
+        if(row.uuid)item.append(h('p','Protocolo '+row.uuid));
+        if(['preparado','draft','sent','viewed'].includes(row.situacao)){
+          item.append(button('Consultar situação',()=>run(async()=>refresh(await api(ref+'/consultar',{})))));
+          item.append(button('Cancelar solicitação',()=>{if(window.confirm('Cancelar o envio desta revisão para assinatura?'))run(async()=>refresh(await api(ref+'/cancelar',{})));},'erp-secondary'));
+        }
+        if(row.situacao==='signed'){
+          item.append(h('p','Assinatura em '+new Date(row.assinado_em.replace(' ','T')+'Z').toLocaleString('pt-BR')+'.'));
+          if(!Number(row.vinculado))item.append(h('p','Esta assinatura corresponde à revisão enviada. Confira o PDF antes de emitir a redação atual.'));
+          item.append(button('Baixar PDF assinado',()=>run(async()=>{
+            const result=await api(ref+'/pdf'),raw=atob(result.conteudo);
+            if(result.mime!=='application/pdf'||!raw.startsWith('%PDF-'))throw Error('Arquivo de assinatura indisponível.');
+            const url=URL.createObjectURL(new Blob([Uint8Array.from(raw,ch=>ch.charCodeAt(0))],{type:'application/pdf'}));
+            const a=document.createElement('a');a.href=url;a.download=result.nome;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+          })));
+        }
+        body.append(item);
+      }
+    }
+    try{const data=await api(path);if(m.dialog.isConnected)paint(data);}
+    catch(error){feedbackNode.textContent=error.message;}
+  }
+
   function bind(m,form,path,payload,onDone){const save=h('button','Salvar'),status=feedback();save.type='submit';form.append(save,status);let signature='',key='';form.onsubmit=async e=>{e.preventDefault();if(m.dialog.dataset.busy==='1'||!form.reportValidity())return;try{const body=payload(),mark=JSON.stringify(body);if(mark!==signature){signature=mark;key=uuid();}m.dialog.dataset.busy='1';save.disabled=m.close.disabled=true;status.textContent='Salvando...';const result=await api(path,body,key);m.dialog.close();await onDone(result);}catch(e){status.textContent=e.message;status.setAttribute('role','alert');}finally{m.dialog.dataset.busy='0';save.disabled=m.close.disabled=false;}};}
   function editContract(id){return getContract(id,'Editar contrato',async(c,m)=>{const form=h('form',undefined,'ederp-form erp-contract-form'),number=field('numero','Número do contrato',c.numero),contractDate=field('data_contrato','Data do contrato',c.data_contrato,'date'),term=field('termo','Texto do contrato',c.termo_snapshot,'textarea'),version=field('versao_termo','Versão do termo',c.versao_termo),reason=field('motivo','Motivo da alteração','','textarea');number.input.maxLength=100;term.input.maxLength=40000;version.input.maxLength=40;reason.input.maxLength=2000;m.content.append(summary(c),form);form.append(number.node,contractDate.node);
     const financial=[];if(!Number(c.parcelas_geradas)&&!c.total_parcelas){for(const [name,label,type]of [...(c.mensalidade_base_total!=null?[['mensalidade_base_total','Anuidade sem o componente de pontualidade (R$)','text'],['desconto_base_total','Desconto manual total (R$)','text']]:[['valor_original_total','Valor original total (R$)','text'],['desconto_incondicional_total','Bolsa total (R$)','text']]),['quantidade_parcelas','Quantidade de parcelas','number'],['primeiro_vencimento','Primeiro vencimento','date']]){const f=field(name,label,c[name],type);form.append(f.node);financial.push(f);}}else form.append(h('p','As parcelas já foram geradas. Use o Financeiro para ajustar os lançamentos.'));

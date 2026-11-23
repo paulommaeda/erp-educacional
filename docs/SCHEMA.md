@@ -1,5 +1,9 @@
 # Schema implementado
 
+## Versão 50 — assinatura eletrônica
+
+`assinatura_envios` guarda a coligada, o contrato, a revisão, a referência externa, o protocolo único, o estado, a data de assinatura e os hashes dos PDFs original e final. O corpo de emissão é conservado para repetição até a confirmação do protocolo ou recusa definitiva. A unicidade de contrato/revisão, referência, UUID e evento permite reconhecer reenvios. A instalação cria a tabela vazia.
+
 ## Versão 49 — bolsas do aluno
 
 `aluno_bolsas` armazena título, descrição, percentual e situação de cada bolsa do estudante. `contrato_bolsas_aluno` guarda a cópia aplicada ao contrato, com uma única linha por contrato e bolsa de origem. As chaves estrangeiras incluem a coligada. O detalhamento de uma parcela recalculada registra `origem=aluno` e `idbolsa_aluno` em `bolsas_json`. A migração cria as duas tabelas vazias e conserva os valores emitidos anteriormente.
