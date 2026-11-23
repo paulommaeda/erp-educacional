@@ -45,6 +45,8 @@ final class MenuPolicy
         if(str_starts_with($path,'/exclusoes')||($path==='/configuracoes'&&$method!=='GET'))return false;
         if(str_starts_with($path,'/perfis')||str_starts_with($path,'/importacao')||str_starts_with($path,'/contas'))return false;
         $path=preg_replace('~^/integracao/(?=contratos/|descontos/|bolsas$)~','/',$path);
+        if($path==='/assinatura-eletronica/configuracao')return Access::isAdmin();
+        if(preg_match('~^/contratos/[^/]+/assinatura(?:/|$)~',$path))return Access::canManageContracts();
         if($path==='/contratos'||preg_match('~^/alunos/[^/]+/contratos$~',$path))return Access::canReadContracts();
         if(preg_match('~^/contratos/[^/]+(?:/(?:excluir|assinar|pdf))?$~',$path))return Access::canManageContracts();
         if(str_starts_with($path,'/modelos-contrato'))return Access::canManageContracts()||($method==='GET'&&self::any(['matriculas','alunos','academico']));

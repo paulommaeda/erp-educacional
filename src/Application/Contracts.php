@@ -31,7 +31,7 @@ final class Contracts
     public function detail(int $id):array
     {
         Access::requireManageContracts();$c=$this->contract($id);$m=$this->db->get('matriculas',(int)$c['idmatricula']);$a=$this->db->get('alunos',(int)$m['idaluno']);$p=$this->db->get('pessoas',(int)$a['codpessoa']);$rf=$this->db->get('pessoas',(int)$c['codpessoa_rf_atual']);
-        $c['aluno']=$p['nome'];$c['ra']=$a['ra'];$c['idaluno']=$a['idaluno'];$c['responsavel']=$rf['nome'];$c['periodo']=$this->db->get('periodos_letivos',(int)$m['codperiodo'])['codigo'];$c['turma']=$this->db->get('turmas',(int)$m['idturma_atual'])['nome'];
+        $c['aluno']=$p['nome'];$c['ra']=$a['ra'];$c['idaluno']=$a['idaluno'];$c['responsavel']=$rf['nome'];$c['responsavel_email']=$rf['email']??'';$c['periodo']=$this->db->get('periodos_letivos',(int)$m['codperiodo'])['codigo'];$c['turma']=$this->db->get('turmas',(int)$m['idturma_atual'])['nome'];
         $c['bolsas_aluno']=(new StudentScholarships($this->db))->forContract($id);
         $c['total_parcelas']=(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table('parcelas').' WHERE idcontrato=%d',[$id])['n'];
         $c['lancamentos_ativos']=(int)$this->db->row('SELECT COUNT(*) AS n FROM '.$this->db->table('lancamentos').' l JOIN '.$this->db->table('parcelas').' p ON p.idparcela=l.idparcela WHERE p.idcontrato=%d AND l.excluido_em IS NULL',[$id])['n'];return $c;

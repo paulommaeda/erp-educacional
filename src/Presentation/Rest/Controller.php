@@ -47,6 +47,16 @@ final class Controller
         $this->route('/gestao-financeira/filtros','GET',fn()=>Access::canViewFinancialDashboard(),fn($r)=>$dashboard->options($r->get_query_params()));
         $contracts=new \EducacionalERP\Application\Contracts($this->db,new Operations($this->db));
         $models=new \EducacionalERP\Application\ContractTemplates($this->db,new Operations($this->db));
+        $signatures=new \EducacionalERP\Application\ContractSignatures($this->db);
+        $sigPath='/contratos/'.$id.'/assinatura';
+        $manageSignatures=fn()=>Access::canManageContracts();
+        $this->route('/assinatura-eletronica/configuracao','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Infrastructure\Signature\Settings::publicData());
+        $this->route('/assinatura-eletronica/configuracao','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Infrastructure\Signature\Settings::save($this->payload($r)));
+        $this->route($sigPath,'GET',$manageSignatures,fn($r)=>$signatures->listing((int)$r['id']));
+        $this->route($sigPath.'/enviar','POST',$manageSignatures,fn($r)=>$signatures->send((int)$r['id'],$this->payload($r),$this->key($r)));
+        $envio=$sigPath.'/(?P<envio>[1-9][0-9]{0,17})';
+        foreach(['consultar','cancelar'] as $action)$this->route($envio.'/'.$action,'POST',$manageSignatures,fn($r)=>$signatures->action((int)$r['id'],(int)$r['envio'],$action));
+        $this->route($envio.'/pdf','GET',$manageSignatures,fn($r)=>$signatures->pdf((int)$r['id'],(int)$r['envio']));
         $this->route('/contratos','GET',fn()=>Access::canReadContracts(),fn($r)=>$contracts->listing($r->get_query_params()));
         $this->route('/contratos/'.$id,'GET',fn()=>Access::canManageContracts(),fn($r)=>$contracts->detail((int)$r['id']));
         $this->route('/contratos/'.$id.'/pdf','GET',fn()=>Access::canManageContracts(),fn($r)=>(new \EducacionalERP\Application\ContractPrint($this->db,$contracts))->download((int)$r['id']));

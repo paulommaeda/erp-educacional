@@ -4610,6 +4610,76 @@
       }
     ]
   },
+  "assinatura_envios": {
+    "pk": [
+      "idenvio"
+    ],
+    "columns": {
+      "idenvio": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
+      "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
+      "idcontrato": "bigint(20) unsigned NOT NULL",
+      "revisao": "int unsigned NOT NULL",
+      "referencia": "varchar(160) NOT NULL",
+      "api_base": "varchar(512) NOT NULL",
+      "uuid": "varchar(36) DEFAULT NULL",
+      "situacao": "varchar(16) NOT NULL DEFAULT 'preparado'",
+      "original_hash": "char(64) NOT NULL",
+      "revisao_hash": "char(64) NOT NULL",
+      "responsavel_nome": "varchar(191) NOT NULL",
+      "pedido_json": "longtext DEFAULT NULL",
+      "assinado_em": "datetime DEFAULT NULL",
+      "final_hash": "char(64) DEFAULT NULL",
+      "evento": "varchar(100) DEFAULT NULL",
+      "vinculado": "tinyint(1) NOT NULL DEFAULT 0",
+      "consultar_apos": "datetime NOT NULL",
+      "criado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "atualizado_em": "datetime NOT NULL DEFAULT CURRENT_TIMESTAMP",
+      "versao": "bigint(20) unsigned NOT NULL DEFAULT 1"
+    },
+    "unique": [
+      [
+        "idcontrato",
+        "revisao"
+      ],
+      [
+        "referencia"
+      ],
+      [
+        "uuid"
+      ],
+      [
+        "evento"
+      ]
+    ],
+    "indexes": [
+      [
+        "situacao",
+        "consultar_apos"
+      ]
+    ],
+    "fks": [
+      {
+        "columns": [
+          "codcoligada"
+        ],
+        "target": "coligadas",
+        "references": [
+          "codcoligada"
+        ]
+      },
+      {
+        "columns": [
+          "codcoligada",
+          "idcontrato"
+        ],
+        "target": "contratos",
+        "references": [
+          "codcoligada",
+          "idcontrato"
+        ]
+      }
+    ]
+  },
   "contrato_bolsas_aluno": {
     "pk": [
       "idaplicacao"

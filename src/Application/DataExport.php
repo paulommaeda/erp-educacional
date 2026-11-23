@@ -15,7 +15,7 @@ final class DataExport
         'alunos'=>['nome'=>'Alunos e responsáveis','tabelas'=>['alunos','aluno_responsaveis','aluno_retiradas']],
         'academico'=>['nome'=>'Estrutura acadêmica e planos','tabelas'=>['coligadas','periodos_letivos','cursos','turnos','planos_pagamento','turmas','subtipos_disciplina','disciplinas','grades_curriculares','grade_disciplinas','turma_grades','professores','professor_disciplinas','professor_turmas','professor_valores_hora']],
         'matriculas'=>['nome'=>'Matrículas e rematrículas','tabelas'=>['aluno_periodos','matriculas','matricula_movimentacoes','registros_preservados','ofertas_rematricula','oferta_turmas','rematriculas']],
-        'financeiro'=>['nome'=>'Contratos, parcelas e financeiro','tabelas'=>['educbank_fila','educbank_retornos','educbank_recebimentos','modelos_contrato','contratos','aluno_bolsas','contrato_bolsas_aluno','parcelas','lancamentos','baixas','baixa_estornos','lancamento_ajustes','trocas_responsavel','troca_contratos','troca_lancamentos','contrato_descontos','desconto_lancamentos','desconto_recalculos','desconto_indicados']],
+        'financeiro'=>['nome'=>'Contratos, parcelas e financeiro','tabelas'=>['educbank_fila','educbank_retornos','educbank_recebimentos','modelos_contrato','contratos','assinatura_envios','aluno_bolsas','contrato_bolsas_aluno','parcelas','lancamentos','baixas','baixa_estornos','lancamento_ajustes','trocas_responsavel','troca_contratos','troca_lancamentos','contrato_descontos','desconto_lancamentos','desconto_recalculos','desconto_indicados']],
         'chat'=>['nome'=>'Chat, canais e anexos privados','tabelas'=>['chat_canais','chat_membros','chat_conversas','chat_mensagens','chat_anexos','chat_leituras']],
         'historico_escolar'=>['nome'=>'Históricos escolares anteriores','tabelas'=>['tipos_disciplina','historicos_anteriores','historico_anos','historico_disciplinas']],
         'historico'=>['nome'=>'Log de modificações e exclusões','tabelas'=>['auditoria','exclusoes_definitivas']],
@@ -55,7 +55,8 @@ final class DataExport
         $where=[];$args=[];
         if(isset($schema['columns']['codcoligada'])){$where[]='codcoligada IN ('.implode(',',array_fill(0,count($companies),'%d')).')';$args=$companies;}
         if($cursor){$or=[];foreach($pk as $i=>$column){$and=[];for($j=0;$j<$i;$j++){$and[]=$pk[$j].'=%d';$args[]=(int)$cursor[$j];}$and[]=$column.'>%d';$args[]=(int)$cursor[$i];$or[]='('.implode(' AND ',$and).')';}$where[]='('.implode(' OR ',$or).')';}
-        $limit=200;$rows=$this->db->rows('SELECT * FROM '.$this->db->table($source).($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY '.implode(',',$pk).' LIMIT '.($limit+1),$args);
+        $columns=$source==='assinatura_envios'?implode(',',array_diff(array_keys($schema['columns']),['pedido_json'])):'*';
+        $limit=200;$rows=$this->db->rows('SELECT '.$columns.' FROM '.$this->db->table($source).($where?' WHERE '.implode(' AND ',$where):'').' ORDER BY '.implode(',',$pk).' LIMIT '.($limit+1),$args);
         $more=count($rows)>$limit;if($more)array_pop($rows);$last=$rows?end($rows):null;$next=$more?array_map(fn($k)=>(string)$last[$k],$pk):null;
         if($table==='usuarios'){$users=[];foreach($rows as $link){$u=get_userdata((int)$link['wp_user_id']);if($u)$users[]=['ID'=>(int)$u->ID,'codpessoa'=>$link['codpessoa'],'user_login'=>$u->user_login,'display_name'=>$u->display_name,'user_email'=>$u->user_email,'roles'=>array_values($u->roles)];}$rows=$users;}
         if(in_array($table,['contratos','lancamentos'],true)){$companiesData=new CompanyData($this->db);$rows=array_map(fn($r)=>$companiesData->decorate($r),$rows);}

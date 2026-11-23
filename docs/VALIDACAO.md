@@ -1,5 +1,12 @@
 # Validação
 
+## 0.19.37
+
+- WordPress 7.1.3, PHP 8.4.27 e MariaDB 11.4.8 com o ZIP distribuído do Assinatura Eletrônica Educacional 1.1.0. O teste `tests/wordpress-contract-signatures.php` requer `EDERP_TEST_BOOTSTRAP`, a constante `EDERP_TEST_DATABASE=true` e `EDERP_TEST_SIGN_PLUGIN` apontando para o arquivo principal do assinador. Foram exercitadas as rotas reais dos dois plugins com dados fictícios. O transporte HTTP local encaminhou os pedidos à REST do WordPress, autenticou a senha de aplicativo e interceptou os e-mails.
+- A migração repetida do schema 49 para o 50 preservou os dados financeiros e os termos. Foram conferidos os bytes do PDF com a bolsa, a preservação dos zeros do RA, a recuperação após perda da resposta, a identificação pelo CPF e nascimento, a leitura do PDF, o código por e-mail, o webhook HMAC e sua repetição. O ERP bloqueou a redação correta e entregou o PDF certificado após conferir o hash. Foram testados também cancelamento, revisão anterior e expiração recuperada pela consulta periódica.
+- As suítes nativas de contrato HTML e bolsas do aluno passaram em 43 e 38 verificações. As suítes de interface em JSDOM exerceram configuração da conexão, envio, consulta, acesso por perfil, assinatura manual, matrícula e bolsas. Os testes PHP/SQLite abrangeram contratos, impressão, assinatura, permissões, bolsas, rematrícula, exportação e exclusão. Sintaxe PHP e JavaScript e especificação JSON do schema conferidas.
+- A entrega de mensagens em caixas de e-mail reais e a comunicação HTTPS entre os domínios da escola dependem da instalação e da configuração do ambiente da coligada.
+
 ## 0.19.36
 
 - WordPress 7.1.3, PHP 8.4.27 e MariaDB 11.4.8. As suítes nativas de bolsas do aluno, concessões do contrato e texto/impressão passaram, respectivamente, em 38, 37 e 43 verificações. A migração do schema 48 para o 49 foi aplicada duas vezes sobre dados históricos. A API conferiu permissões, coligada, prévia desatualizada e matrícula por operador acadêmico.
