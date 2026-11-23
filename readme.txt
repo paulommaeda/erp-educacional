@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.37
+Stable tag: 0.19.38
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.38 =
+* Backup completo ou apenas do banco, com data, versão do ERP, WordPress e esquema. O administrador pode baixar, importar e restaurar um ponto anterior em destino isolado.
 
 = 0.19.37 =
 * Envio do PDF de cada revisão ao plugin Assinatura Eletrônica Educacional, com convite por e-mail ao responsável financeiro. A tela de contratos acompanha o protocolo e disponibiliza o PDF assinado.
