@@ -14,28 +14,79 @@ final class SiteBackup
     {
         if(is_multisite())throw new RuntimeException('A recuperação do ERP exige uma instalação WordPress individual.');
         if(!class_exists(ZipArchive::class)||!method_exists(ZipArchive::class,'setEncryptionName'))throw new RuntimeException('Ative a extensão ZIP do PHP com suporte a AES-256.');
-        $this->root=self::real(ABSPATH);
-        $documentRoot=$_SERVER['DOCUMENT_ROOT']??'';
-        if($documentRoot===''&&!defined('EDERP_BACKUP_DIR'))throw new RuntimeException('Configure EDERP_BACKUP_DIR no wp-config.php com um caminho privado fora da raiz pública da hospedagem.');
-        $public=self::real($documentRoot!==''?$documentRoot:ABSPATH);
-        $path=defined('EDERP_BACKUP_DIR')?EDERP_BACKUP_DIR:dirname($public).'/.erp-backups-'.substr(hash('sha256',$this->root),0,12);
-        if(!is_string($path)||(!is_dir($path)&&!@mkdir($path,0700,true)))throw new RuntimeException('Configure EDERP_BACKUP_DIR no wp-config.php com uma pasta privada gravável fora do diretório público.');
-        $this->storage=self::real($path);
-        foreach([$public,$this->root,self::real(WP_CONTENT_DIR)] as $dir)
-            if(self::inside($this->storage,$dir)||self::inside($dir,$this->storage))throw new RuntimeException('A pasta de backup deve ficar separada da instalação e fora da raiz pública.');
+        $this->root=self::real(ABSPATH,'a raiz do WordPress (ABSPATH)');
+        $protected=[$this->root,self::real(WP_CONTENT_DIR,'a pasta de conteúdo (WP_CONTENT_DIR)')];
+        $reported=$_SERVER['DOCUMENT_ROOT']??'';
+        $roots=[$reported];
+        // An Apache alias can have its own context root inside the public tree.
+        if(($_SERVER['CONTEXT_PREFIX']??null)===''){
+            $roots[]=$_SERVER['CONTEXT_DOCUMENT_ROOT']??'';
+        }
+        $public=null;
+        foreach(array_unique($roots) as $root){
+            if(!is_string($root)||!self::absolute($root))continue;
+            $normalized=self::normalize($root);
+            $protected[]=$normalized;
+            $resolved=@realpath($root);
+            if($resolved!==false&&@is_dir($resolved)){
+                $protected[]=self::normalize($resolved);
+                $public??=self::normalize($resolved);
+            }
+        }
+        if(defined('EDERP_BACKUP_DIR')){
+            $path=EDERP_BACKUP_DIR;
+            if(!is_string($path)||!self::absolute($path)){
+                throw new RuntimeException('EDERP_BACKUP_DIR deve conter o caminho absoluto de uma pasta privada na hospedagem atual.');
+            }
+        }elseif($public!==null){
+            $path=dirname($public).'/.erp-backups-'.substr(hash('sha256',$this->root),0,12);
+        }else{
+            throw new RuntimeException('O PHP não conseguiu localizar a raiz pública informada pela hospedagem (DOCUMENT_ROOT: '.($reported?:'ausente').'). Configure EDERP_BACKUP_DIR no wp-config.php com o caminho absoluto de uma pasta privada gravável fora da área pública.');
+        }
+
+        $path=self::normalize($path);
+        self::checkStorageLocation($path,$protected);
+        if(!@is_dir($path)&&!@mkdir($path,0700,true)&&!@is_dir($path)){
+            throw new RuntimeException('O PHP não conseguiu criar a pasta de backup em '.$path.'. Confira a permissão de escrita e os caminhos permitidos pela hospedagem (open_basedir), ou ajuste EDERP_BACKUP_DIR no wp-config.php.');
+        }
+        $this->storage=self::real($path,'a pasta de backup');
+        self::checkStorageLocation($this->storage,$protected);
     }
 
-    private static function real(string $path):string
+    private static function absolute(string $path):bool
     {
-        $resolved=realpath($path);
-        if($resolved===false)throw new RuntimeException('Diretório ou arquivo indisponível.');
-        return rtrim(str_replace('\\','/',$resolved),'/');
+        return str_starts_with($path,'/')||(PHP_OS_FAMILY==='Windows'&&preg_match('~^(?:[A-Z]:[/\\\\]|\\\\\\\\)~i',$path));
+    }
+
+    private static function normalize(string $path):string
+    {
+        $path=str_replace('\\','/',$path);
+        if(preg_match('~^[A-Z]:/$~i',$path))return $path;
+        return rtrim($path,'/')?:'/';
+    }
+
+    private static function checkStorageLocation(string $path,array $protected):void
+    {
+        foreach($protected as $dir){
+            if(self::inside($path,$dir)||self::inside($dir,$path)){
+                throw new RuntimeException('A pasta de backup '.$path.' deve ficar fora da área pública e separada dos arquivos do WordPress. Ajuste EDERP_BACKUP_DIR no wp-config.php.');
+            }
+        }
+    }
+
+    private static function real(string $path,string $label):string
+    {
+        $resolved=@realpath($path);
+        if($resolved===false||!@is_dir($resolved)){
+            throw new RuntimeException('O PHP não conseguiu acessar '.$label.' em '.$path.'. Confira o caminho e as permissões da hospedagem.');
+        }
+        return self::normalize($resolved);
     }
 
     private static function inside(string $path,string $dir):bool
     {
         if(PHP_OS_FAMILY==='Windows'){$path=strtolower($path);$dir=strtolower($dir);}
-        return $path===$dir||str_starts_with($path,$dir.'/');
+        return $path===$dir||str_starts_with($path,rtrim($dir,'/').'/');
     }
 
     private static function relative(string $path):void
@@ -52,9 +103,20 @@ final class SiteBackup
     public function history():array
     {
         $list=[];
-        foreach(glob($this->storage.'/*.json')?:[] as $file){
-            $row=json_decode((string)file_get_contents($file),true);
-            if(is_array($row)&&isset($row['id'],$row['data_utc'])&&is_file($this->path($row['id'],'.zip')))$list[]=$row;
+        $directory=@opendir($this->storage);
+        if($directory===false){
+            throw new RuntimeException('O PHP não conseguiu listar a pasta de backup '.$this->storage.'. Confira a permissão de leitura ou ajuste EDERP_BACKUP_DIR no wp-config.php.');
+        }
+        try{
+            while(($entry=readdir($directory))!==false){
+                if(!preg_match('/^[a-f0-9]{32}\.json$/D',$entry))continue;
+                $contents=@file_get_contents($this->storage.'/'.$entry);
+                if($contents===false)throw new RuntimeException('Não foi possível ler o índice de backup '.$entry.'. Confira a permissão de leitura em '.$this->storage.'.');
+                $row=json_decode($contents,true);
+                if(is_array($row)&&isset($row['id'],$row['data_utc'])&&is_file($this->path($row['id'],'.zip')))$list[]=$row;
+            }
+        }finally{
+            closedir($directory);
         }
         usort($list,static fn($a,$b)=>strcmp($b['data_utc'],$a['data_utc']));
         return $list;
@@ -70,7 +132,7 @@ final class SiteBackup
     private function work(string $label):string
     {
         $dir=$this->storage.'/'.$label.'-'.bin2hex(random_bytes(12));
-        if(!mkdir($dir,0700))throw new RuntimeException('Não foi possível reservar espaço para o backup.');
+        if(!@mkdir($dir,0700))throw new RuntimeException('O PHP não conseguiu gravar na pasta de backup '.$this->storage.'. Confira a permissão de escrita, o espaço livre e EDERP_BACKUP_DIR no wp-config.php.');
         return $dir;
     }
 
@@ -86,12 +148,12 @@ final class SiteBackup
     {
         $uploads=wp_upload_dir();
         $directories=[];
-        foreach([WP_CONTENT_DIR,WP_PLUGIN_DIR,get_theme_root(),$uploads['basedir'],dirname(EDERP_FILE)] as $dir)
-            if(!self::inside(self::real($dir),$this->root))throw new RuntimeException('Há arquivos do site fora da raiz do WordPress. Inclua essa instalação em um backup da hospedagem.');
+        foreach(['a pasta de conteúdo'=>WP_CONTENT_DIR,'a pasta de plugins'=>WP_PLUGIN_DIR,'a pasta de temas'=>get_theme_root(),'a pasta de uploads'=>$uploads['basedir'],'a pasta do ERP'=>dirname(EDERP_FILE)] as $label=>$dir)
+            if(!self::inside(self::real($dir,$label),$this->root))throw new RuntimeException('Há arquivos do site fora da raiz do WordPress. Inclua essa instalação em um backup da hospedagem.');
         $config=is_file($this->root.'/wp-config.php')?$this->root.'/wp-config.php':dirname($this->root).'/wp-config.php';
         if(!is_file($config))throw new RuntimeException('wp-config.php não encontrado.');
         $add('config/wp-config.php',$config);
-        $content=ltrim(substr(self::real(WP_CONTENT_DIR),strlen($this->root)),'/');
+        $content=ltrim(substr(self::real(WP_CONTENT_DIR,'a pasta de conteúdo'),strlen($this->root)),'/');
         $skip=['.git','wp-config.php','.maintenance',$content.'/cache',$content.'/upgrade',$content.'/upgrade-temp-backup',$content.'/ai1wm-backups'];
         $filter=new \RecursiveCallbackFilterIterator(new \RecursiveDirectoryIterator($this->root,\FilesystemIterator::SKIP_DOTS),function($item)use($skip){
             $p=str_replace('\\','/',$item->getPathname());$rel=substr($p,strlen($this->root)+1);

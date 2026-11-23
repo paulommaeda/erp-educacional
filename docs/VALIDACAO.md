@@ -1,5 +1,10 @@
 # Validação
 
+## 0.19.39
+
+- Reproduzido o aviso genérico da 0.19.38 com uma raiz pública inexistente. Conferidos os diagnósticos para DOCUMENT_ROOT, WP_CONTENT_DIR, caminho relativo e falha ao criar a pasta. Um destino no diretório público foi recusado antes de criar a pasta.
+- A suíte `tests/wordpress-backups.php` cobre a abertura do histórico com uma raiz alternativa do servidor, a rejeição de um contexto restrito a um alias e a abertura do mesmo histórico com `EDERP_BACKUP_DIR` mesmo com DOCUMENT_ROOT inacessível. A suíte usa WordPress 7.1.3 e MariaDB 11.4.8 em ambiente local descartável. O caminho e as permissões reais de cada hospedagem dependem da configuração da conta.
+
 ## 0.19.38
 
 - Testes de criação e recuperação no WordPress 7.1.3 com PHP 8.4.27 e MariaDB 11.4.8, em uma instalação descartável. A suíte `tests/wordpress-backups.php` usa `EDERP_TEST_BOOTSTRAP`, `EDERP_BACKUP_TEST_ROOT` apontando para a raiz descartável e `EDERP_TEST_DATABASE=true`. O usuário MySQL do teste precisa poder criar bancos de teste.
