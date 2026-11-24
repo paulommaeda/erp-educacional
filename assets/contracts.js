@@ -115,10 +115,13 @@
 
   function contractTable(){
     const table=h('table',undefined,'erp-contract-table'),head=h('thead'),tr=h('tr');
-    for(const title of ['Contrato e aluno','Período e turma','Condições','Situação','Ações'])tr.append(h('th',title));
+    for(const title of ['Contrato e aluno','Período e turma','Condições','Situação','Assinado','Ações']){
+      const heading=h('th',title,title==='Assinado'?'erp-contract-signed':'');
+      heading.scope='col';tr.append(heading);
+    }
     head.append(tr);table.append(head);const body=h('tbody');
     for(const c of rows){
-      const row=h('tr'),who=h('td'),school=h('td'),terms=h('td'),state=h('td'),actions=h('td');
+      const row=h('tr'),who=h('td'),school=h('td'),terms=h('td'),state=h('td'),signed=h('td',undefined,'erp-contract-signed'),actions=h('td',undefined,'erp-contract-row-menu');
       who.dataset.label='Contrato e aluno';
       if(canContracts&&selectable(c)){
         const label=h('label',undefined,'erp-contract-selection'),input=h('input');
@@ -131,21 +134,26 @@
       school.dataset.label='Período e turma';school.append(h('span',c.periodo),h('small',c.turma));
       terms.dataset.label='Condições';terms.append(h('strong',money(c.valor_liquido_total)),h('small',c.quantidade_parcelas+' parcelas · '+date(c.primeiro_vencimento)));
       state.dataset.label='Situação';state.append(h('span',c.status==='cancelado'?'Cancelado':Number(c.parcelas_geradas)?'Parcelas geradas':'Aguardando parcelas','erp-contract-badge'));
-      const signed=h('label',undefined,'erp-contract-signature-check'),check=h('input');
+      const envio=c.envio_assinatura;
+      if(envio&&envio.situacao!=='signed')state.append(h('small',signatureLabels[envio.situacao]));
+
+      signed.dataset.label='Assinado';
+      const signatureCheck=h('div',undefined,'erp-contract-signature-check'),check=h('input');
       check.type='checkbox';check.checked=!!c.assinado_em;check.disabled=!!c.assinado_em||!canContracts;
       check.setAttribute('aria-label','Contrato '+c.numero+' assinado');
       check.onchange=()=>{check.checked=false;openContract(c.idcontrato);};
-      signed.append(check,h('span',c.assinado_em?'Assinado':'Não assinado'));state.append(signed);
-      const envio=c.envio_assinatura;
-      if(envio)state.append(h('small',envio.situacao==='signed'&&!Number(envio.vinculado)?'Revisão anterior assinada':signatureLabels[envio.situacao]));
-      actions.dataset.label='Ações';const group=h('div',undefined,'erp-contract-actions');
+      signatureCheck.append(check);signed.append(signatureCheck);
+
+      actions.dataset.label='Ações';
+      const actionsForContract=[];
       if(canContracts){
-        group.append(button('Ver contrato',()=>openContract(c.idcontrato)));
-        if(c.status==='ativo')group.append(button('Editar',()=>editContract(c.idcontrato)));
-        group.append(button('Excluir',()=>removeContract(c.idcontrato),'erp-contract-danger'));
+        actionsForContract.push(button('Ver contrato',()=>openContract(c.idcontrato)));
+        if(c.status==='ativo')actionsForContract.push(button('Editar',()=>editContract(c.idcontrato)));
+        actionsForContract.push(button('Excluir',()=>removeContract(c.idcontrato),'erp-contract-danger'));
       }
-      if(canDiscounts&&c.status==='ativo')group.append(button('Bolsas e descontos',()=>window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;})));
-      actions.append(group);row.append(who,school,terms,state,actions);body.append(row);
+      if(canDiscounts&&c.status==='ativo')actionsForContract.push(button('Bolsas e descontos',()=>window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;})));
+      if(actionsForContract.length)actions.append(window.EDERPActionMenu.create(actionsForContract,root,'Ações do contrato '+c.numero));
+      row.append(who,school,terms,state,signed,actions);body.append(row);
     }
     table.append(body);return table;
   }
@@ -193,7 +201,7 @@
       }
     }
   }
-  function modal(title){const dialog=h('dialog',undefined,'journey-confirm ederp erp-contract-dialog'),heading=h('h2',title),close=button('Fechar',()=>dialog.close(),'erp-secondary'),content=h('div'),status=feedback();heading.id='erp-contract-dialog-'+uuid();dialog.setAttribute('aria-labelledby',heading.id);const opener=document.activeElement,header=h('header',undefined,'erp-contract-dialog-header');header.append(heading,close);dialog.append(header,content,status);dialog.onclose=()=>{dialog.remove();if(opener?.isConnected)opener.focus();};dialog.addEventListener('cancel',e=>{if(dialog.dataset.busy==='1')e.preventDefault();});document.body.append(dialog);dialog.showModal();return {dialog,content,status,close};}
+  function modal(title){const dialog=h('dialog',undefined,'journey-confirm ederp erp-contract-dialog'),heading=h('h2',title),close=button('Fechar',()=>dialog.close(),'erp-secondary'),content=h('div'),status=feedback();heading.id='erp-contract-dialog-'+uuid();dialog.setAttribute('aria-labelledby',heading.id);const focused=document.activeElement,opener=focused?.closest('.erp-enrollment-actions')?.querySelector('summary')||focused,header=h('header',undefined,'erp-contract-dialog-header');header.append(heading,close);dialog.append(header,content,status);dialog.onclose=()=>{dialog.remove();if(opener?.isConnected)opener.focus();};dialog.addEventListener('cancel',e=>{if(dialog.dataset.busy==='1')e.preventDefault();});document.body.append(dialog);dialog.showModal();return {dialog,content,status,close};}
   function summary(c){const box=h('dl',undefined,'erp-contract-summary');for(const [label,value]of [['Aluno',c.aluno+' · RA '+c.ra],['Período e turma',c.periodo+' · '+c.turma],['Responsável financeiro',c.responsavel],['Valor líquido',money(c.valor_liquido_total)],['Parcelamento',c.quantidade_parcelas+' parcelas · '+date(c.primeiro_vencimento)]]){const item=h('div');item.append(h('dt',label),h('dd',value));box.append(item);}return box;}
   async function getContract(id,title,done){const m=modal(title);m.status.textContent='Carregando contrato...';try{const c=await api('contratos/'+id);if(!m.dialog.isConnected)return;m.status.textContent='';await done(c,m);}catch(e){m.status.textContent=e.message;}return m;}
   async function printContract(current,m,button){
