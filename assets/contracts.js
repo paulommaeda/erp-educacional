@@ -27,17 +27,169 @@
   root.replaceChildren(h('h1',canContracts?'Contratos':'Bolsas e descontos dos contratos'),h('p',canContracts?'Consulte os contratos dos alunos e cadastre os modelos usados pela secretaria.':'Busque o aluno, RA ou contrato para aplicar e gerenciar bolsas, descontos e indicações.'));
   const notice=feedback(),tabs=h('nav',undefined,'erp-tabs'),listTab=button('Contratos dos alunos',()=>switchTab('contracts')),modelsTab=button('Modelos de contrato',()=>switchTab('models')),listPanel=h('section'),modelPanel=h('section');
   tabs.setAttribute('aria-label','Áreas de contratos');tabs.append(listTab);if(canContracts)tabs.append(modelsTab);else tabs.hidden=true;root.append(tabs,notice,listPanel,modelPanel);
-  const searchForm=h('form',undefined,'erp-contract-filters'),search=field('search','Buscar por aluno, RA ou contrato','','search',false),status=choice('status','Situação',[['','Todas'],['ativo','Ativos'],['pendente','Aguardando parcelas'],['cancelado','Cancelados']]),find=h('button','Buscar');find.type='submit';
-  search.input.maxLength=191;searchForm.append(search.node,status.node,find);const list=h('div'),pagination=h('nav',undefined,'erp-contract-pagination'),pageInfo=h('span'),previous=button('Anterior',()=>{page--;load();}),next=button('Próxima',()=>{page++;load();});pagination.setAttribute('aria-label','Páginas de contratos');pagination.append(previous,pageInfo,next);listPanel.append(searchForm,list,pagination);
-  searchForm.onsubmit=e=>{e.preventDefault();page=1;load();};status.input.onchange=()=>{page=1;load();};
-  if(canContracts&&EDERP.caps?.admin)listPanel.prepend(button('Configurar assinatura eletrônica',signatureSettings));
-  if(canDiscounts&&window.EDERPScholarships)listPanel.prepend(button('Bolsas por aluno',()=>window.EDERPScholarships.chooseStudent(load)));
-  if(student)listPanel.prepend(link('Ver todos os alunos',canContracts?'contratos':'bolsas'));
+  const searchForm=h('form',undefined,'erp-contract-filters');
+  const search=field('search','Buscar por aluno, RA ou contrato','','search',false);
+  const status=choice('status','Situação',[['','Todas'],['ativo','Ativos'],['pendente','Aguardando parcelas'],['cancelado','Cancelados']]);
+  const signatureFilter=choice('assinatura','Assinatura',[['','Todos'],['assinado','Assinados'],['nao_assinado','Não assinados']]);
+  signatureFilter.input.setAttribute('aria-label','Assinatura');
+  const find=h('button','Buscar');find.type='submit';
+  search.input.maxLength=191;searchForm.append(search.node,status.node);
+  if(canContracts)searchForm.append(signatureFilter.node);
+  searchForm.append(find);
+
+  const headerTools=h('div',undefined,'erp-contract-toolbar'),list=h('div');
+  const pagination=h('nav',undefined,'erp-contract-pagination'),pageInfo=h('span');
+  const previous=button('Anterior',()=>{page--;load();}),next=button('Próxima',()=>{page++;load();});
+  pagination.setAttribute('aria-label','Páginas de contratos');pagination.append(previous,pageInfo,next);
+  if(student)headerTools.append(link('Ver todos os alunos',canContracts?'contratos':'bolsas'));
+  if(canDiscounts&&window.EDERPScholarships)headerTools.append(button('Bolsas por aluno',()=>window.EDERPScholarships.chooseStudent(load)));
+  if(canContracts&&EDERP.caps?.admin)headerTools.append(button('Configurar assinatura eletrônica',signatureSettings));
+  if(headerTools.childElementCount)listPanel.append(headerTools);
+  listPanel.append(searchForm);
+
+  const selected=new Map(),limit=100,selectionBar=h('div',undefined,'erp-contract-toolbar erp-contract-batch');
+  const pageCheck=h('input'),pageLabel=h('label',undefined,'erp-contract-selection'),selectionInfo=feedback();
+  const sendSelected=button('Enviar para assinatura',()=>openBatch(true));
+  const checkSelected=button('Conferir assinaturas',()=>openBatch(false));
+  const clear=button('Limpar seleção',()=>{selected.clear();updateSelection();},'erp-secondary');
+  pageCheck.type='checkbox';pageLabel.append(pageCheck,h('span','Selecionar contratos desta página'));
+  if(canContracts){selectionBar.append(pageLabel,selectionInfo,sendSelected,checkSelected,clear);listPanel.append(selectionBar);}
+  listPanel.append(list,pagination);
+  const signatureLabels={preparado:'Envio a confirmar',draft:'Rascunho',sent:'Convite solicitado',viewed:'Visualizado',signed:'Assinado',cancelled:'Cancelado',expired:'Expirado',rejeitado:'Envio recusado'};
+  const pendingSignature=new Set(['preparado','draft','sent','viewed']);
+  const canSend=c=>c.status==='ativo'&&!c.assinado_em&&!['draft','sent','viewed'].includes(c.envio_assinatura?.situacao);
+  const canCheck=c=>!!c.envio_assinatura&&c.envio_assinatura.situacao!=='rejeitado';
+  const selectable=c=>canSend(c)||canCheck(c);
+  const visibleEligible=()=>rows.filter(selectable);
+
+  function updateSelection(){
+    if(!canContracts)return;
+    const contracts=[...selected.values()],eligible=visibleEligible();
+    const onPage=eligible.filter(c=>selected.has(String(c.idcontrato))).length;
+    pageCheck.checked=!!eligible.length&&onPage===eligible.length;
+    pageCheck.indeterminate=onPage>0&&onPage<eligible.length;
+    pageCheck.disabled=!eligible.length;
+    for(const input of list.querySelectorAll('[data-batch-contract]')){
+      input.checked=selected.has(input.dataset.batchContract);
+    }
+    selectionInfo.textContent=contracts.length?(contracts.length+' selecionado(s) · '+contracts.filter(canSend).length+' para envio · '+contracts.filter(canCheck).length+' para conferência'):'Selecione os contratos para enviar ou conferir.';
+    sendSelected.disabled=!contracts.some(canSend);
+    checkSelected.disabled=!contracts.some(canCheck);
+    clear.disabled=!contracts.length;
+  }
+  function selectContract(c,checked){
+    const id=String(c.idcontrato);
+    if(!checked){selected.delete(id);return;}
+    if(!selected.has(id)&&selected.size>=limit){
+      notice.textContent='Selecione até '+limit+' contratos por lote.';
+      return;
+    }
+    selected.set(id,c);
+  }
+  pageCheck.onchange=()=>{for(const c of visibleEligible())selectContract(c,pageCheck.checked);updateSelection();};
+  function applyFilters(){selected.clear();notice.textContent='';page=1;load();}
+  searchForm.onsubmit=e=>{e.preventDefault();applyFilters();};
+  status.input.onchange=signatureFilter.input.onchange=applyFilters;
+
   function switchTab(view){if(view==='models'&&!canContracts)view='contracts';active=view;listPanel.hidden=view!=='contracts';modelPanel.hidden=view!=='models';listTab.setAttribute('aria-pressed',String(view==='contracts'));modelsTab.setAttribute('aria-pressed',String(view==='models'));listTab.classList.toggle('active',view==='contracts');modelsTab.classList.toggle('active',view==='models');if(view==='models')loadModels();else load();}
-  async function load(){const turn=++generation;list.replaceChildren(h('p','Carregando contratos...'));previous.disabled=next.disabled=find.disabled=true;try{const q=new URLSearchParams({page:String(page),search:search.input.value,status:status.input.value,codperiodo:String(EDERP.period||EDERP.currentPeriod||'todos')});if(student)q.set('idaluno',student);const d=await api('contratos?'+q);if(turn!==generation)return;rows=d.items;list.replaceChildren();if(!rows.length)list.append(h('p','Nenhum contrato encontrado. Confira o período selecionado ou refine a busca.'));else{
-      const table=h('table',undefined,'erp-contract-table'),head=h('thead'),tr=h('tr');for(const title of ['Contrato e aluno','Período e turma','Condições','Situação','Ações'])tr.append(h('th',title));head.append(tr);table.append(head);const body=h('tbody');
-      for(const c of rows){const row=h('tr'),who=h('td'),school=h('td'),terms=h('td'),state=h('td'),actions=h('td');who.dataset.label='Contrato e aluno';who.append(h('strong',c.numero),h('span',c.aluno),h('small','RA '+c.ra));school.dataset.label='Período e turma';school.append(h('span',c.periodo),h('small',c.turma));terms.dataset.label='Condições';terms.append(h('strong',money(c.valor_liquido_total)),h('small',c.quantidade_parcelas+' parcelas · '+date(c.primeiro_vencimento)));state.dataset.label='Situação';state.append(h('span',c.status==='cancelado'?'Cancelado':Number(c.parcelas_geradas)?'Parcelas geradas':'Aguardando parcelas','erp-contract-badge'));actions.dataset.label='Ações';const signed=h('label',undefined,'erp-contract-signature-check'),check=h('input');check.type='checkbox';check.checked=!!c.assinado_em;check.disabled=!!c.assinado_em||!canContracts;check.setAttribute('aria-label','Contrato '+c.numero+' assinado');check.onchange=()=>{check.checked=false;openContract(c.idcontrato);};signed.append(check,h('span','Assinado'));state.append(signed);const group=h('div',undefined,'erp-contract-actions');if(canContracts){group.append(button('Ver contrato',()=>openContract(c.idcontrato)));if(c.status==='ativo')group.append(button('Editar',()=>editContract(c.idcontrato)));group.append(button('Excluir',()=>removeContract(c.idcontrato),'erp-contract-danger'));}if(canDiscounts&&c.status==='ativo')group.append(button('Bolsas e descontos',()=>window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;})));actions.append(group);row.append(who,school,terms,state,actions);body.append(row);}table.append(body);list.append(table);
-    }pageInfo.textContent=d.total+' contratos · Página '+page;previous.disabled=page<=1;next.disabled=page*20>=d.total;}catch(e){if(turn===generation){list.replaceChildren(h('p',e.message));pageInfo.textContent='';}}finally{if(turn===generation)find.disabled=false;}}
+
+  async function load(){
+    const turn=++generation;
+    rows=[];list.replaceChildren(h('p','Carregando contratos...'));previous.disabled=next.disabled=find.disabled=true;updateSelection();
+    try{
+      const q=new URLSearchParams({page:String(page),search:search.input.value,status:status.input.value,codperiodo:String(EDERP.period||EDERP.currentPeriod||'todos')});
+      if(canContracts&&signatureFilter.input.value)q.set('assinatura',signatureFilter.input.value);
+      if(student)q.set('idaluno',student);
+      const d=await api('contratos?'+q);
+      if(turn!==generation)return;
+      rows=d.items;
+      list.replaceChildren(rows.length?contractTable():h('p','Nenhum contrato encontrado. Confira o período selecionado ou refine a busca.'));
+      pageInfo.textContent=d.total+' contratos · Página '+page;
+      previous.disabled=page<=1;next.disabled=page*20>=d.total;
+    }catch(e){if(turn===generation){list.replaceChildren(h('p',e.message));pageInfo.textContent='';}}
+    finally{if(turn===generation){find.disabled=false;updateSelection();}}
+  }
+
+  function contractTable(){
+    const table=h('table',undefined,'erp-contract-table'),head=h('thead'),tr=h('tr');
+    for(const title of ['Contrato e aluno','Período e turma','Condições','Situação','Ações'])tr.append(h('th',title));
+    head.append(tr);table.append(head);const body=h('tbody');
+    for(const c of rows){
+      const row=h('tr'),who=h('td'),school=h('td'),terms=h('td'),state=h('td'),actions=h('td');
+      who.dataset.label='Contrato e aluno';
+      if(canContracts&&selectable(c)){
+        const label=h('label',undefined,'erp-contract-selection'),input=h('input');
+        input.type='checkbox';input.dataset.batchContract=String(c.idcontrato);
+        input.setAttribute('aria-label','Selecionar contrato '+c.numero);
+        input.onchange=()=>{selectContract(c,input.checked);updateSelection();};
+        label.append(input,h('strong',c.numero));who.append(label);
+      }else who.append(h('strong',c.numero));
+      who.append(h('span',c.aluno),h('small','RA '+c.ra));
+      school.dataset.label='Período e turma';school.append(h('span',c.periodo),h('small',c.turma));
+      terms.dataset.label='Condições';terms.append(h('strong',money(c.valor_liquido_total)),h('small',c.quantidade_parcelas+' parcelas · '+date(c.primeiro_vencimento)));
+      state.dataset.label='Situação';state.append(h('span',c.status==='cancelado'?'Cancelado':Number(c.parcelas_geradas)?'Parcelas geradas':'Aguardando parcelas','erp-contract-badge'));
+      const signed=h('label',undefined,'erp-contract-signature-check'),check=h('input');
+      check.type='checkbox';check.checked=!!c.assinado_em;check.disabled=!!c.assinado_em||!canContracts;
+      check.setAttribute('aria-label','Contrato '+c.numero+' assinado');
+      check.onchange=()=>{check.checked=false;openContract(c.idcontrato);};
+      signed.append(check,h('span',c.assinado_em?'Assinado':'Não assinado'));state.append(signed);
+      const envio=c.envio_assinatura;
+      if(envio)state.append(h('small',envio.situacao==='signed'&&!Number(envio.vinculado)?'Revisão anterior assinada':signatureLabels[envio.situacao]));
+      actions.dataset.label='Ações';const group=h('div',undefined,'erp-contract-actions');
+      if(canContracts){
+        group.append(button('Ver contrato',()=>openContract(c.idcontrato)));
+        if(c.status==='ativo')group.append(button('Editar',()=>editContract(c.idcontrato)));
+        group.append(button('Excluir',()=>removeContract(c.idcontrato),'erp-contract-danger'));
+      }
+      if(canDiscounts&&c.status==='ativo')group.append(button('Bolsas e descontos',()=>window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;})));
+      actions.append(group);row.append(who,school,terms,state,actions);body.append(row);
+    }
+    table.append(body);return table;
+  }
+
+  function openBatch(send){
+    const contracts=[...selected.values()].filter(send?canSend:canCheck);
+    if(!contracts.length)return;
+    const ignored=selected.size-contracts.length;
+    const m=modal(send?'Enviar contratos para assinatura':'Conferir assinaturas dos contratos');
+    const candidates=h('ul',undefined,'erp-contract-batch-list');
+    for(const c of contracts)candidates.append(h('li',c.numero+' · '+c.aluno));
+    const confirm=button(send?'Confirmar envio':'Confirmar conferência',runBatch);
+    m.content.append(h('p',send?'O ERP solicitará o convite por e-mail para o responsável financeiro de cada contrato abaixo.':'O ERP vai consultar a última revisão enviada de cada contrato abaixo.'));
+    if(ignored)m.content.append(h('p',ignored+' contrato(s) selecionado(s) não se aplicam a esta ação.'));
+    m.content.append(candidates,confirm);
+
+    async function runBatch(){
+      if(m.dialog.dataset.busy==='1')return;
+      m.dialog.dataset.busy='1';m.close.disabled=true;
+      const results=h('ul',undefined,'erp-contract-batch-list');
+      m.content.replaceChildren(results);
+      let completed=0,failed=0;
+      try{
+        for(const c of contracts){
+          m.status.textContent='Processando '+(completed+failed+1)+' de '+contracts.length+'…';
+          const base='contratos/'+c.idcontrato+'/assinatura';
+          try{
+            const response=send?await api(base+'/enviar',{versao:c.versao}):await api(base+'/'+c.envio_assinatura.idenvio+'/consultar',{});
+            const envio=send?response.items[0]:response.items.find(row=>String(row.idenvio)===String(c.envio_assinatura.idenvio));
+            if(!envio)throw Error('O serviço não retornou a revisão consultada.');
+            const label=envio.situacao==='signed'&&!Number(envio.vinculado)?'Revisão anterior assinada':signatureLabels[envio.situacao];
+            results.append(h('li',c.numero+' · '+(label||'Processado')));
+            completed++;
+            selected.delete(String(c.idcontrato));
+          }catch(error){
+            failed++;
+            results.append(h('li',c.numero+' · '+error.message,'erp-contract-danger'));
+          }
+        }
+        const message=completed+' processado(s)'+(failed?' e '+failed+' com erro':'')+'.';
+        m.status.textContent=notice.textContent=message;
+        await load();
+      }finally{
+        m.dialog.dataset.busy='0';m.close.disabled=false;
+      }
+    }
+  }
   function modal(title){const dialog=h('dialog',undefined,'journey-confirm ederp erp-contract-dialog'),heading=h('h2',title),close=button('Fechar',()=>dialog.close(),'erp-secondary'),content=h('div'),status=feedback();heading.id='erp-contract-dialog-'+uuid();dialog.setAttribute('aria-labelledby',heading.id);const opener=document.activeElement,header=h('header',undefined,'erp-contract-dialog-header');header.append(heading,close);dialog.append(header,content,status);dialog.onclose=()=>{dialog.remove();if(opener?.isConnected)opener.focus();};dialog.addEventListener('cancel',e=>{if(dialog.dataset.busy==='1')e.preventDefault();});document.body.append(dialog);dialog.showModal();return {dialog,content,status,close};}
   function summary(c){const box=h('dl',undefined,'erp-contract-summary');for(const [label,value]of [['Aluno',c.aluno+' · RA '+c.ra],['Período e turma',c.periodo+' · '+c.turma],['Responsável financeiro',c.responsavel],['Valor líquido',money(c.valor_liquido_total)],['Parcelamento',c.quantidade_parcelas+' parcelas · '+date(c.primeiro_vencimento)]]){const item=h('div');item.append(h('dt',label),h('dd',value));box.append(item);}return box;}
   async function getContract(id,title,done){const m=modal(title);m.status.textContent='Carregando contrato...';try{const c=await api('contratos/'+id);if(!m.dialog.isConnected)return;m.status.textContent='';await done(c,m);}catch(e){m.status.textContent=e.message;}return m;}
@@ -85,7 +237,7 @@
   async function signaturePanel(c,m){
     const section=h('section',undefined,'erp-contract-signature'),title=h('h3','Assinatura eletrônica'),body=h('div'),feedbackNode=feedback();
     section.append(title,body,feedbackNode);m.content.append(section);
-    const path='contratos/'+c.idcontrato+'/assinatura',labels={preparado:'Envio a confirmar',draft:'Rascunho',sent:'Convite solicitado',viewed:'Visualizado',signed:'Assinado',cancelled:'Cancelado',expired:'Expirado',rejeitado:'Envio recusado'};
+    const path='contratos/'+c.idcontrato+'/assinatura';
     let busy=false,sendKey=uuid();
     async function run(fn){
       if(busy)return;busy=true;const buttons=[...body.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
@@ -102,7 +254,7 @@
       body.replaceChildren();
       const rows=data.items||[],latest=rows[0];
       if(!data.configurado&&!rows.length){body.append(h('p','A integração de assinatura ainda precisa ser configurada para esta coligada.'));return;}
-      const open=latest&&['preparado','draft','sent','viewed'].includes(latest.situacao);
+      const open=latest&&pendingSignature.has(latest.situacao);
       if(data.configurado&&!c.assinado_em&&c.status==='ativo'&&(!open||latest.situacao==='preparado')){
         if(!open)sendKey=uuid();
         body.append(h('p','O responsável financeiro '+c.responsavel+(c.responsavel_email?' ('+c.responsavel_email+')':'')+' receberá o convite por e-mail.'),
@@ -110,9 +262,9 @@
       }
       for(const row of rows){
         const item=h('article',undefined,'erp-scholarship-card'),ref=path+'/'+row.idenvio;
-        item.append(h('strong','Revisão '+row.revisao+' · '+(labels[row.situacao]||row.situacao)),h('p','Referência '+row.referencia));
+        item.append(h('strong','Revisão '+row.revisao+' · '+(signatureLabels[row.situacao]||row.situacao)),h('p','Referência '+row.referencia));
         if(row.uuid)item.append(h('p','Protocolo '+row.uuid));
-        if(['preparado','draft','sent','viewed'].includes(row.situacao)){
+        if(pendingSignature.has(row.situacao)){
           item.append(button('Consultar situação',()=>run(async()=>refresh(await api(ref+'/consultar',{})))));
           item.append(button('Cancelar solicitação',()=>{if(window.confirm('Cancelar o envio desta revisão para assinatura?'))run(async()=>refresh(await api(ref+'/cancelar',{})));},'erp-secondary'));
         }

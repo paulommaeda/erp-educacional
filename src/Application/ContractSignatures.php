@@ -36,6 +36,25 @@ final class ContractSignatures
         return ['configurado'=>$s['base']!==''&&$s['senha']!=='','items'=>$rows];
     }
 
+    /** Current request metadata for a page of contracts already scoped to the active company. */
+    public function latestForContracts(array $ids):array
+    {
+        Access::requireManageContracts();
+        if(!$ids)return [];
+        $table=$this->db->table('assinatura_envios');
+        $placeholders=implode(',',array_fill(0,count($ids),'%d'));
+        $rows=$this->db->rows(
+            "SELECT current_envio.idcontrato,current_envio.idenvio,current_envio.situacao,current_envio.vinculado
+             FROM $table current_envio
+             JOIN (SELECT idcontrato,MAX(revisao) AS revisao FROM $table
+                   WHERE codcoligada=%d AND idcontrato IN ($placeholders) GROUP BY idcontrato) latest
+                ON current_envio.idcontrato=latest.idcontrato AND current_envio.revisao=latest.revisao
+             WHERE current_envio.codcoligada=%d",
+            [Coligadas::current(),...$ids,Coligadas::current()]
+        );
+        return array_column($rows,null,'idcontrato');
+    }
+
     private function attempt(int $id,int $attempt):array
     {
         Access::requireManageContracts();
@@ -52,12 +71,12 @@ final class ContractSignatures
         $prepared=ContractTextLock::run($this->db,fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'preparar_assinatura',['contrato'=>$id,'versao'=>$version],function()use($id,$version,$key){
             $c=$this->contract($id,true);
             if(ContractText::signed($c)||$c['status']!=='ativo')throw new RuleViolation('Selecione um contrato ativo que ainda aguarda assinatura.');
+            if((int)$c['versao']!==$version)throw new RuleViolation('O contrato mudou. Reabra a ficha e confira o texto.');
             $latest=$this->db->row('SELECT idenvio,revisao,situacao,revisao_hash FROM '.$this->db->table('assinatura_envios').' WHERE idcontrato=%d ORDER BY revisao DESC LIMIT 1 FOR UPDATE',[$id]);
             if($latest&&in_array($latest['situacao'],self::OPEN,true)){
                 if($latest['revisao_hash']!==self::fingerprint($c))throw new RuleViolation('Há uma revisão anterior em andamento. Consulte ou cancele o envio antes de emitir o texto atualizado.');
                 return ['idenvio'=>(int)$latest['idenvio']];
             }
-            if((int)$c['versao']!==$version)throw new RuleViolation('O contrato mudou. Reabra a ficha e confira o texto.');
             $settings=Settings::read();
             if(!$settings['base']||!$settings['senha'])throw new RuleViolation('Configure a assinatura eletrônica desta coligada.');
             $person=$this->db->get('pessoas',(int)$c['codpessoa_rf_atual']);
