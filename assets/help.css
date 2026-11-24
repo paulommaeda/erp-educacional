@@ -1,0 +1,30 @@
+.erp-wiki{max-width:1150px;margin-inline:auto}
+.erp-wiki-heading{margin-bottom:20px}
+.erp-wiki-heading h1,.erp-wiki-article h1{margin:0 0 8px;line-height:1.2}
+.erp-wiki-heading p,.erp-wiki-article header p{margin:0;color:var(--j-muted)}
+.erp-wiki-search{padding:16px;border:1px solid var(--j-line);background:var(--j-surface);border-radius:12px}
+.erp-wiki-search label{display:block;font-weight:650;margin-bottom:8px}
+.erp-wiki-search div{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.erp-wiki-search input{flex:1 1 200px;min-width:0;min-height:44px}
+.erp-wiki-search button,.erp-wiki-open{min-height:44px}
+.erp-wiki-topic{margin-block:26px}
+.erp-wiki-topic h2,.erp-wiki-article h2{font-size:1.16rem;margin:0 0 12px}
+.erp-wiki-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,270px),1fr));gap:12px;list-style:none;margin:0;padding:0}
+.erp-wiki-grid a{display:flex;flex-direction:column;gap:6px;height:100%;padding:16px;border:1px solid var(--j-line);border-radius:12px;background:var(--j-surface);text-decoration:none}
+.erp-wiki-grid a:hover,.erp-wiki-grid a:focus-visible{border-color:var(--j-action);background:var(--j-soft)}
+.erp-wiki-grid a span{color:var(--j-muted);line-height:1.45;font-size:.92rem}
+.erp-wiki-path{display:flex;flex-wrap:wrap;gap:8px;font-size:.9rem;margin-bottom:16px}
+.erp-wiki-path span::before{content:"/";margin-right:8px}
+.erp-wiki-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
+.erp-wiki-article{margin:0;min-width:0;line-height:1.58}
+.erp-wiki-open{display:inline-flex;align-items:center;font-weight:650;margin-top:6px}
+.erp-wiki-article section{margin-top:24px;scroll-margin-top:86px}
+.erp-wiki-article ol{margin:0;padding-inline-start:24px}
+.erp-wiki-article li+li{margin-top:8px}
+.erp-wiki-note{margin-top:20px;padding:12px;border-inline-start:3px solid var(--j-action);background:var(--j-soft)}
+.erp-wiki-aside{min-width:0}
+.erp-wiki-aside nav{padding:14px;border:1px solid var(--j-line);border-radius:12px;background:var(--j-surface);margin-bottom:12px}
+.erp-wiki-aside h2{font-size:1rem;margin:0}
+.erp-wiki-aside ul{list-style:none;padding:0;margin:6px 0 0}
+.erp-wiki-aside a{display:block;padding-block:8px;line-height:1.4}
+@media(min-width:880px){.erp-wiki-layout{grid-template-columns:minmax(0,1fr) minmax(185px,240px);align-items:start}}

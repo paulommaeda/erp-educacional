@@ -26,7 +26,16 @@ final class Portal
     public function register():void
     {
         Authentication::register();
-        add_action('wp_enqueue_scripts',static function(){global $post;if($post instanceof \WP_Post && str_contains($post->post_content,'[erp_')&&!str_contains($post->post_content,'[erp_requerimento')){Pages::assets();wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);if(!is_user_logged_in()||in_array($_GET['erp_tela']??'',['recuperar_senha','redefinir_senha'],true))self::loginAssets();}});
+        add_action('wp_enqueue_scripts',static function(){
+            global $post;
+            if(!$post instanceof \WP_Post||!str_contains($post->post_content,'[erp_')||str_contains($post->post_content,'[erp_requerimento'))return;
+            Pages::assets();
+            wp_enqueue_style('journey-ui',plugins_url('assets/journey.css',EDERP_FILE),['ederp'],EDERP_VERSION);
+            if(!is_user_logged_in()||in_array($_GET['erp_tela']??'',['recuperar_senha','redefinir_senha'],true))self::loginAssets();
+            if(MenuPolicy::can('ajuda')&&(($_GET['erp_tela']??null)==='ajuda'||has_shortcode($post->post_content,'erp_ajuda'))){
+                HelpWiki::assets();
+            }
+        });
         add_action('admin_init',[self::class,'setup'],20);
         add_action('admin_init',static function(){if(is_user_logged_in()&&!Access::isAdmin()&&!wp_doing_ajax()){wp_safe_redirect(self::url());exit;}},1);
         add_filter('show_admin_bar',static fn($show)=>Access::isAdmin()?$show:false);
@@ -63,6 +72,7 @@ final class Portal
         $account='<details class="journey-account-menu"><summary class="journey-account" aria-controls="journey-account-submenu" aria-expanded="false">'.get_avatar(get_current_user_id(),40).'<span class="journey-account-name">'.esc_html($firstName).'</span></summary><nav id="journey-account-submenu" class="journey-account-submenu" aria-label="Minha conta"><a href="'.esc_url(self::url('perfil')).'">Meu perfil</a><a class="journey-account-logout" href="'.esc_url(Authentication::logoutUrl()).'">Sair</a></nav></details>';
         ob_start();echo '<div class="journey-app ederp"><a class="journey-skip" href="#journey-content">Ir para o conteúdo</a><aside class="journey-sidebar"><a class="journey-brand" href="'.esc_url(self::url()).'">'.$logo.'</a>'.$this->nav().'<p class="journey-sidebar-note">Gestão escolar<br>'.$schoolName.'</p></aside><div class="journey-body"><header class="journey-header"><a href="'.esc_url(self::url()).'">'.$logo.'</a><span>Portal educacional</span>'.$account.'</header><main id="journey-content" class="journey-content" data-journey-screen="'.esc_attr($view).'" tabindex="-1">';
         if(!MenuPolicy::can($view))echo '<section class="ederp-card"><h1>Acesso indisponível</h1><p>Seu perfil não tem acesso a esta área.</p><a href="'.esc_url(self::url()).'">Voltar ao início</a></section>';
+        elseif($view==='ajuda'){HelpWiki::assets();HelpWiki::render();}
         elseif($view==='documentos')echo '<section data-erp-documents><p role="status">Carregando documentos...</p></section>';
         elseif($view==='chat')echo '<section data-erp-chat><p role="status">Carregando conversas...</p></section>';
         elseif(in_array($view,['pessoas','alunos','professores','academico','matriculas','financeiro','gestao_financeira','contratos','bolsas','rematriculas','exportacao','importacao','requerimentos','configuracoes'],true)){
