@@ -1,5 +1,9 @@
 # Validação
 
+## 0.19.45
+
+- O Chromium conferiu a coluna Assinado com caixas marcadas e desmarcadas, sem texto na célula, e o menu de ações a 390 e 1100 px. Foram testados abertura pelo teclado, fechamento com Escape, abertura do contrato pelo menu e retorno do foco. Clicar na caixa do contrato pendente abriu o detalhe sem registrar assinatura.
+
 ## 0.19.44
 
 - O Chromium conferiu o alinhamento das caixas, os dois botões na mesma linha e a remoção do texto inicial a 390 e 1100 px, com estilos do portal. O teste também repetiu a seleção entre páginas, o envio e a conferência em lote.

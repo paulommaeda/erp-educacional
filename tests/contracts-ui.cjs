@@ -20,7 +20,7 @@ async function setup(options={}){
    else if(route==='modelos-contrato/3'&&body){models=[{...models[0],...body,versao:'6'}];result=models[0];}
    else result={excluido:true};return {ok:true,json:async()=>result};
  };
- w.eval(fs.readFileSync(path.join(__dirname,'../assets/contracts.js'),'utf8'));await tick();return {dom,w,d,calls,errors,failNext:()=>{fail=true;}};
+ for(const script of ['action-menu.js','contracts.js'])w.eval(fs.readFileSync(path.join(__dirname,'../assets',script),'utf8'));await tick();return {dom,w,d,calls,errors,failNext:()=>{fail=true;}};
 }
 async function test(){
  const tuitionClause='A CONTRATANTE pagará a anuidade escolar de [contrato_valor_original], dividida em [contrato_parcelamento_original].';

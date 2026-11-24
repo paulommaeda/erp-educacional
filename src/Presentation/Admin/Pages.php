@@ -24,7 +24,7 @@ final class Pages
         wp_enqueue_script('ederp-financial-dashboard',plugins_url('assets/financial-dashboard.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_style('ederp-financial-dashboard',plugins_url('assets/financial-dashboard.css',EDERP_FILE),['ederp'],EDERP_VERSION);
         wp_enqueue_script('ederp-contract-document',plugins_url('assets/contract-document.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
-        wp_enqueue_script('ederp-contracts',plugins_url('assets/contracts.js',EDERP_FILE),['ederp','ederp-workflow','ederp-contract-document'],EDERP_VERSION,true);
+        wp_enqueue_script('ederp-contracts',plugins_url('assets/contracts.js',EDERP_FILE),['ederp','ederp-workflow','ederp-contract-document','ederp-action-menu'],EDERP_VERSION,true);
         wp_enqueue_style('ederp-contracts',plugins_url('assets/contracts.css',EDERP_FILE),['ederp'],EDERP_VERSION);
         wp_enqueue_script('ederp-document-notifications',plugins_url('assets/document-notifications.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         wp_enqueue_script('ederp-family',plugins_url('assets/family-students.js',EDERP_FILE),['ederp','ederp-document-notifications'],EDERP_VERSION,true);

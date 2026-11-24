@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.44
+Stable tag: 0.19.45
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.45 =
+* Os contratos exibem uma coluna Assinado com o indicador de assinatura e um menu compacto de ações por linha.
 
 = 0.19.44 =
 * Ajusta a seleção de contratos e deixa os botões de envio e conferência ao lado da seleção da página.
