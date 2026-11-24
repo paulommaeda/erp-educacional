@@ -1,5 +1,9 @@
 # Validação
 
+## 0.19.44
+
+- O Chromium conferiu o alinhamento das caixas, os dois botões na mesma linha e a remoção do texto inicial a 390 e 1100 px, com estilos do portal. O teste também repetiu a seleção entre páginas, o envio e a conferência em lote.
+
 ## 0.19.43
 
 - O fluxo de assinatura com WordPress 7.1.3, MariaDB 11.4.8 e Assinatura Eletrônica 1.1.2 passou em 43 verificações. Foram conferidos filtros, última revisão, assinatura da redação vigente e execução da consulta pelo gancho horário do WP-Cron com transporte de teste.

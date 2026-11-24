@@ -27,7 +27,7 @@ O WP-Cron consulta os envios pendentes a cada hora. A consulta manual está disp
 ## Trabalhar com vários contratos
 
 1. Abra **Contratos → Contratos dos alunos**. Use o filtro **Assinatura** para listar assinados ou não assinados. O filtro considera a assinatura da redação em vigor, inclusive quando registrada manualmente. Uma assinatura de revisão anterior continua no histórico.
-2. Marque os contratos da lista ou use **Selecionar contratos desta página**. A seleção permanece ao navegar pelas páginas e é limpa ao aplicar filtros. É possível selecionar até 100 contratos por lote.
+2. Marque os contratos da lista ou use a caixa à esquerda dos botões de ação para selecionar os contratos elegíveis da página. A seleção permanece ao navegar pelas páginas e é limpa ao aplicar filtros. É possível selecionar até 100 contratos por lote.
 3. Use **Enviar para assinatura** para os contratos ativos ainda elegíveis. Revise a lista e clique em **Confirmar envio**. O ERP solicita os convites aos responsáveis financeiros. Envios que já aguardam assinatura podem ser conferidos.
 4. Use **Conferir assinaturas**, revise a lista e clique em **Confirmar conferência**. O ERP consulta o protocolo de cada revisão selecionada e mostra o resultado por contrato, inclusive quando a consulta falha. Mantenha a tela aberta até a conclusão.
 

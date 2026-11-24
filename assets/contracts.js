@@ -52,8 +52,11 @@
   const sendSelected=button('Enviar para assinatura',()=>openBatch(true));
   const checkSelected=button('Conferir assinaturas',()=>openBatch(false));
   const clear=button('Limpar seleção',()=>{selected.clear();updateSelection();},'erp-secondary');
-  pageCheck.type='checkbox';pageLabel.append(pageCheck,h('span','Selecionar contratos desta página'));
-  if(canContracts){selectionBar.append(pageLabel,selectionInfo,sendSelected,checkSelected,clear);listPanel.append(selectionBar);}
+  pageCheck.type='checkbox';
+  pageCheck.setAttribute('aria-label','Selecionar contratos desta página');
+  pageCheck.title='Selecionar contratos desta página';
+  pageLabel.append(pageCheck);
+  if(canContracts){selectionBar.append(pageLabel,sendSelected,checkSelected,clear,selectionInfo);listPanel.append(selectionBar);}
   listPanel.append(list,pagination);
   const signatureLabels={preparado:'Envio a confirmar',draft:'Rascunho',sent:'Convite solicitado',viewed:'Visualizado',signed:'Assinado',cancelled:'Cancelado',expired:'Expirado',rejeitado:'Envio recusado'};
   const pendingSignature=new Set(['preparado','draft','sent','viewed']);
@@ -72,7 +75,7 @@
     for(const input of list.querySelectorAll('[data-batch-contract]')){
       input.checked=selected.has(input.dataset.batchContract);
     }
-    selectionInfo.textContent=contracts.length?(contracts.length+' selecionado(s) · '+contracts.filter(canSend).length+' para envio · '+contracts.filter(canCheck).length+' para conferência'):'Selecione os contratos para enviar ou conferir.';
+    selectionInfo.textContent=contracts.length?(contracts.length+' selecionado(s) · '+contracts.filter(canSend).length+' para envio · '+contracts.filter(canCheck).length+' para conferência'):'';
     sendSelected.disabled=!contracts.some(canSend);
     checkSelected.disabled=!contracts.some(canCheck);
     clear.disabled=!contracts.length;
