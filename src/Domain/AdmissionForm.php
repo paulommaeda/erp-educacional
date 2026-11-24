@@ -46,6 +46,33 @@ final class AdmissionForm
         $v=trim(strip_tags((string)$v));if(strlen($v)>$limit)throw new RuleViolation('Texto acima do limite de '.$limit.' caracteres.');
         if($required&&$v==='')throw new RuleViolation('Preencha o campo obrigatório.');return $v;
     }
+    public static function requireDistinctEmails(array $people,array $choices=[]):void
+    {
+        $identities=[];
+        $owners=[];
+        $labels=self::PEOPLE+['outro'=>'Outro responsável'];
+        foreach($people as $slot=>$person){
+            if($slot==='aluno')continue;
+            $choice=$choices[$slot]??[];
+            $identity=$slot;
+            if(($choice['acao']??null)==='reutilizar'&&is_string($choice['referencia']??null)){
+                $identity=$identities[$choice['referencia']]??$slot;
+            }elseif(($choice['acao']??null)==='existente'&&!empty($choice['codpessoa'])){
+                $identity='pessoa:'.Input::id($choice['codpessoa']);
+            }
+            $identities[$slot]=$identity;
+            $email=strtolower(trim((string)($person['email']??'')));
+            if($email==='')continue;
+            foreach($owners[$email]??[] as $previous){
+                $bothParents=in_array($previous,['pai','mae'],true)&&in_array($slot,['pai','mae'],true);
+                if($bothParents||$identity!==$identities[$previous]){
+                    throw new RuleViolation($labels[$slot].': este e-mail já foi informado para '.$labels[$previous].'. Informe um e-mail diferente para cada pessoa.');
+                }
+            }
+            $owners[$email][]=$slot;
+        }
+    }
+
     public static function validate(array $d,bool $review=false,?array $catalog=null,?array $original=null,bool $api=false):array
     {
         $catalog??=self::fields();
@@ -80,6 +107,7 @@ final class AdmissionForm
                 $out['pessoas'][$slot]=CadastroText::normalize($valid);if($api&&isset($p['campos_adicionais'])){if(!is_array($p['campos_adicionais'])||count($p['campos_adicionais'])>200)throw new RuleViolation('Campos adicionais inválidos.');$out['pessoas'][$slot]['campos_adicionais']=$p['campos_adicionais'];}if(isset($valid['parentesco']))$out['pessoas'][$slot]['parentesco']=$valid['parentesco'];
             }catch(RuleViolation $e){throw new RuleViolation((self::PEOPLE[$slot]??'Outro responsável').': '.$e->getMessage());}
         }
+        if(!$review)self::requireDistinctEmails($out['pessoas']);
         foreach(['responsavel_academico','responsavel_financeiro'] as $f){$slot=$d[$f]??'';if(!is_string($slot)||$slot==='aluno'||!isset($out['pessoas'][$slot]))throw new RuleViolation('Selecione o '.str_replace('_',' ',$f).' informado neste requerimento.');$out[$f]=$slot;}
         $values=$d['campos']??[];if(!is_array($values)||array_diff(array_keys($values),array_column($catalog,'chave')))throw new RuleViolation('Campos complementares inválidos.');
         foreach($catalog as $f){if($f['chave']==='empresa'||!self::visible($f,$values))continue;

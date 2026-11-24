@@ -15,6 +15,7 @@ final class AdmissionAcceptance
     }
     public function inside(array $data,array $choices,string $key,bool $writeEmptyContacts=true):array
     {
+            AdmissionForm::requireDistinctEmails($data['pessoas'],$choices);
             $people=[];
             foreach($data['pessoas'] as $slot=>$p){$choice=$choices[$slot]??[];$action=$choice['acao']??'';
                 if($action==='existente'){$pid=Input::id($choice['codpessoa']??null);$person=$this->db->get('pessoas',$pid,true);if(!(int)$person['ativo'])throw new RuleViolation('Pessoa inativa.');(new Accounts($this->db))->ensure($pid);$people[$slot]=['codpessoa'=>$pid,'acao'=>'existente'];}

@@ -50,6 +50,8 @@ A nacionalidade vem primeiro em cada bloco de pessoa. Para **Brasileira**, a sel
 
 Os seletores de responsável acadêmico e financeiro mostram **Pai, Mãe e Outro**, conforme a filiação informada. Requerimentos antigos que apontavam o financeiro diretamente para outro responsável acadêmico conservam a referência durante a conferência.
 
+Cada responsável informado precisa de um e-mail próprio. Se o endereço já estiver em outro bloco, o aviso aparece no campo durante a digitação e a etapa pede a correção. Se a mesma pessoa responde pelas duas funções, selecione **Pai** ou **Mãe** nos dois campos. Quando a pessoa estiver em **Outro responsável acadêmico**, selecione **Mesmo outro responsável acadêmico** no campo **Responsável financeiro**. Na conferência de pedidos anteriores, corrija o e-mail de pessoas distintas ou indique **Mesma pessoa de outro bloco** quando for a mesma pessoa.
+
 Em **Pessoas autorizadas a retirar o aluno**, escolha **Pai**, **Mãe** ou **Outro**. Pai/Mãe usam automaticamente nome, documentos, contato e parentesco do bloco da pessoa; nenhum campo adicional é exigido. Outro abre nome, telefone, parentesco, CPF, RG e observações. Apenas os pais efetivamente informados são oferecidos para seleção.
 
 Valores anteriores que não correspondem às novas listas aparecem identificados na conferência e podem ser preservados sem apagar informações históricas. Alterar o curso exige uma nova série compatível.
