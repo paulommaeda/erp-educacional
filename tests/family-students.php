@@ -44,5 +44,32 @@ $extraType=$docs->saveType(['nome'=>'Comprovante de endereço'],kF())['idtipo_do
 $company2=$db->insert('coligadas',['nome'=>'COLÉGIO 2','razao_social'=>'COLÉGIO 2']);$student2=$db->insert('alunos',['codcoligada'=>$company2,'codpessoa'=>$child,'ra'=>'RA-02']);$type2=Coligadas::within($company2,fn()=>$docs->saveType(['nome'=>'Carteira de vacinação'],kF()))['idtipo_documento'];
 wp_set_current_user($parent);denyF(fn()=>$docs->upload($student,$type2,['name'=>'vacina.pdf'],kF()),'tipo de documento de outro colégio não é aceito');$db->insert('aluno_responsaveis',['codcoligada'=>$company2,'idaluno'=>$student2,'codpessoa_responsavel'=>$mother,'parentesco'=>'mae','responsavel_academico'=>1,'inicio_vigencia'=>'2020-01-01 00:00:00']);okF(count(array_filter($docs->listing($student),fn($r)=>$r['ativo']))===2,'família vê documentos dos colégios vinculados sem trocar de coligada');
 $third=$docs->upload($student2,$type2,['name'=>'vacina.pdf'],kF());wp_set_current_user($staff);denyF(fn()=>$docs->download($third['iddocumento'],true),'secretaria não acessa documentos de outra coligada de trabalho');
+wp_set_current_user(1);
+$types=[];
+foreach(['pai','mae','pai_e_mae','financeiro_outro'] as $condition){
+    $types[$condition]=(int)$docs->saveType(['nome'=>'Documento '.$condition,'obrigatorio'=>1,'condicao'=>$condition],kF())['idtipo_documento'];
+}
+denyF(fn()=>$docs->saveType(['nome'=>'Inválido','condicao'=>'inexistente'],kF()),'condição fora do catálogo é recusada');
+$checklist=new \EducacionalERP\Application\DocumentChecklist($db);
+$conditionalIds=static function(array $rows)use($types):array{
+    $ids=array_map('intval',array_column($rows,'idtipo_documento'));
+    return array_keys(array_intersect($types,$ids));
+};
+okF($conditionalIds($docs->listing($student,true))===['mae']&&$conditionalIds($checklist->pending($student))===['mae'],'só mãe informada gera a solicitação correspondente');
+wp_set_current_user($parent);
+denyF(fn()=>$docs->upload($student,$types['pai'],['name'=>'pai.pdf'],kF()),'família não pode enviar tipo que não se aplica');
+wp_set_current_user(1);
+$father=$db->insert('pessoas',['nome'=>'PAI TESTE']);
+$thirdGuardian=$db->insert('pessoas',['nome'=>'AVÓ TESTE']);
+$fatherLink=$db->insert('aluno_responsaveis',['idaluno'=>$student,'codpessoa_responsavel'=>$father,'parentesco'=>'pai','responsavel_financeiro'=>1,'inicio_vigencia'=>'2020-01-01 00:00:00']);
+$thirdLink=$db->insert('aluno_responsaveis',['idaluno'=>$student,'codpessoa_responsavel'=>$thirdGuardian,'parentesco'=>'avo_feminina','responsavel_academico'=>1,'inicio_vigencia'=>'2020-01-01 00:00:00']);
+okF($conditionalIds($checklist->pending($student))===['pai','mae','pai_e_mae'],'pai financeiro e avó acadêmica não exigem documento financeiro de Outro');
+$fatherDoc=$docs->upload($student,$types['pai'],['name'=>'pai.pdf'],kF(),true);
+$db->update('aluno_responsaveis',$fatherLink,['fim_vigencia'=>'2025-01-01 00:00:00','responsavel_financeiro'=>0]);
+$db->update('aluno_responsaveis',$thirdLink,['responsavel_financeiro'=>1]);
+$staffTypes=array_column($docs->listing($student,true),null,'idtipo_documento');
+okF(!$staffTypes[$types['pai']]['aplicavel']&&!$staffTypes[$types['pai']]['pode_enviar']&&(int)$staffTypes[$types['pai']]['documento']['iddocumento']===(int)$fatherDoc['iddocumento'],'secretaria preserva acesso ao envio anterior sem abrir nova solicitação');
+wp_set_current_user($parent);
+okF($conditionalIds($docs->listing($student))===['mae','financeiro_outro']&&$conditionalIds($checklist->pending($student))===['mae','financeiro_outro'],'avó financeira exige documento de Outro e vínculo encerrado retira a solicitação do pai');
 wp_set_current_user(1);$db->update('aluno_responsaveis',$link,['fim_vigencia'=>'2025-01-01 00:00:00']);wp_set_current_user($parent);denyF(fn()=>$family->detail($student),'encerramento do vínculo revoga edição dos contatos');denyF(fn()=>$docs->download($second['iddocumento']),'encerramento do vínculo também revoga download do documento');
 okF(count($db->rows('SELECT * FROM '.$db->table('auditoria')." WHERE acao IN ('contato_aluno_pelo_responsavel','enviar','conferir')"))>=6,'contatos, envios e conferências registram autor e data na auditoria');
