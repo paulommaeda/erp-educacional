@@ -107,6 +107,9 @@ try{
     wp_set_current_user($admin->ID);
     $seen=sigPass(sigReq($api.'/'.$n.'/consultar','POST',[]),'consulta recupera a visualização');
     sigCheck($seen['items'][0]['situacao']==='viewed','contrato visualizado continua pendente de assinatura');
+    $unsigned=sigPass(sigReq($root.'contratos?codperiodo=todos&assinatura=nao_assinado&search=000123'),'lista não assinados para ação em lote');
+    sigCheck((int)$unsigned['items'][0]['envio_assinatura']['idenvio']===$n&&$unsigned['items'][0]['envio_assinatura']['situacao']==='viewed','listagem fornece a última revisão e o estado para conferência');
+    sigCheck(sigReq($root.'contratos?assinatura=outro')->get_status()===422,'lista recusa estado de assinatura inválido');
     wp_set_current_user(0);
     sigPass(sigReq($portal.'ack','POST',['clauses'=>array_keys($view['clauses']),'issued_sha256'=>$hash,'scroll_percent'=>100,'format'=>'pdf'],$headers),'ciência das cláusulas registrada');
     sigPass(sigReq($portal.'otp','POST',[],$headers),'código entregue ao transporte de teste');
@@ -122,6 +125,8 @@ try{
     wp_set_current_user($admin->ID);$pdf=sigPass(sigReq($api.'/'.$n.'/pdf'),'gestor baixa o original com certificado');
     sigCheck(hash('sha256',base64_decode($pdf['conteudo']))===$remote->pdf_hash_sha256,'hash do PDF final confere');
     $failDownload=true;sigCheck(sigReq($api.'/'.$n.'/pdf')->get_status()===422,'divergência do PDF final impede a entrega');$failDownload=false;
+    $signedList=sigPass(sigReq($root.'contratos?codperiodo=todos&assinatura=assinado&search=000123'),'lista assinados para ação em lote');
+    sigCheck($signedList['total']===1&&$signedList['items'][0]['assinado_em']===$remote->signed_at&&sigReq($root.'contratos?codperiodo=todos&assinatura=nao_assinado&search=000123')->get_data()['total']===0,'filtros refletem a assinatura da redação atual');
     $other=$make('000124');$api2=$root.'contratos/'.$other['idcontrato'].'/assinatura';
     $initial=sigPass(sigReq($api2.'/enviar','POST',['versao'=>$other['versao']]),'segundo contrato recebe referência própria')['items'][0];
     $deliverNow=false;$cancel=sigPass(sigReq($api2.'/'.$initial['idenvio'].'/cancelar','POST',[]),'cancelamento confirmado por consulta autenticada');
@@ -138,7 +143,11 @@ try{
     $providerRow=EduSign\Store::contract($pending['uuid']);
     EduSign\Store::update('contracts',['expires_at'=>'2000-01-01 00:00:00'],['id'=>$providerRow->id]);
     $db->update('assinatura_envios',(int)$pending['idenvio'],['consultar_apos'=>'2000-01-01 00:00:00']);
-    wp_set_current_user(0);(new ContractSignatures($db))->reconcile();
+    Notifications::register($db);
+    do_action('init');
+    sigCheck(wp_get_schedule(Notifications::HOOK)==='hourly','consulta automática é agendada a cada hora');
+    wp_set_current_user(0);$totalInvites=count($issuedBodies);do_action(Notifications::HOOK);
+    sigCheck(count($issuedBodies)===$totalInvites,'cron não emite contratos nem solicita convites');
     sigCheck($db->get('assinatura_envios',(int)$pending['idenvio'])['situacao']==='expired'&&!$db->get('contratos',(int)$last['idcontrato'])['assinado_em'],'consulta em segundo plano recupera um vencimento sem webhook');
     wp_set_current_user($admin->ID);$fresh=$make('000126');$api4=$root.'contratos/'.$fresh['idcontrato'].'/assinatura';$offlineIssue=true;
     sigCheck(sigReq($api4.'/enviar','POST',['versao'=>$fresh['versao']])->get_status()===422,'interrupção anterior à emissão mantém a referência recuperável');
@@ -149,6 +158,7 @@ try{
     sigCheck(!$blocked,'todo o transporte ocorreu entre as rotas locais das duas extensões');
     echo "WORDPRESS_CONTRACT_SIGNATURES_OK: $checks verificações / WordPress $wp_version / MariaDB ".$wpdb->db_version()." / Assinatura ".EduSign\VERSION."\n";
 }finally{
+    wp_clear_scheduled_hook(Notifications::HOOK);
     wp_set_current_user($admin->ID);if(is_int($actor)&&$actor)wp_delete_user($actor);$wpdb->prefix=$prefix;
     foreach($saved as $name=>$value){if($value===null)delete_option($name);else update_option($name,$value,false);}
 }

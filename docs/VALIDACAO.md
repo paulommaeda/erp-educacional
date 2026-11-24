@@ -1,5 +1,11 @@
 # Validação
 
+## 0.19.43
+
+- O fluxo de assinatura com WordPress 7.1.3, MariaDB 11.4.8 e Assinatura Eletrônica 1.1.2 passou em 43 verificações. Foram conferidos filtros, última revisão, assinatura da redação vigente e execução da consulta pelo gancho horário do WP-Cron com transporte de teste.
+- No Chromium a 390 px, foram verificadas seleção entre páginas, confirmação antes de qualquer envio, consulta, resultado por contrato em falha parcial, filtro de assinados e espaçamento das ações.
+- As suítes de contratos, registro manual da assinatura, permissões e descontos passaram em PHP/SQLite.
+
 ## 0.19.42
 
 - A suíte de requerimentos públicos passou em 81 verificações e a integração de requerimentos do Fluent Forms passou em 38. Os casos novos cobrem normalização do e-mail, rejeição antes da gravação, requerimentos com duplicidade na conferência e reaproveitamento explícito da mesma pessoa.

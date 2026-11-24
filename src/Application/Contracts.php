@@ -19,8 +19,21 @@ final class Contracts
         if(!empty($query['idaluno'])){$from.=' AND m.idaluno=%d';$args[]=Input::id($query['idaluno']);}
         $status=(string)($query['status']??'');if($status!==''&&!in_array($status,['ativo','cancelado','pendente'],true))throw new RuleViolation('Situação de contrato inválida.');
         if($status==='pendente')$from.=" AND c.status='ativo' AND c.parcelas_geradas=0";elseif($status!==''){$from.=' AND c.status=%s';$args[]=$status;}
+        $signature=$query['assinatura']??'';
+        $from.=match($signature){
+            ''=>'',
+            'assinado'=>' AND c.assinado_em IS NOT NULL',
+            'nao_assinado'=>' AND c.assinado_em IS NULL',
+            default=>throw new RuleViolation('Filtro de assinatura inválido.')
+        };
         $total=(int)$this->db->row('SELECT COUNT(*) AS n'.$from,$args)['n'];
-        return ['items'=>$this->db->rows('SELECT c.idcontrato,c.numero,c.versao,c.status,c.assinado_em,c.parcelas_geradas,c.valor_liquido_total,c.quantidade_parcelas,c.primeiro_vencimento,a.idaluno,a.ra,p.nome AS aluno,t.nome AS turma,pl.codigo AS periodo'.$from.' ORDER BY c.idcontrato DESC LIMIT 20 OFFSET %d',[...$args,($page-1)*20]),'total'=>$total,'page'=>$page];
+        $items=$this->db->rows('SELECT c.idcontrato,c.numero,c.versao,c.status,c.assinado_em,c.parcelas_geradas,c.valor_liquido_total,c.quantidade_parcelas,c.primeiro_vencimento,a.idaluno,a.ra,p.nome AS aluno,t.nome AS turma,pl.codigo AS periodo'.$from.' ORDER BY c.idcontrato DESC LIMIT 20 OFFSET %d',[...$args,($page-1)*20]);
+        if($items&&Access::canManageContracts()){
+            $latest=(new ContractSignatures($this->db))->latestForContracts(array_map('intval',array_column($items,'idcontrato')));
+            foreach($items as &$item)$item['envio_assinatura']=$latest[$item['idcontrato']]??null;
+            unset($item);
+        }
+        return ['items'=>$items,'total'=>$total,'page'=>$page];
     }
     private function contract(int $id,bool $lock=false):array
     {

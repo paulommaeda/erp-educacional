@@ -22,7 +22,14 @@ Em **Contratos → Ver contrato**, confira o texto, as bolsas e o destinatário.
 
 O aviso do assinador e a consulta autenticada podem confirmar uma assinatura. O ERP conserva a data UTC, o protocolo, os hashes original e final e o nome do responsável que assinou. A confirmação bloqueia a redação correspondente. Se o texto ou o responsável financeiro tiver mudado desde o envio, o PDF assinado continua disponível na revisão anterior e a redação atual aguarda uma nova emissão. As bolsas do aluno aparecem no PDF conforme os campos usados no modelo.
 
-O WP-Cron consulta periodicamente os envios pendentes. A consulta manual está disponível mesmo quando o aviso ainda não chegou. Falhas de comunicação conservam a última situação confirmada. Cada revisão continua associada ao endereço do site que a emitiu. Para alterar um envio em andamento, cancele a solicitação no serviço e emita uma nova revisão.
+O WP-Cron consulta os envios pendentes a cada hora. A consulta manual está disponível mesmo quando o aviso ainda não chegou. Falhas de comunicação conservam a última situação confirmada. Cada revisão continua associada ao endereço do site que a emitiu. Para alterar um envio em andamento, cancele a solicitação no serviço e emita uma nova revisão.
+
+## Trabalhar com vários contratos
+
+1. Abra **Contratos → Contratos dos alunos**. Use o filtro **Assinatura** para listar assinados ou não assinados. O filtro considera a assinatura da redação em vigor, inclusive quando registrada manualmente. Uma assinatura de revisão anterior continua no histórico.
+2. Marque os contratos da lista ou use **Selecionar contratos desta página**. A seleção permanece ao navegar pelas páginas e é limpa ao aplicar filtros. É possível selecionar até 100 contratos por lote.
+3. Use **Enviar para assinatura** para os contratos ativos ainda elegíveis. Revise a lista e clique em **Confirmar envio**. O ERP solicita os convites aos responsáveis financeiros. Envios que já aguardam assinatura podem ser conferidos.
+4. Use **Conferir assinaturas**, revise a lista e clique em **Confirmar conferência**. O ERP consulta o protocolo de cada revisão selecionada e mostra o resultado por contrato, inclusive quando a consulta falha. Mantenha a tela aberta até a conclusão.
 
 ## Rotas no ERP
 

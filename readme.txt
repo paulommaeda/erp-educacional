@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.42
+Stable tag: 0.19.43
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.43 =
+* Contratos podem ser filtrados pela assinatura e selecionados para envio e conferência em lote, com confirmação e resultado por contrato.
 
 = 0.19.42 =
 * Avisa sobre e-mails repetidos enquanto a família preenche o requerimento e bloqueia duplicidades entre pessoas diferentes. Quando uma pessoa tem duas atribuições, o formulário permite reaproveitar seus dados.
