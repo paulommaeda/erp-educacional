@@ -1,5 +1,11 @@
 # Validação
 
+## 0.19.42
+
+- A suíte de requerimentos públicos passou em 81 verificações e a integração de requerimentos do Fluent Forms passou em 38. Os casos novos cobrem normalização do e-mail, rejeição antes da gravação, requerimentos com duplicidade na conferência e reaproveitamento explícito da mesma pessoa.
+- No Chromium a 390 px, o aviso apareceu durante a digitação, sumiu após a correção e ignorou blocos desativados. Também foi conferida a opção de usar o outro responsável acadêmico como financeiro.
+- A suíte de notificações em WordPress 7.1.3 e MariaDB 11.4.8 passou em 46 verificações.
+
 ## 0.19.41
 
 - A suíte `tests/wordpress-help.php` executou 12 verificações em WordPress 7.1.3 com MariaDB 11.4.8. Conferiu índice, artigos, busca sem acentos, ausência de resultados, links diretos, autenticação e acesso por perfil.

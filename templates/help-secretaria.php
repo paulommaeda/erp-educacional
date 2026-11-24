@@ -22,7 +22,7 @@ return [
                 'Clique em Aprovar e criar cadastros. Confira o RA retornado e os vínculos em Alunos. Se a conexão usa a conferência simples de pessoas, confirme os cadastros oferecidos pela tela e complete o aluno e os vínculos na ficha.',
             ],
             'Tratar divergências'=>[
-                'Se faltar informação essencial, mantenha o requerimento pendente enquanto confirma os dados com a família. Para rejeitar um requerimento do formulário público, clique em Rejeitar e registre o motivo.',
+                'Se aparecer um aviso de e-mail repetido, confirme com a família um endereço próprio para cada pessoa. Se os dois blocos se referirem à mesma pessoa, use Mesma pessoa de outro bloco. Se faltar informação essencial, mantenha o requerimento pendente enquanto confirma os dados. Para rejeitar um requerimento do formulário público, clique em Rejeitar e registre o motivo.',
                 'Se o aluno já existir, procure pelo RA antes de criar outro cadastro. Para rever o pedido, consulte o histórico da aba de origem.',
             ],
         ],
