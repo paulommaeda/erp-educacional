@@ -4,7 +4,7 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\RuleViolation;
 final class MenuPolicy
 {
-    public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','documentos'=>'Documentos dos alunos','pessoas'=>'Pessoas','alunos'=>'Alunos','professores'=>'Professores','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Financeiro','gestao_financeira'=>'Gestão financeira','contratos'=>'Contratos','bolsas'=>'Bolsas e descontos dos contratos','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações'];
+    public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','documentos'=>'Documentos dos alunos','pessoas'=>'Pessoas','alunos'=>'Alunos','professores'=>'Professores','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','financeiro'=>'Financeiro','gestao_financeira'=>'Gestão financeira','contratos'=>'Contratos','bolsas'=>'Bolsas e descontos dos contratos','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações','ajuda'=>'Ajuda'];
     private const ADMIN=['exportacao','importacao','perfis','configuracoes'];
     private const CAPS=['documentos'=>'erp_gerenciar_pessoas','requerimentos'=>'erp_gerenciar_pessoas','pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','professores'=>'erp_gerenciar_academico','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','rematriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro','gestao_financeira'=>'erp_consultar_gestao_financeira','contratos'=>'erp_gerenciar_contratos','bolsas'=>'erp_gerenciar_bolsas_descontos'];
     public static function defaults(string $role):array
@@ -23,6 +23,7 @@ final class MenuPolicy
         if(!isset(self::MENUS[$menu])||!is_user_logged_in())return false;
         if(Access::isAdmin())return true;
         if(in_array($menu,['inicio','perfil'],true))return true;
+        if($menu==='ajuda')return self::any(['requerimentos','pessoas','alunos','matriculas','documentos','usuarios']);
         if(in_array($menu,self::ADMIN,true))return false;
         $settings=get_option('ederp_menu_policy',[]);
         foreach(wp_get_current_user()->roles as $role) {
@@ -76,7 +77,7 @@ final class MenuPolicy
     {
         Access::requireAdmin();$data=get_option('ederp_menu_policy',[]);$rows=[];
         foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'student_sections'=>get_option(StudentRecordPolicy::OPTION,[])[$slug]??[],'field_groups'=>get_option('ederp_field_group_policy',[])[$slug]??[],'user_permissions'=>UserPermissions::forRole($slug),'custom'=>str_starts_with($slug,'erp_custom_')];
-        return ['student_sections'=>StudentRecordPolicy::SECTIONS,'field_groups'=>(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups(),'user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','exportacao','importacao','perfis','configuracoes']))];
+        return ['student_sections'=>StudentRecordPolicy::SECTIONS,'field_groups'=>(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups(),'user_actions'=>UserPermissions::ACTIONS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','exportacao','importacao','perfis','configuracoes','ajuda']))];
     }
     public static function save(array $data):array
     {
@@ -84,7 +85,7 @@ final class MenuPolicy
         if(!$r||$role==='administrator')throw new RuleViolation('Perfil inválido ou reservado.');
         $menus=$data['menus']??[];
         if(!is_array($menus)||count($menus)>count(self::MENUS))throw new RuleViolation('Menus inválidos.');
-        foreach($menus as $menu)if(!is_string($menu)||!isset(self::MENUS[$menu])||in_array($menu,self::ADMIN,true))throw new RuleViolation('Menu reservado ou inválido.');
+        foreach($menus as $menu)if(!is_string($menu)||!isset(self::MENUS[$menu])||in_array($menu,self::ADMIN,true)||$menu==='ajuda')throw new RuleViolation('Menu reservado ou inválido.');
         if(isset($data['student_sections']))$sections=StudentRecordPolicy::validate($data['student_sections']);
         if(isset($data['field_groups'])){
             $ids=$data['field_groups'];if(!is_array($ids)||count($ids)>500)throw new RuleViolation('Grupos inválidos.');

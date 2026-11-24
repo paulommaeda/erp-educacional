@@ -1,5 +1,10 @@
 # Validação
 
+## 0.19.41
+
+- A suíte `tests/wordpress-help.php` executou 12 verificações em WordPress 7.1.3 com MariaDB 11.4.8. Conferiu índice, artigos, busca sem acentos, ausência de resultados, links diretos, autenticação e acesso por perfil.
+- O Chromium navegou do índice ao artigo e ao sumário com larguras de 390 e 1280 px. Também foi conferido o acesso a Ajuda pelo menu móvel. As suítes de renderização, permissões e roteamento do portal passaram.
+
 ## 0.19.40
 
 - WordPress 7.1.3, PHP 8.4.27 e MariaDB 11.4.8. A suíte documental passou em 55 verificações, incluindo migração, preservação do histórico, condição padrão dos tipos existentes e ausência de pendência para um aluno sem pai vinculado.

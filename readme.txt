@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.40
+Stable tag: 0.19.41
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.41 =
+* Menu Ajuda no portal com busca e artigos para a secretaria sobre requerimentos, cadastro, responsáveis, matrículas, documentos e acesso das famílias.
 
 = 0.19.40 =
 * Documentos do aluno podem ser solicitados para todos, conforme a presença de pai, mãe ou ambos, ou quando o responsável financeiro for Outro. A regra vale para envios e lembretes.
