@@ -1,10 +1,24 @@
-# Contatos e documentos dos alunos — 0.19.31
+# Contatos e documentos dos alunos
 
-Após atualizar, entre uma vez no WordPress como administrador para aplicar a migração automática do banco (schema 48). A atualização acrescenta a origem dos envios, uma fila de notificações e o controle de lembretes; documentos, cadastros, assinaturas e valores anteriores são preservados.
+Na versão 0.19.40, entre uma vez no WordPress como administrador para aplicar a migração do banco (schema 51). A migração acrescenta a condição de solicitação aos tipos de documento e conserva os envios anteriores.
 
 ## Configuração do colégio
 
-Em **Configurações → Documentos dos alunos**, cadastre os documentos solicitados: nome, orientações, obrigatório/opcional, ordem e ativo/inativo. Os tipos pertencem à coligada de trabalho. Um tipo sem envios pode ser excluído; quando já existe histórico, utilize Inativo.
+Em **Configurações → Documentos dos alunos**, cadastre os documentos solicitados: nome, orientações, obrigatório/opcional, ordem e ativo/inativo. Em **Solicitar para**, escolha em quais fichas o tipo deve aparecer. A opção **Obrigatório** passa a valer apenas para os alunos que atendem à condição. Os tipos pertencem à coligada de trabalho. Um tipo sem envios pode ser excluído; quando já existe histórico, utilize Inativo.
+
+### Documentos da família
+
+| Tipo de documento | Valor no campo **Solicitar para** |
+| --- | --- |
+| RG ou CPF do pai | Quando houver pai informado |
+| RG ou CPF da mãe | Quando houver mãe informada |
+| Documento conjunto de pai e mãe | Quando pai e mãe estiverem informados |
+| Documento de responsável financeiro que não é pai nem mãe | Quando o responsável financeiro for Outro |
+| Certidão de nascimento do aluno | Todos os alunos |
+
+As condições consultam os vínculos ativos da ficha do aluno, gravados ao aprovar o requerimento ou mantidos pela secretaria. Um pai ou uma mãe informados continuam atendendo à sua condição mesmo quando outra pessoa assume as funções acadêmicas ou financeiras. O financeiro de tipo **Outro** pode ser, por exemplo, uma avó ou um tutor com a atribuição financeira no cadastro. O vínculo com a função de responsável acadêmico, sozinho, não gera a solicitação de documento financeiro.
+
+Se a condição deixar de valer, o portal da família retira a solicitação e o ERP deixa de cobrar o documento. A secretaria pode consultar os envios anteriores. Tipos já cadastrados recebem **Todos os alunos** na atualização.
 
 ## Portal do responsável
 

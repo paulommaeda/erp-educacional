@@ -26,6 +26,9 @@ final class StudentDocuments
             $name=trim(sanitize_text_field(Input::text($data['nome']??null,120)));if($name==='')throw new RuleViolation('Informe o nome do documento.');
             $valid=['nome'=>$name,'orientacoes'=>empty($data['orientacoes'])?null:Input::text($data['orientacoes'],1000)];
             foreach(['ativo','obrigatorio'] as $field){$value=$data[$field]??($field==='ativo'?1:0);if(!in_array($value,[0,1,'0','1',false,true],true))throw new RuleViolation('Situação inválida.');$valid[$field]=(int)$value;}
+            $condition=$data['condicao']??($before['condicao']??'todos');
+            if(!in_array($condition,DocumentChecklist::CONDITIONS,true))throw new RuleViolation('Condição do documento inválida.');
+            $valid['condicao']=$condition;
             $order=filter_var($data['ordem']??0,FILTER_VALIDATE_INT,['options'=>['min_range'=>0,'max_range'=>10000]]);if($order===false)throw new RuleViolation('Ordem inválida.');$valid['ordem']=$order;
             if($id)$this->db->update('tipos_documento_aluno',$id,$valid);else $id=$this->db->insert('tipos_documento_aluno',$valid);
             $this->db->audit('tipos_documento_aluno',$id,$before?'editar':'criar',$before,$valid,$key);return ['idtipo_documento'=>$id];
@@ -50,11 +53,17 @@ final class StudentDocuments
     }
     public function listing(int $student,bool $staff=false):array
     {
-        $a=$this->student($student,$staff);$ids=$staff?[$student]:(new FamilyAccess($this->db))->localStudents($student);$out=[];
+        $this->student($student,$staff);$ids=$staff?[$student]:(new FamilyAccess($this->db))->localStudents($student);$out=[];
+        $checklist=new DocumentChecklist($this->db);
         foreach($ids as $local){$aluno=$this->db->get('alunos',$local);$company=$this->db->get('coligadas',(int)$aluno['codcoligada']);$types=$this->db->rows('SELECT * FROM '.$this->db->table('tipos_documento_aluno').' WHERE codcoligada=%d ORDER BY ordem,nome',[(int)$aluno['codcoligada']]);
             $table=$this->db->table('aluno_documentos');$latest=array_column($this->db->rows("SELECT d.* FROM $table d JOIN (SELECT idtipo_documento,MAX(iddocumento) AS ultimo FROM $table WHERE idaluno=%d GROUP BY idtipo_documento) u ON u.ultimo=d.iddocumento",[$local]),null,'idtipo_documento');
-            foreach($types as $type){$row=$latest[$type['idtipo_documento']]??null;if(!(int)$type['ativo']&&!$row)continue;
-                $out[]=['idaluno'=>$local,'idtipo_documento'=>$type['idtipo_documento'],'nome'=>$type['nome'],'orientacoes'=>$type['orientacoes'],'obrigatorio'=>(bool)$type['obrigatorio'],'ativo'=>(bool)$type['ativo'],'colegio'=>$company['nome'],'pode_enviar'=>(int)$type['ativo']&&(!$row||$row['status']==='rejeitado'),'documento'=>$row?$this->publicRow($row):null];
+            $conditions=$checklist->conditions($local,(int)$aluno['codcoligada']);
+            foreach($types as $type){
+                $row=$latest[$type['idtipo_documento']]??null;
+                $applies=$conditions[$type['condicao']]??false;
+                if(!$applies&&(!$staff||!$row))continue;
+                if(!(int)$type['ativo']&&!$row)continue;
+                $out[]=['idaluno'=>$local,'idtipo_documento'=>$type['idtipo_documento'],'nome'=>$type['nome'],'orientacoes'=>$type['orientacoes'],'obrigatorio'=>$applies&&(bool)$type['obrigatorio'],'ativo'=>(bool)$type['ativo'],'aplicavel'=>$applies,'colegio'=>$company['nome'],'pode_enviar'=>$applies&&(int)$type['ativo']&&(!$row||$row['status']==='rejeitado'),'documento'=>$row?$this->publicRow($row):null];
             }
         }return $out;
     }
@@ -63,6 +72,8 @@ final class StudentDocuments
         $a=$this->student($student,$staff);$result=Coligadas::within((int)$a['codcoligada'],fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'enviar_documento_aluno',['idaluno'=>$student,'idtipo_documento'=>$type,'origem'=>$staff?'secretaria':'familia','nome'=>(string)($file['name']??''),'hash'=>!empty($file['tmp_name'])&&is_file($file['tmp_name'])?hash_file('sha256',$file['tmp_name']):''],function()use($student,$type,$file,$key,$staff){
             $a=$this->student($student,$staff,true);if(!(int)$a['ativo']||!(int)$this->db->get('pessoas',(int)$a['codpessoa'])['ativo'])throw new RuleViolation('Aluno inativo.');$t=$this->db->get('tipos_documento_aluno',$type,true);
             if((int)$t['codcoligada']!==(int)$a['codcoligada']||!(int)$t['ativo'])throw new RuleViolation('Documento não solicitado por este colégio.');
+            $conditions=(new DocumentChecklist($this->db))->conditions($student,(int)$a['codcoligada']);
+            if(!($conditions[$t['condicao']]??false))throw new RuleViolation('Este documento não é solicitado para os vínculos atuais do aluno.');
             $slot=$this->db->row('SELECT iddocumento FROM '.$this->db->table('aluno_documentos').' WHERE idaluno=%d AND idtipo_documento=%d AND ativo_unico=1 FOR UPDATE',[$student,$type]);if($slot)throw new RuleViolation('Este documento já foi enviado e está aguardando conferência ou foi aprovado.');
             $stored=$this->files->put($file);$this->db->onCompletion(function($committed)use($stored){if(!$committed)$this->files->delete($stored['arquivo_token']);});
             $id=$this->db->insert('aluno_documentos',$stored+['codcoligada'=>$a['codcoligada'],'idaluno'=>$student,'idtipo_documento'=>$type,'origem_envio'=>$staff?'secretaria':'familia','enviado_por_wp_user_id'=>get_current_user_id(),'enviado_em'=>gmdate('Y-m-d H:i:s')]);

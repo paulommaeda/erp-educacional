@@ -1,5 +1,11 @@
 # Validação
 
+## 0.19.40
+
+- WordPress 7.1.3, PHP 8.4.27 e MariaDB 11.4.8. A suíte documental passou em 55 verificações, incluindo migração, preservação do histórico, condição padrão dos tipos existentes e ausência de pendência para um aluno sem pai vinculado.
+- Os testes PHP/SQLite cobriram documentos de pai, mãe e ambos, avó com atribuição acadêmica ou financeira, bloqueio de upload fora da condição, encerramento do vínculo e acesso da secretaria ao histórico. A suíte de notificações passou em 56 verificações.
+- No Chromium, os formulários de cadastro e edição exibiram as regras de **Solicitar para** e enviaram a condição selecionada. Sintaxe PHP, JavaScript e JSON do esquema conferidos.
+
 ## 0.19.39
 
 - Reproduzido o aviso genérico da 0.19.38 com uma raiz pública inexistente. Conferidos os diagnósticos para DOCUMENT_ROOT, WP_CONTENT_DIR, caminho relativo e falha ao criar a pasta. Um destino no diretório público foi recusado antes de criar a pasta.

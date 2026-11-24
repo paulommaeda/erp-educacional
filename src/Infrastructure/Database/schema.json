@@ -3762,6 +3762,7 @@
       "idtipo_documento": "bigint(20) unsigned NOT NULL AUTO_INCREMENT",
       "nome": "varchar(120) NOT NULL",
       "orientacoes": "varchar(1000) DEFAULT NULL",
+      "condicao": "varchar(24) NOT NULL DEFAULT 'todos'",
       "obrigatorio": "tinyint(1) NOT NULL DEFAULT 0",
       "ativo": "tinyint(1) NOT NULL DEFAULT 1",
       "ordem": "int unsigned NOT NULL DEFAULT 0",

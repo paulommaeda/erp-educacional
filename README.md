@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.39
+# ERP Educacional — 0.19.40
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -8,8 +8,8 @@ Em **ERP Educacional → Backup e restauração**, crie um ponto de recuperaçã
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.39.zip` em uma cópia de homologação com backup.
-2. Abra o wp-admin como administrador. A migração atualiza para o **schema 50**, que registra o protocolo, a revisão e os comprovantes de integridade de cada envio para assinatura. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.40.zip` em uma cópia de homologação com backup.
+2. Abra o wp-admin como administrador. A migração atualiza para o **schema 51**, que adiciona a condição de solicitação aos tipos de documento dos alunos. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
 5. Em Estrutura acadêmica → **Turmas**, edite as turmas existentes e selecione o plano. Para cadastrar uma turma nova, selecione período, curso, turno e plano. Uma turma sem plano ativo não pode gerar nova matrícula com contrato.

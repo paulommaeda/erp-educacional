@@ -98,6 +98,10 @@ final class DocumentNotifications
             $expected=$staff?'pendente':$row['tipo'];if($doc['status']!==$expected||($staff&&($doc['origem_envio']??'familia')!=='familia'))return null;
             $latest=$this->db->row('SELECT MAX(iddocumento) AS ultimo FROM '.$this->db->table('aluno_documentos').' WHERE idaluno=%d AND idtipo_documento=%d',[(int)$student['idaluno'],(int)$doc['idtipo_documento']]);if((int)$latest['ultimo']!==(int)$doc['iddocumento'])return null;
             $type=$this->db->get('tipos_documento_aluno',(int)$doc['idtipo_documento']);
+            if($row['tipo']==='rejeitado'){
+                $conditions=$list->conditions((int)$student['idaluno'],(int)$student['codcoligada']);
+                if(!(int)$type['ativo']||!($conditions[$type['condicao']]??false))return null;
+            }
         }
         $school=SchoolIdentity::read();$familyUrl=add_query_arg('documentos_aluno',(int)$student['idaluno'],Portal::url('inicio'));$staffUrl=add_query_arg('aluno_documentos',(int)$student['idaluno'],Portal::url('documentos'));
         $items=[];foreach($pending as $p)$items[]='• '.$p['nome'].($p['status']==='rejeitado'?' — reenviar: '.$p['motivo']:' — ainda não enviado');
