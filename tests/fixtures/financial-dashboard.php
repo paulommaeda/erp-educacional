@@ -18,3 +18,17 @@ function seedFinancialDashboard(\EducacionalERP\Domain\Store $db):array
     foreach($titles['a'] as $n=>$id)if($n<=7&&$n!==5)$db->update('lancamentos',$id,['vencimento'=>$n===4?$today:$yesterday]);$db->update('lancamentos',$titles['b'][1],['vencimento'=>$yesterday]);
     return $f+['a'=>$a,'b'=>$b,'classB'=>$classB,'titles'=>$titles];
 }
+
+function prepareInstallmentReportDueDates(\EducacionalERP\Domain\Store $db,array $fixture):void
+{
+    $dates=[1=>'2027-01-15',2=>'2027-01-20',3=>'2027-01-31',4=>'2027-02-12',5=>'2027-02-14',6=>'2027-03-18',7=>'2027-03-25'];
+    foreach($dates as $number=>$date){
+        $db->update('lancamentos',$fixture['titles']['a'][$number],['vencimento'=>$date]);
+    }
+    $db->update('lancamentos',$fixture['titles']['b'][1],['vencimento'=>'2027-01-05']);
+    // Keep the January due dates while reproducing installments from another competence.
+    foreach([$fixture['titles']['a'][2],$fixture['titles']['b'][1]] as $id){
+        $title=$db->get('lancamentos',$id);
+        $db->update('parcelas',(int)$title['idparcela'],['competencia'=>'2026-12-01']);
+    }
+}

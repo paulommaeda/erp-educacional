@@ -151,7 +151,7 @@ final class Reports
             $id=(string)$item['idaluno'];
             echo '<option value="'.esc_attr($id).'"'.selected($studentValue,$id,false).'>'.esc_html($item['nome'].' · RA '.$item['ra']).'</option>';
         }
-        echo '</select></label><label>Mês de competência <select name="relatorio_mes"><option value="todos">Todos</option>';
+        echo '</select></label><label>Mês de vencimento <select name="relatorio_mes"><option value="todos">Todos</option>';
         $months=$service->months();
         if($month!==null&&!in_array($month,$months,true))$months[]=$month;
         foreach($months as $key){

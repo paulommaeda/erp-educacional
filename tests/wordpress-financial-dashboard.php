@@ -38,6 +38,7 @@ try{
     fwpActor($admin->ID);fwpReq('perfis/menus',['role'=>$roles[1],'menus'=>[]]);fwpActor($actors['dashboard']);fwpOK(fwpReq('gestao-financeira')->get_status()===403&&fwpReq('gestao-financeira/filtros')->get_status()===403,'revogação bloqueia resumo e filtros imediatamente');
     fwpActor($admin->ID);
     fwpOK(fwpReq('perfis/menus',['role'=>$roles[1],'menus'=>[],'reports'=>['parcelas']])->get_status()===200,'Parcelas pode ser liberado por perfil como relatório independente');
+    prepareInstallmentReportDueDates($db,$fixture);
     $_GET=['erp_tela'=>'relatorios','relatorio'=>'parcelas','relatorio_aluno'=>$fixture['a']['idaluno'],'relatorio_mes'=>'2027-01'];
     fwpActor($actors['finance']);
     $portal=new Portal();
@@ -46,10 +47,10 @@ try{
     fwpActor($actors['dashboard']);
     $html=$portal->render('inicio');
     $preview=strstr($html,'<table class="erp-roster-table erp-installment-report-table">')?:'';
-    fwpOK(str_contains($preview,'ALUNO DASH-A')&&!str_contains($preview,'ALUNO DASH-B')&&str_contains($preview,'R$ 1.003,00'),'prévia consulta aluno e competência e mostra líquido com precisão DECIMAL');
-    fwpOK(substr_count($html,'<option value="todos">Todos</option>')===2&&str_contains($html,'data-erp-report-download'),'filtros oferecem Todos e PDF usa a mesma seleção');
+    fwpOK(str_contains($preview,'ALUNO DASH-A')&&!str_contains($preview,'ALUNO DASH-B')&&str_contains($preview,'R$ 1.003,00'),'prévia consulta aluno e vencimento mesmo quando a competência difere');
+    fwpOK(str_contains($html,'Mês de vencimento')&&substr_count($html,'<option value="todos">Todos</option>')===2&&str_contains($html,'data-erp-report-download'),'filtros oferecem Todos e PDF usa a mesma seleção');
     $source=new \EducacionalERP\Application\InstallmentReport($db);
     $pdf=\EducacionalERP\Infrastructure\Pdf\InstallmentReportPdf::render($source->sheets((int)$fixture['a']['idaluno'],'2027-01'),['nome'=>'Colégio fictício']);
-    fwpOK(str_starts_with($pdf,'%PDF-')&&str_contains($pdf,'841.89 595.28'),'relatório gera PDF paisagem com filtro de competência');
+    fwpOK(str_starts_with($pdf,'%PDF-')&&str_contains($pdf,'841.89 595.28'),'relatório gera PDF paisagem com filtro de vencimento');
     echo "WORDPRESS_FINANCIAL_DASHBOARD_OK: $checks verificações / WordPress $wp_version / MariaDB ".$wpdb->db_version()."\n";
 }finally{fwpActor($admin->ID);foreach($users as $user)wp_delete_user($user);foreach($roles as $role)remove_role($role);$wpdb->prefix=$prefix;$_GET=$oldGet;foreach($saved as $key=>$value){if($value===null)delete_option($key);else update_option($key,$value,false);}}
