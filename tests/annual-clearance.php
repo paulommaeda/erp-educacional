@@ -81,6 +81,17 @@ clearanceCheck($data['rows'][0] === ['Mensalidade · ALUNO QUIT-A', '1/12', '10/
 clearanceCheck($data['rows'][3][4] === 'R$ 350,00' && $data['rows'][3][6] === '11/01/'.$later
     && $report->details($year, $other, $school)['total'] === 'R$ 1.003,00', 'troca de responsável preserva valores históricos e ignora estorno');
 
+$scope = $report->details($year, $responsible, $school, (int)$first['idaluno'], $fixture['period']);
+clearanceCheck(count($scope['rows']) === 2 && $scope['total'] === 'R$ 1.353,00'
+    && str_contains($scope['statement'], 'RA QUIT-A') && str_contains($scope['statement'], 'período letivo BOLSA-2027'),
+    'filtros de aluno e período letivo restringem a tabela e identificam o recorte no documento');
+clearanceCheck(count($report->responsibles($year, (int)$first['idaluno'], $fixture['period'])) === 1
+    && $report->responsibles($year, (int)$first['idaluno'], $fixture['period']+100) === [],
+    'lista de responsáveis segue os filtros administrativos');
+clearanceCheck(array_keys($report->personalOptions($responsible)) === ['1-'.$year]
+    && array_keys($report->personalOptions($other)) === ['1-'.$year]
+    && $report->personalOptions((int)$first['codpessoa']) === [], 'opções particulares usam vínculos financeiros do titular');
+
 $outside = $db->insert('coligadas', ['nome'=>'OUTRA', 'razao_social'=>'OUTRA']);
 Coligadas::within($outside, function () use ($report, $year, $responsible, $school) {
     clearanceCheck($report->years() === [] && $report->responsibles($year) === [], 'filtros respeitam a coligada');

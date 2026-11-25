@@ -36,7 +36,9 @@ final class Portal
             if(MenuPolicy::can('ajuda')&&(($_GET['erp_tela']??null)==='ajuda'||has_shortcode($post->post_content,'erp_ajuda'))){
                 HelpWiki::assets();
             }
-            if(MenuPolicy::can('relatorios')&&(($_GET['erp_tela']??null)==='relatorios'||has_shortcode($post->post_content,'erp_relatorios'))){
+            $view=$_GET['erp_tela']??null;
+            if((MenuPolicy::can('relatorios')&&($view==='relatorios'||has_shortcode($post->post_content,'erp_relatorios')))
+                ||(MenuPolicy::can('meu_financeiro')&&($view==='meu_financeiro'||has_shortcode($post->post_content,'erp_financeiro')||has_shortcode($post->post_content,'erp_meu_financeiro')))){
                 Reports::assets();
             }
         });
@@ -84,7 +86,10 @@ final class Portal
         elseif(in_array($view,['pessoas','alunos','professores','academico','matriculas','financeiro','gestao_financeira','contratos','bolsas','rematriculas','exportacao','importacao','requerimentos','configuracoes'],true)){
             $caps=['pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','professores'=>'erp_gerenciar_academico','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro','gestao_financeira'=>'erp_consultar_gestao_financeira','contratos'=>'erp_gerenciar_contratos','bolsas'=>'erp_gerenciar_bolsas_descontos','rematriculas'=>'erp_gerenciar_academico','exportacao'=>'manage_options','requerimentos'=>'erp_gerenciar_pessoas','importacao'=>'manage_options','configuracoes'=>'manage_options'];
             (new Pages())->screen($view,MenuPolicy::MENUS[$view],$caps[$view]);
-        }elseif(in_array($view,['meus_estudos','meu_financeiro','renovacao'],true))echo '<section data-ederp-portal="'.esc_attr(['meus_estudos'=>'academic','meu_financeiro'=>'finance','renovacao'=>'renew'][$view]).'"><p role="status">Carregando...</p></section>';
+        }elseif($view==='meu_financeiro'){
+            echo '<section data-ederp-portal="finance"><p role="status">Carregando...</p></section>';
+            Reports::personalClearance(new Database($GLOBALS['wpdb']));
+        }elseif(in_array($view,['meus_estudos','renovacao'],true))echo '<section data-ederp-portal="'.esc_attr(['meus_estudos'=>'academic','renovacao'=>'renew'][$view]).'"><p role="status">Carregando...</p></section>';
         else echo '<section data-journey-view="'.esc_attr($view).'"><p role="status">Carregando...</p></section>';
         echo '</main><footer class="journey-footer"><a href="https://paulomaeda.com" target="_blank" rel="noopener noreferrer">Desenvolvido por Paulo Maeda</a> · Versão '.esc_html(EDERP_VERSION).'</footer></div><nav class="journey-bottom" aria-label="Navegação rápida"></nav><dialog class="journey-drawer"><div class="journey-drawer-head"><h2>Seu portal</h2><button type="button" data-close-menu aria-label="Fechar menu">Fechar</button></div>'.$this->nav().'<a class="journey-logout" href="'.esc_url(Authentication::logoutUrl()).'">Sair da conta</a></dialog></div>';
         return ob_get_clean();

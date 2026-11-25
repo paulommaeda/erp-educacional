@@ -3,7 +3,7 @@ document.querySelectorAll('[data-erp-report-filters]').forEach(form => {
     const classSelect = form.elements.namedItem('relatorio_turma');
     const download = form.querySelector('[data-erp-report-download]');
     const statusCount = form.querySelector('[data-erp-report-status-count]');
-    const year = form.elements.namedItem('relatorio_ano');
+    const clearanceFilters = ['relatorio_ano', 'quitacao_aluno', 'quitacao_periodo'];
     form.addEventListener('change', () => {
         if (download) download.hidden = true;
         if (statusCount) {
@@ -15,8 +15,10 @@ document.querySelectorAll('[data-erp-report-filters]').forEach(form => {
         if (classSelect.value !== 'todas') classSelect.value = '';
         form.requestSubmit();
     });
-    year?.addEventListener('change', () => {
-        form.elements.namedItem('relatorio_responsavel').value = '';
-        form.requestSubmit();
+    clearanceFilters.forEach(name => {
+        form.elements.namedItem(name)?.addEventListener('change', () => {
+            form.elements.namedItem('relatorio_responsavel').value = '';
+            form.requestSubmit();
+        });
     });
 });
