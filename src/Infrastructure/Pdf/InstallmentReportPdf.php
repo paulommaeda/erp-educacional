@@ -23,7 +23,7 @@ final class InstallmentReportPdf extends SchoolReportPdf
             foreach($sheets as $sheet){
                 $pdf->month=$sheet['month'];
                 $pdf->AddPage();
-                $pdf->body($sheet['rows']);
+                $pdf->body($sheet['rows'],$sheet['totals']);
             }
             return $pdf->Output('S');
         });
@@ -38,18 +38,24 @@ final class InstallmentReportPdf extends SchoolReportPdf
         $this->drawRow($cells,$height,232);
     }
 
-    private function body(array $rows):void
+    private function body(array $rows,array $totals):void
     {
+        $this->SetFont('Helvetica','B',9);
+        $footer=array_map(fn(array $total)=>$this->layout(['',$total['label'],$total['original'],'','',$total['net']]),$totals);
+        $footerHeight=array_sum(array_column($footer,1));
         $this->SetFont('Helvetica','',9);
         if(!$rows){
             $this->Cell(array_sum(self::WIDTHS),8,$this->encode('Nenhuma parcela encontrada para os filtros selecionados.'),0,1,'C');
-            return;
         }
+        $lastRow=array_key_last($rows);
         foreach($rows as $index=>$row){
             [$cells,$height]=$this->layout($row);
-            if($this->GetY()+$height>$this->PageBreakTrigger)$this->AddPage();
+            $required=$height+($index===$lastRow?$footerHeight:0);
+            if($this->GetY()+$required>$this->PageBreakTrigger)$this->AddPage();
             $this->drawRow($cells,$height,$index%2===0?247:255);
         }
+        $this->SetFont('Helvetica','B',9);
+        foreach($footer as [$cells,$height])$this->drawRow($cells,$height,232);
     }
 
     private function layout(array $row):array

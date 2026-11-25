@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.51
+Stable tag: 0.19.52
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.52 =
+* Relatório Parcelas mostra a quantidade de alunos, o total original e o total líquido no rodapé da prévia e do PDF.
 
 = 0.19.51 =
 * Relatório Parcelas usa o vencimento atual para listar meses, filtrar lançamentos e agrupar a prévia e o PDF.
