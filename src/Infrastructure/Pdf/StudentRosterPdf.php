@@ -7,13 +7,14 @@ use EducacionalERP\Application\StudentRoster;
 final class StudentRosterPdf extends SchoolReportPdf
 {
     private const MARGIN=5;
-    private const WIDTHS=[12,27,27,14,12,24,24,18,24,24,18,22,18,23];
+    private const WIDTHS=[10,25,26,14,16,22,23,21,22,24,22,20,18,24];
     private const LINE_HEIGHT=3;
     private float $bodyStart;
 
     private function __construct(array $school,?string $logo)
     {
         parent::__construct('L',self::MARGIN,$school,$logo,'Alunos');
+        $this->cMargin=.8;
     }
 
     public static function render(array $students,array $school):string
@@ -29,7 +30,7 @@ final class StudentRosterPdf extends SchoolReportPdf
     public function Header()
     {
         $this->schoolHeader(13);
-        $this->SetFont('Helvetica','B',8);
+        $this->SetFont('Helvetica','B',7.5);
         [$cells,$height]=$this->layout(StudentRoster::COLUMNS);
         $this->drawRow($cells,$height,232);
         $this->bodyStart=$this->GetY();
