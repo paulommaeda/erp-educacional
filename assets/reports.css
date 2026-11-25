@@ -45,6 +45,15 @@
 .erp-reports .erp-installment-report-table tfoot :is(td,th){background:#e8e8e8;border-top:1px solid #bdbdbd;font-weight:700}
 .erp-reports .erp-installment-report-table tfoot td{text-align:right}
 .erp-installment-report-month{margin:.75rem 0 0;font-size:1rem}
+.erp-clearance-sheet{max-width:56rem}
+.erp-clearance-sheet h3{margin:1rem 0;text-align:center;text-transform:uppercase}
+.erp-reports .erp-clearance-table{width:100%;min-width:620px}
+.erp-reports .erp-clearance-table :is(td,th):nth-child(n+2){text-align:center;white-space:nowrap}
+.erp-reports .erp-clearance-table :is(td,th):is(:nth-child(4),:nth-child(5)),.erp-reports .erp-clearance-table tfoot :is(th,td){text-align:right}
+.erp-reports .erp-clearance-table tbody tr:nth-child(even) td{background:#fff}
+.erp-reports .erp-clearance-table tfoot :is(th,td){background:#e8e8e8;font-weight:700}
+.erp-clearance-signature{width:min(100%,18rem);margin:3rem auto 1.5rem;padding-top:.35rem;border-top:1px solid #595959;text-align:center;font-size:.85rem;font-weight:700}
+.erp-clearance-footer{margin-top:1.5rem;padding-top:.5rem;border-top:1px solid #595959;text-align:center;font-size:.8rem}
 
 @media(max-width:480px){
     .erp-signature-details{font-size:.75rem}

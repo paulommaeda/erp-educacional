@@ -5,7 +5,8 @@ if(PHP_SAPI!=='cli')exit;$bootstrap=getenv('EDERP_TEST_BOOTSTRAP');if(!$bootstra
 if(!defined('EDERP_TEST_DATABASE')||EDERP_TEST_DATABASE!==true||defined('EDERP_SQLITE_TEST'))throw new RuntimeException('Exige WordPress/MySQL de testes.');
 require_once dirname(__DIR__).'/autoload.php';require __DIR__.'/fixtures/financial-dashboard.php';require_once ABSPATH.'wp-admin/includes/user.php';
 if(!defined('EDERP_FILE'))define('EDERP_FILE',dirname(__DIR__).'/erp-educacional.php');if(!defined('EDERP_VERSION'))define('EDERP_VERSION','0.19.28');
-use EducacionalERP\Application\{Operations,CatalogService,AcademicService,FinanceService,ExportService,RenewalService,StudentWorkflow};
+use EducacionalERP\Application\{AnnualClearance,Operations,CatalogService,AcademicService,FinanceService,ExportService,RenewalService,StudentWorkflow};
+use EducacionalERP\Domain\Input;
 use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Infrastructure\WordPress\{Access,SchemaMigration};
 use EducacionalERP\Presentation\Rest\Controller;
@@ -54,5 +55,24 @@ try{
     $source=new \EducacionalERP\Application\InstallmentReport($db);
     $pdf=\EducacionalERP\Infrastructure\Pdf\InstallmentReportPdf::render($source->sheets((int)$fixture['a']['idaluno'],'2027-01'),['nome'=>'Colégio fictício']);
     fwpOK(str_starts_with($pdf,'%PDF-')&&str_contains($pdf,'841.89 595.28'),'relatório gera PDF paisagem com filtro de vencimento');
+
+    $year=min(2025,(int)substr(Input::today(),0,4)-1);
+    $db->update('coligadas',1,['razao_social'=>'ESCOLA FICTÍCIA LTDA','cnpj'=>'11222333000181']);
+    $db->update('lancamentos',$fixture['titles']['a'][3],['vencimento'=>$year.'-01-10']);
+    $db->update('lancamentos',$fixture['titles']['a'][2],['vencimento'=>$year.'-02-10']);
+    $_GET=['erp_tela'=>'relatorios','relatorio'=>'quitacao_anual','relatorio_ano'=>$year,'relatorio_responsavel'=>$fixture['responsible']];
+    $html=$portal->render('inicio');
+    fwpOK(!str_contains($html,'relatorio_responsavel')&&!str_contains($html,'data-erp-report-download'),'acesso a Parcelas não libera a declaração anual');
+    fwpActor($admin->ID);
+    fwpOK(fwpReq('perfis/menus',['role'=>$roles[1],'menus'=>[],'reports'=>['parcelas','quitacao_anual']])->get_status()===200,
+        'declaração anual pode ser concedida individualmente ao perfil');
+    fwpActor($actors['dashboard']);
+    $html=$portal->render('inicio');
+    fwpOK(str_contains($html,'1 título com saldo em aberto')&&!str_contains($html,'data-erp-report-download'),'prévia bloqueia emissão quando há saldo no ano selecionado');
+    $db->update('lancamentos',$fixture['titles']['a'][2],['vencimento'=>'2027-01-20']);
+    $html=$portal->render('inicio');
+    fwpOK(str_contains($html,'id="erp-clearance-title">'.AnnualClearance::TITLE)&&str_contains($html,'ESCOLA FICTÍCIA LTDA')
+        &&str_contains($html,'Valor total pago</th><td>R$ 1.250,00')&&str_contains($html,'data-erp-report-download'),
+        'declaração no portal inclui identidade, soma efetiva e acesso ao PDF');
     echo "WORDPRESS_FINANCIAL_DASHBOARD_OK: $checks verificações / WordPress $wp_version / MariaDB ".$wpdb->db_version()."\n";
 }finally{fwpActor($admin->ID);foreach($users as $user)wp_delete_user($user);foreach($roles as $role)remove_role($role);$wpdb->prefix=$prefix;$_GET=$oldGet;foreach($saved as $key=>$value){if($value===null)delete_option($key);else update_option($key,$value,false);}}
