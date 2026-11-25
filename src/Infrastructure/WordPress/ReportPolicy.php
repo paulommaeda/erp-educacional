@@ -2,11 +2,12 @@
 declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\WordPress;
 
+use EducacionalERP\Application\AnnualClearance;
 use EducacionalERP\Domain\RuleViolation;
 
 final class ReportPolicy
 {
-    public const REPORTS=['assinaturas'=>'Lista de assinaturas','alunos'=>'Alunos','parcelas'=>'Parcelas'];
+    public const REPORTS=['assinaturas'=>'Lista de assinaturas','alunos'=>'Alunos','parcelas'=>'Parcelas','quitacao_anual'=>AnnualClearance::TITLE];
     public const OPTION='ederp_report_policy';
 
     public static function settings():array

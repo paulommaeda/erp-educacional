@@ -3,6 +3,7 @@ document.querySelectorAll('[data-erp-report-filters]').forEach(form => {
     const classSelect = form.elements.namedItem('relatorio_turma');
     const download = form.querySelector('[data-erp-report-download]');
     const statusCount = form.querySelector('[data-erp-report-status-count]');
+    const year = form.elements.namedItem('relatorio_ano');
     form.addEventListener('change', () => {
         if (download) download.hidden = true;
         if (statusCount) {
@@ -12,6 +13,10 @@ document.querySelectorAll('[data-erp-report-filters]').forEach(form => {
     });
     period?.addEventListener('change', () => {
         if (classSelect.value !== 'todas') classSelect.value = '';
+        form.requestSubmit();
+    });
+    year?.addEventListener('change', () => {
+        form.elements.namedItem('relatorio_responsavel').value = '';
         form.requestSubmit();
     });
 });
