@@ -1,5 +1,10 @@
 # Validação
 
+## 0.19.46
+
+- Em WordPress 7.1.3 com MariaDB 11.4.8 e um destino K8 simulado, passaram 39 verificações da integração e 55 da migração e do fluxo de notificações. Os testes conferiram a fila após a matrícula, o agendamento, o isolamento por período e coligada, o cancelamento e a nova tentativa após falha temporária.
+- No Chromium, foram conferidos a opção por coligada, a atualização da fila e o acesso ao envio manual. As suítes em PHP/SQLite para integração com materiais e contratos passaram com 39 e 97 verificações, respectivamente.
+
 ## 0.19.45
 
 - O Chromium conferiu a coluna Assinado com caixas marcadas e desmarcadas, sem texto na célula, e o menu de ações a 390 e 1100 px. Foram testados abertura pelo teclado, fechamento com Escape, abertura do contrato pelo menu e retorno do foco. Clicar na caixa do contrato pendente abriu o detalhe sem registrar assinatura.

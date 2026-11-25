@@ -28,6 +28,7 @@ final class AcademicService
         $this->movement($enrollment,null,(int)$class['idturma'],'matricula','Matrícula inicial',null,'reservado');
         $result = ['idmatricula'=>(string)$enrollment]+$financial;
         $this->db->audit('matriculas',$enrollment,'criar',null,$result,$key);
+        (new MaterialsOutbox($this->db))->enqueue($enrollment,(int)$class['codcoligada'],(int)$class['codperiodo']);
         return $result;
     }
     public function createContract(int $enrollment,array $data,string $key): array
@@ -137,6 +138,7 @@ final class AcademicService
         $this->movement($id,null,$classId,'matricula','Vinculação de turma pela ficha do aluno',null,'reservado');
         $result=['idmatricula'=>(string)$id,'idturma'=>(string)$classId];
         $this->db->audit('matriculas',$id,'criar',null,$result,$key);
+        (new MaterialsOutbox($this->db))->enqueue($id,(int)$class['codcoligada'],$periodId);
         return $result;
     }
     public function transfer(int $id, array $data, string $key): array

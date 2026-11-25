@@ -3,7 +3,7 @@ declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Database;
 final class Installer
 {
-    public const VERSION = '51';
+    public const VERSION = '52';
     public function __construct(private Database $db) {}
     public function install(): void
     {
