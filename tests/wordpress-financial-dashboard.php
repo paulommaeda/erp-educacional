@@ -45,7 +45,8 @@ try{
     fwpOK(!str_contains($html,'ALUNO DASH-A')&&!str_contains($html,'data-erp-report-download'),'perfil financeiro sem permissão para Parcelas não recebe valores');
     fwpActor($actors['dashboard']);
     $html=$portal->render('inicio');
-    fwpOK(str_contains($html,'ALUNO DASH-A')&&!str_contains($html,'ALUNO DASH-B')&&str_contains($html,'R$ 1.003,00'),'prévia consulta aluno e competência e mostra líquido com precisão DECIMAL');
+    $preview=strstr($html,'<table class="erp-roster-table erp-installment-report-table">')?:'';
+    fwpOK(str_contains($preview,'ALUNO DASH-A')&&!str_contains($preview,'ALUNO DASH-B')&&str_contains($preview,'R$ 1.003,00'),'prévia consulta aluno e competência e mostra líquido com precisão DECIMAL');
     fwpOK(substr_count($html,'<option value="todos">Todos</option>')===2&&str_contains($html,'data-erp-report-download'),'filtros oferecem Todos e PDF usa a mesma seleção');
     $source=new \EducacionalERP\Application\InstallmentReport($db);
     $pdf=\EducacionalERP\Infrastructure\Pdf\InstallmentReportPdf::render($source->sheets((int)$fixture['a']['idaluno'],'2027-01'),['nome'=>'Colégio fictício']);
