@@ -16,7 +16,7 @@ final class InstallmentReport
         $student=$student==='todos'?null:Input::id($student);
         if($month==='todos')return [$student,null];
         if(!is_string($month)||!preg_match('/^[1-9][0-9]{3}-(?:0[1-9]|1[0-2])$/D',$month)){
-            throw new RuleViolation('Selecione um mês de competência válido.');
+            throw new RuleViolation('Selecione um mês de vencimento válido.');
         }
         return [$student,$month];
     }
@@ -32,7 +32,7 @@ final class InstallmentReport
 
     public function months():array
     {
-        return array_column($this->db->rows('SELECT DISTINCT SUBSTR(p.competencia,1,7) AS mes'.$this->scope().' ORDER BY mes DESC',[Coligadas::current()]),'mes');
+        return array_column($this->db->rows('SELECT DISTINCT SUBSTR(l.vencimento,1,7) AS mes'.$this->scope().' ORDER BY mes DESC',[Coligadas::current()]),'mes');
     }
 
     public static function monthLabel(?string $month):string
@@ -54,10 +54,10 @@ final class InstallmentReport
         }
         if($month!==null){
             $start=$month.'-01';
-            $where.=' AND p.competencia BETWEEN %s AND %s';
+            $where.=' AND l.vencimento BETWEEN %s AND %s';
             array_push($args,$start,(new \DateTimeImmutable($start))->modify('last day of this month')->format('Y-m-d'));
         }
-        $rows=$this->db->rows('SELECT SUBSTR(p.competencia,1,7) AS mes,a.ra,pe.nome,l.codcoligada,
+        $rows=$this->db->rows('SELECT SUBSTR(l.vencimento,1,7) AS mes,a.ra,pe.nome,l.codcoligada,
             l.valor_original,l.desconto_incondicional,l.pontualidade_snapshot,l.valor_liquido'.$where.
             ' ORDER BY mes DESC,pe.nome,a.ra,l.vencimento,l.idlancamento',$args);
         $sheets=[];

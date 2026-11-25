@@ -26,15 +26,18 @@ Access::install();
 update_option('ederp_pontualidade','103.00');
 $db=new Database($wpdb);
 $f=seedFinancialDashboard($db);
+prepareInstallmentReportDueDates($db,$f);
 $report=new InstallmentReport($db);
 $student=(int)$f['a']['idaluno'];
 $sheets=$report->sheets(...InstallmentReport::filters('todos','todos'));
 reportCheck(array_column($sheets,'month')===['Março/2027','Fevereiro/2027','Janeiro/2027']&&array_map('count',array_column($sheets,'rows'))===[2,1,4],
-    'Todos agrupa por competência e exclui cancelados e excluídos');
+    'Todos agrupa por vencimento e exclui cancelados e excluídos');
 reportCheck($report->months()===['2027-03','2027-02','2027-01']&&array_column($report->students(),'ra')===['DASH-A','DASH-B'],
-    'filtros oferecem meses e alunos da coligada');
+    'filtros oferecem meses de vencimento e alunos da coligada');
 $january=$report->sheets($student,'2027-01')[0]['rows'];
-reportCheck(count($january)===3&&array_unique(array_column($january,0))===['DASH-A'],'aluno e competência podem ser combinados mesmo com o vencimento em outro mês');
+reportCheck(count($january)===3&&array_unique(array_column($january,0))===['DASH-A'],'aluno e mês de vencimento podem ser combinados mesmo com outra competência');
+reportCheck(count($report->sheets((int)$f['b']['idaluno'],'2027-01')[0]['rows'])===1&&$report->sheets(null,'2026-12')[0]['rows']===[],
+    'parcelas aparecem no mês de vencimento e saem do mês da competência original');
 reportCheck(in_array(['DASH-A','ALUNO DASH-A','R$ 1.353,00','R$ 350,00','R$ 103,00','R$ 1.003,00'],$january,true),
     'valor líquido deduz desconto incondicional e mantém pontualidade em coluna separada após baixas');
 
@@ -54,5 +57,5 @@ Coligadas::within($company,function()use($report,$student){
     rejectReportFilter(fn()=>$report->sheets($student,null),'aluno de outra coligada é recusado');
 });
 $pdf=InstallmentReportPdf::render($sheets,['nome'=>'Colégio de teste']);
-reportCheck(str_starts_with($pdf,'%PDF-')&&preg_match_all('~/Type /Page\b~',$pdf)===3&&str_contains($pdf,'841.89 595.28'),'PDF gera uma folha por competência em A4 paisagem');
+reportCheck(str_starts_with($pdf,'%PDF-')&&preg_match_all('~/Type /Page\b~',$pdf)===3&&str_contains($pdf,'841.89 595.28'),'PDF gera uma folha por mês de vencimento em A4 paisagem');
 if($path=getenv('EDERP_INSTALLMENT_REPORT_PDF'))file_put_contents($path,$pdf);
