@@ -93,7 +93,7 @@ async function main(){
             assert.match(p,/RA\s+Nome\s+Email\s+Turma\s+Período\s+Pai\s+Email Pai/);
             assert.match(p,/Mãe\s+Email Mãe\s+Telefone Mãe\s+Outro Res\s+Telefone\s+Email/);
         }
-        assert.match(rosterPdf.text,/ALUNA RESERVADA/);
+        assert.match(rosterPdf.text,/0070\s+ALUNA\s+5º ANO D\s+2027\s+RESERVADA/);
         assert.match(rosterPdf.text,/PAULO PAI.*pai@exemplo.test.*41990000001.*MARIA MÃE.*mae@exemplo.test/);
         assert.match(rosterPdf.text,/ANA AVÓ.*41990000003.*avo@exemplo.test/);
         assert.match(rosterPdf.text,/SOFIA TIA.*41990000004.*tia@exemplo.test/);
