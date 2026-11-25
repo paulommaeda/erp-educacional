@@ -1,0 +1,19 @@
+name: Validar lista de assinaturas
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: mysqli, mbstring, gd, zip, openssl
+      - run: |
+          git diff --check HEAD^1 HEAD
+          for file in erp-educacional.php src/Application/EnrollmentSignatures.php src/Infrastructure/Pdf/EnrollmentSignaturesPdf.php src/Presentation/Portal/Reports.php src/Presentation/Portal/Portal.php src/Infrastructure/WordPress/MenuPolicy.php; do
+            php -l "$file"
+          done
+          node --check assets/reports.js
