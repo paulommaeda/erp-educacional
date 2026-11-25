@@ -75,7 +75,7 @@ jobs:
         run: |
           php -S 127.0.0.1:38547 -t "$WP_QA_DIR" > "$RUNNER_TEMP/wp.log" 2>&1 &
           server=$!
-          trap 'kill "$server" || true; tail -n 60 "$RUNNER_TEMP/wp.log"' EXIT
+          trap 'kill "$server" || true; tail -n 150 "$RUNNER_TEMP/wp.log"' EXIT
           for attempt in $(seq 1 25); do
             if curl -fsS http://127.0.0.1:38547/ >/dev/null; then break; fi
             sleep 1

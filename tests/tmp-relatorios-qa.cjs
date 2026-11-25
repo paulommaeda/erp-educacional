@@ -13,12 +13,24 @@ function url(period,group) {
     result.searchParams.set('relatorio_turma',group);
     return result.href;
 }
+async function login(context, account){
+    const page = await context.newPage();
+    page.setDefaultTimeout(12000);
+    await page.goto(fixture.portal);
+    const form = page.locator('form').filter({has:page.locator('input[name=erp_auth][value=entrar]')});
+    await form.locator('input[name=login]').fill(account.login);
+    await form.locator('input[name=password]').fill(account.password);
+    await Promise.all([
+        page.waitForURL(/erp_tela=inicio/,{timeout:12000}),
+        form.locator('button[type=submit]').click()
+    ]);
+    return page;
+}
 async function main(){
     const browser = await chromium.launch({headless:true});
     try {
         const staff = await browser.newContext({viewport:{width:390,height:844}});
-        await staff.addCookies([{...fixture.staff,url:origin}]);
-        const page = await staff.newPage();
+        const page = await login(staff,fixture.staff);
         await page.goto(fixture.portal);
         await page.getByRole('heading',{name:'Lista de assinaturas'}).waitFor();
         assert.equal(await page.locator('select[name=relatorio_periodo]').inputValue(),String(fixture.period));
@@ -72,7 +84,7 @@ async function main(){
         console.log('Download em A4, as duas páginas com logo e cabeçalho, 42 alunos e acentos.');
 
         const parent = await browser.newContext();
-        await parent.addCookies([{...fixture.parent,url:origin}]);
+        await login(parent,fixture.parent);
         assert.equal((await parent.request.get(pdfUrl)).status(),403);
         const familyReport = await parent.request.get(url(fixture.period,fixture.class));
         assert.doesNotMatch(await familyReport.text(),/0001.*ÁLUNO TESTE/);

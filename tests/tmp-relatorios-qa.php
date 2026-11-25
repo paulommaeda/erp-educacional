@@ -20,10 +20,12 @@ $admin=get_users(['role'=>'administrator','number'=>1])[0];
 wp_set_current_user($admin->ID);
 Portal::setup();
 update_option('active_plugins',['erp-educacional/erp-educacional.php']);
-$cookie=static function(string $role):array{
-    $id=wp_insert_user(['user_login'=>$role.'_qa','user_pass'=>wp_generate_password(24),'role'=>$role]);
+$account=static function(string $role):array{
+    $login=$role.'_qa';
+    $password=wp_generate_password(24,false,false);
+    $id=wp_insert_user(['user_login'=>$login,'user_pass'=>$password,'role'=>$role]);
     if(is_wp_error($id))throw new RuntimeException($id->get_error_message());
-    return ['name'=>LOGGED_IN_COOKIE,'value'=>rawurlencode(wp_generate_auth_cookie($id,time()+3600,'logged_in'))];
+    return compact('login','password');
 };
 $year=static fn(int $suffix)=>$db->insert('periodos_letivos',['codigo'=>'202'.$suffix,'descricao'=>'Ano de teste','data_inicio'=>'202'.$suffix.'-01-01','data_fim'=>'202'.$suffix.'-12-31','codcoligada'=>Coligadas::current()]);
 $catalog=static function(int $period,string $label)use($db){
@@ -67,6 +69,6 @@ $company=$db->insert('coligadas',['nome'=>'OUTRA ESCOLA','razao_social'=>'OUTRA 
 file_put_contents(getenv('WP_QA_DIR').'/fixture.json',wp_json_encode([
     'portal'=>Portal::url('relatorios'),'period'=>$period,'class'=>$class,
     'previous'=>$previous,'oldClass'=>$oldClass,'other'=>$other,'otherClass'=>$otherClass,'emptyClass'=>$emptyClass,
-    'staff'=>$cookie('erp_secretaria'),'parent'=>$cookie('erp_responsavel_academico')
+    'staff'=>$account('erp_secretaria'),'parent'=>$account('erp_responsavel_academico')
 ],JSON_UNESCAPED_UNICODE));
 echo "Matrículas fictícias e perfis criados.\n";
