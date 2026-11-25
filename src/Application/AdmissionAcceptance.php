@@ -29,12 +29,19 @@ final class AdmissionAcceptance
             }
             $pid=$people['aluno']['codpessoa'];foreach($people as $slot=>$p)if($slot!=='aluno'&&$p['codpessoa']===$pid)throw new RuleViolation('O aluno não pode ser seu próprio responsável.');
             $a=$this->db->row('SELECT * FROM '.$this->db->table('alunos').' WHERE codcoligada=%d AND codpessoa=%d FOR UPDATE',[Coligadas::current(),$pid]);if($a&&!(int)$a['ativo'])throw new RuleViolation('Aluno inativo. Reative o cadastro antes de aprovar.');
-            $student=$a?(int)$a['idaluno']:(int)$this->catalog->createInside('alunos',['codpessoa'=>$pid,'ra'=>(string)$this->db->get('pessoas',$pid)['codigo_pessoa'],'tipo_aluno'=>'REGULAR'],$key)['id'];
+            $needsAee=($data['campos'][AdmissionForm::LEARNING_NEEDS]??null)==='Sim';
+            $student=$a?(int)$a['idaluno']:(int)$this->catalog->createInside('alunos',['codpessoa'=>$pid,'ra'=>(string)$this->db->get('pessoas',$pid)['codigo_pessoa'],'tipo_aluno'=>$needsAee?'AEE':'REGULAR'],$key)['id'];
+            if($a&&$needsAee&&$a['tipo_aluno']!=='AEE'){
+                $changes=['tipo_aluno'=>'AEE'];
+                $this->db->update('alunos',$student,$changes);
+                $this->db->audit('alunos',$student,'classificar_requerimento',['tipo_aluno'=>$a['tipo_aluno']],$changes,$key);
+            }
             $extras=$data['campos'];$definitions=array_column($this->db->rows('SELECT chave,tipo,opcoes FROM '.$this->db->table('campos_adicionais')),null,'chave');foreach($extras as $field=>&$value){$definition=$definitions[$field]??null;if($definition&&$definition['tipo']==='selecao'&&$value!=='')foreach(preg_split('/\r?\n/',$definition['opcoes']) as $option)if(\EducacionalERP\Domain\CadastroText::upper($value)===\EducacionalERP\Domain\CadastroText::upper(trim($option))){$value=trim($option);break;}}unset($value);if($writeEmptyContacts||$data['contatos_emergencia'])$extras['contatos_emergencia']=implode("\n\n",array_map(fn($c)=>$c['nome']."\n".$c['telefone']."\n".$c['parentesco'],$data['contatos_emergencia']));(new AdditionalFields($this->db))->write($pid,$extras,$key);
             $merged=[];foreach($people as $slot=>$p){if($slot==='aluno')continue;$person=$p['codpessoa'];$row=$merged[$person]??['codpessoa_responsavel'=>$person,'parentesco'=>match($slot){'pai'=>'pai','mae'=>'mae',default=>$data['pessoas'][$slot]['parentesco']??'outro'},'responsavel_academico'=>0,'responsavel_financeiro'=>0,'pode_rematricular'=>0];if($data['responsavel_academico']===$slot){$row['responsavel_academico']=1;$row['pode_rematricular']=1;}if($data['responsavel_financeiro']===$slot)$row['responsavel_financeiro']=1;$merged[$person]=$row;}
             foreach($merged as $row){$current=$this->db->row('SELECT * FROM '.$this->db->table('aluno_responsaveis').' WHERE idaluno=%d AND codpessoa_responsavel=%d AND fim_vigencia IS NULL FOR UPDATE',[$student,$row['codpessoa_responsavel']]);if($current){foreach(['responsavel_academico','responsavel_financeiro','pode_rematricular'] as $flag)if((int)$current[$flag]!==$row[$flag])throw new RuleViolation('O aluno já possui vínculos com atribuições diferentes. Ajuste-os na ficha antes de aprovar este requerimento.');}else $this->catalog->linkInside($student,$row,$key);}
             (new StudentPickup($this->db))->importInside($student,$data['retiradas'],$people,$key);
             foreach($data['pessoas'] as $slot=>$person)if(!empty($person['campos_adicionais']))(new AdditionalFields($this->db))->write($people[$slot]['codpessoa'],$person['campos_adicionais'],$key);
+            if($needsAee)(new DocumentChecklist($this->db))->requireAeeReports($key);
             return ['idaluno'=>$student,'ra'=>$this->db->get('alunos',$student)['ra'],'pessoas'=>$people];
     }
 }

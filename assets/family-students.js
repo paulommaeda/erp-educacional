@@ -69,7 +69,8 @@ const documentConditions=[
  ['pai','Quando houver pai informado'],
  ['mae','Quando houver mãe informada'],
  ['pai_e_mae','Quando pai e mãe estiverem informados'],
- ['financeiro_outro','Quando o responsável financeiro for Outro']
+ ['financeiro_outro','Quando o responsável financeiro for Outro'],
+ ['aee','Alunos do tipo AEE']
 ];
 async function settings(container){
  container.replaceChildren();const head=h('section',undefined,'ederp-card'),list=h('div');head.append(h('h2','Documentos solicitados aos alunos'),h('p','Cadastre os documentos deste colégio. Os envios serão conferidos pela secretaria.'));container.append(head,list);

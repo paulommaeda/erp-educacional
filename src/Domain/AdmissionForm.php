@@ -5,6 +5,7 @@ namespace EducacionalERP\Domain;
 final class AdmissionForm
 {
     public const PEOPLE=['aluno'=>'Aluno','pai'=>'Pai','mae'=>'Mãe','academico'=>'Outro responsável acadêmico','financeiro'=>'Outro responsável financeiro'];
+    public const LEARNING_NEEDS='aprendizagem_input_radio_3';
     public static function fields(?Store $db=null):array
     {
         $fields=json_decode(file_get_contents(__DIR__.'/admission-fields.json'),true,512,JSON_THROW_ON_ERROR);

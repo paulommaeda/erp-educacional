@@ -15,10 +15,15 @@ Em **Configurações → Documentos dos alunos**, cadastre os documentos solicit
 | Documento conjunto de pai e mãe | Quando pai e mãe estiverem informados |
 | Documento de responsável financeiro que não é pai nem mãe | Quando o responsável financeiro for Outro |
 | Certidão de nascimento do aluno | Todos os alunos |
+| Laudos | Alunos do tipo AEE |
 
 As condições consultam os vínculos ativos da ficha do aluno, gravados ao aprovar o requerimento ou mantidos pela secretaria. Um pai ou uma mãe informados continuam atendendo à sua condição mesmo quando outra pessoa assume as funções acadêmicas ou financeiras. O financeiro de tipo **Outro** pode ser, por exemplo, uma avó ou um tutor com a atribuição financeira no cadastro. O vínculo com a função de responsável acadêmico, sozinho, não gera a solicitação de documento financeiro.
 
-Se a condição deixar de valer, o portal da família retira a solicitação e o ERP deixa de cobrar o documento. A secretaria pode consultar os envios anteriores. Tipos já cadastrados recebem **Todos os alunos** na atualização.
+Se a condição deixar de valer, o portal da família retira a solicitação e o ERP deixa de cobrar o documento. A secretaria pode consultar os envios anteriores. A migração 51 atribui **Todos os alunos** aos tipos de documento que ainda não tinham condição.
+
+### Laudos para alunos AEE
+
+Ao aprovar um requerimento com resposta **Sim** à pergunta sobre dificuldades, necessidades especiais ou transtornos de aprendizagem, o ERP classifica o aluno como **AEE** e ativa a solicitação obrigatória de **Laudos** em **Documentos do aluno**. A primeira aprovação com essa resposta prepara o tipo na coligada. Se houver um tipo chamado **Laudos** ou **Laudo**, o ERP reaproveita o cadastro e conserva suas orientações e envios.
 
 ## Portal do responsável
 
