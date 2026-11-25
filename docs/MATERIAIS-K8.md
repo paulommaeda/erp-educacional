@@ -22,7 +22,15 @@ A interface mostra a confirmação por lote e o total concluído. Se um lote fal
 
 Se os cadastros, os vínculos ou a configuração mudarem entre a conferência e o envio, o ERP exige nova conferência. As últimas 40 tentativas ficam registradas por coligada: repetir uma chave confirmada nesse histórico não repete o transporte; uma chave sem confirmação também não é repetida automaticamente.
 
-O envio é manual por esses botões. Novas matrículas ou alterações de responsáveis exigem nova conferência e envio.
+## Enviar automaticamente após a matrícula
+
+A partir da versão 0.19.46, selecione a coligada, confira a conexão e o **Período dos alunos**, marque **Enviar automaticamente após a matrícula** e clique em **Salvar configuração**. A opção vem desativada.
+
+Quando uma nova matrícula recebe turma no período escolhido, o ERP grava o envio na mesma transação da matrícula. O WP-Cron processa a fila a cada cinco minutos, conforme a execução do agendador do WordPress. O envio consulta os dados atuais do aluno e de seus responsáveis e atualiza aquele RA no K8. Matrículas já existentes podem ser enviadas pelo fluxo manual.
+
+A seção **Envios automáticos** mostra os registros recentes, pendências e falhas. O ERP tenta até quatro vezes em falhas temporárias, como timeout ou indisponibilidade. Corrija erros de cadastro ou credenciais e use o envio manual para os casos com falha definitiva. Desativar a opção pausa a fila. Mudar a URL ou o período cancela os trabalhos pendentes da configuração anterior quando forem processados.
+
+Alterações em vínculos ou transferências de turma feitas após um envio confirmado podem ser sincronizadas pelo fluxo manual.
 
 ## Alunos e responsáveis incluídos
 
@@ -82,4 +90,4 @@ Pedidos, preços, estoque, cobranças e entregas continuam sendo tratados pelo s
 
 ## Verificação
 
-O formato, a autenticação, o isolamento por coligada/período, a validação, os lotes e as falhas foram exercitados com SQLite e WordPress/MariaDB locais. As chamadas externas foram interceptadas por um receptor simulado que verifica o contrato do documento fornecido. Nenhum cadastro ou e-mail foi enviado a um site externo. O destino real ainda precisa ser configurado e validado pelo administrador. Schema 44 mantido.
+Os testes em SQLite e WordPress/MariaDB locais cobriram o formato, a autenticação, o isolamento por coligada e período, a validação, os lotes e as falhas. O teste da fila usou o WP-Cron e um receptor simulado. A fila de envio automático é criada na migração para a versão 52 do banco do ERP.

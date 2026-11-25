@@ -27,5 +27,57 @@ try{
     $GLOBALS['materials_timeout']=true;$uncertain=bin2hex(random_bytes(16));okWM(requestWM('enviar',$payload,$uncertain)->get_status()===422,'timeout devolve orientação sem afirmar conclusão');$calls=count($GLOBALS['materials_calls']);okWM(requestWM('enviar',$payload,$uncertain)->get_status()===422&&count($GLOBALS['materials_calls'])===$calls,'mesma tentativa incerta não é reenviada');$GLOBALS['materials_timeout']=false;
     $GLOBALS['materials_status']=403;okWM(requestWM('enviar',$payload)->get_status()===422,'permissão insuficiente do destino não confirma envio');$GLOBALS['materials_status']=200;$GLOBALS['materials_base_warning']='A compra consulta uma base externa.';$warning=requestWM('enviar',$payload);okWM($warning->get_data()['aviso_base']==='A compra consulta uma base externa.','aviso sobre base externa é preservado para o administrador');$GLOBALS['materials_base_warning']=null;
     $public=requestWM('configuracao')->get_data();okWM($public['ultimo']['status']==='confirmado'&&!str_contains(wp_json_encode($public),'senha-aplicacao-ficticia')&&!str_contains(wp_json_encode($public),'52998224725'),'histórico administrativo contém resultado sem credenciais ou cadastros completos');Coligadas::within($company,function()use($db){okWM(Settings::publicData($db)['url']==='','outra coligada não reutiliza a conexão do primeiro colégio');});update_option('ederp_schema_error','falha simulada');okWM(requestWM('conferencia')->get_status()===503,'migração pendente bloqueia a exportação');delete_option('ederp_schema_error');
+    $jobs=$db->table('materiais_envios');
+    okWM($db->rows("SELECT * FROM $jobs")===[]&&!$public['automatico'],'opção desativada e matrículas anteriores fora da fila');
+    $save['versao']=$public['versao'];$save['senha']='';$save['automatico']=true;
+    okWM(requestWM('configuracao',$save)->get_data()['automatico']===true,'administrador ativa o envio por coligada');
+    $createStudent=static function(string $ra)use($db,$father):int{
+        $person=$db->insert('pessoas',['nome'=>'ALUNO TESTE '.$ra]);
+        $id=$db->insert('alunos',['codpessoa'=>$person,'ra'=>$ra]);
+        $db->insert('aluno_responsaveis',['idaluno'=>$id,'codpessoa_responsavel'=>$father,'parentesco'=>'pai','inicio_vigencia'=>'2000-01-01 00:00:00']);
+        return $id;
+    };
+    $new=$createStudent('000070');
+    $calls=count($GLOBALS['materials_calls']);
+    try{
+        $db->atomic(function()use($academicService,$new,$period,$class){
+            $academicService->placeInside($new,$period,$class,bin2hex(random_bytes(16)));
+            throw new RuntimeException('rollback-simulado');
+        });
+    }catch(RuntimeException $error){if($error->getMessage()!=='rollback-simulado')throw $error;}
+    okWM($db->rows("SELECT * FROM $jobs")===[]&&count($GLOBALS['materials_calls'])===$calls,'rollback da matrícula desfaz a inclusão na fila');
+    $placed=$db->atomic(fn()=>$academicService->placeInside($new,$period,$class,bin2hex(random_bytes(16))));
+    okWM(count($db->rows("SELECT * FROM $jobs"))===1&&count($GLOBALS['materials_calls'])===$calls,'matrícula confirmada enfileira apenas o aluno e não chama K8 na requisição');
+    $wrongPeriod=$db->insert('periodos_letivos',['codigo'=>'2028','descricao'=>'Fora da integração','data_inicio'=>'2028-01-01','data_fim'=>'2028-12-31']);
+    $wrongClass=$db->insert('turmas',['codperiodo'=>$wrongPeriod,'idcurso'=>$course,'idturno'=>$shift,'codigo'=>'6A','nome'=>'6A','capacidade'=>100]);
+    $db->atomic(fn()=>$academicService->placeInside($createStudent('000071'),$wrongPeriod,$wrongClass,bin2hex(random_bytes(16))));
+    okWM(count($db->rows("SELECT * FROM $jobs"))===1,'matrícula de outro período fica fora da fila');
+    $cron=\EducacionalERP\Infrastructure\Materials\Cron::HOOK;
+    \EducacionalERP\Infrastructure\Materials\Cron::register($db);
+    do_action('init');
+    okWM(wp_get_schedule($cron)===\EducacionalERP\Infrastructure\Materials\Cron::INTERVAL,'WP-Cron agenda a integração a cada cinco minutos');
+    wp_set_current_user(0);
+    $GLOBALS['materials_timeout']=true;
+    do_action($cron);
+    $job=$db->row("SELECT * FROM $jobs WHERE idmatricula=%d",[(int)$placed['idmatricula']]);
+    okWM($job['situacao']==='pendente'&&(int)$job['tentativas']===1&&$job['tentar_apos']>gmdate('Y-m-d H:i:s'),'timeout reagenda e mantém a matrícula');
+    do_action($cron);
+    okWM(count($GLOBALS['materials_calls'])===$calls+1,'intervalo impede nova tentativa imediata');
+    $GLOBALS['materials_timeout']=false;
+    $db->update('materiais_envios',(int)$job['idenvio'],['tentar_apos'=>'2000-01-01 00:00:00']);
+    do_action($cron);do_action($cron);
+    $body=json_decode(end($GLOBALS['materials_calls'])['args']['body'],true);
+    okWM(count($GLOBALS['materials_calls'])===$calls+2&&count($body['alunos'])===1&&$body['alunos'][0]['ra']==='000070'&&count($body['alunos'][0]['responsaveis'])===1,'cron entrega apenas o RA pendente, com responsável, sem repetir envio confirmado');
+    wp_set_current_user($admin->ID);
+    okWM((int)requestWM('configuracao')->get_data()['fila_automatica']['totais']['confirmado']===1,'configuração mostra confirmação do envio');
+    $cancel=$db->atomic(fn()=>$academicService->placeInside($createStudent('000072'),$period,$class,bin2hex(random_bytes(16))));
+    $db->update('matriculas',(int)$cancel['idmatricula'],['status'=>'cancelada','ativo_unico'=>null]);
+    $calls=count($GLOBALS['materials_calls']);do_action($cron);
+    okWM(count($GLOBALS['materials_calls'])===$calls&&$db->row("SELECT situacao FROM $jobs WHERE idmatricula=%d",[(int)$cancel['idmatricula']])['situacao']==='cancelado','matrícula cancelada antes da entrega fica fora da importação');
+    $pause=$db->atomic(fn()=>$academicService->placeInside($createStudent('000073'),$period,$class,bin2hex(random_bytes(16))));
+    $save['versao']=requestWM('configuracao')->get_data()['versao'];$save['automatico']=false;
+    requestWM('configuracao',$save);do_action($cron);
+    okWM(count($GLOBALS['materials_calls'])===$calls&&$db->row("SELECT situacao FROM $jobs WHERE idmatricula=%d",[(int)$pause['idmatricula']])['situacao']==='pendente','desativar a opção pausa a fila da coligada');
+    wp_clear_scheduled_hook($cron);
     echo "WORDPRESS_MATERIALS_SYNC_OK: $checks verificações / WordPress $wp_version / MariaDB ".$wpdb->db_version()."\n";
 }finally{wp_set_current_user($admin->ID);foreach($users as $user)if(is_int($user))wp_delete_user($user);$wpdb->prefix=$oldPrefix;foreach($saved as $key=>$value){if($value===null)delete_option($key);else update_option($key,$value,false);}}

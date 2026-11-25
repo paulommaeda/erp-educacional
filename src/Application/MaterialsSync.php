@@ -10,11 +10,17 @@ final class MaterialsSync
     public const BATCH_SIZE=200;
     public const BATCH_BYTES=2097152;
     public function __construct(private Store $db){}
-    private function plan():array
+    private function dataset(int $company,int $period,?int $student=null):array
     {
-        $s=Settings::read();$company=Coligadas::current();if(empty($s['codperiodo']))throw new RuleViolation('Escolha e salve o período dos alunos antes de conferir.');$period=Input::id($s['codperiodo']);if((int)$this->db->get('periodos_letivos',$period)['codcoligada']!==$company)throw new RuleViolation('Escolha um período desta coligada.');if(!(int)$this->db->get('coligadas',$company)['ativo'])throw new RuleViolation('Coligada inativa.');
         $a=$this->db->table('alunos');$p=$this->db->table('pessoas');$m=$this->db->table('matriculas');$t=$this->db->table('turmas');$v=$this->db->table('aluno_responsaveis');
-        $rows=$this->db->rows("SELECT a.idaluno,a.ra,p.nome,p.cpf,t.nome AS turma FROM $m m JOIN $a a ON a.idaluno=m.idaluno AND a.codcoligada=m.codcoligada JOIN $p p ON p.codpessoa=a.codpessoa JOIN $t t ON t.idturma=m.idturma_atual AND t.codcoligada=m.codcoligada AND t.codperiodo=m.codperiodo WHERE m.codcoligada=%d AND m.codperiodo=%d AND m.excluido_em IS NULL AND m.ativo_unico=1 AND a.ativo=1 AND p.ativo=1 ORDER BY a.idaluno,m.idmatricula",[$company,$period]);
+        $filter=$student===null?'':' AND a.idaluno=%d';
+        $args=$student===null?[$company,$period]:[$company,$period,$student];
+        $rows=$this->db->rows("SELECT a.idaluno,a.ra,p.nome,p.cpf,t.nome AS turma
+            FROM $m m JOIN $a a ON a.idaluno=m.idaluno AND a.codcoligada=m.codcoligada
+            JOIN $p p ON p.codpessoa=a.codpessoa
+            JOIN $t t ON t.idturma=m.idturma_atual AND t.codcoligada=m.codcoligada AND t.codperiodo=m.codperiodo
+            WHERE m.codcoligada=%d AND m.codperiodo=%d AND m.excluido_em IS NULL AND m.ativo_unico=1
+                AND a.ativo=1 AND p.ativo=1$filter ORDER BY a.idaluno,m.idmatricula",$args);
         $students=[];$ids=[];$warnings=[];$now=gmdate('Y-m-d H:i:s');
         foreach($rows as $r){$id=(int)$r['idaluno'];$record=['ra'=>(string)$r['ra'],'nome_aluno'=>(string)$r['nome'],'cpf_aluno'=>(string)($r['cpf']??''),'turma'=>(string)$r['turma'],'responsaveis'=>[]];foreach(['ra','nome_aluno','turma'] as $key)if(trim($record[$key])==='')throw new RuleViolation('Aluno '.$r['idaluno'].' sem '.$key.'. Corrija antes de enviar.');if($record['cpf_aluno']!==''&&!Cpf::valid($record['cpf_aluno']))throw new RuleViolation('CPF do aluno inválido no RA '.$r['ra'].'.');
             if(isset($students[$id])){if($students[$id]!==$record)throw new RuleViolation('RA '.$r['ra'].' possui mais de uma turma atual no período. Confira a matrícula.');continue;}$students[$id]=$record;$ids[]=$id;
@@ -23,7 +29,20 @@ final class MaterialsSync
             foreach($links as $link){$id=(int)$link['idaluno'];$cpf=(string)($link['cpf']??'');if(trim((string)$link['nome'])==='')throw new RuleViolation('Responsável sem nome no RA '.$students[$id]['ra'].'.');if($cpf!==''&&!Cpf::valid($cpf))throw new RuleViolation('CPF de responsável inválido no RA '.$students[$id]['ra'].'.');$students[$id]['responsaveis'][]=['nome'=>(string)$link['nome'],'cpf'=>$cpf,'telefone'=>preg_replace('/\D/','',(string)($link['telefone']??''))];}
         }
         foreach($students as $id=>$student){$count=count($student['responsaveis']);if($count>100)throw new RuleViolation('RA '.$student['ra'].' supera 100 responsáveis.');$hasCpf=false;foreach($student['responsaveis'] as $responsible)if($responsible['cpf']!=='')$hasCpf=true;if(!$hasCpf)$warnings[]=['ra'=>$student['ra'],'message'=>'Nenhum responsável com CPF: o aluno não será localizado pela compra por CPF.'];foreach($student['responsaveis'] as $responsible)if($responsible['cpf']===''){$warnings[]=['ra'=>$student['ra'],'message'=>'Há responsável sem CPF neste aluno.'];break;}}
-        $totalActive=(int)$this->db->row("SELECT COUNT(*) AS n FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa WHERE a.codcoligada=%d AND a.ativo=1 AND p.ativo=1",[$company])['n'];$students=array_values($students);$batches=[];$batch=[];$bytes=80;$expanded=0;
+        return [array_values($students),$warnings];
+    }
+    public function forEnrollment(int $student,int $company,int $period):?array
+    {
+        [$students]=$this->dataset($company,$period,$student);
+        return $students[0]??null;
+    }
+    private function plan():array
+    {
+        $s=Settings::read();$company=Coligadas::current();if(empty($s['codperiodo']))throw new RuleViolation('Escolha e salve o período dos alunos antes de conferir.');$period=Input::id($s['codperiodo']);if((int)$this->db->get('periodos_letivos',$period)['codcoligada']!==$company)throw new RuleViolation('Escolha um período desta coligada.');if(!(int)$this->db->get('coligadas',$company)['ativo'])throw new RuleViolation('Coligada inativa.');
+        [$students,$warnings]=$this->dataset($company,$period);
+        $a=$this->db->table('alunos');$p=$this->db->table('pessoas');
+        $totalActive=(int)$this->db->row("SELECT COUNT(*) AS n FROM $a a JOIN $p p ON p.codpessoa=a.codpessoa WHERE a.codcoligada=%d AND a.ativo=1 AND p.ativo=1",[$company])['n'];
+        $batches=[];$batch=[];$bytes=80;$expanded=0;
         foreach($students as $student){$size=strlen(wp_json_encode($student))+1;$records=max(1,(int)ceil(count($student['responsaveis'])/2));if($size+80>self::BATCH_BYTES)throw new RuleViolation('RA '.$student['ra'].' excede o tamanho permitido para um lote.');if($batch&&(count($batch)>=self::BATCH_SIZE||$bytes+$size>self::BATCH_BYTES||$expanded+$records>8000)){$batches[]=$batch;$batch=[];$bytes=80;$expanded=0;}$batch[]=$student;$bytes+=$size;$expanded+=$records;}if($batch)$batches[]=$batch;
         $signature=hash_hmac('sha256',wp_json_encode([$company,$s['versao'],$s['url'],$s['usuario'],$period,$students]),wp_salt('auth').'|k8-materials-plan');
         return ['assinatura'=>$signature,'configurada'=>$s['url']!==''&&$s['usuario']!==''&&$s['senha']!=='','codcoligada'=>(string)$company,'codperiodo'=>(string)$period,'total'=>count($students),'sem_turma_no_periodo'=>max(0,$totalActive-count($students)),'avisos'=>$warnings,'batches'=>$batches];
