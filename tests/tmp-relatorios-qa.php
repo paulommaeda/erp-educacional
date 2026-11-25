@@ -56,7 +56,7 @@ for($i=42;$i>=1;$i--){
 $add($period,$course,$class,'0080','CANCELADO','cancelada');
 $add($period,$course,$class,'0081','TRANSFERIDO','transferencia_externa');
 $add($period,$course,$class,'0082','EXCLUÍDO','cursando','2026-11-25 00:00:00');
-$add($previous,$course,$oldClass,'0003','ALUNA ANO ANTERIOR','aprovado');
+$add($previous,$course,$oldClass,'0063','ALUNA ANO ANTERIOR','aprovado');
 $company=$db->insert('coligadas',['nome'=>'OUTRA ESCOLA','razao_social'=>'OUTRA ESCOLA']);
 [$other,$otherClass]=Coligadas::within($company,static function()use($year,$catalog,$add){
     $period=$year(7);

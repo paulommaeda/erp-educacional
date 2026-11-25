@@ -83,7 +83,7 @@ final class Reports
             $download=add_query_arg([
                 'relatorio_periodo'=>$period,'relatorio_turma'=>$class,'relatorio_pdf'=>wp_create_nonce(self::nonce($period,$class)),
             ],$url);
-            echo '<a class="button" href="'.esc_url($download).'">Salvar em PDF</a>';
+            echo '<a class="erp-link-button" href="'.esc_url($download).'">Salvar em PDF</a>';
         }
         echo '</div></form>';
     }
