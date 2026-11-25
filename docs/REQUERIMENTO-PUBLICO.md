@@ -22,6 +22,8 @@ Novos requerimentos geram mensagens individuais depois da gravação. O e-mail l
 
 Após aprovação, o ERP cria ou aproveita pessoas, contas WordPress e aluno. O e-mail de criação da senha permanece manual em **Usuários e acessos**, separado da confirmação do requerimento. A nova versão não envia confirmações de requerimentos antigos automaticamente.
 
+Nas aprovações a partir da versão 0.19.49, a resposta conferida **Sim** em **Apresenta dificuldades, necessidades especiais ou transtornos de aprendizagem?** classifica o aluno como **AEE**. Isso também torna **Laudos** obrigatório nos documentos do aluno. Uma resposta **Não** mantém a classificação de um aluno já cadastrado e classifica um cadastro novo como Regular.
+
 ## Etapas e destino dos dados
 
 | Área do formulário | Destino após aprovação |

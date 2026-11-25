@@ -5,14 +5,34 @@ use EducacionalERP\Domain\{Store,RuleViolation};
 /** One definition of actionable missing documents, shared by the home screen and reminders. */
 final class DocumentChecklist
 {
-    public const CONDITIONS=['todos','pai','mae','pai_e_mae','financeiro_outro'];
+    public const CONDITIONS=['todos','pai','mae','pai_e_mae','financeiro_outro','aee'];
 
     public function __construct(private Store $db){}
     public function activeStudent(int $id):?array
     {
-        return $this->db->row('SELECT a.idaluno,a.codcoligada,a.ra,p.nome,c.nome AS colegio FROM '.$this->db->table('alunos').' a JOIN '.$this->db->table('pessoas').' p ON p.codpessoa=a.codpessoa JOIN '.$this->db->table('coligadas').' c ON c.codcoligada=a.codcoligada WHERE a.idaluno=%d AND a.ativo=1 AND p.ativo=1 AND c.ativo=1',[$id]);
+        return $this->db->row('SELECT a.idaluno,a.codcoligada,a.ra,a.tipo_aluno,p.nome,c.nome AS colegio FROM '.$this->db->table('alunos').' a JOIN '.$this->db->table('pessoas').' p ON p.codpessoa=a.codpessoa JOIN '.$this->db->table('coligadas').' c ON c.codcoligada=a.codcoligada WHERE a.idaluno=%d AND a.ativo=1 AND p.ativo=1 AND c.ativo=1',[$id]);
     }
-    public function conditions(int $student,int $company):array
+
+    /** Reuse the document type and its uploads when the school already uses Laudo or Laudos. */
+    public function requireAeeReports(string $key):void
+    {
+        $table=$this->db->table('tipos_documento_aluno');
+        $company=Coligadas::current();
+        $before=$this->db->row("SELECT * FROM $table WHERE codcoligada=%d AND LOWER(nome) IN ('laudos','laudo')
+            ORDER BY CASE WHEN LOWER(nome)='laudos' THEN 0 ELSE 1 END,idtipo_documento LIMIT 1 FOR UPDATE",[$company]);
+        $changes=['condicao'=>'aee','ativo'=>1,'obrigatorio'=>1];
+        if(!$before){
+            $changes+=['nome'=>'Laudos','codcoligada'=>$company];
+            $id=$this->db->insert('tipos_documento_aluno',$changes);
+        }else{
+            if($before['condicao']==='aee'&&(int)$before['ativo']===1&&(int)$before['obrigatorio']===1)return;
+            $id=(int)$before['idtipo_documento'];
+            $this->db->update('tipos_documento_aluno',$id,$changes);
+        }
+        $this->db->audit('tipos_documento_aluno',$id,$before?'editar':'criar',$before,$changes,$key);
+    }
+
+    public function conditions(int $student,int $company,string $studentType):array
     {
         $links=$this->db->table('aluno_responsaveis');
         $people=$this->db->table('pessoas');
@@ -21,7 +41,7 @@ final class DocumentChecklist
              WHERE v.idaluno=%d AND v.codcoligada=%d AND v.inicio_vigencia<=UTC_TIMESTAMP() AND v.fim_vigencia IS NULL AND p.ativo=1",
             [$student,$company]
         );
-        $conditions=['todos'=>true,'pai'=>false,'mae'=>false,'financeiro_outro'=>false];
+        $conditions=['todos'=>true,'pai'=>false,'mae'=>false,'financeiro_outro'=>false,'aee'=>$studentType==='AEE'];
         foreach($rows as $row){
             if(in_array($row['parentesco'],['pai','mae'],true)){
                 $conditions[$row['parentesco']]=true;
@@ -37,7 +57,7 @@ final class DocumentChecklist
         $a=$this->activeStudent($student);if(!$a)return [];$types=$this->db->table('tipos_documento_aluno');$docs=$this->db->table('aluno_documentos');
         $rows=$this->db->rows("SELECT t.idtipo_documento,t.nome,t.obrigatorio,t.condicao,d.iddocumento,d.status,d.motivo FROM $types t LEFT JOIN $docs d ON d.iddocumento=(SELECT MAX(lastdoc.iddocumento) FROM $docs lastdoc WHERE lastdoc.idaluno=%d AND lastdoc.idtipo_documento=t.idtipo_documento) WHERE t.codcoligada=%d AND t.ativo=1 AND ((d.iddocumento IS NULL AND t.obrigatorio=1) OR d.status='rejeitado') ORDER BY t.ordem,t.nome,t.idtipo_documento",[$student,(int)$a['codcoligada']]);
         if(!$rows)return [];
-        $conditions=$this->conditions($student,(int)$a['codcoligada']);
+        $conditions=$this->conditions($student,(int)$a['codcoligada'],$a['tipo_aluno']);
         $pending=[];
         foreach($rows as $row){
             if(!($conditions[$row['condicao']]??false))continue;

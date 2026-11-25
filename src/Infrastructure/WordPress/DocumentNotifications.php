@@ -99,7 +99,7 @@ final class DocumentNotifications
             $latest=$this->db->row('SELECT MAX(iddocumento) AS ultimo FROM '.$this->db->table('aluno_documentos').' WHERE idaluno=%d AND idtipo_documento=%d',[(int)$student['idaluno'],(int)$doc['idtipo_documento']]);if((int)$latest['ultimo']!==(int)$doc['iddocumento'])return null;
             $type=$this->db->get('tipos_documento_aluno',(int)$doc['idtipo_documento']);
             if($row['tipo']==='rejeitado'){
-                $conditions=$list->conditions((int)$student['idaluno'],(int)$student['codcoligada']);
+                $conditions=$list->conditions((int)$student['idaluno'],(int)$student['codcoligada'],$student['tipo_aluno']);
                 if(!(int)$type['ativo']||!($conditions[$type['condicao']]??false))return null;
             }
         }

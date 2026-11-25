@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__.'/sqlite-bootstrap.php';require dirname(__DIR__).'/autoload.php';
-use EducacionalERP\Application\{PublicAdmissions,AdmissionSettings,Operations,CatalogService,Coligadas,StudentPickup};
+use EducacionalERP\Application\{PublicAdmissions,AdmissionSettings,Operations,CatalogService,Coligadas,DocumentChecklist,StudentDocuments,StudentPickup};
 use EducacionalERP\Domain\{AdmissionForm,RuleViolation,StudentFiles};
 use EducacionalERP\Infrastructure\Database\{Database,Installer};
 use EducacionalERP\Infrastructure\WordPress\{Access,StudentRecordPolicy,AdmissionGuard};
@@ -47,7 +47,19 @@ ck(countR('aluno_retiradas')===2,'autorizações do responsável e da avó são 
 $values=(new EducacionalERP\Application\AdditionalFields($db))->decorate($person)['campos_adicionais'];ck(str_contains($values['saude_orientacoes_medicas'],'MÉDICO')&&str_contains($values['contatos_emergencia'],'EMERGÊNCIA'),'saúde e contatos completos ficam na pessoa do aluno');ck($db->get('requerimentos_publicos',1)['status']==='aprovado'&&$service->listing('pendente',1)['total']===0,'aprovado sai dos pendentes e fica no histórico');ck(count($service->studentRequests((int)$r['idaluno']))===1,'origem documental fica vinculada à ficha do aluno');
 $familyUser=$db->row('SELECT wp_user_id FROM '.$db->table('pessoa_usuarios').' WHERE codpessoa=%d',[(int)$r['pessoas']['mae']['codpessoa']]);wp_set_current_user((int)$familyUser['wp_user_id']);no(fn()=>$service->detail(1),'família não acessa conferência interna');no(fn()=>(new StudentPickup($db))->listing((int)$r['idaluno']),'família não consulta cadastros de retirada por endpoint interno');
 wp_set_current_user(1);$secretary=wp_insert_user(['user_login'=>'secretaria.teste','role'=>'erp_secretaria']);wp_set_current_user($secretary);ck($service->listing('aprovado',1)['total']===1,'secretaria autorizada vê fila');no(fn()=>$service->detail(1),'sem liberação médica, secretaria não lê nem aprova dados sensíveis');update_option(StudentRecordPolicy::OPTION,['erp_secretaria'=>['dados_pessoais','ficha_medica','dificuldades_aprendizagem']]);ck($service->detail(1)['status']==='aprovado','permissões configuradas liberam conferência completa');
-wp_set_current_user(1);$d2=fixture('DOIS');$d2['pessoas']['pai']=$d['pessoas']['pai'];$d2['pessoas']['mae']=$d['pessoas']['mae'];$service->submit($d2,[],ky());$row2=$service->detail(2);ck(count($row2['sugestoes']['pai'])===1,'sugere pessoa pelo nome e nascimento sem mesclar automaticamente');$choices2=['aluno'=>['acao'=>'criar'],'pai'=>['acao'=>'existente','codpessoa'=>$r['pessoas']['pai']['codpessoa']],'mae'=>['acao'=>'existente','codpessoa'=>$r['pessoas']['mae']['codpessoa']]];$r2=$service->approve(2,['versao'=>$row2['versao'],'dados'=>$row2['dados'],'pessoas'=>$choices2],ky());ck(countR('pessoas')===4&&countR('alunos')===2,'outro filho reutiliza responsáveis sem duplicação');
+wp_set_current_user(1);$d2=fixture('DOIS');$d2['campos'][AdmissionForm::LEARNING_NEEDS]='Sim';$d2['pessoas']['pai']=$d['pessoas']['pai'];$d2['pessoas']['mae']=$d['pessoas']['mae'];$service->submit($d2,[],ky());$row2=$service->detail(2);ck(count($row2['sugestoes']['pai'])===1,'sugere pessoa pelo nome e nascimento sem mesclar automaticamente');$choices2=['aluno'=>['acao'=>'criar'],'pai'=>['acao'=>'existente','codpessoa'=>$r['pessoas']['pai']['codpessoa']],'mae'=>['acao'=>'existente','codpessoa'=>$r['pessoas']['mae']['codpessoa']]];$r2=$service->approve(2,['versao'=>$row2['versao'],'dados'=>$row2['dados'],'pessoas'=>$choices2],ky());ck(countR('pessoas')===4&&countR('alunos')===2,'outro filho reutiliza responsáveis sem duplicação');
+$docs=new StudentDocuments($db);
+$checklist=new DocumentChecklist($db);
+$regularId=(int)$r['idaluno'];
+$aeeId=(int)$r2['idaluno'];
+ck($db->get('alunos',$regularId)['tipo_aluno']==='REGULAR'&&$db->get('alunos',$aeeId)['tipo_aluno']==='AEE','resposta conferida classifica o cadastro como Regular ou AEE');
+$types=$docs->types();
+ck(count($types)===1&&$types[0]['nome']==='Laudos'&&$types[0]['condicao']==='aee'&&(bool)$types[0]['obrigatorio'],'aprovação cria Laudos obrigatório somente para AEE');
+wp_set_current_user((int)$familyUser['wp_user_id']);
+$familyDocs=$docs->listing($aeeId);
+ck(count($familyDocs)===1&&$familyDocs[0]['obrigatorio']&&$familyDocs[0]['pode_enviar'],'responsável vinculado vê Laudos obrigatório e pode enviá-lo');
+ck($docs->listing($regularId)===[]&&$checklist->pending($regularId)===[]&&array_column($checklist->pending($aeeId),'nome')===['Laudos'],'pendências e documentos usam a mesma condição para cada aluno');
+wp_set_current_user(1);
 $pickup=new StudentPickup($db);$auth=$pickup->listing((int)$r['idaluno'])[0];$pickup->save((int)$r['idaluno'],['idautorizacao'=>$auth['idautorizacao'],'versao'=>$auth['versao'],'nome'=>$auth['nome'],'parentesco'=>$auth['parentesco'],'ativo'=>0],ky());ck((int)$db->get('aluno_retiradas',(int)$auth['idautorizacao'])['ativo']===0,'retirada pode ser revogada mantendo histórico');no(fn()=>$pickup->save((int)$r2['idaluno'],['idautorizacao'=>$auth['idautorizacao'],'versao'=>$auth['versao'],'nome'=>'Teste','parentesco'=>'TIA'],ky()),'não edita autorização de outro aluno');
 $other=$db->insert('coligadas',['nome'=>'OUTRO COLÉGIO','razao_social'=>'OUTRO COLÉGIO']);Coligadas::within($other,function()use($service,$pickup,$r){no(fn()=>$service->detail(1),'requerimento isolado por coligada');no(fn()=>$pickup->listing((int)$r['idaluno']),'autorização isolada por coligada');});
 $d3=fixture('TRES');$service->submit($d3,[],ky());$row3=$service->detail(3);$service->reject(3,['versao'=>$row3['versao'],'motivo'=>'Dados incompletos confirmados pela equipe'],ky());ck($service->listing('rejeitado',1)['total']===1&&countR('pessoas')===4,'rejeição registra motivo sem criar pessoa');no(fn()=>$service->approve(3,['versao'=>$row3['versao'],'dados'=>$row3['dados'],'pessoas'=>$choices],ky()),'rejeitado não pode ser aprovado por requisição antiga');
@@ -69,6 +81,27 @@ $turns=array_column(AdmissionForm::fields(),null,'chave')['interesse_turno']['op
 $wrong=$guided;$wrong['campos']['interesse_curso']='Curso digitado fora da lista';no(fn()=>AdmissionForm::validate($wrong),'curso fora da lista é recusado');$wrong=$guided;$wrong['campos']['interesse_curso']='Ensino Fundamental I';no(fn()=>AdmissionForm::validate($wrong),'6º ano não pode acompanhar Fundamental I');$wrong=$guided;$wrong['campos']['interesse_curso']='';no(fn()=>AdmissionForm::validate($wrong),'ano/série exige escolha do curso');$high=$guided;$high['campos']['interesse_curso']='Ensino Médio';$high['campos']['interesse_serie']='2ª Série';ck(AdmissionForm::validate($high)['campos']['interesse_serie']==='2ª Série','Ensino Médio oferece séries');
 $old=$guided;$old['campos']['interesse_curso']='Curso anterior';$old['campos']['interesse_serie']='Turma antiga';$old['pessoas']['aluno']['local_nascimento']='Cidade registrada antes da atualização';$historical=AdmissionForm::validate($old,true,null,$old);ck($historical['campos']['interesse_serie']==='Turma antiga'&&$historical['pessoas']['aluno']['local_nascimento']==='CIDADE REGISTRADA ANTES DA ATUALIZAÇÃO','conferência preserva valores legados sem apagá-los');$newWrong=$old;$newWrong['campos']['interesse_curso']='Ensino Fundamental I';no(fn()=>AdmissionForm::validate($newWrong,true,null,$old),'trocar curso exige selecionar uma série compatível mesmo na conferência');
 $secondCompany=$db->insert('coligadas',['nome'=>'OUTRA OFERTA','razao_social'=>'OUTRA OFERTA']);$db->insert('cursos',['codcoligada'=>1,'codigo'=>'EF1-PUBLIC','nome'=>'ENSINO FUNDAMENTAL I']);$db->insert('cursos',['codcoligada'=>1,'codigo'=>'INATIVO','nome'=>'CURSO INATIVO','ativo'=>0]);$db->insert('cursos',['codcoligada'=>$secondCompany,'codigo'=>'OUTRA','nome'=>'CURSO DE OUTRA COLIGADA']);$publicCatalog=array_column(AdmissionForm::fields($db),null,'chave');ck($publicCatalog['interesse_curso']['opcoes']===['ENSINO FUNDAMENTAL I'],'lista cursos ativos apenas da coligada do formulário');
+$reuse=static function(array $submitted,array $accepted)use($db,$service):array{
+    $submitted['campos']['interesse_curso']='Ensino Fundamental I';
+    $submitted['campos']['interesse_serie']='5º ANO';
+    $receipt=$service->submit($submitted,[],ky());
+    $row=$db->row('SELECT idrequerimento FROM '.$db->table('requerimentos_publicos').' WHERE protocolo=%s',[$receipt['protocolo']]);
+    $id=(int)$row['idrequerimento'];
+    $review=$service->detail($id);
+    $choices=[];
+    foreach($accepted['pessoas'] as $slot=>$person)$choices[$slot]=['acao'=>'existente','codpessoa'=>$person['codpessoa']];
+    return $service->approve($id,['versao'=>$review['versao'],'dados'=>$review['dados'],'pessoas'=>$choices],ky());
+};
+$laudosId=(int)$types[0]['idtipo_documento'];
+$db->update('tipos_documento_aluno',$laudosId,['condicao'=>'todos','obrigatorio'=>0,'orientacoes'=>'Orientação existente']);
+$d['campos'][AdmissionForm::LEARNING_NEEDS]='Sim';
+$updated=$reuse($d,$r);
+$laudos=$db->get('tipos_documento_aluno',$laudosId);
+ck((int)$updated['idaluno']===$regularId&&$db->get('alunos',$regularId)['tipo_aluno']==='AEE','novo requerimento com Sim atualiza aluno já cadastrado e mantém o RA');
+ck(count($docs->types())===1&&$laudos['condicao']==='aee'&&(bool)$laudos['obrigatorio']&&$laudos['orientacoes']==='Orientação existente','reaproveita tipo já cadastrado e preserva orientações');
+$d2['campos'][AdmissionForm::LEARNING_NEEDS]='Não';
+$reuse($d2,$r2);
+ck($db->get('alunos',$aeeId)['tipo_aluno']==='AEE','resposta Não preserva a classificação AEE existente');
 update_option(Coligadas::option('ederp_public_admissions'),['ativo'=>0]);no(fn()=>$service->submit(fixture('FECHADO'),[],ky()),'escola pode encerrar recebimento');
 if(getenv('EDERP_ADMISSION_JSON'))file_put_contents(getenv('EDERP_ADMISSION_JSON'),wp_json_encode(['row'=>$pdfData,'config'=>['campos'=>AdmissionForm::fields(),'estados_civis'=>[],'configuracao'=>AdmissionSettings::read()]]));
 echo "PUBLIC ADMISSIONS OK - $checks verificações\n";
