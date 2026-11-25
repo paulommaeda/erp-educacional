@@ -2,57 +2,36 @@
 declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\Pdf;
 
-use EducacionalERP\Vendor\Fpdf\FPDF;
-
-require_once dirname(__DIR__,3).'/lib/fpdf/fpdf.php';
-
-final class EnrollmentSignaturesPdf extends FPDF
+final class EnrollmentSignaturesPdf extends SchoolReportPdf
 {
     private const MARGIN=12;
     private const WIDTH=186;
     private const RA=33;
     private const NAME=91;
 
-    private function __construct(private array $report,private string $school,private ?string $logo)
+    private array $report;
+
+    private function __construct(array $school,?string $logo)
     {
-        parent::__construct('P','mm','A4');
-        $this->fontpath=dirname(__DIR__,3).'/lib/fpdf/font/';
-        $this->SetMargins(self::MARGIN,self::MARGIN,self::MARGIN);
-        $this->SetAutoPageBreak(false,self::MARGIN);
-        $this->SetTitle('Lista de assinaturas',true);
-        $this->SetAuthor($school,true);
-        $this->SetCreator('ERP Educacional');
+        parent::__construct('P',self::MARGIN,$school,$logo,'Lista de assinaturas');
     }
 
-    public static function render(array $report,array $school):string
+    public static function render(array $reports,array $school):string
     {
-        $logo=ReceiptLogo::load($school,'a lista de assinaturas');
-        try{
-            $pdf=new self($report,(string)$school['nome'],$logo['path']);
-            $pdf->AddPage();
-            $pdf->body();
+        return self::withLogo($school,'a lista de assinaturas',static function(?string $logo) use($reports,$school){
+            $pdf=new self($school,$logo);
+            foreach($reports as $report){
+                $pdf->report=$report;
+                $pdf->AddPage();
+                $pdf->body();
+            }
             return $pdf->Output('S');
-        }finally{
-            foreach($logo['cleanup'] as $path)@unlink($path);
-        }
+        });
     }
 
     public function Header()
     {
-        $this->SetTextColor(25,25,25);
-        if($this->logo){
-            [$w,$h,$type]=getimagesize($this->logo);
-            $scale=min(70/$w,20/$h);
-            $this->Image($this->logo,(210-$w*$scale)/2,self::MARGIN,$w*$scale,$h*$scale,$type===IMAGETYPE_PNG?'PNG':'JPG');
-            $y=self::MARGIN+$h*$scale+5;
-        }else{
-            $this->SetFont('Helvetica','B',13);
-            $this->MultiCell(self::WIDTH,6,$this->encode($this->school),0,'C');
-            $y=$this->GetY()+4;
-        }
-        $this->SetDrawColor(89,89,89);
-        $this->Line(self::MARGIN,$y,self::MARGIN+self::WIDTH,$y);
-        $this->SetXY(self::MARGIN,$y+3);
+        $this->schoolHeader(20);
         $width=self::WIDTH/3;
         $this->SetFont('Helvetica','B',9);
         $this->Cell($width,5,$this->encode('Período Letivo'));
@@ -101,26 +80,4 @@ final class EnrollmentSignaturesPdf extends FPDF
         }
     }
 
-    private function wrap(string $value,float $width):array
-    {
-        $text=$this->encode($value);
-        $width-=2*$this->cMargin;
-        $lines=[];
-        while($this->GetStringWidth($text)>$width){
-            $length=1;
-            while($this->GetStringWidth(substr($text,0,$length+1))<=$width)$length++;
-            $space=strrpos(substr($text,0,$length+1),' ');
-            if($space>0)$length=$space;
-            $lines[]=substr($text,0,$length);
-            $text=ltrim(substr($text,$length));
-        }
-        $lines[]=$text;
-        return $lines;
-    }
-
-    private function encode(string $value):string
-    {
-        $value=preg_replace('/[\x00-\x20]+/u',' ',trim($value))??'';
-        return mb_convert_encoding($value,'Windows-1252','UTF-8');
-    }
 }

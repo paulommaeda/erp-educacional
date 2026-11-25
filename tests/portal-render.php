@@ -7,6 +7,8 @@ $GLOBALS['logged']=false;
 function current_user_can($cap){return false;}
 function is_user_logged_in(){return $GLOBALS['logged'];}
 function wp_get_current_user(){return (object)['ID'=>2,'roles'=>['erp_pessoa'],'display_name'=>'Pessoa'];}
+function wp_roles(){return (object)['roles'=>['erp_pessoa'=>['capabilities'=>['read'=>true]]]];}
+function add_option($key,$value,...$args){return true;}
 function sanitize_key($v){return strtolower(preg_replace('/[^a-zA-Z0-9_\-]/','',$v));}
 function sanitize_text_field($v){return strip_tags($v);}
 function is_admin(){return false;}
