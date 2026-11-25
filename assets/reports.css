@@ -39,6 +39,10 @@
 .erp-roster-table th{background:#e8e8e8}
 .erp-roster-table td{background:#fff}
 .erp-roster-table tbody:nth-of-type(odd) td{background:#f7f7f7}
+.erp-reports .erp-installment-report-table{min-width:700px}
+.erp-reports .erp-installment-report-table :is(td,th):nth-child(n+3){text-align:right}
+.erp-reports .erp-installment-report-table tbody tr:nth-child(even) td{background:#fff}
+.erp-installment-report-month{margin:.75rem 0 0;font-size:1rem}
 
 @media(max-width:480px){
     .erp-signature-details{font-size:.75rem}

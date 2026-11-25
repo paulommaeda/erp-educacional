@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.49
+# ERP Educacional — 0.19.50
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -16,9 +16,11 @@ Em **Perfis e acessos**, abra o perfil e marque os relatórios desejados na seç
 
 Em **Relatórios**, selecione o período letivo e uma turma da coligada ativa ou a opção **Todas**. A **Lista de assinaturas** separa os alunos por turma. O relatório **Alunos** mostra os contatos do aluno e dos responsáveis com vínculo vigente e permite marcar várias situações de matrícula. Com nenhuma situação marcada, todas são incluídas. Use **Ver na tela** e **Salvar em PDF**. O relatório Alunos usa A4 em paisagem com margens de 5 mm.
 
+O relatório **Parcelas** permite selecionar um aluno, um mês de competência ou **Todos** em cada filtro. Exibe uma linha por lançamento, com valores atualizados e agrupamento por competência na prévia e no PDF em A4 paisagem. A coluna **Pontualidade** mostra o desconto previsto para a parcela. O **Valor líquido** corresponde à parcela original menos o desconto incondicional. Administradores podem liberar o relatório para outros perfis em **Perfis e acessos**.
+
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.49.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.50.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 52**, que acrescenta a fila de envio automático de matrículas ao K8. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.

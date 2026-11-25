@@ -11,7 +11,7 @@ use EducacionalERP\Infrastructure\WordPress\{Access,SchemaMigration};
 use EducacionalERP\Presentation\Rest\Controller;
 use EducacionalERP\Presentation\Portal\Portal;
 $admin=get_users(['role'=>'administrator','number'=>1])[0];wp_set_current_user($admin->ID);Access::install();$prefix=$wpdb->prefix;$saved=[];$users=[];$roles=[];$checks=0;$tag=bin2hex(random_bytes(4));$oldGet=$_GET;
-foreach(['ederp_schema_version','ederp_schema_error','ederp_schema_integrity','ederp_schema_attempt_release','ederp_pontualidade','ederp_menu_policy','ederp_field_group_policy','ederp_user_permissions','ederp_educbank','ederp_school_identity'] as $key)$saved[$key]=get_option($key,null);
+foreach(['ederp_schema_version','ederp_schema_error','ederp_schema_integrity','ederp_schema_attempt_release','ederp_pontualidade','ederp_menu_policy','ederp_report_policy','ederp_field_group_policy','ederp_user_permissions','ederp_educbank','ederp_school_identity'] as $key)$saved[$key]=get_option($key,null);
 add_filter('pre_wp_mail',static fn()=>true,999,2);add_filter('pre_http_request',static fn()=>new WP_Error('test_http_blocked','Transporte bloqueado no teste.'),999,3);
 function fwpOK(bool $ok,string $label):void{global $checks;if(!$ok){fwrite(STDERR,'FAIL: '.$label.PHP_EOL);throw new RuntimeException($label);}$checks++;echo "PASS: $label\n";}
 function fwpActor(int $id):void{wp_set_current_user(0);wp_set_current_user($id);}
@@ -36,5 +36,20 @@ try{
     $company=$db->insert('coligadas',['nome'=>'OUTRA ESCOLA','razao_social'=>'OUTRA ESCOLA']);fwpActor($actors['dashboard']);fwpOK(fwpReq('coligadas/selecionar',['codcoligada'=>$company])->get_status()===200,'operador do painel seleciona coligada');fwpOK(fwpReq('gestao-financeira',null,['codperiodo'=>'todos'])->get_data()['totais']['parcelas']===0,'relatório não mistura coligadas');fwpOK(fwpReq('gestao-financeira',null,['idaluno'=>$fixture['a']['idaluno']])->get_status()===422,'identificador de aluno de outra coligada recusado');fwpReq('coligadas/selecionar',['codcoligada'=>1]);
     $before=serialize([$db->rows('SELECT * FROM '.$db->table('lancamentos').' ORDER BY idlancamento'),$db->rows('SELECT * FROM '.$db->table('baixas').' ORDER BY idbaixa')]);fwpReq('gestao-financeira',null,['codperiodo'=>'todos']);fwpReq('gestao-financeira/filtros',null,['tipo'=>'turmas']);fwpOK($before===serialize([$db->rows('SELECT * FROM '.$db->table('lancamentos').' ORDER BY idlancamento'),$db->rows('SELECT * FROM '.$db->table('baixas').' ORDER BY idbaixa')]),'consultas não alteram cobranças nem pagamentos');
     fwpActor($admin->ID);fwpReq('perfis/menus',['role'=>$roles[1],'menus'=>[]]);fwpActor($actors['dashboard']);fwpOK(fwpReq('gestao-financeira')->get_status()===403&&fwpReq('gestao-financeira/filtros')->get_status()===403,'revogação bloqueia resumo e filtros imediatamente');
+    fwpActor($admin->ID);
+    fwpOK(fwpReq('perfis/menus',['role'=>$roles[1],'menus'=>[],'reports'=>['parcelas']])->get_status()===200,'Parcelas pode ser liberado por perfil como relatório independente');
+    $_GET=['erp_tela'=>'relatorios','relatorio'=>'parcelas','relatorio_aluno'=>$fixture['a']['idaluno'],'relatorio_mes'=>'2027-01'];
+    fwpActor($actors['finance']);
+    $portal=new Portal();
+    $html=$portal->render('inicio');
+    fwpOK(!str_contains($html,'ALUNO DASH-A')&&!str_contains($html,'data-erp-report-download'),'perfil financeiro sem permissão para Parcelas não recebe valores');
+    fwpActor($actors['dashboard']);
+    $html=$portal->render('inicio');
+    $preview=strstr($html,'<table class="erp-roster-table erp-installment-report-table">')?:'';
+    fwpOK(str_contains($preview,'ALUNO DASH-A')&&!str_contains($preview,'ALUNO DASH-B')&&str_contains($preview,'R$ 1.003,00'),'prévia consulta aluno e competência e mostra líquido com precisão DECIMAL');
+    fwpOK(substr_count($html,'<option value="todos">Todos</option>')===2&&str_contains($html,'data-erp-report-download'),'filtros oferecem Todos e PDF usa a mesma seleção');
+    $source=new \EducacionalERP\Application\InstallmentReport($db);
+    $pdf=\EducacionalERP\Infrastructure\Pdf\InstallmentReportPdf::render($source->sheets((int)$fixture['a']['idaluno'],'2027-01'),['nome'=>'Colégio fictício']);
+    fwpOK(str_starts_with($pdf,'%PDF-')&&str_contains($pdf,'841.89 595.28'),'relatório gera PDF paisagem com filtro de competência');
     echo "WORDPRESS_FINANCIAL_DASHBOARD_OK: $checks verificações / WordPress $wp_version / MariaDB ".$wpdb->db_version()."\n";
 }finally{fwpActor($admin->ID);foreach($users as $user)wp_delete_user($user);foreach($roles as $role)remove_role($role);$wpdb->prefix=$prefix;$_GET=$oldGet;foreach($saved as $key=>$value){if($value===null)delete_option($key);else update_option($key,$value,false);}}
