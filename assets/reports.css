@@ -1,0 +1,31 @@
+.erp-reports h1{margin:0 0 1rem}
+.erp-reports h2{margin:0 0 1rem}
+.erp-report-filters{display:flex;align-items:end;flex-wrap:wrap;gap:.75rem}
+.erp-report-filters label{display:grid;gap:.3rem;min-width:0;flex:1 1 13rem}
+.erp-report-filters select{width:100%;min-width:0}
+.erp-report-actions{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.erp-reports .erp-report-actions .erp-link-button{margin:0}
+.erp-signature-sheet{margin:1.25rem auto 0;padding:clamp(.75rem,3vw,1.75rem);max-width:60rem;background:#fff;color:#191919;border:1px solid #dedede;border-radius:.5rem}
+.erp-signature-logo{display:grid;place-items:center;padding-bottom:.75rem;border-bottom:1px solid #595959;text-align:center}
+.erp-signature-logo img{display:block;width:auto;max-width:70%;height:auto;max-height:4.75rem;object-fit:contain}
+.erp-signature-details{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.4rem;margin:.65rem 0 1rem;font-size:.875rem}
+.erp-signature-details dt{font-weight:700}
+.erp-signature-details dd{margin:.15rem 0 0;overflow-wrap:anywhere}
+.erp-signature-details div:nth-child(2){text-align:center}
+.erp-signature-details div:last-child{text-align:right;white-space:nowrap}
+.erp-reports .erp-signature-table{width:100%;border-collapse:collapse;table-layout:fixed;border:0;border-radius:0;margin:0}
+.erp-signature-table col:first-child{width:17.75%}
+.erp-signature-table col:last-child{width:33.33%}
+.erp-signature-table th,.erp-signature-table td{color:#191919;text-align:left;padding:.5rem .38rem;border:0;white-space:normal;overflow-wrap:anywhere}
+.erp-signature-table th{background:#e8e8e8}
+.erp-signature-table tbody tr:nth-child(odd) td{background:#f7f7f7}
+.erp-signature-table tbody tr:nth-child(even) td{background:#fff}
+.erp-signature-table td{height:2.35rem;vertical-align:middle}
+.erp-signature-table td:last-child{vertical-align:bottom}
+.erp-signature-line{display:block;border-bottom:1px solid #595959}
+
+@media(max-width:480px){
+    .erp-signature-details{font-size:.75rem}
+    .erp-signature-details div:last-child dd{font-size:.7rem}
+    .erp-signature-table th,.erp-signature-table td{font-size:.8rem}
+}

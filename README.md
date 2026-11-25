@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.46
+# ERP Educacional — 0.19.47
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -10,9 +10,13 @@ Abra **Ajuda** no menu do portal para consultar e buscar as rotinas da secretari
 
 Em **ERP Educacional → Backup e restauração**, crie um ponto de recuperação completo ou somente do banco. O histórico exibe data, tipo e versões. Veja [como recuperar uma versão anterior](docs/BACKUP.md).
 
+## Relatórios
+
+Em **Relatórios → Lista de assinaturas**, selecione o período letivo e a turma da coligada ativa. Clique em **Ver na tela** para conferir a lista por nome ou em **Salvar em PDF** para baixar o documento em A4. O acesso acompanha a permissão de Matrículas.
+
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.46.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.47.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 52**, que acrescenta a fila de envio automático de matrículas ao K8. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.

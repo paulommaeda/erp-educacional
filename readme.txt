@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.46
+Stable tag: 0.19.47
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.47 =
+* Área Relatórios com lista de assinaturas por período letivo e turma, prévia na tela e PDF com a identidade da escola.
 
 = 0.19.46 =
 * Opção por coligada para enviar novas matrículas ao K8 em segundo plano, com situação por aluno, novas tentativas em falhas temporárias e envio manual disponível.
