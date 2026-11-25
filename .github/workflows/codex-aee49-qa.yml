@@ -1,0 +1,80 @@
+name: Validar AEE e Laudos
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    services:
+      maria:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: erp-local-fixture
+          MARIADB_DATABASE: erp_qa
+        ports: ['3306/tcp']
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: mysqli, mbstring, gd, zip, openssl, pdo_sqlite, fileinfo
+      - name: Verificar sintaxe e regressões em SQLite
+        run: |
+          git diff --check HEAD^1 HEAD
+          for f in erp-educacional.php src/Application/AdmissionAcceptance.php src/Application/DocumentChecklist.php src/Application/StudentDocuments.php src/Domain/AdmissionForm.php src/Infrastructure/WordPress/DocumentNotifications.php; do
+            php -l "$f"
+          done
+          node --check assets/family-students.js
+          for test in public-admissions fluent-admission-api family-students document-notifications portal-permissions; do
+            php "tests/$test.php"
+          done
+      - name: Preparar WordPress descartável
+        env:
+          WP_QA_DB_PORT: ${{ job.services.maria.ports['3306'] }}
+        run: |
+          wp_dir="$RUNNER_TEMP/wordpress"
+          echo "EDERP_TEST_BOOTSTRAP=$wp_dir/wp-load.php" >> "$GITHUB_ENV"
+          echo "EDERP_BACKUP_TEST_ROOT=$wp_dir" >> "$GITHUB_ENV"
+          echo "WP_QA_DB_PORT=$WP_QA_DB_PORT" >> "$GITHUB_ENV"
+          curl -fsSL --retry 2 https://wordpress.org/wordpress-6.8.3.tar.gz | tar xz -C "$RUNNER_TEMP"
+          cat > "$wp_dir/wp-config.php" <<'PHP'
+          <?php
+          define('DB_NAME','erp_qa');
+          define('DB_USER','root');
+          define('DB_PASSWORD','erp-local-fixture');
+          define('DB_HOST','127.0.0.1:'.getenv('WP_QA_DB_PORT'));
+          define('DB_CHARSET','utf8mb4');
+          define('DB_COLLATE','');
+          define('WP_HOME','http://erp-test.local');
+          define('WP_SITEURL',WP_HOME);
+          define('WP_HTTP_BLOCK_EXTERNAL',true);
+          define('DISABLE_WP_CRON',true);
+          define('WP_ENVIRONMENT_TYPE','local');
+          define('EDERP_TEST_DATABASE',true);
+          $table_prefix='wp_';
+          if(!defined('ABSPATH'))define('ABSPATH',__DIR__.'/');
+          require ABSPATH.'wp-settings.php';
+          PHP
+          export EDERP_TEST_BOOTSTRAP="$wp_dir/wp-load.php"
+          php <<'PHP'
+          <?php
+          define('WP_INSTALLING',true);
+          $_SERVER['HTTP_HOST']='erp-test.local';
+          $_SERVER['REQUEST_URI']='/';
+          require getenv('EDERP_TEST_BOOTSTRAP');
+          require_once ABSPATH.'wp-admin/includes/upgrade.php';
+          add_filter('pre_wp_mail',static fn()=>true);
+          if(!is_blog_installed())wp_install('Escola QA','gestor_teste','local@example.test',false,'',wp_generate_password(24));
+          PHP
+      - name: Aprovar requerimentos e conferir documentos no WordPress
+        run: |
+          php tests/wordpress-admission-notifications.php
+          php tests/wordpress-document-notifications.php
