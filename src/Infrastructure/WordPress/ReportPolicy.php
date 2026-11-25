@@ -6,7 +6,7 @@ use EducacionalERP\Domain\RuleViolation;
 
 final class ReportPolicy
 {
-    public const REPORTS=['assinaturas'=>'Lista de assinaturas','alunos'=>'Alunos'];
+    public const REPORTS=['assinaturas'=>'Lista de assinaturas','alunos'=>'Alunos','parcelas'=>'Parcelas'];
     public const OPTION='ederp_report_policy';
 
     public static function settings():array

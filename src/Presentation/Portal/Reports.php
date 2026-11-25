@@ -2,10 +2,10 @@
 declare(strict_types=1);
 namespace EducacionalERP\Presentation\Portal;
 
-use EducacionalERP\Application\{Coligadas,EnrollmentReports,SchoolSettings,StudentRoster};
+use EducacionalERP\Application\{Coligadas,EnrollmentReports,InstallmentReport,SchoolSettings,StudentRoster};
 use EducacionalERP\Domain\{Input,RuleViolation,Store};
 use EducacionalERP\Infrastructure\Database\Database;
-use EducacionalERP\Infrastructure\Pdf\{EnrollmentSignaturesPdf,StudentRosterPdf};
+use EducacionalERP\Infrastructure\Pdf\{EnrollmentSignaturesPdf,InstallmentReportPdf,StudentRosterPdf};
 use EducacionalERP\Infrastructure\WordPress\{ReportPolicy,SchemaMigration,SchoolIdentity};
 
 final class Reports
@@ -35,6 +35,11 @@ final class Reports
         echo '<section class="ederp-card"><h2>'.esc_html($available[$report]).'</h2>';
         if(SchemaMigration::pending()){
             echo '<p role="status">Atualize o banco do ERP para gerar este relatório.</p></section></section>';
+            return;
+        }
+        if($report==='parcelas'){
+            self::installments(new InstallmentReport($db),add_query_arg('relatorio',$report,$url));
+            echo '</section>';
             return;
         }
 
@@ -85,11 +90,7 @@ final class Reports
 
     private static function filters(string $url,string $report,array $periods,array $classes,int $period,string $class,array $statuses,bool $ready):void
     {
-        wp_parse_str((string)wp_parse_url($url,PHP_URL_QUERY),$query);
-        echo '<form method="get" action="'.esc_url(explode('?',$url,2)[0]).'" class="erp-report-filters" data-erp-report-filters>';
-        foreach($query as $key=>$value){
-            if(is_scalar($value))echo '<input type="hidden" name="'.esc_attr($key).'" value="'.esc_attr($value).'">';
-        }
+        self::openFilters($url);
         echo '<label>Período Letivo <select name="relatorio_periodo">';
         foreach($periods as $id=>$item){
             $label=$item['codigo']===$item['descricao']?$item['codigo']:$item['codigo'].' · '.$item['descricao'];
@@ -104,16 +105,82 @@ final class Reports
         echo '</select></label>';
         if($report==='alunos')self::statusFilter($statuses);
 
-        echo '<div class="erp-report-actions"><button type="submit">Ver na tela</button>';
-        if($ready){
-            $params=[
-                'relatorio_periodo'=>$period,'relatorio_turma'=>$class,
-                'relatorio_pdf'=>wp_create_nonce(self::nonce($report,$period,$class,$statuses)),
-            ];
-            if($statuses)$params['relatorio_situacao']=$statuses;
-            echo '<a class="erp-link-button" data-erp-report-download href="'.esc_url(add_query_arg($params,$url)).'">Salvar em PDF</a>';
+        $params=[
+            'relatorio_periodo'=>$period,'relatorio_turma'=>$class,
+            'relatorio_pdf'=>$ready?wp_create_nonce(self::nonce($report,$period,$class,$statuses)):null,
+        ];
+        if($statuses)$params['relatorio_situacao']=$statuses;
+        self::closeFilters($ready?add_query_arg($params,$url):null);
+    }
+
+    private static function openFilters(string $url):void
+    {
+        wp_parse_str((string)wp_parse_url($url,PHP_URL_QUERY),$query);
+        echo '<form method="get" action="'.esc_url(explode('?',$url,2)[0]).'" class="erp-report-filters" data-erp-report-filters>';
+        foreach($query as $key=>$value){
+            if(is_scalar($value))echo '<input type="hidden" name="'.esc_attr($key).'" value="'.esc_attr($value).'">';
         }
+    }
+
+    private static function closeFilters(?string $download):void
+    {
+        echo '<div class="erp-report-actions"><button type="submit">Ver na tela</button>';
+        if($download!==null)echo '<a class="erp-link-button" data-erp-report-download href="'.esc_url($download).'">Salvar em PDF</a>';
         echo '</div></form>';
+    }
+
+    private static function installments(InstallmentReport $service,string $url):void
+    {
+        $student=null;
+        $month=null;
+        $sheets=null;
+        $error='';
+        if(isset($_GET['relatorio_aluno'],$_GET['relatorio_mes'])){
+            try{
+                [$student,$month]=InstallmentReport::filters($_GET['relatorio_aluno'],$_GET['relatorio_mes']);
+                $sheets=$service->sheets($student,$month);
+            }catch(RuleViolation $e){
+                $error=$e->getMessage();
+            }
+        }
+        $studentValue=$student===null?'todos':(string)$student;
+        $monthValue=$month??'todos';
+        self::openFilters($url);
+        echo '<label>Aluno <select name="relatorio_aluno"><option value="todos">Todos</option>';
+        foreach($service->students() as $item){
+            $id=(string)$item['idaluno'];
+            echo '<option value="'.esc_attr($id).'"'.selected($studentValue,$id,false).'>'.esc_html($item['nome'].' · RA '.$item['ra']).'</option>';
+        }
+        echo '</select></label><label>Mês de competência <select name="relatorio_mes"><option value="todos">Todos</option>';
+        $months=$service->months();
+        if($month!==null&&!in_array($month,$months,true))$months[]=$month;
+        foreach($months as $key){
+            echo '<option value="'.esc_attr($key).'"'.selected($monthValue,$key,false).'>'.esc_html(InstallmentReport::monthLabel($key)).'</option>';
+        }
+        echo '</select></label>';
+        self::closeFilters($sheets===null?null:add_query_arg([
+            'relatorio_aluno'=>$studentValue,'relatorio_mes'=>$monthValue,
+            'relatorio_pdf'=>wp_create_nonce(self::installmentNonce($student,$month)),
+        ],$url));
+        if($error)echo '<p class="erp-feedback error" role="alert">'.esc_html($error).'</p>';
+        echo '</section>';
+        if($sheets===null)return;
+        $logo=self::logo();
+        foreach($sheets as $sheet){
+            $label=esc_html($sheet['month']);
+            echo '<article class="erp-signature-sheet erp-roster-sheet" aria-label="Parcelas de '.esc_attr($sheet['month']).'">'.$logo;
+            echo '<h3 class="erp-installment-report-month">'.$label.'</h3>';
+            echo '<div class="erp-roster-scroll" role="region" aria-label="Tabela de parcelas" tabindex="0"><table class="erp-roster-table erp-installment-report-table"><thead><tr>';
+            foreach(InstallmentReport::COLUMNS as $column)echo '<th scope="col">'.esc_html($column).'</th>';
+            echo '</tr></thead><tbody>';
+            foreach($sheet['rows'] as $row){
+                echo '<tr>';
+                foreach($row as $value)echo '<td>'.esc_html($value).'</td>';
+                echo '</tr>';
+            }
+            if(!$sheet['rows'])echo '<tr><td colspan="6">Nenhuma parcela encontrada para os filtros selecionados.</td></tr>';
+            echo '</tbody></table></div></article>';
+        }
     }
 
     private static function statusFilter(array $statuses):void
@@ -197,6 +264,19 @@ final class Reports
         return 'ederp_relatorio_'.Coligadas::current().'_'.$report.'_'.$period.'_'.$class.'_'.implode(',',$statuses);
     }
 
+    private static function installmentNonce(?int $student,?string $month):string
+    {
+        return 'ederp_relatorio_parcelas_'.Coligadas::current().'_'.($student??'todos').'_'.($month??'todos');
+    }
+
+    private static function verifyPdf(string $action):void
+    {
+        $nonce=$_GET['relatorio_pdf'];
+        if(!is_string($nonce)||!wp_verify_nonce($nonce,$action)){
+            wp_die('Abra novamente o relatório no portal para salvar em PDF.','',['response'=>403]);
+        }
+    }
+
     public static function download():void
     {
         $portal=(int)get_option('ederp_portal_page',0);
@@ -207,33 +287,43 @@ final class Reports
         if(!is_string($report)||!isset($available[$report]))wp_die('Seu perfil não tem acesso a este relatório.','',['response'=>403]);
         if(SchemaMigration::pending())wp_die('Atualize o banco do ERP para gerar este relatório.','',['response'=>503]);
         try{
-            $period=Input::id($_GET['relatorio_periodo']??null);
-            $requestedClass=$_GET['relatorio_turma']??null;
-            $classValue=$requestedClass===self::ALL_CLASSES?self::ALL_CLASSES:(string)Input::id($requestedClass);
-            $statuses=$report==='alunos'?StudentRoster::statuses($_GET['relatorio_situacao']??[]):[];
-            $nonce=$_GET['relatorio_pdf'];
-            if(!is_string($nonce)||!wp_verify_nonce($nonce,self::nonce($report,$period,$classValue,$statuses))){
-                wp_die('Abra novamente o relatório no portal para salvar em PDF.','',['response'=>403]);
-            }
-            $service=new EnrollmentReports(new Database($GLOBALS['wpdb']));
-            $periods=$service->periods();
-            self::period($periods,$period);
-            $classes=$service->classes($period);
-            $class=self::classId($classes,$classValue);
-            $rows=self::rows($service,$report,$periods[$period],$classes,$class,$statuses);
             $school=SchoolIdentity::read();
             $school['logo_padrao']=get_option(SchoolIdentity::option(),false)===false;
-            $pdf=$report==='alunos'?StudentRosterPdf::render($rows,$school):EnrollmentSignaturesPdf::render($rows,$school);
+            $db=new Database($GLOBALS['wpdb']);
+            if($report==='parcelas'){
+                [$student,$month]=InstallmentReport::filters($_GET['relatorio_aluno']??null,$_GET['relatorio_mes']??null);
+                self::verifyPdf(self::installmentNonce($student,$month));
+                $pdf=InstallmentReportPdf::render((new InstallmentReport($db))->sheets($student,$month),$school);
+                $name='parcelas-'.($month??'todos-os-meses').($student===null?'':'-aluno-'.$student).'.pdf';
+            }else{
+                [$pdf,$name]=self::enrollmentPdf($db,$report,$school);
+            }
         }catch(RuleViolation $e){
             wp_die(esc_html($e->getMessage()),'',['response'=>422]);
         }
-        $kind=$report==='alunos'?'alunos':'lista-assinaturas';
-        $classCode=$class===null?self::ALL_CLASSES:$classes[$class]['codigo'];
-        $name=$kind.'-'.sanitize_title($periods[$period]['codigo'].'-'.$classCode).'.pdf';
         header('Content-Type: application/pdf');
         header('Content-Disposition: attachment; filename="'.$name.'"');
         header('X-Content-Type-Options: nosniff');
         echo $pdf;
         exit;
+    }
+
+    private static function enrollmentPdf(Store $db,string $report,array $school):array
+    {
+        $period=Input::id($_GET['relatorio_periodo']??null);
+        $requestedClass=$_GET['relatorio_turma']??null;
+        $classValue=$requestedClass===self::ALL_CLASSES?self::ALL_CLASSES:(string)Input::id($requestedClass);
+        $statuses=$report==='alunos'?StudentRoster::statuses($_GET['relatorio_situacao']??[]):[];
+        self::verifyPdf(self::nonce($report,$period,$classValue,$statuses));
+        $service=new EnrollmentReports($db);
+        $periods=$service->periods();
+        self::period($periods,$period);
+        $classes=$service->classes($period);
+        $class=self::classId($classes,$classValue);
+        $rows=self::rows($service,$report,$periods[$period],$classes,$class,$statuses);
+        $pdf=$report==='alunos'?StudentRosterPdf::render($rows,$school):EnrollmentSignaturesPdf::render($rows,$school);
+        $kind=$report==='alunos'?'alunos':'lista-assinaturas';
+        $classCode=$class===null?self::ALL_CLASSES:$classes[$class]['codigo'];
+        return [$pdf,$kind.'-'.sanitize_title($periods[$period]['codigo'].'-'.$classCode).'.pdf'];
     }
 }

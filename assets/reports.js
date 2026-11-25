@@ -10,7 +10,7 @@ document.querySelectorAll('[data-erp-report-filters]').forEach(form => {
             statusCount.textContent = selected ? selected + ' selecionada(s)' : 'Todas';
         }
     });
-    period.addEventListener('change', () => {
+    period?.addEventListener('change', () => {
         if (classSelect.value !== 'todas') classSelect.value = '';
         form.requestSubmit();
     });
