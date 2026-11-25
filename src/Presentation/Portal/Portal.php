@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace EducacionalERP\Presentation\Portal;
 use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy};
+use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Presentation\Admin\Pages;
 final class Portal
 {
@@ -35,6 +36,9 @@ final class Portal
             if(MenuPolicy::can('ajuda')&&(($_GET['erp_tela']??null)==='ajuda'||has_shortcode($post->post_content,'erp_ajuda'))){
                 HelpWiki::assets();
             }
+            if(MenuPolicy::can('relatorios')&&(($_GET['erp_tela']??null)==='relatorios'||has_shortcode($post->post_content,'erp_relatorios'))){
+                Reports::assets();
+            }
         });
         add_action('admin_init',[self::class,'setup'],20);
         add_action('admin_init',static function(){if(is_user_logged_in()&&!Access::isAdmin()&&!wp_doing_ajax()){wp_safe_redirect(self::url());exit;}},1);
@@ -42,6 +46,7 @@ final class Portal
         add_filter('login_redirect',static function($to,$requested,$user){if($user instanceof \WP_User&&!in_array('administrator',$user->roles,true))return self::url();return $to;},10,3);
         add_filter('template_include',static function($file){if(is_page((int)get_option('ederp_portal_page',0))&&get_option('ederp_portal_page'))return dirname(__DIR__,3).'/templates/portal.php';return $file;});
         add_action('template_redirect',static function(){global $post;if($post instanceof \WP_Post&&str_contains($post->post_content,'[erp_')){if(!defined('DONOTCACHEPAGE'))define('DONOTCACHEPAGE',true);nocache_headers();}});
+        add_action('template_redirect',[Reports::class,'download'],8);
         add_shortcode('erp_app',fn()=>$this->render('inicio'));
         add_shortcode('erp_portal',fn()=>$this->render('inicio'));
         foreach(MenuPolicy::MENUS as $key=>$label)add_shortcode('erp_'.$key,fn()=>$this->render($key));
@@ -73,6 +78,7 @@ final class Portal
         ob_start();echo '<div class="journey-app ederp"><a class="journey-skip" href="#journey-content">Ir para o conteúdo</a><aside class="journey-sidebar"><a class="journey-brand" href="'.esc_url(self::url()).'">'.$logo.'</a>'.$this->nav().'<p class="journey-sidebar-note">Gestão escolar<br>'.$schoolName.'</p></aside><div class="journey-body"><header class="journey-header"><a href="'.esc_url(self::url()).'">'.$logo.'</a><span>Portal educacional</span>'.$account.'</header><main id="journey-content" class="journey-content" data-journey-screen="'.esc_attr($view).'" tabindex="-1">';
         if(!MenuPolicy::can($view))echo '<section class="ederp-card"><h1>Acesso indisponível</h1><p>Seu perfil não tem acesso a esta área.</p><a href="'.esc_url(self::url()).'">Voltar ao início</a></section>';
         elseif($view==='ajuda'){HelpWiki::assets();HelpWiki::render();}
+        elseif($view==='relatorios'){Reports::render(new Database($GLOBALS['wpdb']));}
         elseif($view==='documentos')echo '<section data-erp-documents><p role="status">Carregando documentos...</p></section>';
         elseif($view==='chat')echo '<section data-erp-chat><p role="status">Carregando conversas...</p></section>';
         elseif(in_array($view,['pessoas','alunos','professores','academico','matriculas','financeiro','gestao_financeira','contratos','bolsas','rematriculas','exportacao','importacao','requerimentos','configuracoes'],true)){
