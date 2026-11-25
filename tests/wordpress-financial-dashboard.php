@@ -48,6 +48,8 @@ try{
     $html=$portal->render('inicio');
     $preview=strstr($html,'<table class="erp-roster-table erp-installment-report-table">')?:'';
     fwpOK(str_contains($preview,'ALUNO DASH-A')&&!str_contains($preview,'ALUNO DASH-B')&&str_contains($preview,'R$ 1.003,00'),'prévia consulta aluno e vencimento mesmo quando a competência difere');
+    fwpOK(str_contains($preview,'<tfoot><tr><th scope="row" colspan="2">Total do mês · 1 aluno</th><td>R$ 4.059,00</td><td colspan="2"></td><td>R$ 3.135,50</td>'),
+        'rodapé da prévia conta o aluno uma vez e soma os valores do filtro');
     fwpOK(str_contains($html,'Mês de vencimento')&&substr_count($html,'<option value="todos">Todos</option>')===2&&str_contains($html,'data-erp-report-download'),'filtros oferecem Todos e PDF usa a mesma seleção');
     $source=new \EducacionalERP\Application\InstallmentReport($db);
     $pdf=\EducacionalERP\Infrastructure\Pdf\InstallmentReportPdf::render($source->sheets((int)$fixture['a']['idaluno'],'2027-01'),['nome'=>'Colégio fictício']);

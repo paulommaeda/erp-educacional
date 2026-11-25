@@ -179,7 +179,12 @@ final class Reports
                 echo '</tr>';
             }
             if(!$sheet['rows'])echo '<tr><td colspan="6">Nenhuma parcela encontrada para os filtros selecionados.</td></tr>';
-            echo '</tbody></table></div></article>';
+            echo '</tbody><tfoot>';
+            foreach($sheet['totals'] as $total){
+                echo '<tr><th scope="row" colspan="2">'.esc_html($total['label']).'</th><td>'.esc_html($total['original']).'</td>'
+                    .'<td colspan="2"></td><td>'.esc_html($total['net']).'</td></tr>';
+            }
+            echo '</tfoot></table></div></article>';
         }
     }
 

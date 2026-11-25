@@ -57,23 +57,52 @@ final class InstallmentReport
             $where.=' AND l.vencimento BETWEEN %s AND %s';
             array_push($args,$start,(new \DateTimeImmutable($start))->modify('last day of this month')->format('Y-m-d'));
         }
-        $rows=$this->db->rows('SELECT SUBSTR(l.vencimento,1,7) AS mes,a.ra,pe.nome,l.codcoligada,
+        $rows=$this->db->rows('SELECT SUBSTR(l.vencimento,1,7) AS mes,a.idaluno,a.ra,pe.nome,l.codcoligada,
             l.valor_original,l.desconto_incondicional,l.pontualidade_snapshot,l.valor_liquido'.$where.
             ' ORDER BY mes DESC,pe.nome,a.ra,l.vencimento,l.idlancamento',$args);
-        $sheets=[];
+        $groups=[];
+        $students=[];
         foreach($rows as $row){
+            $key=$row['mes'];
+            $original=Money::cents((string)$row['valor_original']);
             $net=Money::cents((string)$row['valor_liquido']);
             $punctuality=min(ContractDiscounts::punctuality($row),max(0,$net));
-            $sheets[$row['mes']][]=[
-                $row['ra'],$row['nome'],self::currency(Money::cents((string)$row['valor_original'])),
+            $groups[$key]??=['rows'=>[],'students'=>[],'original'=>0,'net'=>0];
+            $groups[$key]['rows'][]=[
+                $row['ra'],$row['nome'],self::currency($original),
                 self::currency(Money::cents((string)$row['desconto_incondicional'])),self::currency($punctuality),self::currency($net),
             ];
+            $groups[$key]['students'][$row['idaluno']]=true;
+            $groups[$key]['original']+=$original;
+            $groups[$key]['net']+=$net;
+            $students[$row['idaluno']]=true;
         }
-        if(!$sheets)return [['month'=>self::monthLabel($month),'rows'=>[]]];
+        if(!$groups)return [[
+            'month'=>self::monthLabel($month),'rows'=>[],
+            'totals'=>[self::totals($month===null?'Total geral':'Total do mês',0,0,0)],
+        ]];
 
-        $out=[];
-        foreach($sheets as $key=>$group)$out[]=['month'=>self::monthLabel($key),'rows'=>$group];
-        return $out;
+        $sheets=[];
+        foreach($groups as $key=>$group){
+            $sheets[]=[
+                'month'=>self::monthLabel($key),'rows'=>$group['rows'],
+                'totals'=>[self::totals('Total do mês',count($group['students']),$group['original'],$group['net'])],
+            ];
+        }
+        if(count($sheets)>1){
+            $sheets[array_key_last($sheets)]['totals'][]=self::totals(
+                'Total geral',count($students),array_sum(array_column($groups,'original')),array_sum(array_column($groups,'net')),
+            );
+        }
+        return $sheets;
+    }
+
+    private static function totals(string $label,int $students,int $original,int $net):array
+    {
+        return [
+            'label'=>$label.' · '.$students.($students===1?' aluno':' alunos'),
+            'original'=>self::currency($original),'net'=>self::currency($net),
+        ];
     }
 
     private function scope():string

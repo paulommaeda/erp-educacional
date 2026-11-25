@@ -42,6 +42,8 @@
 .erp-reports .erp-installment-report-table{min-width:700px}
 .erp-reports .erp-installment-report-table :is(td,th):nth-child(n+3){text-align:right}
 .erp-reports .erp-installment-report-table tbody tr:nth-child(even) td{background:#fff}
+.erp-reports .erp-installment-report-table tfoot :is(td,th){background:#e8e8e8;border-top:1px solid #bdbdbd;font-weight:700}
+.erp-reports .erp-installment-report-table tfoot td{text-align:right}
 .erp-installment-report-month{margin:.75rem 0 0;font-size:1rem}
 
 @media(max-width:480px){
