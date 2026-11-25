@@ -100,6 +100,7 @@ function sanitize_email(string $s): string {return $s;}
 function is_email(string $s): bool {return (bool)filter_var($s,FILTER_VALIDATE_EMAIL);}
 function wp_generate_password(int $length=12,bool $special=true,bool $extra=false):string{return substr(bin2hex(random_bytes($length)),0,$length);}
 function update_option(string $k,mixed $v,...$a):void{$GLOBALS['test_options'][$k]=$v;}
+function add_option(string $k,mixed $v,...$a):bool{if(array_key_exists($k,$GLOBALS['test_options']))return false;$GLOBALS['test_options'][$k]=$v;return true;}
 function get_option(string $k,mixed $default=false):mixed{return $GLOBALS['test_options'][$k]??$default;}
 function delete_option(string $k):void{unset($GLOBALS['test_options'][$k]);}
 $wpdb=new wpdb();
