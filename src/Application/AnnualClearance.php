@@ -24,41 +24,54 @@ final class AnnualClearance
     public function years(): array
     {
         return array_column($this->db->rows('SELECT DISTINCT SUBSTR(l.vencimento,1,4) AS ano'.$this->titles()
-            .' WHERE '.self::scope().' AND l.vencimento<%s ORDER BY ano DESC',
+            .' WHERE l.codcoligada=%d AND '.self::scope().' AND l.vencimento<%s ORDER BY ano DESC',
             [Coligadas::current(), substr(Input::today(), 0, 4).'-01-01']), 'ano');
     }
 
-    public function responsibles(int $year): array
+    public function personalOptions(int $responsible): array
+    {
+        $companies = $this->db->table('coligadas');
+        $rows = $this->db->rows('SELECT DISTINCT l.codcoligada AS company,issuer.nome,SUBSTR(l.vencimento,1,4) AS ano'.$this->titles()
+            ." JOIN $companies issuer ON issuer.codcoligada=l.codcoligada"
+            .' WHERE '.self::scope().' AND l.vencimento<%s AND '.$this->responsibility()
+            .' ORDER BY ano DESC,issuer.nome,company', [substr(Input::today(), 0, 4).'-01-01', $responsible, $responsible]);
+        $options = [];
+        foreach ($rows as $row) {
+            $company = (int)$row['company'];
+            $year = (int)$row['ano'];
+            $options[$company.'-'.$year] = ['company'=>$company, 'year'=>$year, 'label'=>$year.' · '.$row['nome']];
+        }
+        return $options;
+    }
+
+    public function responsibles(int $year, ?int $student = null, ?int $period = null): array
     {
         $payments = $this->db->table('baixas');
         $people = $this->db->table('pessoas');
+        [$where, $args] = $this->filters($year, $student, $period);
         return $this->db->rows('SELECT DISTINCT rf.codpessoa,rf.nome'.$this->titles()
             ." LEFT JOIN $payments b ON b.idlancamento=l.idlancamento AND b.codcoligada=l.codcoligada
                 AND CAST(l.saldo_aberto AS DECIMAL(15,2))=0 AND ".$this->unreversed('b')
             ." JOIN $people rf ON rf.codpessoa=l.codpessoa_rf_atual OR rf.codpessoa=b.codpessoa_devedor"
-            .' WHERE '.self::scope().' AND l.vencimento BETWEEN %s AND %s ORDER BY rf.nome,rf.codpessoa',
-            [Coligadas::current(), $year.'-01-01', $year.'-12-31']);
+            .$where.' ORDER BY rf.nome,rf.codpessoa', $args);
     }
 
-    public function details(int $year, int $responsible, array $school): array
+    public function details(int $year, int $responsible, array $school, ?int $student = null, ?int $period = null): array
     {
-        self::year($year);
         $company = Coligadas::current();
         $payments = $this->db->table('baixas');
         $students = $this->db->table('alunos');
         $people = $this->db->table('pessoas');
+        [$where, $args] = $this->filters($year, $student, $period);
         $titles = $this->db->rows('SELECT l.idlancamento,l.status,l.saldo_aberto,l.vencimento,l.valor_original,l.valor_baixa,
-            p.numero,c.quantidade_parcelas,student.nome,b.codpessoa_devedor,b.valor_pago,b.data_pagamento'.$this->titles()
+            p.numero,c.quantidade_parcelas,student.nome,a.ra,b.codpessoa_devedor,b.valor_pago,b.data_pagamento'.$this->titles()
             ." JOIN $students a ON a.idaluno=m.idaluno AND a.codcoligada=l.codcoligada
                 JOIN $people student ON student.codpessoa=a.codpessoa
                 LEFT JOIN $payments b ON b.idlancamento=l.idlancamento AND b.codcoligada=l.codcoligada AND ".$this->unreversed('b')
-            .' WHERE '.self::scope()." AND l.vencimento BETWEEN %s AND %s
-                AND (l.codpessoa_rf_atual=%d OR (CAST(l.saldo_aberto AS DECIMAL(15,2))=0 AND EXISTS (
-                    SELECT 1 FROM $payments own WHERE own.idlancamento=l.idlancamento AND own.codcoligada=l.codcoligada
-                    AND own.codpessoa_devedor=%d AND ".$this->unreversed('own').')))
-                ORDER BY l.vencimento,student.nome,p.numero,l.idlancamento,b.data_pagamento,b.idbaixa',
-            [$company, $year.'-01-01', $year.'-12-31', $responsible, $responsible]);
-        if (!$titles) throw new RuleViolation('Nenhum título encontrado para este responsável no ano e na coligada selecionados.');
+            .$where.' AND '.$this->responsibility()
+            .' ORDER BY l.vencimento,student.nome,p.numero,l.idlancamento,b.data_pagamento,b.idbaixa',
+            [...$args, $responsible, $responsible]);
+        if (!$titles) throw new RuleViolation('Nenhum título encontrado para os filtros selecionados.');
 
         $groups = [];
         $pending = [];
@@ -77,8 +90,8 @@ final class AnnualClearance
         }
         if ($pending) {
             $count = count($pending);
-            $message = $count === 1 ? 'Há 1 título com saldo em aberto neste ano.' : 'Há '.$count.' títulos com saldo em aberto neste ano.';
-            throw new RuleViolation($message.' Confira a Gestão financeira antes de emitir a declaração.');
+            $message = $count === 1 ? 'Há 1 título com saldo em aberto na seleção.' : 'Há '.$count.' títulos com saldo em aberto na seleção.';
+            throw new RuleViolation($message.' A declaração ficará disponível após a quitação.');
         }
         $rows = [];
         $total = 0;
@@ -112,8 +125,11 @@ final class AnnualClearance
         if (empty($school['logo_id']) && empty($school['logo_padrao'])) $school['nome'] = $owner['nome'];
         $cnpj = preg_replace('/^(..)(...)(...)(....)(..)$/', '$1.$2.$3/$4-$5', $cnpj);
         $cpf = preg_replace('/^(...)(...)(...)(..)$/', '$1.$2.$3-$4', $cpf);
+        $scope = 'com vencimento no ano de '.$year;
+        if ($student !== null) $scope .= ', referentes ao aluno '.$titles[0]['nome'].' (RA '.$titles[0]['ra'].')';
+        if ($period !== null) $scope .= ', do período letivo '.$this->db->get('periodos_letivos', $period)['codigo'];
         $statement = $legalName.', inscrita no CNPJ nº '.$cnpj.', declara, nos termos da Lei nº 12.007, de 29 de julho de 2009, '
-            .'que os débitos com vencimento no ano de '.$year.' vinculados a '.$person['nome'].', CPF nº '.$cpf.', encontram-se quitados, conforme os títulos abaixo.';
+            .'que os débitos '.$scope.', vinculados a '.$person['nome'].', CPF nº '.$cpf.', encontram-se quitados, conforme os títulos abaixo.';
         $city = trim((string)($school['cidade'] ?? ''));
         $address = trim(implode(' ', array_filter([$school['rua'] ?? '', $school['numero'] ?? '', $school['complemento'] ?? ''])));
         $locality = implode(' – ', array_filter([$school['bairro'] ?? '', trim($city.' '.($school['estado'] ?? '')), $school['cep'] ?? '']));
@@ -137,7 +153,31 @@ final class AnnualClearance
 
     private static function scope(): string
     {
-        return "l.codcoligada=%d AND l.excluido_em IS NULL AND c.excluido_em IS NULL AND m.excluido_em IS NULL AND l.status<>'cancelado'";
+        return "l.excluido_em IS NULL AND c.excluido_em IS NULL AND m.excluido_em IS NULL AND l.status<>'cancelado'";
+    }
+
+    private function filters(int $year, ?int $student, ?int $period): array
+    {
+        self::year($year);
+        $where = ' WHERE l.codcoligada=%d AND '.self::scope().' AND l.vencimento BETWEEN %s AND %s';
+        $args = [Coligadas::current(), $year.'-01-01', $year.'-12-31'];
+        if ($student !== null) {
+            $where .= ' AND m.idaluno=%d';
+            $args[] = $student;
+        }
+        if ($period !== null) {
+            $where .= ' AND m.codperiodo=%d';
+            $args[] = $period;
+        }
+        return [$where, $args];
+    }
+
+    private function responsibility(): string
+    {
+        $payments = $this->db->table('baixas');
+        return "(l.codpessoa_rf_atual=%d OR (CAST(l.saldo_aberto AS DECIMAL(15,2))=0 AND EXISTS (
+            SELECT 1 FROM $payments own WHERE own.idlancamento=l.idlancamento AND own.codcoligada=l.codcoligada
+            AND own.codpessoa_devedor=%d AND ".$this->unreversed('own').')))';
     }
 
     private function unreversed(string $alias): string

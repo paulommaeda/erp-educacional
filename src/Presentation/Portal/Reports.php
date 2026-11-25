@@ -6,7 +6,7 @@ use EducacionalERP\Application\{AnnualClearance,Coligadas,EnrollmentReports,Inst
 use EducacionalERP\Domain\{Input,RuleViolation,Store};
 use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Infrastructure\Pdf\{AnnualClearancePdf,EnrollmentSignaturesPdf,InstallmentReportPdf,StudentRosterPdf};
-use EducacionalERP\Infrastructure\WordPress\{ReportPolicy,SchemaMigration,SchoolIdentity};
+use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,ReportPolicy,SchemaMigration,SchoolIdentity};
 
 final class Reports
 {
@@ -43,7 +43,7 @@ final class Reports
             return;
         }
         if($report==='quitacao_anual'){
-            self::annualClearance(new AnnualClearance($db),add_query_arg('relatorio',$report,$url));
+            self::annualClearance($db,add_query_arg('relatorio',$report,$url));
             echo '</section>';
             return;
         }
@@ -193,23 +193,30 @@ final class Reports
         }
     }
 
-    private static function annualClearance(AnnualClearance $service,string $url):void
+    private static function annualClearance(Store $db,string $url):void
     {
+        $service=new AnnualClearance($db);
         $years=$service->years();
         if(!$years){
             echo '<p>Nenhum lançamento de ano encerrado nesta coligada.</p></section>';
             return;
         }
         $year=(int)$years[0];
+        $student=$period=null;
         $responsible=null;
+        $responsibles=[];
         $data=null;
         $error='';
         try{
             if(isset($_GET['relatorio_ano']))$year=AnnualClearance::year($_GET['relatorio_ano']);
+            [$student,$period]=self::clearanceScope();
+            $responsibles=array_column($service->responsibles($year,$student,$period),null,'codpessoa');
             if(($_GET['relatorio_responsavel']??'')!==''){
                 $responsible=Input::id($_GET['relatorio_responsavel']);
-                $data=$service->details($year,$responsible,self::reportSchool());
+            }elseif(isset($_GET['relatorio_ano'])&&count($responsibles)===1){
+                $responsible=(int)array_key_first($responsibles);
             }
+            if($responsible!==null)$data=$service->details($year,$responsible,self::reportSchool(),$student,$period);
         }catch(RuleViolation $e){
             $error=$e->getMessage();
         }
@@ -219,19 +226,76 @@ final class Reports
         foreach($years as $option){
             echo '<option value="'.esc_attr((string)$option).'"'.selected($year,$option,false).'>'.esc_html((string)$option).'</option>';
         }
+        echo '</select></label><label>Aluno <select name="quitacao_aluno"><option value="todos">Todos</option>';
+        foreach((new InstallmentReport($db))->students() as $item){
+            $id=(string)$item['idaluno'];
+            echo '<option value="'.esc_attr($id).'"'.selected($student,$id,false).'>'.esc_html($item['nome'].' · RA '.$item['ra']).'</option>';
+        }
+        echo '</select></label><label>Período letivo <select name="quitacao_periodo"><option value="todos">Todos</option>';
+        foreach((new EnrollmentReports($db))->periods() as $item){
+            $id=(string)$item['codperiodo'];
+            echo '<option value="'.esc_attr($id).'"'.selected($period,$id,false).'>'.esc_html($item['codigo']).'</option>';
+        }
         echo '</select></label><label>Responsável financeiro <select name="relatorio_responsavel"><option value="">Selecione</option>';
-        foreach($service->responsibles($year) as $person){
+        foreach($responsibles as $person){
             $id=(string)$person['codpessoa'];
             echo '<option value="'.esc_attr($id).'"'.selected($responsible,$id,false).'>'.esc_html($person['nome'].' · Cód. '.$id).'</option>';
         }
         echo '</select></label>';
         self::closeFilters($data===null?null:add_query_arg([
             'relatorio_ano'=>$year,'relatorio_responsavel'=>$responsible,
-            'relatorio_pdf'=>wp_create_nonce(self::annualClearanceNonce($year,$responsible)),
+            'quitacao_aluno'=>$student??'todos','quitacao_periodo'=>$period??'todos',
+            'relatorio_pdf'=>wp_create_nonce(self::annualClearanceNonce($year,$responsible,$student,$period)),
+        ],$url));
+        if($error)echo '<p class="erp-feedback error" role="alert">'.esc_html($error).'</p>';
+        elseif(!$responsibles)echo '<p role="status">Nenhum responsável financeiro encontrado para os filtros selecionados.</p>';
+        echo '</section>';
+        if($data!==null)self::clearancePreview($data);
+    }
+
+    public static function personalClearance(Database $db):void
+    {
+        if(SchemaMigration::pending())return;
+        $responsible=self::personalResponsible($db);
+        if($responsible===null)return;
+        self::assets();
+        $service=new AnnualClearance($db);
+        $options=$service->personalOptions($responsible);
+        echo '<section class="erp-reports erp-personal-clearance"><section class="ederp-card"><h2>'.esc_html(AnnualClearance::TITLE).'</h2>';
+        if(!$options){
+            echo '<p>Nenhum lançamento de ano encerrado encontrado para sua conta.</p></section></section>';
+            return;
+        }
+        $selection=$_GET['quitacao_emissor']??'';
+        $option=null;
+        $data=null;
+        $error='';
+        if($selection!==''){
+            try{
+                $option=self::personalOption($options,$selection);
+                $data=self::personalData($service,$responsible,$option);
+            }catch(RuleViolation $e){
+                $error=$e->getMessage();
+            }
+        }
+        $url=add_query_arg('relatorio','quitacao_anual',Portal::url('meu_financeiro'));
+        self::openFilters($url);
+        echo '<label>Ano dos vencimentos e coligada <select name="quitacao_emissor" required><option value="">Selecione</option>';
+        foreach($options as $key=>$item){
+            echo '<option value="'.esc_attr($key).'"'.selected(is_string($selection)?$selection:'',$key,false).'>'.esc_html($item['label']).'</option>';
+        }
+        echo '</select></label>';
+        self::closeFilters($data===null?null:add_query_arg([
+            'quitacao_emissor'=>$selection,'relatorio_pdf'=>wp_create_nonce(self::personalClearanceNonce($responsible,$option)),
         ],$url));
         if($error)echo '<p class="erp-feedback error" role="alert">'.esc_html($error).'</p>';
         echo '</section>';
-        if($data===null)return;
+        if($data!==null)Coligadas::within($option['company'],static fn()=>self::clearancePreview($data));
+        echo '</section>';
+    }
+
+    private static function clearancePreview(array $data):void
+    {
 
         $school=$data['school'];
         $logo=(!empty($school['logo_id'])||!empty($school['logo_padrao']))?self::logo():
@@ -352,9 +416,37 @@ final class Reports
         }
     }
 
-    private static function annualClearanceNonce(int $year,int $responsible):string
+    private static function clearanceScope():array
     {
-        return 'ederp_quitacao_anual_'.Coligadas::current().'_'.$year.'_'.$responsible;
+        $student=$_GET['quitacao_aluno']??'todos';
+        $period=$_GET['quitacao_periodo']??'todos';
+        return [$student==='todos'?null:Input::id($student),$period==='todos'?null:Input::id($period)];
+    }
+
+    private static function annualClearanceNonce(int $year,int $responsible,?int $student,?int $period):string
+    {
+        return 'ederp_quitacao_anual_'.Coligadas::current().'_'.$year.'_'.$responsible.'_'.($student??0).'_'.($period??0);
+    }
+
+    private static function personalClearanceNonce(int $responsible,array $option):string
+    {
+        return 'ederp_minha_quitacao_'.$responsible.'_'.$option['company'].'_'.$option['year'];
+    }
+
+    private static function personalResponsible(Database $db):?int
+    {
+        return MenuPolicy::can('meu_financeiro')?(new Access($db))->person():null;
+    }
+
+    private static function personalOption(array $options,mixed $selection):array
+    {
+        if(!is_string($selection)||!isset($options[$selection]))throw new RuleViolation('Selecione um ano e uma coligada disponíveis para sua conta.');
+        return $options[$selection];
+    }
+
+    private static function personalData(AnnualClearance $service,int $responsible,array $option):array
+    {
+        return Coligadas::within($option['company'],static fn()=>$service->details($option['year'],$responsible,self::reportSchool()));
     }
 
     private static function reportSchool():array
@@ -365,16 +457,30 @@ final class Reports
     public static function download():void
     {
         $portal=(int)get_option('ederp_portal_page',0);
-        if(!$portal||!is_page($portal)||($_GET['erp_tela']??null)!=='relatorios'||!isset($_GET['relatorio_pdf']))return;
-        nocache_headers();
-        $available=ReportPolicy::available();
+        if(!$portal||!is_page($portal)||!isset($_GET['relatorio_pdf']))return;
+        $view=$_GET['erp_tela']??null;
         $report=$_GET['relatorio']??'assinaturas';
-        if(!is_string($report)||!isset($available[$report]))wp_die('Seu perfil não tem acesso a este relatório.','',['response'=>403]);
+        $personal=$view==='meu_financeiro'&&$report==='quitacao_anual';
+        if($view!=='relatorios'&&!$personal)return;
+        nocache_headers();
+        if($personal){
+            if(!MenuPolicy::can('meu_financeiro'))wp_die('Seu perfil não tem acesso a esta declaração.','',['response'=>403]);
+        }elseif(!is_string($report)||!isset(ReportPolicy::available()[$report])){
+            wp_die('Seu perfil não tem acesso a este relatório.','',['response'=>403]);
+        }
         if(SchemaMigration::pending())wp_die('Atualize o banco do ERP para gerar este relatório.','',['response'=>503]);
         try{
             $school=self::reportSchool();
             $db=new Database($GLOBALS['wpdb']);
-            if($report==='parcelas'){
+            if($personal){
+                $responsible=self::personalResponsible($db);
+                if($responsible===null)wp_die('Seu perfil não tem acesso a esta declaração.','',['response'=>403]);
+                $service=new AnnualClearance($db);
+                $option=self::personalOption($service->personalOptions($responsible),$_GET['quitacao_emissor']??null);
+                self::verifyPdf(self::personalClearanceNonce($responsible,$option));
+                $pdf=AnnualClearancePdf::render(self::personalData($service,$responsible,$option));
+                $name='quitacao-anual-'.$option['year'].'.pdf';
+            }elseif($report==='parcelas'){
                 [$student,$month]=InstallmentReport::filters($_GET['relatorio_aluno']??null,$_GET['relatorio_mes']??null);
                 self::verifyPdf(self::installmentNonce($student,$month));
                 $pdf=InstallmentReportPdf::render((new InstallmentReport($db))->sheets($student,$month),$school);
@@ -382,8 +488,9 @@ final class Reports
             }elseif($report==='quitacao_anual'){
                 $year=AnnualClearance::year($_GET['relatorio_ano']??null);
                 $responsible=Input::id($_GET['relatorio_responsavel']??null);
-                self::verifyPdf(self::annualClearanceNonce($year,$responsible));
-                $pdf=AnnualClearancePdf::render((new AnnualClearance($db))->details($year,$responsible,$school));
+                [$student,$period]=self::clearanceScope();
+                self::verifyPdf(self::annualClearanceNonce($year,$responsible,$student,$period));
+                $pdf=AnnualClearancePdf::render((new AnnualClearance($db))->details($year,$responsible,$school,$student,$period));
                 $name='quitacao-anual-'.$year.'.pdf';
             }else{
                 [$pdf,$name]=self::enrollmentPdf($db,$report,$school);

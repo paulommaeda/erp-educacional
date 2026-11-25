@@ -46,6 +46,7 @@
 .erp-reports .erp-installment-report-table tfoot td{text-align:right}
 .erp-installment-report-month{margin:.75rem 0 0;font-size:1rem}
 .erp-clearance-sheet{max-width:56rem}
+.erp-personal-clearance{margin-top:1.25rem}
 .erp-clearance-sheet h3{margin:1rem 0;text-align:center;text-transform:uppercase}
 .erp-reports .erp-clearance-table{width:100%;min-width:620px}
 .erp-reports .erp-clearance-table :is(td,th):nth-child(n+2){text-align:center;white-space:nowrap}

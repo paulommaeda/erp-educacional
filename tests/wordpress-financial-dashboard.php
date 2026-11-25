@@ -10,7 +10,7 @@ use EducacionalERP\Domain\Input;
 use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Infrastructure\WordPress\{Access,SchemaMigration};
 use EducacionalERP\Presentation\Rest\Controller;
-use EducacionalERP\Presentation\Portal\Portal;
+use EducacionalERP\Presentation\Portal\{Portal,Reports};
 $admin=get_users(['role'=>'administrator','number'=>1])[0];wp_set_current_user($admin->ID);Access::install();$prefix=$wpdb->prefix;$saved=[];$users=[];$roles=[];$checks=0;$tag=bin2hex(random_bytes(4));$oldGet=$_GET;
 foreach(['ederp_schema_version','ederp_schema_error','ederp_schema_integrity','ederp_schema_attempt_release','ederp_pontualidade','ederp_menu_policy','ederp_report_policy','ederp_field_group_policy','ederp_user_permissions','ederp_educbank','ederp_school_identity'] as $key)$saved[$key]=get_option($key,null);
 add_filter('pre_wp_mail',static fn()=>true,999,2);add_filter('pre_http_request',static fn()=>new WP_Error('test_http_blocked','Transporte bloqueado no teste.'),999,3);
@@ -74,5 +74,60 @@ try{
     fwpOK(str_contains($html,'id="erp-clearance-title">'.AnnualClearance::TITLE)&&str_contains($html,'ESCOLA FICTÍCIA LTDA')
         &&str_contains($html,'Valor total pago</th><td>R$ 1.250,00')&&str_contains($html,'data-erp-report-download'),
         'declaração no portal inclui identidade, soma efetiva e acesso ao PDF');
+
+    fwpActor($admin->ID);
+    $_GET=['erp_tela'=>'relatorios','relatorio'=>'quitacao_anual','relatorio_ano'=>$year,
+        'quitacao_aluno'=>$fixture['a']['idaluno'],'quitacao_periodo'=>$fixture['period']];
+    $html=$portal->render('inicio');
+    fwpOK(str_contains($html,'name="quitacao_aluno"')&&str_contains($html,'name="quitacao_periodo"')
+        &&str_contains($html,'RA DASH-A')&&str_contains($html,'período letivo BOLSA-2027')
+        &&str_contains($html,'data-erp-report-download'),'filtros administrativos combinam aluno e período e resolvem responsável único');
+    $_GET['quitacao_aluno']=$fixture['b']['idaluno'];
+    fwpOK(!str_contains($portal->render('inicio'),'data-erp-report-download'),'aluno fora da seleção não recebe o PDF administrativo');
+
+    $other=$db->insert('pessoas',['nome'=>'RESPONSÁVEL TESTE OUTRO','cpf'=>'12345678909','data_nascimento'=>'1980-01-02']);
+    $db->update('lancamentos',$fixture['titles']['b'][1],['vencimento'=>$year.'-01-20','codpessoa_rf_atual'=>$other]);
+    $guardians=[];
+    foreach([$fixture['responsible'],$other] as $person){
+        $guard=wp_insert_user(['user_login'=>'fd_guard_'.$person.'_'.$tag,'user_pass'=>wp_generate_password(40),'role'=>'erp_responsavel_financeiro']);
+        if(is_wp_error($guard))throw new RuntimeException($guard->get_error_message());
+        $guardians[]=$guard;
+        $users[]=$guard;
+        $db->insert('pessoa_usuarios',['codpessoa'=>$person,'wp_user_id'=>$guard]);
+    }
+    [$guardian,$otherGuardian]=$guardians;
+    fwpActor($guardian);
+    $_GET=['erp_tela'=>'meu_financeiro','relatorio'=>'quitacao_anual','quitacao_emissor'=>'1-'.$year,
+        'relatorio_responsavel'=>$other,'quitacao_aluno'=>$fixture['b']['idaluno']];
+    $html=$portal->render('inicio');
+    fwpOK(str_contains($html,'name="quitacao_emissor"')&&str_contains($html,'Valor total pago</th><td>R$ 1.250,00')
+        &&str_contains($html,'ALUNO DASH-A')&&!str_contains($html,'ALUNO DASH-B')&&!str_contains($html,'name="relatorio_responsavel"'),
+        'Meu financeiro vincula a prévia ao usuário logado e ignora filtros administrativos');
+    preg_match('/[?&](?:amp;|#038;)?relatorio_pdf=([a-z0-9]+)/',$html,$pdfLink);
+    fwpOK(isset($pdfLink[1]),'responsável recebe link próprio de PDF');
+    fwpActor($otherGuardian);
+    $html=$portal->render('inicio');
+    fwpOK(str_contains($html,'1 título com saldo em aberto')&&!str_contains($html,'ALUNO DASH-A')&&!str_contains($html,'data-erp-report-download'),
+        'outro responsável vê apenas o estado da própria declaração');
+    $previousQuery=$GLOBALS['wp_query'];
+    $portalOption=get_option('ederp_portal_page',0);
+    $GLOBALS['wp_query']=new WP_Query();
+    $GLOBALS['wp_query']->is_page=true;
+    $GLOBALS['wp_query']->queried_object=new stdClass();
+    $GLOBALS['wp_query']->queried_object->ID=100;
+    update_option('ederp_portal_page',100);
+    $deny=static fn()=>static function($message,$title,$args){throw new RuntimeException((string)$message,(int)($args['response']??0));};
+    add_filter('wp_die_handler',$deny);
+    $_GET['relatorio_pdf']=$pdfLink[1];
+    try{
+        Reports::download();
+        fwpOK(false,'PDF copiado deve ser bloqueado para outro usuário');
+    }catch(RuntimeException $error){
+        fwpOK($error->getCode()===403,'PDF copiado é bloqueado para outro responsável');
+    }finally{
+        remove_filter('wp_die_handler',$deny);
+        update_option('ederp_portal_page',$portalOption);
+        $GLOBALS['wp_query']=$previousQuery;
+    }
     echo "WORDPRESS_FINANCIAL_DASHBOARD_OK: $checks verificações / WordPress $wp_version / MariaDB ".$wpdb->db_version()."\n";
 }finally{fwpActor($admin->ID);foreach($users as $user)wp_delete_user($user);foreach($roles as $role)remove_role($role);$wpdb->prefix=$prefix;$_GET=$oldGet;foreach($saved as $key=>$value){if($value===null)delete_option($key);else update_option($key,$value,false);}}
