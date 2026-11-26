@@ -33,6 +33,49 @@ final class Scholarships
         foreach($rules['contrato'] as $row)if($rule=$this->ruleAt($row,$number))$out[]=$rule;
         return array_merge($out,$rules['aluno']);
     }
+
+    /** Reconcile unpaid issued titles from the contract's financial rules and retained audited adjustments. */
+    public function rebuildTitles(array $contract,array $titles,int $manual,bool $replacePlan,string $key):array
+    {
+        $id=(int)$contract['idcontrato'];
+        $count=(int)$contract['quantidade_parcelas'];
+        $manualParts=array_pad($manual?Money::split($manual,min($count,$manual)):[],$count,0);
+        $faces=$replacePlan?Money::split(Money::positive($contract['valor_original_total']),$count):[];
+        $rules=$this->pricingRules($id,true);
+        $discounts=new ContractDiscounts($this->db,new Operations($this->db));
+        $changed=[];
+        foreach($titles as $title){
+            $number=(int)$title['numero'];
+            $titleId=(int)$title['idlancamento'];
+            $punctuality=ContractDiscounts::punctuality($replacePlan?$contract:$title);
+            $face=$faces[$number-1]??Money::cents($title['valor_original']);
+            $adjustment=$title['ajuste_incondicional'];
+            $fixed=$discounts->rebuildApplications($contract,$title,$key);
+            $quote=ScholarshipPricing::quote($face-$punctuality,($manualParts[$number-1]??0)+$fixed+$adjustment,$punctuality,$this->activeRules($rules,$number));
+            $balance=$quote['liquido']-Money::cents($title['desconto_condicional_aplicado'])+Money::cents($title['juros_aplicados'])+Money::cents($title['multa_aplicada']);
+            if($balance<0)throw new RuleViolation('O saldo recalculado ficou negativo na parcela '.$number.'. Confira seus descontos e ajustes.');
+            $values=['valor_original'=>Money::format($quote['original']),'desconto_incondicional'=>Money::format($quote['desconto']),
+                'valor_liquido'=>Money::format($quote['liquido']),'pontualidade_acrescimo'=>Money::format($punctuality),
+                'pontualidade_snapshot'=>Money::format($punctuality),'bolsa_aplicada'=>Money::format($quote['bolsa']),'bolsas_json'=>wp_json_encode($quote['aplicacoes'])];
+            $parcel=$this->db->get('parcelas',(int)$title['idparcela'],true);
+            $parcelValues=$values+['desconto_condicional_previsto'=>Money::format(min($punctuality,$quote['liquido'])),'limite_desconto_condicional'=>$title['vencimento']];
+            $titleValues=$values+['saldo_aberto'=>Money::format($balance),'status'=>$balance===0?'quitado':'aberto'];
+            $titleChanged=$this->saveRebuilt('lancamentos',$titleId,$title,$titleValues,$key);
+            $parcelChanged=$this->saveRebuilt('parcelas',(int)$title['idparcela'],$parcel,$parcelValues,$key);
+            if($titleChanged||$parcelChanged)$changed[]=$titleId;
+        }
+        return $changed;
+    }
+
+    private function saveRebuilt(string $table,int $id,array $before,array $values,string $key):bool
+    {
+        $different=false;
+        foreach($values as $field=>$value)if($before[$field]!==$value){$different=true;break;}
+        if(!$different)return false;
+        $this->db->update($table,$id,$values);
+        $this->db->audit($table,$id,'regerar_contrato',$before,$values,$key);
+        return true;
+    }
     private function range(array $data,int $count):array
     {
         $first=Input::id($data['parcela_inicio']??1);$last=Input::id($data['parcela_fim']??$count);if($first>$last||$last>$count)throw new RuleViolation('Faixa de parcelas da bolsa inválida.');return [$first,$last];

@@ -7,7 +7,8 @@ use EducacionalERP\Application\ContractFinancialSummary;
 final class ContractsReportPdf extends SchoolReportPdf
 {
     private const MARGIN=5;
-    private const WIDTHS=[82,43,57,44,43,18];
+    private const WIDTHS=[69,34,63,13,45,45,18];
+    private const SIGNATURE_COLUMN=6;
     private const LINE_HEIGHT=4;
 
     private function __construct(array $school,?string $logo)
@@ -43,8 +44,8 @@ final class ContractsReportPdf extends SchoolReportPdf
         if(!$contracts)$this->Cell(array_sum(self::WIDTHS),8,$this->encode('Nenhum contrato encontrado para os filtros selecionados.'),0,1,'C');
         foreach($contracts as $index=>$contract){
             $fields=ContractFinancialSummary::reportRow($contract);
-            $signed=$fields[5][0]==='Sim';
-            $fields[5]=[''];
+            $signed=$fields[self::SIGNATURE_COLUMN][0]==='Sim';
+            $fields[self::SIGNATURE_COLUMN]=[''];
             [$cells,$height]=$this->layout($fields);
             if($this->GetY()+$height>$this->PageBreakTrigger)$this->AddPage();
             $this->drawRow($cells,$height,$index%2===0?247:255,$signed);
@@ -70,7 +71,7 @@ final class ContractsReportPdf extends SchoolReportPdf
         foreach($cells as $column=>$lines){
             $width=self::WIDTHS[$column];
             $this->Rect($x,$y,$width,$height,'F');
-            if($column===5&&$signed!==null){
+            if($column===self::SIGNATURE_COLUMN&&$signed!==null){
                 $left=$x+($width-3.5)/2;
                 $top=$y+($height-3.5)/2;
                 $this->Rect($left,$top,3.5,3.5);
@@ -80,7 +81,7 @@ final class ContractsReportPdf extends SchoolReportPdf
                 }
             }else{
                 $this->SetXY($x,$y+1.5);
-                $this->MultiCell($width,self::LINE_HEIGHT,implode("\n",$lines),0,$column===5?'C':'L');
+                $this->MultiCell($width,self::LINE_HEIGHT,implode("\n",$lines),0,in_array($column,[3,self::SIGNATURE_COLUMN],true)?'C':'L');
             }
             $x+=$width;
         }

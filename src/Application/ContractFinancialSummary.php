@@ -2,11 +2,11 @@
 declare(strict_types=1);
 namespace EducacionalERP\Application;
 
-use EducacionalERP\Domain\{FinancialStatus,Money,Store};
+use EducacionalERP\Domain\{FinancialStatus,Money,RuleViolation,Store};
 
 final class ContractFinancialSummary
 {
-    public const COLUMNS=['Contrato e aluno','Período e turma','Condições','Pontualidade','Descontos incondicionais','Assinado'];
+    public const COLUMNS=['Contrato e aluno','Período e turma','Condições','Venc.','Pontualidade','Descontos incondicionais','Assinado'];
 
     public function __construct(private Store $db) {}
 
@@ -65,13 +65,16 @@ final class ContractFinancialSummary
 
     private function totals(array $contract,array $titles):array
     {
-        $punctuality=[];
+        $contract['valor_original_contrato']=$contract['valor_original_total'];
+        $punctuality=$originals=$discounts=[];
         if($titles){
             $original=$net=$discount=0;
             foreach($titles as $title){
-                $original+=Money::cents((string)$title['valor_original']);
+                $originals[]=$face=Money::cents((string)$title['valor_original']);
+                $original+=$face;
                 $net+=Money::cents((string)$title['valor_liquido']);
-                $discount+=Money::cents((string)$title['desconto_incondicional']);
+                $discounts[]=$deduction=Money::cents((string)$title['desconto_incondicional']);
+                $discount+=$deduction;
                 $punctuality[]=self::punctuality($title);
             }
             $contract['valor_original_total']=self::decimal($original);
@@ -79,10 +82,25 @@ final class ContractFinancialSummary
             $contract['desconto_incondicional_total']=self::decimal($discount);
             $contract['primeiro_vencimento']=min(array_column($titles,'vencimento'));
         }elseif(!(int)$contract['parcelas_geradas']){
-            $punctuality[]=max(0,ContractDiscounts::punctuality($contract));
+            $full=$this->db->get('contratos',(int)$contract['idcontrato']);
+            try{
+                foreach((new Scholarships($this->db))->plannedInstallments($full) as $part){
+                    $originals[]=Money::cents($part['valor_original']);
+                    $discounts[]=Money::cents($part['desconto_incondicional']);
+                    $punctuality[]=self::punctuality($part+array_intersect_key($contract,array_flip(['pontualidade_snapshot','codcoligada'])));
+                }
+                $contract['desconto_incondicional_total']=self::decimal(array_sum($discounts));
+                $contract['valor_liquido_total']=self::decimal(array_sum($originals)-array_sum($discounts));
+            }catch(RuleViolation){
+                // A pending contract with conflicting rules remains visible so it can be corrected.
+            }
         }
-        $contract['pontualidade_min']=Money::format($punctuality?min($punctuality):0);
-        $contract['pontualidade_max']=Money::format($punctuality?max($punctuality):0);
+        $contract['dia_vencimento']=$contract['primeiro_vencimento']?substr($contract['primeiro_vencimento'],8,2):null;
+        foreach(['pontualidade'=>$punctuality,'original_parcela'=>$originals,'desconto_parcela'=>$discounts] as $field=>$amounts){
+            $contract[$field.'_min']=$amounts?self::decimal(min($amounts)):null;
+            $contract[$field.'_max']=$amounts?self::decimal(max($amounts)):null;
+        }
+        $contract['pontualidade_total']=$punctuality?self::decimal(array_sum($punctuality)):null;
         unset($contract['pontualidade_snapshot']);
         return $contract;
     }
@@ -105,15 +123,18 @@ final class ContractFinancialSummary
             [$whole,$fraction]=array_pad(explode('.',ltrim($value,'-'),2),2,'00');
             return (str_starts_with($value,'-')?'-':'').'R$ '.number_format((int)$whole,0,',','.').','.str_pad($fraction,2,'0');
         };
-        $due=$contract['primeiro_vencimento'];
-        $punctuality=$money($contract['pontualidade_min']);
-        if($contract['pontualidade_max']!==$contract['pontualidade_min'])$punctuality.=' a '.$money($contract['pontualidade_max']);
+        $range=static function(string $field)use($contract,$money):string{
+            $min=$contract[$field.'_min'];$max=$contract[$field.'_max'];
+            return $min===null?'—':($money($min).($min===$max?'':' a '.$money($max)));
+        };
         return [
             [$contract['numero'],$contract['aluno'],'RA '.$contract['ra']],
             [$contract['periodo'],$contract['turma']],
-            [$money($contract['valor_liquido_total']).' líquidos',$contract['quantidade_parcelas'].' parcelas'.($due?' · '.implode('/',array_reverse(explode('-',$due))):'')],
-            [$punctuality,'Por parcela'],
-            [$money($contract['desconto_incondicional_total']),'Total do contrato'],
+            [$money($contract['valor_original_contrato']).' original',$contract['quantidade_parcelas'].' parcelas · '.$range('original_parcela').' original',
+                $money($contract['valor_liquido_total']).' líquidos'],
+            [$contract['dia_vencimento']??'—'],
+            [$contract['pontualidade_total']===null?'—':($money($contract['pontualidade_total']).' total'),$range('pontualidade').' por parcela'],
+            [$money($contract['desconto_incondicional_total']).' total',$range('desconto_parcela').' por parcela'],
             [$contract['assinado_em']?'Sim':'Não'],
         ];
     }
