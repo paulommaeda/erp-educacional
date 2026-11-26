@@ -11,7 +11,15 @@
   const choice=(name,label,items)=>{const node=h('label',label),input=h('select');input.name=name;for(const [v,t]of items)input.append(new Option(t,v));node.append(input);return {node,input};};
   const feedback=()=>{const p=h('p','','erp-contract-feedback');p.setAttribute('role','status');return p;};
   const link=(text,view,params={})=>{const a=h('a',text,'erp-link-button'),u=new URL(EDERP.front?EDERP.portal:EDERP.admin,location.href);u.searchParams.set(EDERP.front?'erp_tela':'page',EDERP.front?view:'ederp-'+view);for(const [key,value]of Object.entries(params))u.searchParams.set(key,value);a.href=u.href;return a;};
-  async function api(path,data,key){const r=await fetch(EDERP.root+path,{method:data?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:{'X-WP-Nonce':EDERP.nonce,...(data?{'Content-Type':'application/json','Idempotency-Key':key||uuid()}:{})},...(data?{body:JSON.stringify(data)}:{})});let body;try{body=await r.json();}catch{throw Error('O servidor não respondeu como esperado. Tente novamente.');}if(!r.ok)throw Error(body.message||'Não foi possível concluir.');return body;}
+  function apiUrl(path){
+    const base=new URL(EDERP.root,location.href);
+    if(!base.searchParams.has('rest_route'))return new URL(EDERP.root+path,location.href);
+    const [route,query]=path.split('?',2);
+    base.searchParams.set('rest_route',base.searchParams.get('rest_route')+route);
+    for(const [name,value] of new URLSearchParams(query))base.searchParams.append(name,value);
+    return base;
+  }
+  async function api(path,data,key){const r=await fetch(apiUrl(path),{method:data?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:{'X-WP-Nonce':EDERP.nonce,...(data?{'Content-Type':'application/json','Idempotency-Key':key||uuid()}:{})},...(data?{body:JSON.stringify(data)}:{})});let body;try{body=await r.json();}catch{throw Error('O servidor não respondeu como esperado. Tente novamente.');}if(!r.ok)throw Error(body.message||'Não foi possível concluir.');return body;}
   const contractText=(text,format)=>window.EDERPContractDocument?.render(text,format)||h('pre',text,'erp-contract-text');
   const htmlHint='Aceita HTML de formatação: parágrafos, títulos, negrito, itálico, listas e tabelas, com estilos de fonte, alinhamento e borda. Use [contrato_valor_original] e [contrato_parcelamento_original] para os valores antes de qualquer bolsa ou desconto. Use [contrato_dia_vencimento] para mostrar somente o dia. A logo e o rodapé são incluídos na impressão a partir das configurações do colégio. Shortcodes externos ativos aparecem na lista de inserção. Outros marcadores ficam entre colchetes na prévia e no contrato.';
   const tuitionClause='A CONTRATANTE pagará a anuidade escolar de [contrato_valor_original], dividida em [contrato_parcelamento_original].';
