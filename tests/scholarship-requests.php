@@ -9,16 +9,16 @@ $_SERVER['REQUEST_URI']='/';
 require $bootstrap;
 if(!defined('EDERP_TEST_DATABASE')||EDERP_TEST_DATABASE!==true)throw new RuntimeException('Exige WordPress de teste.');
 if(!defined('EDERP_FILE'))define('EDERP_FILE',dirname(__DIR__).'/erp-educacional.php');
-if(!defined('EDERP_VERSION'))define('EDERP_VERSION','0.19.57');
+if(!defined('EDERP_VERSION'))define('EDERP_VERSION','0.19.58');
 require_once dirname(__DIR__).'/autoload.php';
 require __DIR__.'/fixtures/scholarships.php';
 
-use EducacionalERP\Application\{Coligadas,ScholarshipRequests};
+use EducacionalERP\Application\{AcademicService,CatalogService,Coligadas,ExportService,FinanceService,Operations,RenewalService,ScholarshipRequests,StudentWorkflow};
 use EducacionalERP\Domain\RuleViolation;
 use EducacionalERP\Infrastructure\Database\Database;
-use EducacionalERP\Infrastructure\WordPress\{AdmissionGuard,MenuPolicy,SchemaMigration};
+use EducacionalERP\Infrastructure\WordPress\{Access,AdmissionGuard,MenuPolicy,SchemaMigration};
 use EducacionalERP\Presentation\Portal\ScholarshipRequestPage;
-use EducacionalERP\Presentation\Rest\ScholarshipRequestController;
+use EducacionalERP\Presentation\Rest\{Controller,ScholarshipRequestController};
 
 function scholarshipCheck(bool $ok,string $label): void
 {
@@ -38,14 +38,15 @@ $basePrefix=$wpdb->prefix;
 $options=[];
 foreach(['ederp_scholarship_requests','ederp_schema_version','ederp_schema_error','ederp_schema_integrity','ederp_schema_attempt_release',
     'ederp_pontualidade','ederp_menu_policy','ederp_report_policy'] as $option)$options[$option]=get_option($option,null);
-$reviewer=null;
-$profile=null;
-register_shutdown_function(static function()use(&$reviewer,&$profile,$basePrefix,$options,$admin){
+$users=[];
+$roles=[];
+register_shutdown_function(static function()use(&$users,&$roles,$basePrefix,$options,$admin){
     global $wpdb;
     wp_set_current_user($admin);
     $wpdb->prefix=$basePrefix;
-    if(is_int($reviewer)){require_once ABSPATH.'wp-admin/includes/user.php';wp_delete_user($reviewer);}
-    if($profile!==null)remove_role($profile);
+    require_once ABSPATH.'wp-admin/includes/user.php';
+    foreach($users as $user)wp_delete_user($user);
+    foreach($roles as $role)remove_role($role);
     foreach($options as $key=>$value){if($value===null)delete_option($key);else update_option($key,$value,false);}
 });
 $db=new Database($wpdb);
@@ -54,9 +55,18 @@ delete_option('ederp_schema_version');delete_option('ederp_schema_error');
 SchemaMigration::run($db);
 ScholarshipRequestPage::setup();
 update_option('ederp_pontualidade','103.00');
-$profile=MenuPolicy::create(['nome'=>'Análise de bolsas '.bin2hex(random_bytes(4))])['slug'];
-MenuPolicy::save(['role'=>$profile,'menus'=>['requerimentos_bolsa']]);
-$reviewer=wp_insert_user(['user_login'=>'bolsa_'.bin2hex(random_bytes(4)),'user_pass'=>wp_generate_password(),'role'=>$profile]);
+$account=static function(string $name,bool $canDecide)use(&$roles,&$users){
+    $profile=MenuPolicy::create(['nome'=>$name.' '.bin2hex(random_bytes(4))])['slug'];
+    $roles[]=$profile;
+    MenuPolicy::save(['role'=>$profile,'menus'=>['requerimentos_bolsa'],'decidir_requerimentos_bolsa'=>$canDecide]);
+    $id=wp_insert_user(['user_login'=>'bolsa_'.bin2hex(random_bytes(4)),'user_pass'=>wp_generate_password(),'role'=>$profile]);
+    if(is_wp_error($id))throw new RuntimeException($id->get_error_message());
+    $users[]=$id;
+    return $id;
+};
+$reviewer=$account('Análise de bolsas',true);
+$commercial=$account('Comercial de bolsas',false);
+scholarshipCheck(!MenuPolicy::canDecideScholarshipRequests(),'administrador sem perfil designado configura a permissão sem poder decidir');
 $fixture=seedScholarships($db);
 $student=createScholarshipContract($db,$fixture,'BOLSISTA');
 $service=new ScholarshipRequests($db);
@@ -74,6 +84,10 @@ $data=['nivel'=>'Ensino Fundamental I','turma_fundamental_1'=>'3º Ano','turma_f
 wp_set_current_user(0);
 scholarshipDenied(fn()=>$service->listing('todos',1),'Sem acesso');
 add_action('rest_api_init',[(new ScholarshipRequestController($db)),'register']);
+$ops=new Operations($db);$access=new Access($db);$academic=new AcademicService($db,$ops);$catalog=new CatalogService($db,$ops);
+$controller=new Controller($db,$access,$academic,$catalog,new FinanceService($db,$ops),new ExportService($db),
+    new RenewalService($db,$ops,$academic,$access),new StudentWorkflow($db,$ops,$catalog,$academic));
+add_action('rest_api_init',[$controller,'register']);
 // The local fixture uses the same public route as the browser.
 $route='/erp-educacional/v1/publico/requerimentos-bolsa/1';
 $get=rest_do_request(new WP_REST_Request('GET',$route));
@@ -98,11 +112,28 @@ scholarshipCheck($received->get_status()===202&&array_keys($received->get_data()
     &&$send($data,$token,$submission)->get_data()===$received->get_data(),'envio público devolve protocolo e evita duplicação');
 scholarshipCheck(count($messages)===3&&!str_contains(wp_json_encode($messages),'Explicação financeira'),
     'solicitante e dois destinatários recebem avisos sem a justificativa privada');
+scholarshipCheck($messages[0]['to']==='solicitante@example.test'&&str_contains($messages[0]['subject'],'Confirmação de recebimento')
+    &&str_contains($messages[0]['message'],'10,50%')&&str_contains($messages[0]['message'],$received->get_data()['protocolo']),
+    'confirmação ao solicitante contém o percentual pedido e o protocolo');
 
-wp_set_current_user($reviewer);
+wp_set_current_user($commercial);
 $item=$service->listing('pendente',1)['items'][0];
 $id=(int)$item['idpedido'];
 $review=$service->detail($id);
+$decisionRoute='/erp-educacional/v1/requerimentos-bolsa/'.$id.'/decidir';
+$decide=static function(array $body)use($decisionRoute,$key){
+    $request=new WP_REST_Request('POST',$decisionRoute);
+    $request->set_header('Content-Type','application/json');
+    $request->set_header('Idempotency-Key',$key());
+    $request->set_body(wp_json_encode($body));
+    return rest_do_request($request);
+};
+scholarshipCheck(!$review['pode_decidir']&&$decide(['versao'=>$review['versao'],'situacao'=>'aprovado','percentual'=>'15'])->get_status()===403
+    &&$decide(['versao'=>$review['versao'],'situacao'=>'rejeitado'])->get_status()===403&&count($messages)===3,
+    'comercial consulta o pedido sem poder aprovar ou rejeitar pela API');
+scholarshipDenied(fn()=>$service->decide($id,['versao'=>$review['versao'],'situacao'=>'rejeitado'],$key()),'Seu perfil não permite');
+wp_set_current_user($reviewer);
+scholarshipCheck($service->detail($id)['pode_decidir'],'perfil designado recebe a opção de decidir');
 scholarshipCheck((int)$item['idaluno']===(int)$student['idaluno']&&$review['dados']['percentual']==='10.50'
     &&!isset($review['dados']['turma_fundamental_2'])&&$review['notificacoes']['enviado']===3,'nome e nascimento vinculam e a revisão exibe respostas aplicáveis');
 scholarshipDenied(fn()=>ScholarshipRequests::settings(),'administradores');
@@ -119,8 +150,13 @@ wp_set_current_user($reviewer);
 $item=$service->listing('pendente',1)['items'][0];
 $id=(int)$item['idpedido'];
 scholarshipDenied(fn()=>$service->decide($id,['versao'=>1,'situacao'=>'aprovado','percentual'=>'15'],$key()),'Vincule o aluno');
+wp_set_current_user($commercial);
 scholarshipCheck($service->candidates($id,'BOLSISTA')!==[],'pesquisa manual encontra o aluno pelo RA');
 $service->link($id,['idaluno'=>$student['idaluno'],'versao'=>1],$key());
+$linked=$service->detail($id);
+scholarshipCheck((int)$linked['idaluno']===(int)$student['idaluno']&&!$linked['pode_decidir']&&$linked['situacao']==='pendente',
+    'comercial vincula o aluno e o requerimento continua pendente de decisão');
+wp_set_current_user($reviewer);
 $service->decide($id,['versao'=>2,'situacao'=>'rejeitado','observacao'=>'Motivo informado pela escola.'],$key());
 scholarshipCheck($service->detail($id)['situacao']==='rejeitado'&&$service->detail($id)['idbolsa_aluno']===null
     &&str_contains(end($messages)['subject'],'rejeitado'),'vínculo manual, rejeição e e-mail do resultado');

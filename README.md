@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.57
+# ERP Educacional — 0.19.58
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -14,7 +14,9 @@ Em **ERP Educacional → Backup e restauração**, crie um ponto de recuperaçã
 
 Em **Requerimentos de bolsa → Configurar formulário público**, preencha os e-mails da administração, marque **Receber novos requerimentos**, salve e copie o link. Cada coligada tem sua própria configuração. O formulário público usa o shortcode `[erp_requerimento_bolsa coligada="1"]`.
 
-Em **Perfis e acessos**, libere **Requerimentos de bolsa** apenas para a equipe responsável pela análise. Abra o protocolo para consultar as respostas e o aluno vinculado. Quando nome e nascimento identificam um único aluno ativo na coligada, o vínculo é automático. Use **Vincular aluno manualmente** para os demais casos. Aprovar cadastra uma bolsa ativa com o percentual escolhido pelo analista. O solicitante recebe o resultado no e-mail informado, e a tela mostra o estado das notificações.
+Em **Perfis e acessos**, marque a área **Requerimentos de bolsa** para os perfis que podem consultar as respostas e vincular alunos, como o Comercial. Para os perfis que também vão decidir, marque **Aprovar ou rejeitar requerimentos de bolsa**. A decisão exige a atribuição explícita a um perfil, inclusive para quem administra o WordPress. A opção de configurar o formulário e editar os perfis continua disponível aos administradores.
+
+Quando nome e nascimento identificam um único aluno ativo na coligada, o vínculo é automático. Use **Vincular aluno manualmente** para os demais casos. Aprovar cadastra uma bolsa ativa com o percentual escolhido pelo analista. O solicitante recebe uma confirmação com o protocolo e o percentual que pediu e, após a análise, um segundo e-mail com a decisão. A tela mostra o estado das notificações.
 
 ## Relatórios
 
@@ -32,7 +34,7 @@ No resumo, **Regerar ou trocar plano** permite recalcular as parcelas a partir d
 
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.57.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.58.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 53**, que acrescenta os requerimentos de bolsa e sua fila de e-mails. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**. A tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
