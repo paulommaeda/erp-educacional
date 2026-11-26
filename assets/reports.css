@@ -61,3 +61,8 @@
     .erp-signature-details div:last-child dd{font-size:.7rem}
     .erp-signature-table th,.erp-signature-table td{font-size:.8rem}
 }
+
+.erp-reports .erp-contracts-report-table{width:100%;min-width:760px}
+.erp-reports .erp-contracts-report-table :is(th,td):last-child:not([colspan]){text-align:center}
+.erp-reports .erp-contracts-report-table tbody tr:nth-child(even) td{background:#fff}
+.erp-reports .erp-contracts-report-table input[type=checkbox]{width:16px;height:16px;min-height:0;margin:0}

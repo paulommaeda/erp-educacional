@@ -7,7 +7,7 @@ use EducacionalERP\Domain\RuleViolation;
 
 final class ReportPolicy
 {
-    public const REPORTS=['assinaturas'=>'Lista de assinaturas','alunos'=>'Alunos','parcelas'=>'Parcelas','quitacao_anual'=>AnnualClearance::TITLE];
+    public const REPORTS=['assinaturas'=>'Lista de assinaturas','alunos'=>'Alunos','parcelas'=>'Parcelas','quitacao_anual'=>AnnualClearance::TITLE,'contratos'=>'Contratos'];
     public const OPTION='ederp_report_policy';
 
     public static function settings():array

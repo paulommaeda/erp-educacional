@@ -4,6 +4,10 @@ document.querySelectorAll('[data-erp-report-filters]').forEach(form => {
     const download = form.querySelector('[data-erp-report-download]');
     const statusCount = form.querySelector('[data-erp-report-status-count]');
     const clearanceFilters = ['relatorio_ano', 'quitacao_aluno', 'quitacao_periodo'];
+    form.elements.namedItem('contratos_periodo')?.addEventListener('change', () => {
+        form.elements.namedItem('contratos_turma').value = 'todas';
+        form.requestSubmit();
+    });
     form.addEventListener('change', () => {
         if (download) download.hidden = true;
         if (statusCount) {

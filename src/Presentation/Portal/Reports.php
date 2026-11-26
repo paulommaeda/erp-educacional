@@ -2,10 +2,10 @@
 declare(strict_types=1);
 namespace EducacionalERP\Presentation\Portal;
 
-use EducacionalERP\Application\{AnnualClearance,Coligadas,EnrollmentReports,InstallmentReport,SchoolSettings,StudentRoster};
+use EducacionalERP\Application\{AnnualClearance,Coligadas,ContractFinancialSummary,Contracts,EnrollmentReports,InstallmentReport,Operations,SchoolSettings,StudentRoster};
 use EducacionalERP\Domain\{Input,RuleViolation,Store};
 use EducacionalERP\Infrastructure\Database\Database;
-use EducacionalERP\Infrastructure\Pdf\{AnnualClearancePdf,EnrollmentSignaturesPdf,InstallmentReportPdf,StudentRosterPdf};
+use EducacionalERP\Infrastructure\Pdf\{AnnualClearancePdf,ContractsReportPdf,EnrollmentSignaturesPdf,InstallmentReportPdf,StudentRosterPdf};
 use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,ReportPolicy,SchemaMigration,SchoolIdentity};
 
 final class Reports
@@ -39,6 +39,11 @@ final class Reports
         }
         if($report==='parcelas'){
             self::installments(new InstallmentReport($db),add_query_arg('relatorio',$report,$url));
+            echo '</section>';
+            return;
+        }
+        if($report==='contratos'){
+            self::contracts($db,add_query_arg('relatorio',$report,$url));
             echo '</section>';
             return;
         }
@@ -191,6 +196,76 @@ final class Reports
             }
             echo '</tfoot></table></div></article>';
         }
+    }
+
+    private static function contractFilters(Store $db,array $input):array
+    {
+        $current=SchoolSettings::current();
+        $period=$input['contratos_periodo']??($current?(string)$current:'todos');
+        $class=$input['contratos_turma']??self::ALL_CLASSES;
+        $signature=$input['contratos_assinatura']??'';
+        $status=$input['contratos_situacao']??'';
+        $search=$input['contratos_busca']??'';
+        if(!is_string($search)||!is_string($signature)||!is_string($status))throw new RuleViolation('Filtros de contrato inválidos.');
+        $period=$period==='todos'?'todos':(string)Input::id($period);
+        $class=$class===self::ALL_CLASSES?self::ALL_CLASSES:(string)Input::id($class);
+        $enrollment=new EnrollmentReports($db);
+        $periods=$enrollment->periods();
+        if($period!=='todos'&&!isset($periods[$period]))throw new RuleViolation('Selecione um período letivo desta coligada.');
+        $classes=$period==='todos'?[]:$enrollment->classes((int)$period);
+        if($class!==self::ALL_CLASSES&&!isset($classes[$class]))throw new RuleViolation('Selecione uma turma deste período letivo.');
+        $values=['contratos_periodo'=>$period,'contratos_turma'=>$class,'contratos_assinatura'=>$signature,'contratos_situacao'=>$status,'contratos_busca'=>trim(wp_unslash($search))];
+        $query=['codperiodo'=>$period,'idturma'=>$class===self::ALL_CLASSES?null:$class,'assinatura'=>$signature,'status'=>$status,'search'=>$values['contratos_busca']];
+        return [$values,$query,$periods,$classes];
+    }
+
+    private static function contracts(Store $db,string $url):void
+    {
+        $items=null;
+        $error='';
+        try{
+            [$values,$query,$periods,$classes]=self::contractFilters($db,$_GET);
+            if(isset($_GET['contratos_periodo']))$items=(new Contracts($db,new Operations($db)))->report($query);
+        }catch(RuleViolation $e){
+            $error=$e->getMessage();
+            if(!isset($values))[$values,,$periods,$classes]=self::contractFilters($db,['contratos_periodo'=>'todos']);
+        }
+        self::openFilters($url);
+        $selects=[
+            'contratos_periodo'=>['Período letivo',['todos'=>'Todos']+array_column($periods,'codigo','codperiodo')],
+            'contratos_turma'=>['Turma',[self::ALL_CLASSES=>'Todas']+array_column($classes,'nome','idturma')],
+            'contratos_assinatura'=>['Assinatura',[''=>'Todos','assinado'=>'Assinados','nao_assinado'=>'Não assinados']],
+            'contratos_situacao'=>['Situação',[''=>'Todas','ativo'=>'Ativos','pendente'=>'Aguardando parcelas','cancelado'=>'Cancelados']],
+        ];
+        foreach($selects as $key=>[$label,$options]){
+            echo '<label>'.esc_html($label).'<select name="'.esc_attr($key).'">';
+            foreach($options as $option=>$name)echo '<option value="'.esc_attr((string)$option).'"'.selected($values[$key],$option,false).'>'.esc_html($name).'</option>';
+            echo '</select></label>';
+        }
+        echo '<label>Buscar por aluno, RA ou contrato <input type="search" name="contratos_busca" maxlength="191" value="'.esc_attr($values['contratos_busca']).'"></label>';
+        $download=array_replace($values,['contratos_busca'=>rawurlencode($values['contratos_busca'])]);
+        self::closeFilters($items===null?null:add_query_arg($download+['relatorio_pdf'=>wp_create_nonce(self::contractsNonce($values))],$url));
+        if($error)echo '<p class="erp-feedback error" role="alert">'.esc_html($error).'</p>';
+        echo '</section>';
+        if($items===null)return;
+        echo '<article class="erp-signature-sheet erp-roster-sheet" aria-label="Contratos">'.self::logo().'<h3>Contratos</h3>'
+            .'<div class="erp-roster-scroll" role="region" aria-label="Tabela de contratos" tabindex="0"><table class="erp-roster-table erp-contracts-report-table"><thead><tr>';
+        foreach(ContractFinancialSummary::COLUMNS as $column)echo '<th scope="col">'.esc_html($column).'</th>';
+        echo '</tr></thead><tbody>';
+        foreach($items as $item){
+            $fields=ContractFinancialSummary::reportRow($item);
+            $signature=array_pop($fields)[0];
+            echo '<tr>';
+            foreach($fields as $lines)echo '<td>'.implode('<br>',array_map('esc_html',$lines)).'</td>';
+            echo '<td><input type="checkbox" disabled aria-label="'.esc_attr($signature==='Sim'?'Assinado':'Não assinado').'"'.checked($signature,'Sim',false).'></td></tr>';
+        }
+        if(!$items)echo '<tr><td colspan="6">Nenhum contrato encontrado para os filtros selecionados.</td></tr>';
+        echo '</tbody></table></div></article>';
+    }
+
+    private static function contractsNonce(array $values):string
+    {
+        return 'ederp_relatorio_contratos_'.Coligadas::current().'_'.hash('sha256',serialize($values));
     }
 
     private static function annualClearance(Store $db,string $url):void
@@ -485,6 +560,11 @@ final class Reports
                 self::verifyPdf(self::installmentNonce($student,$month));
                 $pdf=InstallmentReportPdf::render((new InstallmentReport($db))->sheets($student,$month),$school);
                 $name='parcelas-'.($month??'todos-os-meses').($student===null?'':'-aluno-'.$student).'.pdf';
+            }elseif($report==='contratos'){
+                [$values,$query]=self::contractFilters($db,$_GET);
+                self::verifyPdf(self::contractsNonce($values));
+                $pdf=ContractsReportPdf::render((new Contracts($db,new Operations($db)))->report($query),$school);
+                $name='relatorio-contratos.pdf';
             }elseif($report==='quitacao_anual'){
                 $year=AnnualClearance::year($_GET['relatorio_ano']??null);
                 $responsible=Input::id($_GET['relatorio_responsavel']??null);
