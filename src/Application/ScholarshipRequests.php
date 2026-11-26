@@ -64,7 +64,6 @@ final class ScholarshipRequests
             $mail=new ScholarshipRequestMail($this->db);
             $mail->queue($id,'recebido',[$data['email']]);
             $mail->queue($id,'administracao',$settings['emails']);
-            (new ScholarshipApprovalLinks($this->db))->queue($id,(int)$settings['aprovador_id']);
             return ['protocolo'=>$protocol,'idpedido'=>$id];
         }));
         (new ScholarshipRequestMail($this->db))->dispatch((int)$result['idpedido']);
@@ -80,7 +79,7 @@ final class ScholarshipRequests
         $args=[Coligadas::current()];
         $where=' WHERE codcoligada=%d';
         if($status!=='todos'){$where.=' AND situacao=%s';$args[]=$status;}
-        $items=$this->db->rows("SELECT idpedido,protocolo,situacao,nome_aluno,idaluno,percentual_aprovado,criado_em FROM $table"
+        $items=$this->db->rows("SELECT idpedido,protocolo,situacao,nome_aluno,idaluno,percentual_aprovado,conferido_em,criado_em FROM $table"
             .$where.' ORDER BY idpedido DESC LIMIT 21 OFFSET %d',[...$args,($page-1)*20]);
         return ['items'=>array_slice($items,0,20),'mais'=>count($items)>20];
     }
@@ -94,6 +93,11 @@ final class ScholarshipRequests
         $row['aluno']=$row['idaluno']?$this->student((int)$row['idaluno']):null;
         $row['notificacoes']=(new ScholarshipRequestMail($this->db))->status($id);
         $row['pode_decidir']=MenuPolicy::canDecideScholarshipRequests();
+        $row['pode_conferir']=MenuPolicy::canCheckScholarshipRequests();
+        if($row['conferido_por']){
+            $checker=get_userdata((int)$row['conferido_por']);
+            $row['conferido_nome']=$checker?$checker->display_name:'Usuário #'.$row['conferido_por'];
+        }
         if($row['decidido_por']&&($row['pode_decidir']||Access::isAdmin())){
             $actor=get_userdata((int)$row['decidido_por']);
             $row['decidido_nome']=$actor?$actor->display_name:'Usuário #'.$row['decidido_por'];
@@ -126,6 +130,26 @@ final class ScholarshipRequests
         }));
     }
 
+    public function checkAndSend(int $id,array $input,string $key): array
+    {
+        if(!MenuPolicy::canCheckScholarshipRequests()){
+            throw new RuleViolation('Seu perfil não permite conferir requerimentos de bolsa.');
+        }
+        if(($input['conferido']??null)!==true)throw new RuleViolation('Marque a conferência do Comercial para enviar ao gerente.');
+        $result=$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'conferir_requerimento_bolsa',
+            ['id'=>$id,'versao'=>$input['versao']??null],function()use($id,$input,$key){
+                $request=$this->pending($id,$input);
+                if($request['conferido_em'])throw new RuleViolation('O Comercial já conferiu este requerimento.');
+                (new ScholarshipApprovalLinks($this->db))->queue($id,(int)self::configuration()['aprovador_id']);
+                $changes=['conferido_em'=>gmdate('Y-m-d H:i:s'),'conferido_por'=>get_current_user_id()];
+                $this->db->update('requerimentos_bolsa',$id,$changes);
+                $this->db->audit('requerimentos_bolsa',$id,'conferir',null,$changes,$key);
+                return ['conferido'=>true];
+            }));
+        (new ScholarshipRequestMail($this->db))->dispatch($id);
+        return $result;
+    }
+
     public function decide(int $id,array $input,string $key): array
     {
         if(!MenuPolicy::canDecideScholarshipRequests())throw new RuleViolation('Seu perfil não permite aprovar ou rejeitar requerimentos de bolsa.');
@@ -139,7 +163,7 @@ final class ScholarshipRequests
     {
         $link=(new ScholarshipApprovalLinks($this->db))->verify($token);
         $request=$this->request((int)$link['idpedido']);
-        if($request['situacao']!=='pendente')throw new RuleViolation(ScholarshipApprovalLinks::UNAVAILABLE);
+        if($request['situacao']!=='pendente'||!$request['conferido_em'])throw new RuleViolation(ScholarshipApprovalLinks::UNAVAILABLE);
         $data=json_decode($request['dados_json'],true,32,JSON_THROW_ON_ERROR);
         $student=$request['idaluno']?$this->student((int)$request['idaluno']):null;
         return [

@@ -40,14 +40,25 @@ add_filter('pre_wp_mail',static function($previous,$mail)use(&$approvalUrl){
     }
     return true;
 },PHP_INT_MAX,2);
+$commercialRole=MenuPolicy::create(['nome'=>'Comercial QA'])['slug'];
+MenuPolicy::save(['role'=>$commercialRole,'menus'=>['requerimentos_bolsa'],'conferir_requerimentos_bolsa'=>true]);
+$commercial=wp_insert_user(['user_login'=>'comercial_bolsas_teste','user_pass'=>wp_generate_password(24),'role'=>$commercialRole,
+    'user_email'=>'comercial@example.test']);
+if(is_wp_error($commercial))throw new RuntimeException($commercial->get_error_message());
+$service=new \EducacionalERP\Application\ScholarshipRequests($db);
 wp_set_current_user(0);
-(new \EducacionalERP\Application\ScholarshipRequests($db))->submit([
+$service->submit([
     'nivel'=>'Ensino Fundamental I','turma_fundamental_1'=>'3º Ano','aluno'=>'Aluno Bolsista','nascimento'=>'2015-01-01',
     'vive_com'=>'Mãe e Pai','situacao_pais'=>'Casados','numero_filhos'=>'2','idade_filhos'=>'10 e 11',
     'profissao_mae'=>'Analista','renda_mae'=>'R$ 1.200','profissao_pai'=>'Comerciante','renda_pai'=>'R$ 2.500',
     'solicitante'=>'Pessoa Solicitante','email'=>'familia@example.test','telefone'=>'41999999999',
     'percentual'=>'11%','justificativa'=>'Justificativa do teste no navegador.',
 ],bin2hex(random_bytes(20)));
+if($approvalUrl)throw new RuntimeException('O e-mail foi enviado antes da conferência.');
+wp_set_current_user($commercial);
+$item=$service->listing('pendente',1)['items'][0];
+$service->checkAndSend((int)$item['idpedido'],['versao'=>1,'conferido'=>true],bin2hex(random_bytes(20)));
+wp_set_current_user(0);
 if(!$approvalUrl)throw new RuntimeException('O e-mail de aprovação não foi capturado.');
 file_put_contents(dirname(getenv('WP_QA_DIR')).'/approval-fixture.json',wp_json_encode(['url'=>$approvalUrl]));
 echo "Requerimento de bolsa para teste no navegador preparado.\n";

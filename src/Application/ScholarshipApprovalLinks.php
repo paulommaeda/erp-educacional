@@ -36,7 +36,7 @@ final class ScholarshipApprovalLinks
     public function queue(int $request,int $recipient): void
     {
         $user=self::eligible($recipient);
-        if(!$user)return;
+        if(!$user)throw new RuleViolation('Peça à administração que configure um gerente autorizado para receber o link.');
         (new ScholarshipRequestMail($this->db))->queue($request,self::MAIL_TYPE,[strtolower($user->user_email)],[
             'aprovador_id'=>$user->ID,'link_referencia'=>bin2hex(random_bytes(16)),
             'link_expira_em'=>gmdate('Y-m-d H:i:s',time()+2*DAY_IN_SECONDS),

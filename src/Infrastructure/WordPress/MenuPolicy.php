@@ -4,6 +4,7 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\RuleViolation;
 final class MenuPolicy
 {
+    private const SCHOLARSHIP_CHECK='erp_conferir_requerimentos_bolsa';
     private const SCHOLARSHIP_DECISION='erp_decidir_requerimentos_bolsa';
     public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','documentos'=>'Documentos dos alunos','pessoas'=>'Pessoas','alunos'=>'Alunos','professores'=>'Professores','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','relatorios'=>'Relatórios','financeiro'=>'Financeiro','gestao_financeira'=>'Gestão financeira','contratos'=>'Contratos','bolsas'=>'Bolsas e descontos dos contratos','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','requerimentos_bolsa'=>'Requerimentos de bolsa','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações','ajuda'=>'Ajuda'];
     private const ADMIN=['exportacao','importacao','perfis','configuracoes'];
@@ -92,6 +93,11 @@ final class MenuPolicy
         return (bool)array_intersect($user->roles,self::scholarshipDecisionRoles());
     }
 
+    public static function canCheckScholarshipRequests(): bool
+    {
+        return self::can('requerimentos_bolsa')&&user_can(wp_get_current_user(),self::SCHOLARSHIP_CHECK);
+    }
+
     public static function scholarshipDecisionRoles(): array
     {
         return array_keys(array_filter(wp_roles()->roles,static fn($role)=>!empty($role['capabilities'][self::SCHOLARSHIP_DECISION])));
@@ -100,7 +106,7 @@ final class MenuPolicy
     public static function describe():array
     {
         Access::requireAdmin();$data=get_option('ederp_menu_policy',[]);$reportSettings=ReportPolicy::settings();$rows=[];
-        foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'student_sections'=>get_option(StudentRecordPolicy::OPTION,[])[$slug]??[],'field_groups'=>get_option('ederp_field_group_policy',[])[$slug]??[],'user_permissions'=>UserPermissions::forRole($slug),'reports'=>$slug==='administrator'?array_keys(ReportPolicy::REPORTS):($reportSettings[$slug]??[]),'decidir_requerimentos_bolsa'=>!empty($r['capabilities'][self::SCHOLARSHIP_DECISION]),'custom'=>str_starts_with($slug,'erp_custom_')];
+        foreach(wp_roles()->roles as $slug=>$r)$rows[]=['slug'=>$slug,'nome'=>$r['name'],'menus'=>$data[$slug]??self::defaults($slug),'student_sections'=>get_option(StudentRecordPolicy::OPTION,[])[$slug]??[],'field_groups'=>get_option('ederp_field_group_policy',[])[$slug]??[],'user_permissions'=>UserPermissions::forRole($slug),'reports'=>$slug==='administrator'?array_keys(ReportPolicy::REPORTS):($reportSettings[$slug]??[]),'decidir_requerimentos_bolsa'=>!empty($r['capabilities'][self::SCHOLARSHIP_DECISION]),'conferir_requerimentos_bolsa'=>!empty($r['capabilities'][self::SCHOLARSHIP_CHECK]),'custom'=>str_starts_with($slug,'erp_custom_')];
         return ['student_sections'=>StudentRecordPolicy::SECTIONS,'field_groups'=>(new \EducacionalERP\Application\AdditionalFields(new \EducacionalERP\Infrastructure\Database\Database($GLOBALS['wpdb'])))->groups(),'user_actions'=>UserPermissions::ACTIONS,'reports'=>ReportPolicy::REPORTS,'roles'=>$rows,'menus'=>array_diff_key(self::MENUS,array_flip(['inicio','perfil','exportacao','importacao','perfis','configuracoes','ajuda','relatorios']))];
     }
     public static function save(array $data):array
@@ -110,8 +116,10 @@ final class MenuPolicy
         $menus=$data['menus']??[];
         if(!is_array($menus)||count($menus)>count(self::MENUS))throw new RuleViolation('Menus inválidos.');
         foreach($menus as $menu)if(!is_string($menu)||!isset(self::MENUS[$menu])||in_array($menu,self::ADMIN,true)||in_array($menu,['ajuda','relatorios'],true))throw new RuleViolation('Menu reservado ou inválido.');
-        $decision=array_key_exists('decidir_requerimentos_bolsa',$data);
-        if($decision&&!is_bool($data['decidir_requerimentos_bolsa']))throw new RuleViolation('Permissão de decisão de bolsa inválida.');
+        $scholarshipPermissions=['conferir_requerimentos_bolsa'=>self::SCHOLARSHIP_CHECK,'decidir_requerimentos_bolsa'=>self::SCHOLARSHIP_DECISION];
+        foreach($scholarshipPermissions as $field=>$cap){
+            if(array_key_exists($field,$data)&&!is_bool($data[$field]))throw new RuleViolation('Permissão de requerimento de bolsa inválida.');
+        }
         $reportSettings=ReportPolicy::settings();
         if(array_key_exists('reports',$data))$reports=ReportPolicy::validate($data['reports']);
         if(isset($data['student_sections']))$sections=StudentRecordPolicy::validate($data['student_sections']);
@@ -128,9 +136,11 @@ final class MenuPolicy
         if(isset($sections)){$policy=get_option(StudentRecordPolicy::OPTION,[]);$policy[$role]=$sections;update_option(StudentRecordPolicy::OPTION,$policy,false);}
         if(isset($groups))update_option('ederp_field_group_policy',$groups,false);
         if(isset($reports)){$reportSettings[$role]=$reports;update_option(ReportPolicy::OPTION,$reportSettings,false);}
-        if($decision){
-            if($data['decidir_requerimentos_bolsa'])$r->add_cap(self::SCHOLARSHIP_DECISION);
-            else $r->remove_cap(self::SCHOLARSHIP_DECISION);
+        foreach($scholarshipPermissions as $field=>$cap){
+            if(array_key_exists($field,$data)){
+                if($data[$field])$r->add_cap($cap);
+                else $r->remove_cap($cap);
+            }
         }
         update_option('ederp_menu_policy',$all,false);return ['salvo'=>true];
     }

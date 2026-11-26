@@ -18,7 +18,7 @@ Em **Perfis e acessos**, marque a área **Requerimentos de bolsa** para os perfi
 
 Quando nome e nascimento identificam um único aluno ativo na coligada, o vínculo é automático. Use **Vincular aluno manualmente** para os demais casos. Aprovar cadastra uma bolsa ativa com o percentual escolhido pelo analista. O solicitante recebe uma confirmação com o protocolo e o percentual que pediu e, após a análise, um segundo e-mail com a decisão. A tela mostra o estado das notificações.
 
-Em **Configurar formulário público**, selecione o **Gerente financeiro para aprovação por e-mail** entre os usuários autorizados a decidir. Os novos pedidos enviam um link individual válido por 48 horas. O gerente pode ver o resumo e confirmar a decisão sem entrar no ERP. Pedidos sem aluno vinculado dependem do vínculo antes da aprovação. O histórico da decisão exibe o gerente e a referência do link. Mantenha o link em sigilo, pois quem o receber poderá usá-lo enquanto estiver válido.
+Em **Configurar formulário público**, selecione o **Gerente financeiro para aprovação por e-mail** entre os usuários autorizados a decidir. Em **Perfis e acessos**, marque **Conferir requerimentos de bolsa e enviar ao gerente** para o Comercial. Na análise do pedido, o Comercial marca **Conferido pelo Comercial** e confirma o envio. Só então o ERP envia ao gerente um link individual válido por 48 horas. O gerente pode ver o resumo e confirmar a decisão sem entrar no ERP. Pedidos sem aluno vinculado dependem do vínculo antes da aprovação. O histórico registra quem conferiu o pedido, o gerente vinculado à decisão e a referência do link. Mantenha o link em sigilo, pois quem o receber poderá usá-lo enquanto estiver válido.
 
 ## Relatórios
 
