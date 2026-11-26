@@ -63,7 +63,51 @@ final class ContractDiscounts
     }
     public function plannedAmount(array $contract,int $number):int
     {
-        $sum=0;foreach($this->db->rows('SELECT * FROM '.$this->db->table('contrato_descontos').' WHERE idcontrato=%d AND ativo=1 ORDER BY iddesconto',[(int)$contract['idcontrato']]) as $row){$rule=null;foreach($this->rules($row) as $v)if((int)$v['partir']<=$number)$rule=$v['regra'];if($rule&&!empty($rule['habilitado'])&&$number>=(int)$rule['parcela_inicio']&&$number<=(int)$rule['parcela_fim']&&$this->eligible($rule,$contract))$sum+=Money::cents($rule['valor']);}return $sum;
+        return array_sum(array_map(fn($rule)=>Money::cents($rule['valor']),$this->plannedRules($contract,$number)));
+    }
+
+    private function plannedRules(array $contract,int $number,bool $lock=false):array
+    {
+        $rules=[];
+        foreach($this->db->rows('SELECT * FROM '.$this->db->table('contrato_descontos').' WHERE idcontrato=%d AND ativo=1 ORDER BY iddesconto'.($lock?' FOR UPDATE':''),[(int)$contract['idcontrato']]) as $row){
+            $rule=null;
+            foreach($this->rules($row) as $version)if((int)$version['partir']<=$number)$rule=$version['regra'];
+            if($rule&&!empty($rule['habilitado'])&&$number>=(int)$rule['parcela_inicio']&&$number<=(int)$rule['parcela_fim']&&$this->eligible($rule,$contract))$rules[$row['iddesconto']]=$rule;
+        }
+        return $rules;
+    }
+
+    /** Synchronize only the records of application. The caller rebuilds the title from these values. */
+    public function rebuildApplications(array $contract,array $title,string $key):int
+    {
+        $id=(int)$title['idlancamento'];
+        $maps=array_column($this->db->rows('SELECT * FROM '.$this->db->table('desconto_lancamentos').' WHERE idlancamento=%d ORDER BY idaplicacao FOR UPDATE',[$id]),null,'iddesconto');
+        $rules=$this->plannedRules($contract,(int)$title['numero'],true);
+        $amount=0;
+        foreach($rules as $discount=>$rule){
+            $before=$maps[$discount]??null;
+            if($rule['tipo']==='indicacao'&&$title['vencimento']<Input::today()){
+                if(!$before||$before['revertido_em']!==null)continue;
+                $amount+=Money::cents($before['valor']);
+                unset($maps[$discount]);
+                continue;
+            }
+            unset($maps[$discount]);
+            $fields=['valor'=>$rule['valor'],'revertido_em'=>null,'nome_snapshot'=>$rule['nome'],'descricao_snapshot'=>$rule['descricao'],'tipo_snapshot'=>$rule['tipo']];
+            $amount+=Money::cents($rule['valor']);
+            if($before&&$before['revertido_em']===null&&$before['valor']===$fields['valor']&&$before['nome_snapshot']===$fields['nome_snapshot']
+                &&$before['descricao_snapshot']===$fields['descricao_snapshot']&&$before['tipo_snapshot']===$fields['tipo_snapshot'])continue;
+            if($before){$application=(int)$before['idaplicacao'];$this->db->update('desconto_lancamentos',$application,$fields);}
+            else $application=$this->db->insert('desconto_lancamentos',['iddesconto'=>$discount,'idlancamento'=>$id]+$fields);
+            $this->db->audit('desconto_lancamentos',$application,'regerar_contrato',$before,$this->db->get('desconto_lancamentos',$application),$key);
+        }
+        foreach($maps as $before){
+            if($before['revertido_em']!==null)continue;
+            $application=(int)$before['idaplicacao'];
+            $this->db->update('desconto_lancamentos',$application,['revertido_em'=>gmdate('Y-m-d H:i:s')]);
+            $this->db->audit('desconto_lancamentos',$application,'regerar_contrato',$before,$this->db->get('desconto_lancamentos',$application),$key);
+        }
+        return $amount;
     }
     private function indexTargets(array $d):void
     {

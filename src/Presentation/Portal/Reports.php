@@ -259,7 +259,7 @@ final class Reports
             foreach($fields as $lines)echo '<td>'.implode('<br>',array_map('esc_html',$lines)).'</td>';
             echo '<td><input type="checkbox" disabled aria-label="'.esc_attr($signature==='Sim'?'Assinado':'Não assinado').'"'.checked($signature,'Sim',false).'></td></tr>';
         }
-        if(!$items)echo '<tr><td colspan="6">Nenhum contrato encontrado para os filtros selecionados.</td></tr>';
+        if(!$items)echo '<tr><td colspan="'.count(ContractFinancialSummary::COLUMNS).'">Nenhum contrato encontrado para os filtros selecionados.</td></tr>';
         echo '</tbody></table></div></article>';
     }
 

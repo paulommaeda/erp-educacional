@@ -2,6 +2,7 @@
   'use strict';
   const root=document.querySelector('[data-erp-contracts]');if(!root)return;
   const canContracts=!!(EDERP.caps?.admin||EDERP.caps?.contracts)&&root.dataset.erpContracts!=='discounts',canDiscounts=!!(EDERP.caps?.admin||EDERP.caps?.discounts);if(!canContracts&&!canDiscounts){root.textContent='Sem permissão para gerenciar contratos ou descontos.';return;}
+  const canReprice=!!(EDERP.caps?.admin||EDERP.caps?.contracts);
   const h=(tag,text,cls)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;};
   const button=(text,fn,cls='')=>{const n=h('button',text,cls);n.type='button';n.onclick=fn;return n;};
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
@@ -125,7 +126,7 @@
   function contractTable(){
     const table=h('table',undefined,'erp-contract-table'),head=h('thead'),tr=h('tr');
     const columns=canContracts?['Contrato e aluno','Período e turma','Condições','Situação','Assinado','Ações']:
-      ['Contrato e aluno','Período e turma','Condições','Pontualidade','Descontos incondicionais','Assinado'];
+      ['Contrato e aluno','Período e turma','Condições','Venc.','Pontualidade','Descontos incondicionais','Assinado'];
     for(const title of columns){
       const heading=h('th',title,title==='Assinado'?'erp-contract-signed':'');
       heading.scope='col';tr.append(heading);
@@ -161,18 +162,21 @@
       if(canContracts){
         actionsForContract.push(button('Ver contrato',()=>openContract(c.idcontrato)));
         if(c.status==='ativo')actionsForContract.push(button('Editar',()=>editContract(c.idcontrato)));
+        if(c.status==='ativo')actionsForContract.push(button('Regerar ou trocar plano',()=>openRepricing(c)));
         actionsForContract.push(button('Excluir',()=>removeContract(c.idcontrato),'erp-contract-danger'));
       }
       if(canContracts&&canDiscounts&&c.status==='ativo')actionsForContract.push(button('Bolsas e descontos',()=>window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;})));
       if(actionsForContract.length)actions.append(window.EDERPActionMenu.create(actionsForContract,root,'Ações do contrato '+c.numero));
       if(canContracts)row.append(who,school,terms,state,signed,actions);
       else{
-        const punctuality=h('td'),discounts=h('td');
+        const due=h('td',c.dia_vencimento??'—'),punctuality=h('td'),discounts=h('td');
+        due.dataset.label='Venc.';
         punctuality.dataset.label='Pontualidade';discounts.dataset.label='Descontos incondicionais';
-        terms.firstElementChild.textContent=money(c.valor_liquido_total)+' líquidos';
-        punctuality.append(h('strong',punctualityText(c)),h('small','Por parcela'));
-        discounts.append(h('strong',money(c.desconto_incondicional_total)),h('small','Total do contrato'));
-        row.append(who,school,terms,punctuality,discounts,signed);
+        terms.replaceChildren(h('strong',money(c.valor_original_contrato)+' original'),
+          h('small',c.quantidade_parcelas+' parcelas · '+amountRange(c,'original_parcela')+' original'),h('small',money(c.valor_liquido_total)+' líquidos'));
+        punctuality.append(h('strong',c.pontualidade_total===null?'—':money(c.pontualidade_total)+' total'),h('small',amountRange(c,'pontualidade')+' por parcela'));
+        discounts.append(h('strong',money(c.desconto_incondicional_total)+' total'),h('small',amountRange(c,'desconto_parcela')+' por parcela'));
+        row.append(who,school,terms,due,punctuality,discounts,signed);
       }
       body.append(row);
     }
@@ -224,7 +228,10 @@
   }
   function modal(title){const dialog=h('dialog',undefined,'journey-confirm ederp erp-contract-dialog'),heading=h('h2',title),close=button('Fechar',()=>dialog.close(),'erp-secondary'),content=h('div'),status=feedback();heading.id='erp-contract-dialog-'+uuid();dialog.setAttribute('aria-labelledby',heading.id);const focused=document.activeElement,opener=focused?.closest('.erp-enrollment-actions')?.querySelector('summary')||focused,header=h('header',undefined,'erp-contract-dialog-header');header.append(heading,close);dialog.append(header,content,status);dialog.onclose=()=>{dialog.remove();if(opener?.isConnected)opener.focus();};dialog.addEventListener('cancel',e=>{if(dialog.dataset.busy==='1')e.preventDefault();});document.body.append(dialog);dialog.showModal();return {dialog,content,status,close};}
   function summary(c){const box=h('dl',undefined,'erp-contract-summary');for(const [label,value]of [['Aluno',c.aluno+' · RA '+c.ra],['Período e turma',c.periodo+' · '+c.turma],['Responsável financeiro',c.responsavel],['Valor líquido',money(c.valor_liquido_total)],['Parcelamento',c.quantidade_parcelas+' parcelas · '+date(c.primeiro_vencimento)]]){const item=h('div');item.append(h('dt',label),h('dd',value));box.append(item);}return box;}
-  function punctualityText(c){return money(c.pontualidade_min)+(c.pontualidade_min===c.pontualidade_max?'':' a '+money(c.pontualidade_max));}
+  function amountRange(c,field){
+    const min=c[field+'_min'],max=c[field+'_max'];
+    return min==null?'—':money(min)+(min===max?'':' a '+money(max));
+  }
   async function openSummary(row){
     const m=modal('Resumo do contrato '+row.numero);
     m.status.textContent='Carregando resumo...';
@@ -235,7 +242,8 @@
       const facts=summary(c);
       for(const [label,value] of [
         ['Data do contrato',date(c.data_contrato)],['Valor original',money(c.valor_original_total)],
-        ['Descontos incondicionais',money(c.desconto_incondicional_total)],['Pontualidade por parcela',punctualityText(c)],
+        ['Descontos incondicionais',money(c.desconto_incondicional_total)+' · '+amountRange(c,'desconto_parcela')+' por parcela'],
+        ['Pontualidade',(c.pontualidade_total===null?'—':money(c.pontualidade_total))+' · '+amountRange(c,'pontualidade')+' por parcela'],
         ['Valor pago',money(c.valor_pago)],['Saldo em aberto',money(c.saldo_aberto)],
         ['Situação',c.status==='cancelado'?'Cancelado':Number(c.parcelas_geradas)?'Parcelas geradas':'Aguardando parcelas'],
         ['Assinado',c.assinado_em?'Sim · '+date(c.assinado_em):'Não']
@@ -283,6 +291,44 @@
         });
         m.content.prepend(edit);
       }
+      if(c.status==='ativo'&&canReprice){
+        m.content.prepend(button('Regerar ou trocar plano',()=>{m.dialog.close();openRepricing(c);}));
+      }
+    }catch(e){if(m.dialog.isConnected)m.status.textContent=e.message;}
+  }
+  async function openRepricing(c){
+    const m=modal('Regerar contrato '+c.numero);
+    const path='contratos/'+c.idcontrato+'/regerar';
+    m.status.textContent='Carregando planos...';
+    try{
+      const result=await api(path);
+      if(!m.dialog.isConnected)return;
+      m.status.textContent='';
+      const form=h('form',undefined,'ederp-form erp-contract-form');
+      const plan=choice('idplano','Plano de pagamento',[['','Manter plano e recalcular']]);
+      const amount=field('desconto_manual','Desconto manual total do contrato (R$)',result.desconto_manual??'');
+      const reason=field('motivo','Motivo da alteração','','textarea');
+      reason.input.maxLength=2000;amount.input.inputMode='decimal';
+      amount.input.readOnly=result.assinado&&result.desconto_manual!==null;
+      for(const p of result.planos)plan.input.append(new Option(p.nome+' · '+money(p.valor_anuidade),p.idplano));
+      plan.input.disabled=result.assinado;
+      if(result.plano)m.content.append(h('p','Plano atual · '+result.plano));
+      m.content.append(h('p','O recálculo usa bolsas, descontos cadastrados e ajustes registrados. Mantém a quantidade e os vencimentos das parcelas. Parcelas com histórico de baixa, canceladas ou excluídas são preservadas.'),form);
+      if(result.assinado)m.content.insertBefore(h('p','O contrato assinado permite recálculo financeiro. O texto e o plano ficam vinculados à assinatura existente.'),form);
+      if(result.desconto_manual===null)m.content.insertBefore(h('p','Informe o desconto manual acordado neste contrato antigo. Use 0,00 se ele não tiver desconto manual.'),form);
+      const confirm=h('label',undefined,'ederp-check'),check=h('input');check.type='checkbox';check.required=true;
+      confirm.append(check,h('span','Confirmo a alteração das parcelas disponíveis.'));
+      form.append(plan.node,amount.node,reason.node,confirm);
+      bind(m,form,path,()=>{
+        const selected=result.planos.find(p=>String(p.idplano)===plan.input.value);
+        const value=amount.input.value.trim();
+        return {versao:result.versao,motivo:reason.input.value,confirmado:check.checked,
+          desconto_manual:value.includes(',')?value.replaceAll('.','').replace(',','.'):value,
+          ...(selected?{idplano:selected.idplano,plano_versao:selected.versao}:{})};
+      },async data=>{
+        notice.textContent=(data.plano_alterado?'Plano de pagamento atualizado.':'Contrato recalculado.')+' '+data.parcelas_alteradas+' parcela(s) atualizada(s) · '+data.parcelas_preservadas+' preservada(s).';
+        await load();
+      });
     }catch(e){if(m.dialog.isConnected)m.status.textContent=e.message;}
   }
   async function getContract(id,title,done){const m=modal(title);m.status.textContent='Carregando contrato...';try{const c=await api('contratos/'+id);if(!m.dialog.isConnected)return;m.status.textContent='';await done(c,m);}catch(e){m.status.textContent=e.message;}return m;}

@@ -59,6 +59,9 @@ final class Controller
         $this->route($envio.'/pdf','GET',$manageSignatures,fn($r)=>$signatures->pdf((int)$r['id'],(int)$r['envio']));
         $this->route('/contratos','GET',fn()=>Access::canReadContracts(),fn($r)=>$contracts->listing($r->get_query_params()));
         $this->route('/contratos/'.$id.'/resumo','GET',fn()=>Access::canReadContracts(),fn($r)=>$contracts->financialSummary((int)$r['id']));
+        $repricing=new \EducacionalERP\Application\ContractRepricing($this->db,new Operations($this->db));
+        $this->route('/contratos/'.$id.'/regerar','GET',fn()=>Access::canManageContracts(),fn($r)=>$repricing->options((int)$r['id']));
+        $this->route('/contratos/'.$id.'/regerar','POST',fn()=>Access::canManageContracts(),fn($r)=>$repricing->run((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/contratos/'.$id,'GET',fn()=>Access::canManageContracts(),fn($r)=>$contracts->detail((int)$r['id']));
         $this->route('/contratos/'.$id.'/pdf','GET',fn()=>Access::canManageContracts(),fn($r)=>(new \EducacionalERP\Application\ContractPrint($this->db,$contracts))->download((int)$r['id']));
         $this->route('/contratos/'.$id,'POST',fn()=>Access::canManageContracts(),fn($r)=>$contracts->update((int)$r['id'],$this->payload($r),$this->key($r)));
