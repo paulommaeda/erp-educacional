@@ -105,7 +105,8 @@
         const info = element('div');
         info.append(element('strong', item.nome_aluno), element('p', item.protocolo + ' · ' + date(item.criado_em) + ' · ' + labels[item.situacao]
           + (item.percentual_aprovado ? ' · ' + percent(item.percentual_aprovado) : '')
-          + (item.idaluno ? '' : ' · Sem vínculo')));
+          + (item.idaluno ? '' : ' · Sem vínculo')
+          + (item.situacao !== 'pendente' ? '' : item.conferido_em ? ' · Conferido pelo Comercial' : ' · Aguardando conferência')));
         card.append(info, button('Abrir requerimento', () => review(item.idpedido, item.protocolo)));
         list.append(card);
       }
@@ -126,10 +127,18 @@
       const emails = element('textarea'); emails.value = data.emails.join('\n'); emails.rows = 5; emails.maxLength = 6000;
       const link = element('a', 'Abrir formulário público'); link.href = data.url; link.target = '_blank'; link.rel = 'noopener';
       const address = element('input'); address.value = data.url; address.readOnly = true;
-      form.append(field('Receber novos requerimentos', active), field('E-mails da administração, um por linha', emails), field('Link público', address));
+      const approver = element('select');
+      approver.append(new Option('Desativado', '0'));
+      for (const user of data.aprovadores) approver.append(new Option(user.nome + ' · ' + user.email, user.id));
+      approver.value = String(data.aprovador_id);
+      if (approver.selectedIndex < 0) approver.value = '0';
+      form.append(field('Receber novos requerimentos', active), field('E-mails da administração, um por linha', emails),
+        field('Gerente financeiro para aprovação por e-mail', approver),
+        element('p', 'Selecione um usuário com permissão para decidir requerimentos de bolsa.'),
+        field('Link público', address));
       view.content.append(link, form);
       bind(form, view, 'Salvar configurações', async () => {
-        await api(path + '/configuracoes', {}, { ativo: active.checked, emails: emails.value });
+        await api(path + '/configuracoes', {}, { ativo: active.checked, emails: emails.value, aprovador_id: approver.value });
         view.message.textContent = 'Configurações salvas.';
       });
     } catch (error) { view.message.textContent = error.message; }
@@ -159,11 +168,19 @@
       const student = data.aluno;
       view.content.append(element('h3', 'Aluno vinculado'), element('p', student
         ? student.nome + ' · RA ' + student.ra + ' · ' + date(student.data_nascimento) : 'Aguardando vínculo manual.'));
+      if (data.conferido_em) {
+        view.content.append(element('p', 'Conferido pelo Comercial · ' + data.conferido_nome + ' · ' + date(data.conferido_em)));
+      }
       if (data.situacao === 'pendente') {
         showLink(view, data);
+        if (data.pode_conferir && !data.conferido_em) showCommercialCheck(view, data);
         if (data.pode_decidir) showDecision(view, data);
       } else {
         if (data.percentual_aprovado) view.content.append(element('p', 'Percentual aprovado · ' + percent(data.percentual_aprovado)));
+        if (data.decidido_nome) {
+          const origin = data.link_decisao ? 'Link por e-mail · Referência ' + data.link_decisao : 'Portal';
+          view.content.append(element('p', 'Decisão registrada por ' + data.decidido_nome + ' · ' + date(data.decidido_em) + ' · ' + origin));
+        }
         if (data.observacao) view.content.append(element('p', data.observacao, 'erp-scholarship-note'));
       }
       const sent = data.notificacoes;
@@ -192,6 +209,22 @@
     });
     box.append(element('summary', data.aluno ? 'Alterar vínculo' : 'Vincular aluno manualmente'), form, results);
     view.content.append(box);
+  }
+
+  function showCommercialCheck(view, data) {
+    const form = element('form', '', 'ederp-form erp-admission-review-card');
+    const checked = element('input');
+    checked.type = 'checkbox';
+    checked.required = true;
+    const label = element('label', '', 'ederp-check');
+    label.append(checked, element('span', 'Conferido pelo Comercial'));
+    form.append(element('h3', 'Conferência do Comercial'), label);
+    bind(form, view, 'Confirmar e enviar ao gerente financeiro', async () => {
+      await api(path + '/' + data.idpedido + '/conferir', {}, { conferido: checked.checked, versao: data.versao });
+      message.textContent = 'Conferência registrada e link de aprovação encaminhado para envio.';
+      view.node.close(); await load(); await review(data.idpedido, data.protocolo);
+    });
+    view.content.append(form);
   }
 
   function showDecision(view, data) {

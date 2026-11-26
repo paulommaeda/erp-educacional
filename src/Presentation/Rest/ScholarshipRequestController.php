@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace EducacionalERP\Presentation\Rest;
 
-use EducacionalERP\Application\{Coligadas,ScholarshipRequests};
+use EducacionalERP\Application\{Coligadas,ScholarshipApprovalLinks,ScholarshipRequests};
 use EducacionalERP\Domain\{Input,RuleViolation,ScholarshipRequestForm};
 use EducacionalERP\Infrastructure\Database\Database;
 use EducacionalERP\Infrastructure\WordPress\{AdmissionGuard,SchemaMigration,SchoolIdentity};
@@ -13,6 +13,12 @@ final class ScholarshipRequestController
 
     public function register(): void
     {
+        foreach(['resumo','decisao'] as $action){
+            register_rest_route(Controller::NS,'/publico/requerimentos-bolsa/(?P<colegio>[1-9][0-9]{0,17})/aprovacao/'.$action,[
+                'methods'=>'POST','permission_callback'=>'__return_true',
+                'callback'=>fn($request)=>$this->approval($request,$action),
+            ]);
+        }
         foreach(['GET','POST'] as $method){
             register_rest_route(Controller::NS,'/publico/requerimentos-bolsa/(?P<colegio>[1-9][0-9]{0,17})',[
                 'methods'=>$method,
@@ -21,6 +27,40 @@ final class ScholarshipRequestController
                 'callback'=>fn($request)=>$this->handle($request,$method),
             ]);
         }
+    }
+
+    private function approval(\WP_REST_Request $request,string $action): \WP_REST_Response
+    {
+        $previous=$this->db->wp->suppress_errors(true);
+        $status=200;
+        try{
+            if(SchemaMigration::pending()){
+                $data=['message'=>'A aprovação está temporariamente indisponível.'];
+                $status=503;
+            }else{
+                $payload=strlen($request->get_body())<=16000?$request->get_json_params():null;
+                if(!is_array($payload))throw new RuleViolation(ScholarshipApprovalLinks::UNAVAILABLE);
+                $company=Input::id($request['colegio']);
+                $owner=$this->db->row('SELECT ativo FROM '.$this->db->table('coligadas').' WHERE codcoligada=%d',[$company]);
+                if(empty($owner['ativo']))throw new RuleViolation(ScholarshipApprovalLinks::UNAVAILABLE);
+                $service=new ScholarshipRequests($this->db);
+                $token=$payload['token']??null;
+                $data=Coligadas::within($company,fn()=>$action==='resumo'?$service->approvalSummary($token)
+                    :$service->decideByEmail($token,is_array($payload['decisao']??null)?$payload['decisao']:[]));
+            }
+        }catch(RuleViolation $e){
+            $data=['message'=>$e->getMessage()];
+            $status=422;
+        }catch(\Throwable){
+            $data=['message'=>'Não foi possível acessar o requerimento agora. Tente novamente.'];
+            $status=500;
+        }finally{
+            $this->db->wp->suppress_errors($previous);
+        }
+        $response=new \WP_REST_Response($data,$status);
+        $response->header('Cache-Control','private, no-store, max-age=0');
+        $response->header('Referrer-Policy','no-referrer');
+        return $response;
     }
 
     private function handle(\WP_REST_Request $request,string $method): mixed

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 namespace EducacionalERP\Infrastructure\WordPress;
 
-use EducacionalERP\Application\{Coligadas,ScholarshipRequests};
+use EducacionalERP\Application\{Coligadas,ScholarshipApprovalLinks,ScholarshipRequests};
 use EducacionalERP\Domain\Store;
 use EducacionalERP\Presentation\Portal\Portal;
 
@@ -28,10 +28,10 @@ final class ScholarshipRequestMail
         if(function_exists('wp_schedule_single_event')&&!wp_next_scheduled(self::HOOK))wp_schedule_single_event(time()+$seconds,self::HOOK);
     }
 
-    public function queue(int $id,string $type,array $emails): void
+    public function queue(int $id,string $type,array $emails,array $metadata=[]): void
     {
         foreach($emails as $email){
-            $this->db->insert(self::TABLE,['idpedido'=>$id,'tipo'=>$type,'destinatario'=>$email,'proxima_tentativa'=>gmdate('Y-m-d H:i:s')]);
+            $this->db->insert(self::TABLE,['idpedido'=>$id,'tipo'=>$type,'destinatario'=>$email,'proxima_tentativa'=>gmdate('Y-m-d H:i:s')]+$metadata);
         }
     }
 
@@ -69,17 +69,28 @@ final class ScholarshipRequestMail
             return;
         }
         $request=$this->db->get('requerimentos_bolsa',(int)$row['idpedido']);
+        $approvalUrl=null;
+        if($row['tipo']===ScholarshipApprovalLinks::MAIL_TYPE){
+            $approvalUrl=$request['situacao']==='pendente'&&$request['conferido_em']?ScholarshipApprovalLinks::url($row):null;
+            if(!$approvalUrl){
+                $this->db->update(self::TABLE,$id,['status'=>'cancelado']);
+                return;
+            }
+        }
         $protocol=$request['protocolo'];
         $application=json_decode($request['dados_json'],true,32,JSON_THROW_ON_ERROR);
         [$subject,$message]=match($row['tipo']){
             'recebido'=>['Confirmação de recebimento do requerimento de bolsa','Recebemos seu pedido de bolsa de '
                 .str_replace('.',',',$application['percentual'])."%. A escola vai analisar as informações e enviar o resultado para este e-mail."],
             'administracao'=>['Novo requerimento de bolsa',"Há um requerimento de bolsa para analisar no ERP.\n".Portal::url('requerimentos_bolsa')],
+            ScholarshipApprovalLinks::MAIL_TYPE=>['Requerimento de bolsa para decisão',
+                "Abra seu link individual para consultar o resumo e registrar a decisão.\n\n".$approvalUrl
+                ."\n\nO link vale por 48 horas a partir da emissão. Mantenha-o em sigilo."],
             'decisao'=>$request['situacao']==='aprovado'
                 ?['Requerimento de bolsa aprovado','Seu requerimento de bolsa foi aprovado com percentual de '.str_replace('.',',',$request['percentual_aprovado']).'%.']
                 :['Requerimento de bolsa rejeitado','Seu requerimento de bolsa foi analisado e rejeitado.'],
         };
-        if($row['tipo']!=='administracao'){
+        if(in_array($row['tipo'],['recebido','decisao'],true)){
             $recipient=preg_replace('/[\r\n]+/',' ',trim($application['solicitante']));
             $message="Olá, $recipient.\n\n".$message;
             if($row['tipo']==='decisao'&&$request['observacao'])$message.="\n\nMensagem da escola: ".$request['observacao'];

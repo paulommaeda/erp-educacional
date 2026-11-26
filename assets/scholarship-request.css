@@ -8,3 +8,6 @@
 .erp-scholarship-dialog [hidden]{display:none!important}
 .erp-scholarship-dialog select{min-width:0}
 @media(max-width:600px){.erp-scholarship-list-item{align-items:start;flex-direction:column}.erp-scholarship-actions label{min-width:min(100%,180px)}}
+
+.erp-scholarship-decision .erp-admission-field{margin-bottom:1rem!important}
+.erp-scholarship-decision [role=status]:empty{display:none}

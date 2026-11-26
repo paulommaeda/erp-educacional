@@ -13,13 +13,14 @@ final class ScholarshipRequests
     public static function configuration(): array
     {
         $settings=get_option(Coligadas::option('ederp_scholarship_requests'),[]);
-        return (is_array($settings)?$settings:[])+['ativo'=>false,'emails'=>[]];
+        return (is_array($settings)?$settings:[])+['ativo'=>false,'emails'=>[],'aprovador_id'=>0];
     }
 
     public static function settings(): array
     {
         Access::requireAdmin();
-        return self::configuration()+['url'=>ScholarshipRequestPage::url(Coligadas::current())];
+        return self::configuration()+['url'=>ScholarshipRequestPage::url(Coligadas::current()),
+            'aprovadores'=>ScholarshipApprovalLinks::recipients()];
     }
 
     public static function saveSettings(array $data): array
@@ -35,7 +36,14 @@ final class ScholarshipRequests
         }
         if(count($emails)>20)throw new RuleViolation('Informe até 20 destinatários.');
         if($data['ativo']&&!$emails)throw new RuleViolation('Informe ao menos um e-mail para receber os novos requerimentos.');
-        update_option(Coligadas::option('ederp_scholarship_requests'),['ativo'=>$data['ativo'],'emails'=>array_values($emails)],false);
+        $manager=$data['aprovador_id']??self::configuration()['aprovador_id'];
+        $manager=in_array($manager,[0,'0'],true)?0:Input::id($manager);
+        if($manager&&!ScholarshipApprovalLinks::eligible($manager)){
+            throw new RuleViolation('Escolha um usuário com e-mail válido e permissão para decidir requerimentos de bolsa.');
+        }
+        update_option(Coligadas::option('ederp_scholarship_requests'),[
+            'ativo'=>$data['ativo'],'emails'=>array_values($emails),'aprovador_id'=>$manager,
+        ],false);
         return self::settings();
     }
 
@@ -71,7 +79,7 @@ final class ScholarshipRequests
         $args=[Coligadas::current()];
         $where=' WHERE codcoligada=%d';
         if($status!=='todos'){$where.=' AND situacao=%s';$args[]=$status;}
-        $items=$this->db->rows("SELECT idpedido,protocolo,situacao,nome_aluno,idaluno,percentual_aprovado,criado_em FROM $table"
+        $items=$this->db->rows("SELECT idpedido,protocolo,situacao,nome_aluno,idaluno,percentual_aprovado,conferido_em,criado_em FROM $table"
             .$where.' ORDER BY idpedido DESC LIMIT 21 OFFSET %d',[...$args,($page-1)*20]);
         return ['items'=>array_slice($items,0,20),'mais'=>count($items)>20];
     }
@@ -85,6 +93,17 @@ final class ScholarshipRequests
         $row['aluno']=$row['idaluno']?$this->student((int)$row['idaluno']):null;
         $row['notificacoes']=(new ScholarshipRequestMail($this->db))->status($id);
         $row['pode_decidir']=MenuPolicy::canDecideScholarshipRequests();
+        $row['pode_conferir']=MenuPolicy::canCheckScholarshipRequests();
+        if($row['conferido_por']){
+            $checker=get_userdata((int)$row['conferido_por']);
+            $row['conferido_nome']=$checker?$checker->display_name:'Usuário #'.$row['conferido_por'];
+        }
+        if($row['decidido_por']&&($row['pode_decidir']||Access::isAdmin())){
+            $actor=get_userdata((int)$row['decidido_por']);
+            $row['decidido_nome']=$actor?$actor->display_name:'Usuário #'.$row['decidido_por'];
+        }else{
+            unset($row['link_decisao']);
+        }
         return $row;
     }
 
@@ -111,16 +130,76 @@ final class ScholarshipRequests
         }));
     }
 
+    public function checkAndSend(int $id,array $input,string $key): array
+    {
+        if(!MenuPolicy::canCheckScholarshipRequests()){
+            throw new RuleViolation('Seu perfil não permite conferir requerimentos de bolsa.');
+        }
+        if(($input['conferido']??null)!==true)throw new RuleViolation('Marque a conferência do Comercial para enviar ao gerente.');
+        $result=$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'conferir_requerimento_bolsa',
+            ['id'=>$id,'versao'=>$input['versao']??null],function()use($id,$input,$key){
+                $request=$this->pending($id,$input);
+                if($request['conferido_em'])throw new RuleViolation('O Comercial já conferiu este requerimento.');
+                (new ScholarshipApprovalLinks($this->db))->queue($id,(int)self::configuration()['aprovador_id']);
+                $changes=['conferido_em'=>gmdate('Y-m-d H:i:s'),'conferido_por'=>get_current_user_id()];
+                $this->db->update('requerimentos_bolsa',$id,$changes);
+                $this->db->audit('requerimentos_bolsa',$id,'conferir',null,$changes,$key);
+                return ['conferido'=>true];
+            }));
+        (new ScholarshipRequestMail($this->db))->dispatch($id);
+        return $result;
+    }
+
     public function decide(int $id,array $input,string $key): array
     {
         if(!MenuPolicy::canDecideScholarshipRequests())throw new RuleViolation('Seu perfil não permite aprovar ou rejeitar requerimentos de bolsa.');
+        $result=$this->executeDecision($id,$input,$key);
+        (new ScholarshipRequestMail($this->db))->dispatch($id);
+        unset($result['percentual']);
+        return $result;
+    }
+
+    public function approvalSummary(mixed $token): array
+    {
+        $link=(new ScholarshipApprovalLinks($this->db))->verify($token);
+        $request=$this->request((int)$link['idpedido']);
+        if($request['situacao']!=='pendente'||!$request['conferido_em'])throw new RuleViolation(ScholarshipApprovalLinks::UNAVAILABLE);
+        $data=json_decode($request['dados_json'],true,32,JSON_THROW_ON_ERROR);
+        $student=$request['idaluno']?$this->student((int)$request['idaluno']):null;
+        return [
+            'protocolo'=>$request['protocolo'],'versao'=>$request['versao'],
+            'aluno'=>$request['nome_aluno'],'aluno_vinculado'=>$student?['nome'=>$student['nome'],'ra'=>$student['ra']]:null,
+            'solicitante'=>$data['solicitante'],'percentual'=>$data['percentual'],'justificativa'=>$data['justificativa'],
+            'nivel'=>$data['nivel'],'turma'=>$data['turma_fundamental_1']??$data['turma_fundamental_2']??$data['turma_medio']??'',
+            'turno'=>$data['turno_fundamental_2']??$data['turno_medio']??'',
+            'renda_mae'=>$data['renda_mae'],'renda_pai'=>$data['renda_pai'],
+        ];
+    }
+
+    public function decideByEmail(mixed $token,array $input): array
+    {
+        $link=(new ScholarshipApprovalLinks($this->db))->verify($token);
+        $id=(int)$link['idpedido'];
+        $previous=get_current_user_id();
+        wp_set_current_user((int)$link['aprovador_id']);
+        try{
+            $result=$this->executeDecision($id,$input,bin2hex(random_bytes(20)),$link['link_referencia']);
+        }finally{
+            wp_set_current_user($previous);
+        }
+        (new ScholarshipRequestMail($this->db))->dispatch($id);
+        return ['situacao'=>$result['situacao'],'percentual'=>$result['percentual']];
+    }
+
+    private function executeDecision(int $id,array $input,string $key,?string $link=null): array
+    {
         $status=$input['situacao']??null;
         if(!in_array($status,['aprovado','rejeitado'],true))throw new RuleViolation('Escolha aprovar ou rejeitar o requerimento.');
         $percent=$status==='aprovado'?ScholarshipRequestForm::percentage($input['percentual']??null):null;
         $note=$input['observacao']??'';
         $note=$note===''?null:Input::text($note,2000);
-        $result=ContractTextLock::run($this->db,fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'decidir_requerimento_bolsa',
-            ['id'=>$id]+$input,function()use($id,$input,$status,$percent,$note,$key){
+        return ContractTextLock::run($this->db,fn()=>$this->db->atomic(fn()=>(new Operations($this->db))->run($key,'decidir_requerimento_bolsa',
+            ['id'=>$id]+$input,function()use($id,$input,$status,$percent,$note,$key,$link){
                 $request=$this->pending($id,$input);
                 $grant=null;
                 if($status==='aprovado'){
@@ -132,15 +211,14 @@ final class ScholarshipRequests
                         'descricao'=>'Benefício concedido pelo requerimento '.$request['protocolo'].'.','percentual'=>$percent,'ativo'=>1],$key);
                 }
                 $changes=['situacao'=>$status,'percentual_aprovado'=>$percent,'idbolsa_aluno'=>$grant['idbolsa_aluno']??null,
-                    'observacao'=>$note,'decidido_em'=>gmdate('Y-m-d H:i:s'),'decidido_por'=>get_current_user_id()];
+                    'observacao'=>$note,'decidido_em'=>gmdate('Y-m-d H:i:s'),'decidido_por'=>get_current_user_id(),'link_decisao'=>$link];
                 $this->db->update('requerimentos_bolsa',$id,$changes);
-                $this->db->audit('requerimentos_bolsa',$id,$status,['situacao'=>'pendente','idaluno'=>$request['idaluno']],$changes,$key);
+                $this->db->audit('requerimentos_bolsa',$id,$status,['situacao'=>'pendente','idaluno'=>$request['idaluno']],
+                    $changes+['origem'=>$link?'link_email':'portal'],$key);
                 $data=json_decode($request['dados_json'],true,32,JSON_THROW_ON_ERROR);
                 (new ScholarshipRequestMail($this->db))->queue($id,'decisao',[$data['email']]);
-                return ['situacao'=>$status,'bolsa'=>$grant];
+                return ['situacao'=>$status,'bolsa'=>$grant,'percentual'=>$percent];
             })));
-        (new ScholarshipRequestMail($this->db))->dispatch($id);
-        return $result;
     }
 
     private function request(int $id,bool $lock=false): array

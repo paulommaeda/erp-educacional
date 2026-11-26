@@ -85,6 +85,8 @@ final class Controller
         $this->route($scholarshipPath.'/'.$id,'GET',$scholarshipReview,fn($r)=>$scholarship->detail((int)$r['id']));
         $this->route($scholarshipPath.'/'.$id.'/alunos','GET',$scholarshipReview,fn($r)=>$scholarship->candidates((int)$r['id'],$r->get_param('busca')));
         $this->route($scholarshipPath.'/'.$id.'/vincular','POST',$scholarshipReview,fn($r)=>$scholarship->link((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route($scholarshipPath.'/'.$id.'/conferir','POST',fn()=>MenuPolicy::canCheckScholarshipRequests(),
+            fn($r)=>$scholarship->checkAndSend((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route($scholarshipPath.'/'.$id.'/decidir','POST',fn()=>MenuPolicy::canDecideScholarshipRequests(),fn($r)=>$scholarship->decide((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/configuracoes/requerimento-publico','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Application\AdmissionSettings::settings());
         $this->route('/configuracoes/requerimento-publico','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Application\AdmissionSettings::save($this->payload($r)));
