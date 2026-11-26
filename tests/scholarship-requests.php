@@ -34,13 +34,27 @@ function scholarshipDenied(callable $action,string $expected): void
 
 $admin=get_users(['role'=>'administrator','number'=>1])[0]->ID;
 wp_set_current_user($admin);
+$basePrefix=$wpdb->prefix;
+$options=[];
+foreach(['ederp_scholarship_requests','ederp_schema_version','ederp_schema_error','ederp_schema_integrity','ederp_schema_attempt_release',
+    'ederp_pontualidade','ederp_menu_policy','ederp_report_policy'] as $option)$options[$option]=get_option($option,null);
+$reviewer=null;
+$profile=null;
+register_shutdown_function(static function()use(&$reviewer,&$profile,$basePrefix,$options,$admin){
+    global $wpdb;
+    wp_set_current_user($admin);
+    $wpdb->prefix=$basePrefix;
+    if(is_int($reviewer)){require_once ABSPATH.'wp-admin/includes/user.php';wp_delete_user($reviewer);}
+    if($profile!==null)remove_role($profile);
+    foreach($options as $key=>$value){if($value===null)delete_option($key);else update_option($key,$value,false);}
+});
 $db=new Database($wpdb);
 $wpdb->prefix='scholarship_'.bin2hex(random_bytes(4)).'_';
 delete_option('ederp_schema_version');delete_option('ederp_schema_error');
 SchemaMigration::run($db);
 ScholarshipRequestPage::setup();
 update_option('ederp_pontualidade','103.00');
-$profile=MenuPolicy::create(['nome'=>'Análise de bolsas QA'])['slug'];
+$profile=MenuPolicy::create(['nome'=>'Análise de bolsas '.bin2hex(random_bytes(4))])['slug'];
 MenuPolicy::save(['role'=>$profile,'menus'=>['requerimentos_bolsa']]);
 $reviewer=wp_insert_user(['user_login'=>'bolsa_'.bin2hex(random_bytes(4)),'user_pass'=>wp_generate_password(),'role'=>$profile]);
 $fixture=seedScholarships($db);
