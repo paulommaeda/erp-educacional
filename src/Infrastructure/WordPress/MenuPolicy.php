@@ -27,9 +27,15 @@ final class MenuPolicy
         if($menu==='ajuda')return self::any(['requerimentos','pessoas','alunos','matriculas','documentos','usuarios']);
         if($menu==='relatorios')return ReportPolicy::available()!==[];
         if(in_array($menu,self::ADMIN,true))return false;
+        return self::profileHasMenu(wp_get_current_user(),$menu)
+            &&(!isset(self::CAPS[$menu])||current_user_can(self::CAPS[$menu]));
+    }
+
+    private static function profileHasMenu(\WP_User $user,string $menu):bool
+    {
         $settings=get_option('ederp_menu_policy',[]);
-        foreach(wp_get_current_user()->roles as $role) {
-            if(in_array($menu,$settings[$role]??self::defaults($role),true))return !isset(self::CAPS[$menu])||current_user_can(self::CAPS[$menu]);
+        foreach($user->roles as $role){
+            if(in_array($menu,$settings[$role]??self::defaults($role),true))return true;
         }
         return false;
     }
@@ -77,14 +83,18 @@ final class MenuPolicy
         if(str_contains($path,'/lancamentos')||str_contains($path,'/baixas')||str_contains($path,'trocas-responsavel'))return self::can('financeiro');
         return true;
     }
-    public static function canDecideScholarshipRequests():bool
+    public static function canDecideScholarshipRequests(?\WP_User $user=null):bool
     {
-        if(!self::can('requerimentos_bolsa'))return false;
-        $roles=wp_roles()->roles;
-        foreach(wp_get_current_user()->roles as $role){
-            if(!empty($roles[$role]['capabilities'][self::SCHOLARSHIP_DECISION]))return true;
-        }
-        return false;
+        $user??=wp_get_current_user();
+        if(!$user->exists())return false;
+        $admin=in_array('administrator',$user->roles,true)&&user_can($user,'manage_options');
+        if(!$admin&&!self::profileHasMenu($user,'requerimentos_bolsa'))return false;
+        return (bool)array_intersect($user->roles,self::scholarshipDecisionRoles());
+    }
+
+    public static function scholarshipDecisionRoles(): array
+    {
+        return array_keys(array_filter(wp_roles()->roles,static fn($role)=>!empty($role['capabilities'][self::SCHOLARSHIP_DECISION])));
     }
 
     public static function describe():array

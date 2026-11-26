@@ -126,10 +126,18 @@
       const emails = element('textarea'); emails.value = data.emails.join('\n'); emails.rows = 5; emails.maxLength = 6000;
       const link = element('a', 'Abrir formulário público'); link.href = data.url; link.target = '_blank'; link.rel = 'noopener';
       const address = element('input'); address.value = data.url; address.readOnly = true;
-      form.append(field('Receber novos requerimentos', active), field('E-mails da administração, um por linha', emails), field('Link público', address));
+      const approver = element('select');
+      approver.append(new Option('Desativado', '0'));
+      for (const user of data.aprovadores) approver.append(new Option(user.nome + ' · ' + user.email, user.id));
+      approver.value = String(data.aprovador_id);
+      if (approver.selectedIndex < 0) approver.value = '0';
+      form.append(field('Receber novos requerimentos', active), field('E-mails da administração, um por linha', emails),
+        field('Gerente financeiro para aprovação por e-mail', approver),
+        element('p', 'Selecione um usuário com permissão para decidir requerimentos de bolsa.'),
+        field('Link público', address));
       view.content.append(link, form);
       bind(form, view, 'Salvar configurações', async () => {
-        await api(path + '/configuracoes', {}, { ativo: active.checked, emails: emails.value });
+        await api(path + '/configuracoes', {}, { ativo: active.checked, emails: emails.value, aprovador_id: approver.value });
         view.message.textContent = 'Configurações salvas.';
       });
     } catch (error) { view.message.textContent = error.message; }
@@ -164,6 +172,10 @@
         if (data.pode_decidir) showDecision(view, data);
       } else {
         if (data.percentual_aprovado) view.content.append(element('p', 'Percentual aprovado · ' + percent(data.percentual_aprovado)));
+        if (data.decidido_nome) {
+          const origin = data.link_decisao ? 'Link por e-mail · Referência ' + data.link_decisao : 'Portal';
+          view.content.append(element('p', 'Decisão registrada por ' + data.decidido_nome + ' · ' + date(data.decidido_em) + ' · ' + origin));
+        }
         if (data.observacao) view.content.append(element('p', data.observacao, 'erp-scholarship-note'));
       }
       const sent = data.notificacoes;

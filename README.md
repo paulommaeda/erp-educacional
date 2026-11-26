@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.58
+# ERP Educacional — 0.19.59
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -17,6 +17,8 @@ Em **Requerimentos de bolsa → Configurar formulário público**, preencha os e
 Em **Perfis e acessos**, marque a área **Requerimentos de bolsa** para os perfis que podem consultar as respostas e vincular alunos, como o Comercial. Para os perfis que também vão decidir, marque **Aprovar ou rejeitar requerimentos de bolsa**. A decisão exige a atribuição explícita a um perfil, inclusive para quem administra o WordPress. A opção de configurar o formulário e editar os perfis continua disponível aos administradores.
 
 Quando nome e nascimento identificam um único aluno ativo na coligada, o vínculo é automático. Use **Vincular aluno manualmente** para os demais casos. Aprovar cadastra uma bolsa ativa com o percentual escolhido pelo analista. O solicitante recebe uma confirmação com o protocolo e o percentual que pediu e, após a análise, um segundo e-mail com a decisão. A tela mostra o estado das notificações.
+
+Em **Configurar formulário público**, selecione o **Gerente financeiro para aprovação por e-mail** entre os usuários autorizados a decidir. Os novos pedidos enviam um link individual válido por 48 horas. O gerente pode ver o resumo e confirmar a decisão sem entrar no ERP. Pedidos sem aluno vinculado dependem do vínculo antes da aprovação. O histórico da decisão exibe o gerente e a referência do link. Mantenha o link em sigilo, pois quem o receber poderá usá-lo enquanto estiver válido.
 
 ## Relatórios
 

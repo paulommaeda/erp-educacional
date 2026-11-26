@@ -162,4 +162,89 @@ scholarshipCheck($service->detail($id)['situacao']==='rejeitado'&&$service->deta
     &&str_contains(end($messages)['subject'],'rejeitado'),'vínculo manual, rejeição e e-mail do resultado');
 $other=$db->insert('coligadas',['nome'=>'Outra escola','razao_social'=>'Outra escola']);
 Coligadas::within($other,fn()=>scholarshipDenied(fn()=>$service->detail($id),'indisponível nesta coligada'));
+
+wp_set_current_user($admin);
+foreach([$reviewer,$commercial] as $user){
+    wp_update_user(['ID'=>$user,'user_email'=>'bolsa-'.$user.'@example.test']);
+}
+scholarshipDenied(fn()=>ScholarshipRequests::saveSettings([
+    'ativo'=>true,'emails'=>'equipe@example.test','aprovador_id'=>$commercial,
+]),'permissão para decidir');
+$settings=ScholarshipRequests::saveSettings([
+    'ativo'=>true,'emails'=>'equipe@example.test','aprovador_id'=>$reviewer,
+]);
+scholarshipCheck(array_column($settings['aprovadores'],'id')===[$reviewer],'configuração oferece somente o usuário com perfil de análise');
+
+$approvalApi=static function(string $action,string $token,array $body=[],int $company=1,string $method='POST')use($route){
+    $request=new WP_REST_Request($method,preg_replace('~/1$~','/'.$company,$route).'/aprovacao/'.$action);
+    $request->set_header('Content-Type','application/json');
+    $request->set_body(wp_json_encode(['token'=>$token,'decisao'=>$body]));
+    return rest_do_request($request);
+};
+$approvalToken=static function(array $mail){
+    if(!preg_match('~(https?://\S+\#([1-9][0-9]*\.[a-f0-9]{64}))~',$mail['message'],$matches)){
+        throw new RuntimeException('Link de aprovação não encontrado.');
+    }
+    $url=$matches[1];
+    parse_str((string)wp_parse_url($url,PHP_URL_QUERY),$query);
+    scholarshipCheck(($query['aprovar_bolsa']??null)==='1'&&!str_contains($query['colegio']??'',$matches[2]),
+        'o token é enviado no fragmento do link');
+    return $matches[2];
+};
+
+$studentByEmail=createScholarshipContract($db,$fixture,'VIAEMAIL');
+$identity=$db->get('pessoas',(int)$studentByEmail['codpessoa']);
+$first=count($messages);
+wp_set_current_user(0);
+$sent=$service->submit(array_replace($data,['aluno'=>$identity['nome'],'nascimento'=>$identity['data_nascimento']]),$key());
+$managerMail=$messages[$first+2];
+scholarshipCheck(count($messages)===$first+3&&$managerMail['to']==='bolsa-'.$reviewer.'@example.test'
+    &&!str_contains($managerMail['message'],'Explicação financeira'),'link individual é enviado apenas ao gerente e omite as respostas');
+$linkToken=$approvalToken($managerMail);
+$wrong=substr($linkToken,0,-1).(str_ends_with($linkToken,'a')?'b':'a');
+$summary=$approvalApi('resumo',$linkToken);
+$summaryData=$summary->get_data();
+scholarshipCheck($summary->get_status()===200&&$summaryData['protocolo']===$sent['protocolo']
+    &&$summaryData['aluno_vinculado']['ra']==='VIAEMAIL'
+    &&!array_intersect(['email','telefone','nascimento'],array_keys($summaryData))
+    &&str_contains((array_change_key_case($summary->get_headers())['cache-control']??''),'no-store'),'resumo público usa token válido e omite os contatos');
+scholarshipCheck($approvalApi('resumo',$wrong)->get_status()===422
+    &&$approvalApi('resumo',$linkToken,[],$other)->get_status()===422
+    &&$approvalApi('decisao',$linkToken,[],1,'GET')->get_status()===404,
+    'assinatura alterada, coligada incorreta e decisão por GET são recusadas');
+
+$entryTable=$db->table('requerimento_bolsa_emails');
+$linkId=(int)explode('.',$linkToken)[0];
+$linkRow=$db->get('requerimento_bolsa_emails',$linkId);
+$claims=[$linkId,$linkRow['codcoligada'],$linkRow['idpedido'],$linkRow['aprovador_id'],
+    $linkRow['destinatario'],$linkRow['link_referencia']];
+$past=gmdate('Y-m-d H:i:s',time()-60);
+$expired=$linkId.'.'.hash_hmac('sha256','ederp:scholarship-approval:v1|'.implode('|',[...$claims,$past]),wp_salt('auth'));
+$db->query("UPDATE $entryTable SET link_expira_em=%s WHERE idemail=%d",[$past,$linkId]);
+scholarshipCheck($approvalApi('resumo',$expired)->get_status()===422,'link expirado é recusado mesmo com assinatura válida');
+$db->query("UPDATE $entryTable SET link_expira_em=%s WHERE idemail=%d",[$linkRow['link_expira_em'],$linkId]);
+
+wp_set_current_user($admin);
+MenuPolicy::save(['role'=>$roles[0],'menus'=>['requerimentos_bolsa'],'decidir_requerimentos_bolsa'=>false]);
+wp_set_current_user(0);
+scholarshipCheck($approvalApi('resumo',$linkToken)->get_status()===422,'link perde acesso se a permissão do gerente é revogada');
+wp_set_current_user($admin);
+MenuPolicy::save(['role'=>$roles[0],'menus'=>['requerimentos_bolsa'],'decidir_requerimentos_bolsa'=>true]);
+wp_set_current_user(0);
+$body=['situacao'=>'aprovado','percentual'=>'18,25','observacao'=>'Aprovado pelo financeiro.','versao'=>$summaryData['versao']];
+$viaEmail=$approvalApi('decisao',$linkToken,$body);
+$idEmailRequest=(int)$linkRow['idpedido'];
+$after=$db->get('requerimentos_bolsa',$idEmailRequest);
+$audit=$db->row('SELECT * FROM '.$db->table('auditoria')." WHERE entidade='requerimentos_bolsa' AND entidade_id=%d AND acao='aprovado'",[$idEmailRequest]);
+$meta=json_decode($audit['depois_json'],true,32,JSON_THROW_ON_ERROR);
+scholarshipCheck($viaEmail->get_status()===200&&$viaEmail->get_data()['percentual']==='18.25'
+    &&$after['idbolsa_aluno']&&(int)$after['decidido_por']===$reviewer&&get_current_user_id()===0
+    &&(int)$audit['ator_wp_user_id']===$reviewer&&$meta['link_decisao']===$linkRow['link_referencia']
+    &&$meta['origem']==='link_email'&&!str_contains(wp_json_encode($audit),$linkToken)
+    &&str_contains(end($messages)['message'],'18,25%'),'aprovação anônima cria bolsa e audita gerente e referência sem divulgar token');
+$sentCount=count($messages);
+scholarshipCheck($approvalApi('resumo',$linkToken)->get_status()===422
+    &&$approvalApi('decisao',$linkToken,$body)->get_status()===422&&count($messages)===$sentCount,
+    'link não abre o resumo nem reaplica uma decisão registrada');
+
 echo "SCHOLARSHIP_REQUESTS_OK\n";

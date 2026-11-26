@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.58
+Stable tag: 0.19.59
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.59 =
+* Aprovação de requerimentos de bolsa por link individual enviado ao gerente financeiro, com validade de 48 horas, uso único e trilha de auditoria.
 
 = 0.19.58 =
 * Permissões separadas para consulta e vínculo e para decisão de requerimentos de bolsa. Confirmação ao solicitante com protocolo e percentual solicitado.
