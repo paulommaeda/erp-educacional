@@ -75,6 +75,17 @@ final class Controller
         $this->route('/modelos-contrato/'.$id.'/excluir','POST',fn()=>Access::canManageContracts(),fn($r)=>$models->remove((int)$r['id'],$this->payload($r),$this->key($r)));
         $admissions=new \EducacionalERP\Application\PublicAdmissions($this->db,$this->catalog);$pickup=new \EducacionalERP\Application\StudentPickup($this->db);
         $admissionReview=fn()=>\EducacionalERP\Application\PublicAdmissions::canReview();
+        $scholarship=new \EducacionalERP\Application\ScholarshipRequests($this->db);
+        $scholarshipReview=fn()=>MenuPolicy::can('requerimentos_bolsa');
+        $scholarshipPath='/requerimentos-bolsa';
+        $this->route($scholarshipPath.'/configuracoes','GET',fn()=>Access::isAdmin(),fn()=>$scholarship::settings());
+        $this->route($scholarshipPath.'/configuracoes','POST',fn()=>Access::isAdmin(),fn($r)=>$scholarship::saveSettings($this->payload($r)));
+        $this->route($scholarshipPath,'GET',$scholarshipReview,fn($r)=>$scholarship->listing($r->get_param('status')??'pendente',$r->get_param('page')??1)
+            +['etapas'=>\EducacionalERP\Domain\ScholarshipRequestForm::steps()]);
+        $this->route($scholarshipPath.'/'.$id,'GET',$scholarshipReview,fn($r)=>$scholarship->detail((int)$r['id']));
+        $this->route($scholarshipPath.'/'.$id.'/alunos','GET',$scholarshipReview,fn($r)=>$scholarship->candidates((int)$r['id'],$r->get_param('busca')));
+        $this->route($scholarshipPath.'/'.$id.'/vincular','POST',$scholarshipReview,fn($r)=>$scholarship->link((int)$r['id'],$this->payload($r),$this->key($r)));
+        $this->route($scholarshipPath.'/'.$id.'/decidir','POST',$scholarshipReview,fn($r)=>$scholarship->decide((int)$r['id'],$this->payload($r),$this->key($r)));
         $this->route('/configuracoes/requerimento-publico','GET',fn()=>Access::isAdmin(),fn()=>\EducacionalERP\Application\AdmissionSettings::settings());
         $this->route('/configuracoes/requerimento-publico','POST',fn()=>Access::isAdmin(),fn($r)=>\EducacionalERP\Application\AdmissionSettings::save($this->payload($r)));
         $this->route('/requerimentos-publicos/'.$id.'/reenviar-confirmacao','POST',fn()=>Access::isAdmin(),fn($r)=>(new \EducacionalERP\Infrastructure\WordPress\AdmissionNotifications($this->db))->retry((int)$r['id']));

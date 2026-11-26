@@ -81,6 +81,7 @@ final class Portal
         if(!MenuPolicy::can($view))echo '<section class="ederp-card"><h1>Acesso indisponível</h1><p>Seu perfil não tem acesso a esta área.</p><a href="'.esc_url(self::url()).'">Voltar ao início</a></section>';
         elseif($view==='ajuda'){HelpWiki::assets();HelpWiki::render();}
         elseif($view==='relatorios'){Reports::render(new Database($GLOBALS['wpdb']));}
+        elseif($view==='requerimentos_bolsa'){ScholarshipRequestPage::review();}
         elseif($view==='documentos')echo '<section data-erp-documents><p role="status">Carregando documentos...</p></section>';
         elseif($view==='chat')echo '<section data-erp-chat><p role="status">Carregando conversas...</p></section>';
         elseif(in_array($view,['pessoas','alunos','professores','academico','matriculas','financeiro','gestao_financeira','contratos','bolsas','rematriculas','exportacao','importacao','requerimentos','configuracoes'],true)){

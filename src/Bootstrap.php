@@ -16,7 +16,7 @@ final class Bootstrap
         finally { $wpdb->suppress_errors($previous); }
         \EducacionalERP\Infrastructure\WordPress\PortalTheme::setup(true);
     }
-    public static function deactivate():void {wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Materials\Cron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Signature\Notifications::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\AccountInvitations::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\AdmissionNotifications::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DiscountCron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DocumentNotifications::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DocumentNotifications::MAIL_HOOK);wp_clear_scheduled_hook('ederp_cleanup_student_documents');wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::RETURNS_HOOK);}
+    public static function deactivate():void {wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Materials\Cron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Signature\Notifications::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\AccountInvitations::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\AdmissionNotifications::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\ScholarshipRequestMail::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DiscountCron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DocumentNotifications::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\WordPress\DocumentNotifications::MAIL_HOOK);wp_clear_scheduled_hook('ederp_cleanup_student_documents');wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::HOOK);wp_clear_scheduled_hook(\EducacionalERP\Infrastructure\Educbank\Cron::RETURNS_HOOK);}
     public function boot(): void
     {
         global $wpdb;
@@ -26,6 +26,7 @@ final class Bootstrap
         (new \EducacionalERP\Infrastructure\WordPress\AdmissionReadAccess($db))->register();
         \EducacionalERP\Infrastructure\WordPress\AccountInvitations::register($db);
         \EducacionalERP\Infrastructure\WordPress\AdmissionNotifications::register($db);
+        \EducacionalERP\Infrastructure\WordPress\ScholarshipRequestMail::register($db);
         \EducacionalERP\Infrastructure\WordPress\DocumentNotifications::register($db);
         \EducacionalERP\Infrastructure\WordPress\UserAccessLog::register($db);
         \EducacionalERP\Infrastructure\Educbank\Cron::register($db);
@@ -39,6 +40,9 @@ final class Bootstrap
         $admissions=new \EducacionalERP\Presentation\Rest\AdmissionController($db,new \EducacionalERP\Application\PublicAdmissions($db,$catalog));add_action('rest_api_init',[$admissions,'register']);
         $reader=new \EducacionalERP\Presentation\Rest\AdmissionReadController($db,new \EducacionalERP\Application\AdmissionReadService($db));add_action('rest_api_init',[$reader,'register']);
         \EducacionalERP\Presentation\Portal\Admissions::register();
+        \EducacionalERP\Presentation\Portal\ScholarshipRequestPage::register();
+        $scholarship=new \EducacionalERP\Presentation\Rest\ScholarshipRequestController($db);
+        add_action('rest_api_init',[$scholarship,'register']);
         $chat=new \EducacionalERP\Presentation\Rest\ChatController(new \EducacionalERP\Application\ChatService($db));add_action('rest_api_init',[$chat,'register']);
         add_filter('get_avatar_data', [new \EducacionalERP\Infrastructure\WordPress\Avatar($db),'filter'],10,2);
         add_action('ederp_cleanup_student_documents',static function()use($db){if(get_option('ederp_schema_version')===Installer::VERSION&&!get_option('ederp_schema_error'))(new \EducacionalERP\Application\StudentDocuments($db))->cleanupRejected();});

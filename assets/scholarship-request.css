@@ -1,0 +1,10 @@
+.erp-scholarship-actions{display:flex;flex-wrap:wrap;align-items:end;gap:.75rem;margin:1rem 0}
+.erp-scholarship-list-item{display:flex;justify-content:space-between;align-items:center;gap:1rem}
+.erp-scholarship-list-item p{margin:.25rem 0 0}
+.erp-scholarship-details{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:.85rem}
+.erp-scholarship-details dt{font-weight:600}
+.erp-scholarship-details dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.erp-scholarship-note{white-space:pre-wrap;overflow-wrap:anywhere}
+.erp-scholarship-dialog [hidden]{display:none!important}
+.erp-scholarship-dialog select{min-width:0}
+@media(max-width:600px){.erp-scholarship-list-item{align-items:start;flex-direction:column}.erp-scholarship-actions label{min-width:min(100%,180px)}}

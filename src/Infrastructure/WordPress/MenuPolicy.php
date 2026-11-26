@@ -4,7 +4,7 @@ namespace EducacionalERP\Infrastructure\WordPress;
 use EducacionalERP\Domain\RuleViolation;
 final class MenuPolicy
 {
-    public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','documentos'=>'Documentos dos alunos','pessoas'=>'Pessoas','alunos'=>'Alunos','professores'=>'Professores','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','relatorios'=>'Relatórios','financeiro'=>'Financeiro','gestao_financeira'=>'Gestão financeira','contratos'=>'Contratos','bolsas'=>'Bolsas e descontos dos contratos','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações','ajuda'=>'Ajuda'];
+    public const MENUS=['inicio'=>'Início','chat'=>'Conversas','usuarios'=>'Usuários','documentos'=>'Documentos dos alunos','pessoas'=>'Pessoas','alunos'=>'Alunos','professores'=>'Professores','academico'=>'Estrutura acadêmica','matriculas'=>'Matrículas','relatorios'=>'Relatórios','financeiro'=>'Financeiro','gestao_financeira'=>'Gestão financeira','contratos'=>'Contratos','bolsas'=>'Bolsas e descontos dos contratos','rematriculas'=>'Ofertas de rematrícula','meus_estudos'=>'Vida acadêmica','meu_financeiro'=>'Meu financeiro','renovacao'=>'Rematrícula','perfil'=>'Meu perfil','exportacao'=>'Exportação','requerimentos'=>'Requerimentos','requerimentos_bolsa'=>'Requerimentos de bolsa','importacao'=>'Importação','perfis'=>'Perfis e acessos','configuracoes'=>'Configurações','ajuda'=>'Ajuda'];
     private const ADMIN=['exportacao','importacao','perfis','configuracoes'];
     private const CAPS=['documentos'=>'erp_gerenciar_pessoas','requerimentos'=>'erp_gerenciar_pessoas','pessoas'=>'erp_gerenciar_pessoas','alunos'=>'erp_gerenciar_pessoas','professores'=>'erp_gerenciar_academico','academico'=>'erp_gerenciar_academico','matriculas'=>'erp_gerenciar_academico','rematriculas'=>'erp_gerenciar_academico','financeiro'=>'erp_consultar_financeiro','gestao_financeira'=>'erp_consultar_gestao_financeira','contratos'=>'erp_gerenciar_contratos','bolsas'=>'erp_gerenciar_bolsas_descontos'];
     public static function defaults(string $role):array
@@ -38,6 +38,7 @@ final class MenuPolicy
     public static function route(string $path,string $method):bool
     {
         if(Access::isAdmin())return true;
+        if(str_starts_with($path,'/requerimentos-bolsa'))return self::can('requerimentos_bolsa');
         if(str_starts_with($path,'/requerimentos-publicos'))return self::can('requerimentos');
         if(str_starts_with($path,'/retiradas-alunos'))return self::can('alunos');
         if(str_starts_with($path,'/api-pessoas'))return Access::isAdmin()||self::can('requerimentos');
