@@ -21,8 +21,9 @@ const { chromium } = require('playwright');
     await page.getByText('Requerimento aprovado e bolsa de 23,50% cadastrada.', { exact: true }).waitFor();
     assert.equal(new URL(page.url()).hash, '');
     assert.equal((await context.cookies()).filter(cookie => cookie.name.startsWith('wordpress_logged_in')).length, 0);
-    await page.goto(fixture.url);
-    await page.getByText('Este link de aprovação é inválido, expirou ou o requerimento já foi decidido.', { exact: true }).waitFor();
+    const reopened = await context.newPage();
+    await reopened.goto(fixture.url);
+    await reopened.getByText('Este link de aprovação é inválido, expirou ou o requerimento já foi decidido.', { exact: true }).waitFor();
     console.log('PASS: resumo, decisão e rejeição de reuso no navegador sem sessão.');
   } finally {
     await browser.close();
