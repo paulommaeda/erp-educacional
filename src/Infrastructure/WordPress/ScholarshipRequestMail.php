@@ -71,7 +71,7 @@ final class ScholarshipRequestMail
         $request=$this->db->get('requerimentos_bolsa',(int)$row['idpedido']);
         $approvalUrl=null;
         if($row['tipo']===ScholarshipApprovalLinks::MAIL_TYPE){
-            $approvalUrl=$request['situacao']==='pendente'?ScholarshipApprovalLinks::url($row):null;
+            $approvalUrl=$request['situacao']==='pendente'&&$request['conferido_em']?ScholarshipApprovalLinks::url($row):null;
             if(!$approvalUrl){
                 $this->db->update(self::TABLE,$id,['status'=>'cancelado']);
                 return;

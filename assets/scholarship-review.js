@@ -105,7 +105,8 @@
         const info = element('div');
         info.append(element('strong', item.nome_aluno), element('p', item.protocolo + ' · ' + date(item.criado_em) + ' · ' + labels[item.situacao]
           + (item.percentual_aprovado ? ' · ' + percent(item.percentual_aprovado) : '')
-          + (item.idaluno ? '' : ' · Sem vínculo')));
+          + (item.idaluno ? '' : ' · Sem vínculo')
+          + (item.situacao !== 'pendente' ? '' : item.conferido_em ? ' · Conferido pelo Comercial' : ' · Aguardando conferência')));
         card.append(info, button('Abrir requerimento', () => review(item.idpedido, item.protocolo)));
         list.append(card);
       }
@@ -167,8 +168,12 @@
       const student = data.aluno;
       view.content.append(element('h3', 'Aluno vinculado'), element('p', student
         ? student.nome + ' · RA ' + student.ra + ' · ' + date(student.data_nascimento) : 'Aguardando vínculo manual.'));
+      if (data.conferido_em) {
+        view.content.append(element('p', 'Conferido pelo Comercial · ' + data.conferido_nome + ' · ' + date(data.conferido_em)));
+      }
       if (data.situacao === 'pendente') {
         showLink(view, data);
+        if (data.pode_conferir && !data.conferido_em) showCommercialCheck(view, data);
         if (data.pode_decidir) showDecision(view, data);
       } else {
         if (data.percentual_aprovado) view.content.append(element('p', 'Percentual aprovado · ' + percent(data.percentual_aprovado)));
@@ -204,6 +209,22 @@
     });
     box.append(element('summary', data.aluno ? 'Alterar vínculo' : 'Vincular aluno manualmente'), form, results);
     view.content.append(box);
+  }
+
+  function showCommercialCheck(view, data) {
+    const form = element('form', '', 'ederp-form erp-admission-review-card');
+    const checked = element('input');
+    checked.type = 'checkbox';
+    checked.required = true;
+    const label = element('label', '', 'ederp-check');
+    label.append(checked, element('span', 'Conferido pelo Comercial'));
+    form.append(element('h3', 'Conferência do Comercial'), label);
+    bind(form, view, 'Confirmar e enviar ao gerente financeiro', async () => {
+      await api(path + '/' + data.idpedido + '/conferir', {}, { conferido: checked.checked, versao: data.versao });
+      message.textContent = 'Conferência registrada e link de aprovação encaminhado para envio.';
+      view.node.close(); await load(); await review(data.idpedido, data.protocolo);
+    });
+    view.content.append(form);
   }
 
   function showDecision(view, data) {

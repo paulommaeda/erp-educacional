@@ -58,7 +58,7 @@ update_option('ederp_pontualidade','103.00');
 $account=static function(string $name,bool $canDecide)use(&$roles,&$users){
     $profile=MenuPolicy::create(['nome'=>$name.' '.bin2hex(random_bytes(4))])['slug'];
     $roles[]=$profile;
-    MenuPolicy::save(['role'=>$profile,'menus'=>['requerimentos_bolsa'],'decidir_requerimentos_bolsa'=>$canDecide]);
+    MenuPolicy::save(['role'=>$profile,'menus'=>['requerimentos_bolsa'],'decidir_requerimentos_bolsa'=>$canDecide,'conferir_requerimentos_bolsa'=>!$canDecide]);
     $id=wp_insert_user(['user_login'=>'bolsa_'.bin2hex(random_bytes(4)),'user_pass'=>wp_generate_password(),'role'=>$profile]);
     if(is_wp_error($id))throw new RuntimeException($id->get_error_message());
     $users[]=$id;
@@ -70,7 +70,7 @@ scholarshipCheck(!MenuPolicy::canDecideScholarshipRequests(),'administrador sem 
 $fixture=seedScholarships($db);
 $student=createScholarshipContract($db,$fixture,'BOLSISTA');
 $service=new ScholarshipRequests($db);
-ScholarshipRequests::saveSettings(['ativo'=>true,'emails'=>"equipe@example.test\nEQUIPE@example.test\nfinanceiro@example.test"]);
+ScholarshipRequests::saveSettings(['ativo'=>true,'emails'=>"equipe@example.test\nEQUIPE@example.test\nfinanceiro@example.test",'aprovador_id'=>0]);
 scholarshipCheck(count(ScholarshipRequests::settings()['emails'])===2&&str_contains(ScholarshipRequests::settings()['url'],'colegio=1'),
     'configuração de destinatários por coligada e página pública');
 $messages=[];
@@ -173,7 +173,9 @@ scholarshipDenied(fn()=>ScholarshipRequests::saveSettings([
 $settings=ScholarshipRequests::saveSettings([
     'ativo'=>true,'emails'=>'equipe@example.test','aprovador_id'=>$reviewer,
 ]);
-scholarshipCheck(array_column($settings['aprovadores'],'id')===[$reviewer],'configuração oferece somente o usuário com perfil de análise');
+$eligibleIds=array_column($settings['aprovadores'],'id');
+scholarshipCheck(in_array($reviewer,$eligibleIds,true)&&!in_array($commercial,$eligibleIds,true),
+    'configuração oferece o gerente autorizado e exclui o Comercial');
 
 $approvalApi=static function(string $action,string $token,array $body=[],int $company=1,string $method='POST')use($route){
     $request=new WP_REST_Request($method,preg_replace('~/1$~','/'.$company,$route).'/aprovacao/'.$action);
@@ -197,6 +199,23 @@ $identity=$db->get('pessoas',(int)$studentByEmail['codpessoa']);
 $first=count($messages);
 wp_set_current_user(0);
 $sent=$service->submit(array_replace($data,['aluno'=>$identity['nome'],'nascimento'=>$identity['data_nascimento']]),$key());
+scholarshipCheck(count($messages)===$first+2,'novo pedido confirma recebimento sem enviar link antes da conferência');
+wp_set_current_user($reviewer);
+$pending=$service->listing('pendente',1)['items'][0];
+$checkedId=(int)$pending['idpedido'];
+$pendingVersion=$service->detail($checkedId)['versao'];
+$checkInput=['versao'=>$pendingVersion,'conferido'=>true];
+scholarshipDenied(fn()=>$service->checkAndSend($checkedId,$checkInput,$key()),'perfil não permite conferir');
+wp_set_current_user($commercial);
+scholarshipDenied(fn()=>$service->checkAndSend($checkedId,array_replace($checkInput,['conferido'=>false]),$key()),'Marque a conferência');
+$checkKey=$key();
+$service->checkAndSend($checkedId,$checkInput,$checkKey);
+$service->checkAndSend($checkedId,$checkInput,$checkKey);
+$checked=$service->detail($checkedId);
+$checkAudit=$db->row('SELECT ator_wp_user_id FROM '.$db->table('auditoria')." WHERE entidade='requerimentos_bolsa' AND entidade_id=%d AND acao='conferir'",[$checkedId]);
+scholarshipCheck((int)$checked['conferido_por']===$commercial&&(int)$checkAudit['ator_wp_user_id']===$commercial&&$checked['pode_conferir']
+    &&count($messages)===$first+3,'conferência explícita do Comercial fica auditada e envia um único e-mail');
+wp_set_current_user(0);
 $managerMail=$messages[$first+2];
 scholarshipCheck(count($messages)===$first+3&&$managerMail['to']==='bolsa-'.$reviewer.'@example.test'
     &&!str_contains($managerMail['message'],'Explicação financeira'),'link individual é enviado apenas ao gerente e omite as respostas');

@@ -17,7 +17,7 @@ Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar.
 == Changelog ==
 
 = 0.19.59 =
-* Aprovação de requerimentos de bolsa por link individual enviado ao gerente financeiro, com validade de 48 horas, uso único e trilha de auditoria.
+* Conferência do Comercial antes do envio do link individual ao gerente financeiro. O link permite aprovar requerimentos de bolsa sem login, com validade de 48 horas, uso único e trilha de auditoria.
 
 = 0.19.58 =
 * Permissões separadas para consulta e vínculo e para decisão de requerimentos de bolsa. Confirmação ao solicitante com protocolo e percentual solicitado.
