@@ -1,0 +1,110 @@
+name: Validar aprovação de bolsa por e-mail
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    services:
+      maria:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: report-local-fixture
+          MARIADB_DATABASE: erp_qa
+        ports: ['3306/tcp']
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: mysqli, mbstring, gd, zip, openssl, pdo_sqlite, fileinfo
+      - name: Verificar sintaxe
+        run: |
+          git diff --check HEAD^1 HEAD
+          git diff --name-only HEAD^1 HEAD -- '*.php' | xargs -r -n1 php -l
+          php -l src/Application/ContractFinancialSummary.php
+          php -l src/Infrastructure/Pdf/ContractsReportPdf.php
+          php -l src/Application/Contracts.php
+          php -l src/Presentation/Portal/Reports.php
+          php -l src/Presentation/Rest/Controller.php
+          php -l src/Infrastructure/WordPress/MenuPolicy.php
+          php -l src/Infrastructure/WordPress/ReportPolicy.php
+          node --check assets/scholarship-request.js
+          node --check assets/scholarship-review.js
+          node --check assets/portal.js
+          node --check assets/reports.js
+          node --check assets/scholarship-approval.js
+          node --check tests/tmp-aprovacao-bolsa-qa.cjs
+          php -l src/Application/ScholarshipApprovalLinks.php
+          php -l src/Application/ScholarshipRequests.php
+          php -l src/Infrastructure/WordPress/ScholarshipRequestMail.php
+          php -l src/Presentation/Portal/ScholarshipRequestPage.php
+          php -l src/Presentation/Rest/ScholarshipRequestController.php
+          php -l tests/scholarship-requests.php
+          git diff --check origin/main HEAD
+          php tests/installment-report.php
+          php tests/financial-dashboard.php
+          php tests/public-admissions.php
+          php tests/student-scholarships.php
+          php tests/contract-permissions.php
+          php tests/annual-clearance.php
+      - name: Preparar WordPress e matrículas fictícias
+        env:
+          WP_QA_DB_PORT: ${{ job.services.maria.ports['3306'] }}
+        run: |
+          wp_dir="$RUNNER_TEMP/wordpress"
+          echo "WP_QA_DIR=$wp_dir" >> "$GITHUB_ENV"
+          echo "WP_QA_DB_PORT=$WP_QA_DB_PORT" >> "$GITHUB_ENV"
+          curl -fsSL --retry 2 https://wordpress.org/wordpress-6.8.3.tar.gz | tar xz -C "$RUNNER_TEMP"
+          cat > "$wp_dir/wp-config.php" <<'PHP'
+          <?php
+          define('DB_NAME','erp_qa');
+          define('DB_USER','root');
+          define('DB_PASSWORD','report-local-fixture');
+          define('DB_HOST','127.0.0.1:'.getenv('WP_QA_DB_PORT'));
+          define('DB_CHARSET','utf8mb4');
+          define('DB_COLLATE','');
+          define('WP_HOME','http://127.0.0.1:38547');
+          define('WP_SITEURL',WP_HOME);
+          define('WP_HTTP_BLOCK_EXTERNAL',true);
+          define('DISABLE_WP_CRON',true);
+          define('WP_ENVIRONMENT_TYPE','local');
+          define('EDERP_TEST_DATABASE',true);
+          $table_prefix='wp_';
+          if(!defined('ABSPATH'))define('ABSPATH',__DIR__.'/');
+          require ABSPATH.'wp-settings.php';
+          PHP
+          ln -s "$GITHUB_WORKSPACE" "$wp_dir/wp-content/plugins/erp-educacional"
+          mkdir -p "$wp_dir/wp-content/mu-plugins"
+          cat > "$wp_dir/wp-content/mu-plugins/sandbox-mail.php" <<'PHP'
+          <?php
+          add_filter('pre_wp_mail',static fn()=>true,10);
+          PHP
+          WP_QA_DIR="$wp_dir" php tests/tmp-aprovacao-bolsa-qa.php
+          EDERP_TEST_BOOTSTRAP="$wp_dir/wp-load.php" php tests/wordpress-financial-dashboard.php
+          EDERP_TEST_BOOTSTRAP="$wp_dir/wp-load.php" php tests/scholarship-requests.php
+      - name: Preparar navegador
+        run: |
+          mkdir -p "$RUNNER_TEMP/report-node"
+          cd "$RUNNER_TEMP/report-node"
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+          echo "NODE_PATH=$RUNNER_TEMP/report-node/node_modules" >> "$GITHUB_ENV"
+      - name: Aprovar sem sessão no navegador
+        run: |
+          php -S 127.0.0.1:38547 -t "$WP_QA_DIR" > "$RUNNER_TEMP/wp.log" 2>&1 &
+          server=$!
+          trap 'kill "$server" || true; tail -n 150 "$RUNNER_TEMP/wp.log"' EXIT
+          for attempt in $(seq 1 25); do
+            if curl -fsS http://127.0.0.1:38547/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/tmp-aprovacao-bolsa-qa.cjs
