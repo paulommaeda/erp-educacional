@@ -70,14 +70,20 @@ final class ScholarshipRequestMail
         }
         $request=$this->db->get('requerimentos_bolsa',(int)$row['idpedido']);
         $protocol=$request['protocolo'];
+        $application=json_decode($request['dados_json'],true,32,JSON_THROW_ON_ERROR);
         [$subject,$message]=match($row['tipo']){
-            'recebido'=>['Recebemos seu requerimento de bolsa',"Seu requerimento de bolsa foi recebido e será analisado pela escola."],
+            'recebido'=>['Confirmação de recebimento do requerimento de bolsa','Recebemos seu pedido de bolsa de '
+                .str_replace('.',',',$application['percentual'])."%. A escola vai analisar as informações e enviar o resultado para este e-mail."],
             'administracao'=>['Novo requerimento de bolsa',"Há um requerimento de bolsa para analisar no ERP.\n".Portal::url('requerimentos_bolsa')],
             'decisao'=>$request['situacao']==='aprovado'
                 ?['Requerimento de bolsa aprovado','Seu requerimento de bolsa foi aprovado com percentual de '.str_replace('.',',',$request['percentual_aprovado']).'%.']
                 :['Requerimento de bolsa rejeitado','Seu requerimento de bolsa foi analisado e rejeitado.'],
         };
-        if($row['tipo']==='decisao'&&$request['observacao'])$message.="\n\nMensagem da escola: ".$request['observacao'];
+        if($row['tipo']!=='administracao'){
+            $recipient=preg_replace('/[\r\n]+/',' ',trim($application['solicitante']));
+            $message="Olá, $recipient.\n\n".$message;
+            if($row['tipo']==='decisao'&&$request['observacao'])$message.="\n\nMensagem da escola: ".$request['observacao'];
+        }
         $school=SchoolIdentity::read();
         $name=preg_replace('/[\r\n]+/',' ',strip_tags($school['nome']));
         $headers=is_email($school['email'])?['Reply-To: '.$school['email']]:[];

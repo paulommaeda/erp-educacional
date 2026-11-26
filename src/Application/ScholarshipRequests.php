@@ -84,6 +84,7 @@ final class ScholarshipRequests
         unset($row['dados_json']);
         $row['aluno']=$row['idaluno']?$this->student((int)$row['idaluno']):null;
         $row['notificacoes']=(new ScholarshipRequestMail($this->db))->status($id);
+        $row['pode_decidir']=MenuPolicy::canDecideScholarshipRequests();
         return $row;
     }
 
@@ -112,7 +113,7 @@ final class ScholarshipRequests
 
     public function decide(int $id,array $input,string $key): array
     {
-        self::reviewAccess();
+        if(!MenuPolicy::canDecideScholarshipRequests())throw new RuleViolation('Seu perfil não permite aprovar ou rejeitar requerimentos de bolsa.');
         $status=$input['situacao']??null;
         if(!in_array($status,['aprovado','rejeitado'],true))throw new RuleViolation('Escolha aprovar ou rejeitar o requerimento.');
         $percent=$status==='aprovado'?ScholarshipRequestForm::percentage($input['percentual']??null):null;

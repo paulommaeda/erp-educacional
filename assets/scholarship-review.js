@@ -161,7 +161,7 @@
         ? student.nome + ' · RA ' + student.ra + ' · ' + date(student.data_nascimento) : 'Aguardando vínculo manual.'));
       if (data.situacao === 'pendente') {
         showLink(view, data);
-        showDecision(view, data);
+        if (data.pode_decidir) showDecision(view, data);
       } else {
         if (data.percentual_aprovado) view.content.append(element('p', 'Percentual aprovado · ' + percent(data.percentual_aprovado)));
         if (data.observacao) view.content.append(element('p', data.observacao, 'erp-scholarship-note'));
