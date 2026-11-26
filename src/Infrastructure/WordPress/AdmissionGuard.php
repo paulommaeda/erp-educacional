@@ -5,9 +5,9 @@ use EducacionalERP\Domain\{Store,RuleViolation};
 /** Signed, short-lived form challenge plus bounded same-IP rates; no public record lookup. */
 final class AdmissionGuard
 {
-    public function __construct(private Store $db){}
+    public function __construct(private Store $db,private string $channel='admissions'){}
     private function ip():string {return hash_hmac('sha256',(string)($_SERVER['REMOTE_ADDR']??'unknown'),wp_salt('auth'));}
-    private function signature(string $body):string {return hash_hmac('sha256',$body.'|'.$this->ip(),wp_salt('nonce').'|erp-admissions');}
+    private function signature(string $body):string {return hash_hmac('sha256',$body.'|'.$this->ip(),wp_salt('nonce').'|erp-'.$this->channel);}
     public function token(int $company):string {$this->rate('abrir',120);$body=$company.'.'.time().'.'.bin2hex(random_bytes(16));return $body.'.'.$this->signature($body);}
     public function postcode():void {try{$this->rate('consultar_cep',180);}catch(RuleViolation $e){throw new RuleViolation('A consulta de CEP está temporariamente indisponível. Preencha o endereço manualmente.');}}
     public function verify(int $company,string $token,string $trap):void
@@ -19,6 +19,7 @@ final class AdmissionGuard
     }
     private function rate(string $action,int $limit):void
     {
+        $action=$this->channel==='admissions'?$action:$this->channel.'_'.$action;
         $bucket='ederp_req_'.hash('sha256',$action.'|'.$this->ip().'|'.intdiv(time(),3600));$lock='erp_req_rate_'.substr($bucket,-30);
         if((int)($this->db->row('SELECT GET_LOCK(%s,3) AS acquired',[$lock])['acquired']??0)!==1)throw new RuleViolation('Aguarde um momento e tente novamente.');
         try{if(function_exists('wp_cache_delete')){wp_cache_delete('_transient_'.$bucket,'options');wp_cache_delete($bucket,'transient');}$count=(int)get_transient($bucket);if($count>=$limit)throw new RuleViolation('Limite temporário de envios atingido. Aguarde ou entre em contato com a secretaria.');set_transient($bucket,$count+1,3700);}finally{$this->db->row('SELECT RELEASE_LOCK(%s) AS released',[$lock]);}

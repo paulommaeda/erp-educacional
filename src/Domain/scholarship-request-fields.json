@@ -1,0 +1,271 @@
+[
+  {
+    "title": "Nível de ensino",
+    "fields": [
+      {
+        "key": "nivel",
+        "label": "Nível de Ensino",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "Ensino Fundamental I",
+          "Ensino Fundamental II",
+          "Ensino Médio"
+        ]
+      },
+      {
+        "key": "turma_fundamental_1",
+        "label": "Turma",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "1º Ano",
+          "2º Ano",
+          "3º Ano",
+          "4º Ano",
+          "5º Ano"
+        ],
+        "when": {
+          "key": "nivel",
+          "options": [
+            "Ensino Fundamental I"
+          ]
+        }
+      },
+      {
+        "key": "turma_fundamental_2",
+        "label": "Turma",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "6º Ano",
+          "7º Ano",
+          "8º Ano",
+          "9º Ano"
+        ],
+        "when": {
+          "key": "nivel",
+          "options": [
+            "Ensino Fundamental II"
+          ]
+        }
+      },
+      {
+        "key": "turma_medio",
+        "label": "Turma",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "1ª Série",
+          "2ª Série",
+          "3ª Série"
+        ],
+        "when": {
+          "key": "nivel",
+          "options": [
+            "Ensino Médio"
+          ]
+        }
+      },
+      {
+        "key": "turno_fundamental_2",
+        "label": "Turno",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "Matutino",
+          "Vespertino"
+        ],
+        "when": {
+          "key": "turma_fundamental_2",
+          "options": [
+            "6º Ano",
+            "7º Ano",
+            "8º Ano",
+            "9º Ano"
+          ]
+        }
+      },
+      {
+        "key": "turno_medio",
+        "label": "Turno",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "Matutino",
+          "Vespertino"
+        ],
+        "when": {
+          "key": "turma_medio",
+          "options": [
+            "1ª Série",
+            "2ª Série",
+            "3ª Série"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "title": "Aluno e família",
+    "fields": [
+      {
+        "key": "aluno",
+        "label": "Nome Completo do Aluno",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "nascimento",
+        "label": "Data de Nascimento",
+        "type": "date",
+        "required": true
+      },
+      {
+        "key": "vive_com",
+        "label": "Aluno vive com:",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "Mãe e Pai",
+          "Só Mãe",
+          "Só Pai",
+          "Avós",
+          "Outros"
+        ]
+      },
+      {
+        "key": "outros_moradia",
+        "label": "Especifique",
+        "type": "text",
+        "required": false,
+        "when": {
+          "key": "vive_com",
+          "options": [
+            "Outros"
+          ]
+        },
+        "adminLabel": "Outra composição de moradia"
+      },
+      {
+        "key": "situacao_pais",
+        "label": "Atual situação conjugal dos pais",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "Casados",
+          "Divorciados",
+          "Separados",
+          "Viúvo(a)"
+        ]
+      },
+      {
+        "key": "guarda",
+        "label": "Se divorciados ou separados, quem tem a guarda?",
+        "type": "radio",
+        "required": true,
+        "options": [
+          "Mãe",
+          "Pai",
+          "Outros"
+        ],
+        "when": {
+          "key": "situacao_pais",
+          "options": [
+            "Divorciados",
+            "Separados"
+          ]
+        }
+      },
+      {
+        "key": "outros_guarda",
+        "label": "Especifique",
+        "type": "text",
+        "required": false,
+        "when": {
+          "key": "guarda",
+          "options": [
+            "Outros"
+          ]
+        },
+        "adminLabel": "Outra guarda"
+      },
+      {
+        "key": "numero_filhos",
+        "label": "Número de Filhos",
+        "type": "number",
+        "required": true
+      },
+      {
+        "key": "idade_filhos",
+        "label": "Idade dos Filhos",
+        "type": "text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "title": "Profissões e rendas",
+    "fields": [
+      {
+        "key": "profissao_mae",
+        "label": "Profissão Mãe",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "renda_mae",
+        "label": "Renda Individual Mãe",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "profissao_pai",
+        "label": "Profissão Pai",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "renda_pai",
+        "label": "Renda Individual Pai",
+        "type": "text",
+        "required": true
+      }
+    ]
+  },
+  {
+    "title": "Solicitante e pedido",
+    "fields": [
+      {
+        "key": "solicitante",
+        "label": "Nome do Solicitante",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "email",
+        "label": "E-mail",
+        "type": "email",
+        "required": true
+      },
+      {
+        "key": "telefone",
+        "label": "Celular/Whatsapp",
+        "type": "tel",
+        "required": true
+      },
+      {
+        "key": "percentual",
+        "label": "Porcentagem de desconto (ex.: 10%)",
+        "type": "text",
+        "required": true
+      },
+      {
+        "key": "justificativa",
+        "label": "Justificativa do Pedido",
+        "type": "textarea",
+        "required": true
+      }
+    ]
+  }
+]

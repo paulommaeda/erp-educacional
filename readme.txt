@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.56
+Stable tag: 0.19.57
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.57 =
+* Formulário público de requerimento de bolsa, vínculo de aluno, análise com percentual ajustável e avisos de recebimento e decisão por e-mail.
 
 = 0.19.56 =
 * Recálculo de contratos e troca do plano de pagamento com auditoria e preservação das baixas. A visão de bolsas e o relatório de contratos mostram valores originais, dia de vencimento e descontos e pontualidade por parcela e no total.
