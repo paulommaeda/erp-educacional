@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.54
+Stable tag: 0.19.55
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.55 =
+* Nova visão de Bolsas e descontos dos contratos com resumo por contrato e relatório Contratos em tela e PDF.
 
 = 0.19.54 =
 * Responsáveis financeiros emitem suas declarações anuais em Meu financeiro. Em Relatórios, a equipe pode filtrar a declaração por aluno e período letivo.

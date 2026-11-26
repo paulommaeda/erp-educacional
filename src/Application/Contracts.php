@@ -3,17 +3,47 @@ declare(strict_types=1);
 namespace EducacionalERP\Application;
 
 use EducacionalERP\Domain\{Store,Input,Money,RuleViolation};
-use EducacionalERP\Infrastructure\WordPress\Access;
+use EducacionalERP\Infrastructure\WordPress\{Access,ReportPolicy};
 
 final class Contracts
 {
     public function __construct(private Store $db,private Operations $ops) {}
     public static function summary(array $contract):array {return array_intersect_key($contract,array_flip(['idcontrato','numero','codcoligada','status','quantidade_parcelas','primeiro_vencimento','valor_liquido_total','parcelas_geradas','versao','assinado_em']));}
+    private const LIST_COLUMNS='c.idcontrato,c.numero,c.versao,c.status,c.assinado_em,c.parcelas_geradas,c.valor_liquido_total,c.quantidade_parcelas,c.primeiro_vencimento,a.idaluno,a.ra,p.nome AS aluno,t.nome AS turma,pl.codigo AS periodo';
+    private const SUMMARY_COLUMNS=',c.valor_original_total,c.desconto_incondicional_total,c.pontualidade_snapshot,c.codcoligada';
+
     public function listing(array $query):array
     {
-        Access::requireReadContracts();$page=max(1,min(100000,(int)($query['page']??1)));$period=SchoolSettings::resolve($query['codperiodo']??null);
+        Access::requireReadContracts();
+        $page=max(1,min(100000,(int)($query['page']??1)));
+        $period=SchoolSettings::resolve($query['codperiodo']??null);
+        [$from,$args]=$this->filters($query,$period);
+        $total=(int)$this->db->row('SELECT COUNT(*) AS n'.$from,$args)['n'];
+        $financial=($query['visao']??null)==='bolsas';
+        $columns=self::LIST_COLUMNS.($financial?self::SUMMARY_COLUMNS:'');
+        $items=$this->db->rows('SELECT '.$columns.$from.' ORDER BY c.idcontrato DESC LIMIT 20 OFFSET %d',[...$args,($page-1)*20]);
+        if($financial)return ['items'=>(new ContractFinancialSummary($this->db))->listing($items),'total'=>$total,'page'=>$page];
+        if($items&&Access::canManageContracts()){
+            $latest=(new ContractSignatures($this->db))->latestForContracts(array_map('intval',array_column($items,'idcontrato')));
+            foreach($items as &$item)$item['envio_assinatura']=$latest[$item['idcontrato']]??null;
+            unset($item);
+        }
+        return ['items'=>$items,'total'=>$total,'page'=>$page];
+    }
+
+    public function report(array $query):array
+    {
+        if(!isset(ReportPolicy::available()['contratos']))throw new RuleViolation('Sem acesso ao relatório de contratos.');
+        [$from,$args]=$this->filters($query,SchoolSettings::resolve($query['codperiodo']??'todos'));
+        $items=$this->db->rows('SELECT '.self::LIST_COLUMNS.self::SUMMARY_COLUMNS.$from.' ORDER BY c.idcontrato DESC',$args);
+        return (new ContractFinancialSummary($this->db))->listing($items);
+    }
+
+    private function filters(array $query,int $period):array
+    {
         $from=' FROM '.$this->db->table('contratos').' c JOIN '.$this->db->table('matriculas').' m ON m.idmatricula=c.idmatricula JOIN '.$this->db->table('alunos').' a ON a.idaluno=m.idaluno JOIN '.$this->db->table('pessoas').' p ON p.codpessoa=a.codpessoa JOIN '.$this->db->table('turmas').' t ON t.idturma=m.idturma_atual JOIN '.$this->db->table('periodos_letivos').' pl ON pl.codperiodo=m.codperiodo WHERE c.codcoligada=%d AND c.excluido_em IS NULL';$args=[Coligadas::current()];
         if($period){$from.=' AND m.codperiodo=%d';$args[]=$period;}
+        if(!empty($query['idturma'])){$from.=' AND m.idturma_atual=%d';$args[]=Input::id($query['idturma']);}
         $search=trim((string)($query['search']??''));if(strlen($search)>191)throw new RuleViolation('Busca muito longa.');
         if($search!==''){$from.=' AND (c.numero LIKE %s OR p.nome LIKE %s OR a.ra LIKE %s)';$term='%'.addcslashes($search,'_%\\').'%';array_push($args,$term,$term,$term);}
         if(!empty($query['idaluno'])){$from.=' AND m.idaluno=%d';$args[]=Input::id($query['idaluno']);}
@@ -26,15 +56,23 @@ final class Contracts
             'nao_assinado'=>' AND c.assinado_em IS NULL',
             default=>throw new RuleViolation('Filtro de assinatura inválido.')
         };
-        $total=(int)$this->db->row('SELECT COUNT(*) AS n'.$from,$args)['n'];
-        $items=$this->db->rows('SELECT c.idcontrato,c.numero,c.versao,c.status,c.assinado_em,c.parcelas_geradas,c.valor_liquido_total,c.quantidade_parcelas,c.primeiro_vencimento,a.idaluno,a.ra,p.nome AS aluno,t.nome AS turma,pl.codigo AS periodo'.$from.' ORDER BY c.idcontrato DESC LIMIT 20 OFFSET %d',[...$args,($page-1)*20]);
-        if($items&&Access::canManageContracts()){
-            $latest=(new ContractSignatures($this->db))->latestForContracts(array_map('intval',array_column($items,'idcontrato')));
-            foreach($items as &$item)$item['envio_assinatura']=$latest[$item['idcontrato']]??null;
-            unset($item);
-        }
-        return ['items'=>$items,'total'=>$total,'page'=>$page];
+        return [$from,$args];
     }
+
+    public function financialSummary(int $id):array
+    {
+        Access::requireReadContracts();
+        return $this->db->atomic(function()use($id){
+            $contract=$this->contract($id);
+            [$from,$args]=$this->filters([],0);
+            $row=$this->db->row('SELECT '.self::LIST_COLUMNS.self::SUMMARY_COLUMNS.$from.' AND c.idcontrato=%d',[...$args,$id]);
+            if(!$row)throw new RuleViolation('Resumo do contrato indisponível.');
+            $row['responsavel']=$this->db->get('pessoas',(int)$contract['codpessoa_rf_atual'])['nome'];
+            $row['data_contrato']=$contract['data_contrato'];
+            return (new ContractFinancialSummary($this->db))->detail($row);
+        });
+    }
+
     private function contract(int $id,bool $lock=false):array
     {
         $c=$this->db->get('contratos',$id);

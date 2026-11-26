@@ -34,7 +34,7 @@
   signatureFilter.input.setAttribute('aria-label','Assinatura');
   const find=h('button','Buscar');find.type='submit';
   search.input.maxLength=191;searchForm.append(search.node,status.node);
-  if(canContracts)searchForm.append(signatureFilter.node);
+  searchForm.append(signatureFilter.node);
   searchForm.append(find);
 
   const headerTools=h('div',undefined,'erp-contract-toolbar'),list=h('div');
@@ -101,7 +101,8 @@
     rows=[];list.replaceChildren(h('p','Carregando contratos...'));previous.disabled=next.disabled=find.disabled=true;updateSelection();
     try{
       const q=new URLSearchParams({page:String(page),search:search.input.value,status:status.input.value,codperiodo:String(EDERP.period||EDERP.currentPeriod||'todos')});
-      if(canContracts&&signatureFilter.input.value)q.set('assinatura',signatureFilter.input.value);
+      if(signatureFilter.input.value)q.set('assinatura',signatureFilter.input.value);
+      if(!canContracts)q.set('visao','bolsas');
       if(student)q.set('idaluno',student);
       const d=await api('contratos?'+q);
       if(turn!==generation)return;
@@ -115,7 +116,9 @@
 
   function contractTable(){
     const table=h('table',undefined,'erp-contract-table'),head=h('thead'),tr=h('tr');
-    for(const title of ['Contrato e aluno','Período e turma','Condições','Situação','Assinado','Ações']){
+    const columns=canContracts?['Contrato e aluno','Período e turma','Condições','Situação','Assinado','Ações']:
+      ['Contrato e aluno','Período e turma','Condições','Pontualidade','Descontos incondicionais','Assinado'];
+    for(const title of columns){
       const heading=h('th',title,title==='Assinado'?'erp-contract-signed':'');
       heading.scope='col';tr.append(heading);
     }
@@ -129,7 +132,8 @@
         input.setAttribute('aria-label','Selecionar contrato '+c.numero);
         input.onchange=()=>{selectContract(c,input.checked);updateSelection();};
         label.append(input,h('strong',c.numero));who.append(label);
-      }else who.append(h('strong',c.numero));
+      }else if(canContracts)who.append(h('strong',c.numero));
+      else who.append(button(c.numero,()=>openSummary(c),'erp-contract-summary-link'));
       who.append(h('span',c.aluno),h('small','RA '+c.ra));
       school.dataset.label='Período e turma';school.append(h('span',c.periodo),h('small',c.turma));
       terms.dataset.label='Condições';terms.append(h('strong',money(c.valor_liquido_total)),h('small',c.quantidade_parcelas+' parcelas · '+date(c.primeiro_vencimento)));
@@ -151,9 +155,18 @@
         if(c.status==='ativo')actionsForContract.push(button('Editar',()=>editContract(c.idcontrato)));
         actionsForContract.push(button('Excluir',()=>removeContract(c.idcontrato),'erp-contract-danger'));
       }
-      if(canDiscounts&&c.status==='ativo')actionsForContract.push(button('Bolsas e descontos',()=>window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;})));
+      if(canContracts&&canDiscounts&&c.status==='ativo')actionsForContract.push(button('Bolsas e descontos',()=>window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;})));
       if(actionsForContract.length)actions.append(window.EDERPActionMenu.create(actionsForContract,root,'Ações do contrato '+c.numero));
-      row.append(who,school,terms,state,signed,actions);body.append(row);
+      if(canContracts)row.append(who,school,terms,state,signed,actions);
+      else{
+        const punctuality=h('td'),discounts=h('td');
+        punctuality.dataset.label='Pontualidade';discounts.dataset.label='Descontos incondicionais';
+        terms.firstElementChild.textContent=money(c.valor_liquido_total)+' líquidos';
+        punctuality.append(h('strong',punctualityText(c)),h('small','Por parcela'));
+        discounts.append(h('strong',money(c.desconto_incondicional_total)),h('small','Total do contrato'));
+        row.append(who,school,terms,punctuality,discounts,signed);
+      }
+      body.append(row);
     }
     table.append(body);return table;
   }
@@ -203,6 +216,67 @@
   }
   function modal(title){const dialog=h('dialog',undefined,'journey-confirm ederp erp-contract-dialog'),heading=h('h2',title),close=button('Fechar',()=>dialog.close(),'erp-secondary'),content=h('div'),status=feedback();heading.id='erp-contract-dialog-'+uuid();dialog.setAttribute('aria-labelledby',heading.id);const focused=document.activeElement,opener=focused?.closest('.erp-enrollment-actions')?.querySelector('summary')||focused,header=h('header',undefined,'erp-contract-dialog-header');header.append(heading,close);dialog.append(header,content,status);dialog.onclose=()=>{dialog.remove();if(opener?.isConnected)opener.focus();};dialog.addEventListener('cancel',e=>{if(dialog.dataset.busy==='1')e.preventDefault();});document.body.append(dialog);dialog.showModal();return {dialog,content,status,close};}
   function summary(c){const box=h('dl',undefined,'erp-contract-summary');for(const [label,value]of [['Aluno',c.aluno+' · RA '+c.ra],['Período e turma',c.periodo+' · '+c.turma],['Responsável financeiro',c.responsavel],['Valor líquido',money(c.valor_liquido_total)],['Parcelamento',c.quantidade_parcelas+' parcelas · '+date(c.primeiro_vencimento)]]){const item=h('div');item.append(h('dt',label),h('dd',value));box.append(item);}return box;}
+  function punctualityText(c){return money(c.pontualidade_min)+(c.pontualidade_min===c.pontualidade_max?'':' a '+money(c.pontualidade_max));}
+  async function openSummary(row){
+    const m=modal('Resumo do contrato '+row.numero);
+    m.status.textContent='Carregando resumo...';
+    try{
+      const c=await api('contratos/'+row.idcontrato+'/resumo');
+      if(!m.dialog.isConnected)return;
+      m.status.textContent='';
+      const facts=summary(c);
+      for(const [label,value] of [
+        ['Data do contrato',date(c.data_contrato)],['Valor original',money(c.valor_original_total)],
+        ['Descontos incondicionais',money(c.desconto_incondicional_total)],['Pontualidade por parcela',punctualityText(c)],
+        ['Valor pago',money(c.valor_pago)],['Saldo em aberto',money(c.saldo_aberto)],
+        ['Situação',c.status==='cancelado'?'Cancelado':Number(c.parcelas_geradas)?'Parcelas geradas':'Aguardando parcelas'],
+        ['Assinado',c.assinado_em?'Sim · '+date(c.assinado_em):'Não']
+      ]){
+        const item=h('div');item.append(h('dt',label),h('dd',value));facts.append(item);
+      }
+      m.content.append(facts);
+      if(c.bolsas_aluno?.length&&window.EDERPScholarships)m.content.append(window.EDERPScholarships.contractStudentGrants(c.bolsas_aluno));
+      if(c.descontos_previstos?.length){
+        const items=h('ul');
+        for(const d of c.descontos_previstos)items.append(h('li',d.nome+' · '+money(d.valor)+' por parcela · '+d.parcela_inicio+' a '+d.parcela_fim+(d.descricao?' · '+d.descricao:'')));
+        m.content.append(h('h3','Descontos previstos'),items);
+      }
+      if(c.bolsas_previstas?.length){
+        const items=h('ul');
+        for(const b of c.bolsas_previstas){
+          const value=b.forma_calculo==='percentual'?Number(b.valor).toLocaleString('pt-BR')+'%':money(b.valor);
+          items.append(h('li',b.nome_snapshot+' · '+value+' · Parcelas '+b.parcela_inicio+' a '+b.parcela_fim+(b.descricao_snapshot?' · '+b.descricao_snapshot:'')));
+        }
+        m.content.append(h('h3','Bolsas previstas'),items);
+      }
+      if(c.parcelas.length){
+        const table=h('table',undefined,'erp-contract-table'),head=h('thead'),heading=h('tr'),body=h('tbody');
+        const labels=['Parcela e vencimento','Original','Descontos incondicionais','Pontualidade','Líquido','Pago','Saldo e situação'];
+        for(const label of labels){const th=h('th',label);th.scope='col';heading.append(th);}
+        const statusLabels={baixado:'Baixado',em_aberto:'Em aberto',vencido:'Vencido'};
+        for(const p of c.parcelas){
+          const tr=h('tr');
+          const values=[p.numero+' · '+date(p.vencimento),money(p.valor_original),money(p.desconto_incondicional),money(p.pontualidade),money(p.valor_liquido),money(p.valor_baixa),money(p.saldo_aberto)+' · '+statusLabels[p.situacao]];
+          for(const [index,value] of values.entries()){
+            const cell=h('td',value);cell.dataset.label=labels[index];
+            if(index===2)for(const d of p.descontos_detalhados){
+              cell.append(h('small',d.nome+' · '+money(d.valor)+(d.descricao?' · '+d.descricao:'')));
+            }
+            tr.append(cell);
+          }
+          body.append(tr);
+        }
+        head.append(heading);table.append(head,body);m.content.append(h('h3','Parcelas do contrato'),table);
+      }
+      if(c.status==='ativo'&&canDiscounts){
+        const edit=button('Gerenciar bolsas e descontos',()=>{
+          m.dialog.close();
+          window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;});
+        });
+        m.content.prepend(edit);
+      }
+    }catch(e){if(m.dialog.isConnected)m.status.textContent=e.message;}
+  }
   async function getContract(id,title,done){const m=modal(title);m.status.textContent='Carregando contrato...';try{const c=await api('contratos/'+id);if(!m.dialog.isConnected)return;m.status.textContent='';await done(c,m);}catch(e){m.status.textContent=e.message;}return m;}
   async function printContract(current,m,button){
     const popup=window.open('','_blank');if(popup){popup.opener=null;popup.document.title='Preparando contrato';popup.document.body.textContent='Preparando o PDF do contrato...';}

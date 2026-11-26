@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.54
+# ERP Educacional — 0.19.55
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -20,9 +20,11 @@ O relatório **Parcelas** permite selecionar um aluno, um mês de vencimento ou 
 
 Em **Meu financeiro**, o responsável escolhe o ano dos vencimentos e a coligada dentre os lançamentos da própria conta. Em **Relatórios → Declaração de Quitação Anual de Débitos**, a equipe com acesso pode filtrar também por aluno e período letivo. Quando os filtros retornam um único responsável financeiro, o ERP o seleciona automaticamente. A prévia e o PDF ficam disponíveis quando os títulos da seleção estão quitados e as baixas conferem. O documento soma os pagamentos efetivos vinculados ao responsável e usa a data da baixa válida mais recente em cada parcela. A emissão é manual, com permissão específica em **Perfis e acessos** para a área de Relatórios.
 
+Em **Bolsas e descontos dos contratos**, clique no número do contrato para consultar condições, pagamentos, parcelas e descontos, ou para abrir o gerenciamento de bolsas. Em **Relatórios → Contratos**, a mesma visão está disponível em tela e PDF, com filtros de período letivo, turma, assinatura e situação, além da busca por aluno, RA ou contrato. Libere o relatório em **Perfis e acessos**.
+
 ## Atualizar e preparar
 
-1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.54.zip` em uma cópia de homologação com backup.
+1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.55.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 52**, que acrescenta a fila de envio automático de matrículas ao K8. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**; a tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).
 3. No Portal Journey → Configurações, confira o **Período letivo atual**.
 4. Em Estrutura acadêmica → **Planos de pagamento**, cadastre código, nome e **valor da anuidade**. Somente administradores criam/editam/excluem planos.
