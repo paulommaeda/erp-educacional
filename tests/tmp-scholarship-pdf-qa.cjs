@@ -14,7 +14,10 @@ const { chromium } = require('playwright');
       await page.goto(fixture.portal);
       await page.locator('input[name=login]').fill(login);
       await page.locator('input[name=password]').fill('Senha-fixture-4029');
-      await page.getByRole('button', { name: 'Entrar', exact: true }).click();
+      await Promise.all([
+        page.waitForURL(url => url.searchParams.get('erp_tela') === 'inicio'),
+        page.locator('.erp-login-form button[type=submit]').click(),
+      ]);
       return { context, page };
     }
 
@@ -45,6 +48,22 @@ const { chromium } = require('playwright');
     const swapped = new URL(shortUrl);
     swapped.searchParams.set('requerimento_bolsa_pdf', new URL(longUrl).searchParams.get('requerimento_bolsa_pdf'));
     assert.equal((await context.request.get(swapped.href)).status(), 403);
+    const switched = await page.evaluate(async company => {
+      const endpoint = new URL(EDERP.root);
+      if (endpoint.searchParams.has('rest_route')) {
+        endpoint.searchParams.set('rest_route', endpoint.searchParams.get('rest_route') + 'coligadas/selecionar');
+      } else {
+        endpoint.pathname += 'coligadas/selecionar';
+      }
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': EDERP.nonce },
+        body: JSON.stringify({ codcoligada: company }),
+      });
+      return response.status;
+    }, fixture.company);
+    assert.equal(switched, 200);
+    assert.equal((await context.request.get(shortUrl)).status(), 403);
     const anonymous = await browser.newContext();
     assert.equal((await anonymous.request.get(shortUrl)).status(), 403);
     const unauthorized = await open('leitor_pdf');
