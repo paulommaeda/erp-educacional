@@ -89,14 +89,15 @@ async function testManagement() {
     assert.equal(created.route, 'bolsas-alunos/1');
     assert.deepEqual(created.body, {titulo:'Bolsa Família', descricao:'Condição para irmãos', percentual:'10.00', ativo:'1'});
     assert.ok(created.headers['Idempotency-Key']);
-    assert.match(latest().textContent, /Bolsa Família.*10,00% · Ativa.*Condição para irmãos/);
+    assert.match(latest().textContent, /Bolsa Família/);
+    assert.deepEqual([...latest().querySelectorAll('.erp-record-grid dd')].map(value=>value.textContent),['10,00%','Ativa','Condição para irmãos']);
     click(latest(), 'Editar bolsa do aluno');
     form = latest().querySelector('form');
     form.querySelector('[aria-label="Situação"]').value = '0';
     form.requestSubmit();
     await tick();
     assert.equal(x.calls.find(c => c.route === 'bolsas-alunos/1/3').body.versao, '1');
-    assert.match(latest().textContent, /10,00% · Inativa/);
+    assert.deepEqual([...latest().querySelectorAll('.erp-record-grid dd')].map(value=>value.textContent),['10,00%','Inativa','Condição para irmãos']);
     const detail = x.w.EDERPScholarships.contractStudentGrants(x.grants);
     assert.match(detail.textContent, /Bolsa Família.*Condição para irmãos/);
     assert.equal(detail.querySelector('button'), null);

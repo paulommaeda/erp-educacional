@@ -120,6 +120,7 @@ final class ScholarshipRequestPage
     public static function review(): void
     {
         wp_enqueue_style('ederp-admissions',plugins_url('assets/admissions.css',EDERP_FILE),[],EDERP_VERSION);
+        wp_enqueue_style('ederp-record-details',plugins_url('assets/record-details.css',EDERP_FILE),[],EDERP_VERSION);
         wp_enqueue_style('ederp-scholarship-request',plugins_url('assets/scholarship-request.css',EDERP_FILE),['ederp-admissions'],EDERP_VERSION);
         wp_enqueue_script('ederp-scholarship-review',plugins_url('assets/scholarship-review.js',EDERP_FILE),['ederp'],EDERP_VERSION,true);
         echo '<section data-erp-scholarship-review><h1>Requerimentos de bolsa</h1><p role="status">Carregando requerimentos...</p></section>';
@@ -131,6 +132,7 @@ final class ScholarshipRequestPage
         wp_add_inline_style('ederp-admissions',Coligadas::within($company,static fn()=>SchoolIdentity::css()));
         wp_enqueue_style('ederp-scholarship-request',plugins_url('assets/scholarship-request.css',EDERP_FILE),['ederp-admissions'],EDERP_VERSION);
         if(self::isApproval()){
+            wp_enqueue_style('ederp-record-details',plugins_url('assets/record-details.css',EDERP_FILE),[],EDERP_VERSION);
             wp_enqueue_script('ederp-scholarship-approval',plugins_url('assets/scholarship-approval.js',EDERP_FILE),[],EDERP_VERSION,true);
         }else{
             wp_enqueue_script('ederp-scholarship-form',plugins_url('assets/scholarship-request.js',EDERP_FILE),[],EDERP_VERSION,true);

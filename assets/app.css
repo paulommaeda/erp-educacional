@@ -127,7 +127,7 @@
 .erp-person-fields label,.erp-person-dialog .erp-person-step label{grid-column:auto!important;min-width:0;display:grid;gap:6px;overflow-wrap:anywhere}
 .erp-person-fields input,.erp-person-fields select,.erp-person-fields textarea,.erp-person-dialog .erp-person-step input,.erp-person-dialog .erp-person-step select,.erp-person-dialog .erp-person-step textarea{width:100%!important;min-width:0!important;box-sizing:border-box}
 .erp-person-fields>p,.erp-person-fields>button,.erp-person-fields>.erp-feedback,.erp-person-fields>.erp-person-steps,.erp-person-fields>.erp-person-step,.erp-person-fields>.erp-person-nav,.erp-person-dialog .erp-person-step>p{grid-column:1/-1}
-.erp-person-fields [hidden]{display:none!important}.erp-extra-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.erp-extra-values dd{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.erp-person-fields [hidden]{display:none!important}
 .erp-person-fields fieldset>p:empty{display:none!important}.erp-person-fields fieldset>p{grid-column:1/-1}.erp-person-fields label:has(input[type=hidden]){display:none!important}
 
 /* Settings lists: consistent spacing, aligned actions and narrow-screen wrapping. */
@@ -225,35 +225,25 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 
 .erp-login-preview{grid-column:1/-1;display:flex;align-items:center;justify-content:center;padding:24px;min-height:280px;border-radius:12px;max-width:100%;box-sizing:border-box}
 
-/* Readable student record and guardian contact cards. */
-.ederp .erp-record-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 28px;margin:18px 0 24px}
-.ederp .erp-record-item{min-width:0;padding-bottom:12px;border-bottom:1px solid var(--j-line,#dce3e0)}
-.ederp .erp-record-item dt{font-size:12px;font-weight:600;color:var(--j-muted,#607582);margin:0 0 6px}
-.ederp .erp-record-item dd{font-size:15px;margin:0;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap}
-.ederp .erp-record-item a{overflow-wrap:anywhere}
-.ederp .erp-record-wide{grid-column:1/-1}
+/* Student record and guardian contact layout. */
 .ederp .ederp-card.erp-personal-record{padding:clamp(14px,2.4vw,28px)}
 .erp-personal-record-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .ederp .erp-personal-record-header h2{margin:0;font-size:clamp(20px,2.5vw,24px);line-height:1.25}
 .ederp .erp-personal-record-header>button{min-height:44px;width:auto;margin:0}
-.erp-personal-record-section{margin-top:12px;padding:clamp(12px,2vw,20px);border:1px solid var(--j-line,#dce3e0);border-radius:12px;background:var(--j-paper,#f5f8f6);min-width:0}
-.ederp .erp-personal-record-section>h3{margin:0 0 12px;font-size:1rem;line-height:1.4}
-.ederp .erp-personal-record-section .erp-record-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:8px;margin:0}
-.ederp .erp-personal-record-section .erp-record-item{padding:10px 12px;border:0;border-radius:8px;background:var(--j-surface,#fff)}
-.ederp .erp-personal-record-section .erp-record-item dt{margin:0 0 3px;font-size:.8rem;line-height:1.4}
-.ederp .erp-personal-record-section .erp-record-item dd{font-weight:500;line-height:1.45}
-.ederp .erp-personal-record-section .erp-record-empty{color:var(--j-muted,#536574);font-weight:400}
-@media(min-width:600px){.ederp .erp-personal-record-section .erp-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(min-width:1150px){.ederp .erp-personal-record-section .erp-record-grid:has(>.erp-record-item:nth-child(3)){grid-template-columns:repeat(3,minmax(0,1fr))}}
+.erp-personal-record-section+.erp-personal-record-section{margin-top:12px}
+.ederp .erp-record-note{margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+.ederp .erp-contact-dialog .erp-record-panel{margin-bottom:16px}
+.erp-curriculum-list .ederp-tools{margin-top:12px}
+.erp-scholarship-card>.erp-record-panel{margin:8px 0}
+.erp-scholarship-card>h4{margin:0}
+.erp-return-card>.erp-record-panel,.erp-educbank-job>.erp-record-panel,.erp-pending-grid .erp-record-panel{margin:10px 0}
 .ederp .erp-family-grid>.erp-guardian-card{display:flex;flex-direction:column;min-width:0;margin:0}
 .ederp .erp-guardian-card>h2{overflow-wrap:anywhere;margin-bottom:16px}
 .ederp .erp-guardian-roles{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 6px}
 .ederp .erp-guardian-roles>.erp-badge{display:inline-flex;align-items:center;margin:0;padding:5px 10px;line-height:1.4}
 .ederp .erp-guardian-actions{display:flex;align-items:stretch;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:auto;padding-top:8px}
 .ederp .erp-family-grid .erp-guardian-actions>button{display:inline-flex;align-items:center;justify-content:center;margin:0;min-height:44px;width:auto;align-self:stretch;height:auto}
-@media(max-width:600px){.ederp .erp-record-grid{grid-template-columns:minmax(0,1fr);gap:14px;margin:16px 0 20px}.ederp .erp-guardian-actions{justify-content:flex-start}.ederp .erp-family-grid .erp-guardian-actions>button{flex:1}.ederp .erp-guardian-card .erp-record-grid{margin-bottom:14px}}
-
-.ederp .erp-record-note{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.6;margin:18px 0}
+@media(max-width:600px){.ederp .erp-guardian-actions{justify-content:flex-start}.ederp .erp-family-grid .erp-guardian-actions>button{flex:1}}
 
 .ederp .erp-family-link-actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;margin-bottom:20px}
 .ederp .erp-family-link-actions>button{margin:0;min-height:44px}
@@ -324,8 +314,6 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .erp-discount-card-heading h3,.erp-discount-card p{margin:0;overflow-wrap:anywhere}
 .erp-discount-card-heading .erp-badge{margin:0}
 .erp-discount-card-footer{align-items:flex-end}
-.erp-discount-card-details{display:grid;gap:4px;min-width:0}
-.erp-discount-card-details>:first-child{font-weight:600}
 .erp-discount-card-footer>.erp-scholarship-actions{margin-inline-start:auto}
 .erp-discount-description{white-space:pre-wrap}
 .erp-discount-form>p,.erp-discount-form>.erp-discount-indicated{grid-column:1/-1}
@@ -350,22 +338,20 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .erp-installment-body{display:grid;gap:18px;min-width:0}
 .erp-installment-identity{display:flex;align-items:center;gap:8px 18px;flex-wrap:wrap;min-width:0;overflow-wrap:anywhere}
 .erp-installment-identity strong{flex-basis:100%;font-size:17px}.erp-installment-identity span{font-size:14px;color:var(--j-muted,#61746e)}
-.erp-installment-summary-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0;min-width:0}
-.erp-installment-summary-field{display:grid;gap:8px;min-width:0;padding:14px;border:1px solid var(--j-line,#dce7e2);border-radius:12px;background:var(--j-paper,#f7faf8)}
-.erp-installment-summary-field dt{font-size:13px;color:var(--j-muted,#61746e);overflow-wrap:anywhere}.erp-installment-summary-field dd{margin:0;font-size:20px;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
-.erp-installment-summary-pago{background:#edf8f0}.erp-installment-summary-saldo{background:var(--j-soft,#edf5f2)}
+.erp-installment-summary-grid .erp-installment-summary-field dd{font-weight:650;font-variant-numeric:tabular-nums}
+.erp-installment-summary-grid>.erp-installment-summary-pago{background:#edf8f0}
+.erp-installment-summary-grid>.erp-installment-summary-saldo{background:var(--j-soft,#edf5f2)}
 .erp-installment-body .erp-installment-note{margin:0;font-size:13px;color:var(--j-muted,#61746e);line-height:1.6}
 .erp-installment-body .erp-discount-breakdown h3{margin:0 0 12px}.erp-installment-body .erp-discount-breakdown article{margin:0 0 10px}
 .erp-installment-body .erp-installment-actions{border-top:1px solid var(--j-line,#dce7e2);padding-top:16px}
 @media(max-width:700px){.ederp table.erp-student-finance-table,.ederp table.erp-student-finance-table tbody,.ederp table.erp-student-finance-table tr{display:block;width:100%}.ederp table.erp-student-finance-table{border:0;background:transparent}.ederp table.erp-student-finance-table thead{display:none}.ederp table.erp-student-finance-table tr{margin:0 0 14px;padding:12px;border:1px solid var(--j-line,#dce7e2);border-radius:14px;background:var(--j-surface,#fff)}.ederp table.erp-student-finance-table td{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;min-width:0;padding:9px 0;white-space:normal;border:0}.ederp table.erp-student-finance-table td:before{content:attr(data-label);flex:0 1 45%;min-width:0;text-align:left;font-size:12px;color:var(--j-muted,#61746e)}.ederp table.erp-student-finance-table td.erp-installment-actions-cell{width:100%}.ederp .erp-installment-actions{justify-content:flex-end}.ederp .erp-installment-link{min-height:44px}.erp-installment-dialog .erp-modal-header h2{font-size:20px}}
-@media(max-width:480px){.erp-installment-summary-grid{grid-template-columns:minmax(0,1fr)}.erp-installment-summary-field{display:flex;align-items:center;justify-content:space-between;gap:14px}.erp-installment-summary-field dt{flex:1 1 55%}.erp-installment-summary-field dd{flex:0 1 auto;font-size:18px;text-align:right}}
 
 .erp-installment-dialog .erp-modal-header{padding:0 0 16px}
 
 /* Financial deletion keeps payment records and requests an auditable reason. */
 .ederp .erp-finance-delete-action,.ederp .erp-finance-delete-confirm{background:#991b1b;color:#fff;border-color:#991b1b}
 .ederp .erp-finance-delete-action:hover,.ederp .erp-finance-delete-confirm:hover{background:#7f1d1d;color:#fff}
-.erp-finance-delete-details{display:grid;grid-template-columns:minmax(96px,1fr) minmax(0,2fr);gap:8px 16px;margin:0 0 16px}.erp-finance-delete-details dt{font-weight:600;overflow-wrap:anywhere}.erp-finance-delete-details dd{margin:0;overflow-wrap:anywhere}
+.erp-finance-delete>.erp-finance-delete-details{margin-bottom:16px}
 .ederp .erp-finance-delete-warning{padding:14px 16px;border-radius:12px;background:#fff1f2;color:#881337;line-height:1.5}
 
 .erp-finance-delete-items{list-style:none;max-height:240px;overflow:auto;margin:0 0 16px;padding:0;overscroll-behavior:contain}.erp-finance-delete-items li{padding:10px 0;border-bottom:1px solid var(--j-line,#dce7e2);overflow-wrap:anywhere}.erp-finance-delete-items strong,.erp-finance-delete-items span{display:block}.erp-finance-delete-items span{font-size:14px}
