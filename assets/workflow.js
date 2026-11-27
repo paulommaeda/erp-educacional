@@ -92,18 +92,47 @@
       item.append(h('dt',label),detail);const content=String(value??'').trim();
       if(content&&(type==='email'||type==='tel')){
         const contact=h('a',content);contact.href=type==='email'?'mailto:'+encodeURIComponent(content):'tel:'+content.replace(/[^+0-9]/g,'');detail.append(contact);
-      }else detail.textContent=content||'Não informado';
+      }else if(content)detail.textContent=content;
+      else detail.append(h('span','Não informado','erp-record-empty'));
       list.append(item);
     }
     return list;
   }
   function studentPersonal(out,d){
     const p=d.pessoa,personal=d.dados_pessoais_permitidos??(caps.admin||!!EDERP.studentSections?.dados_pessoais);
-    if(personal){const c=card('Dados pessoais');out.append(c);
-    c.append(recordGrid([['Nome completo',p.nome,'',true],['E-mail',p.email,'email'],['Telefone',p.telefone,'tel'],['Data de nascimento',date(p.data_nascimento)],['CPF',p.cpf],['RG',p.rg],['Local de Nascimento',p.local_nascimento],['UF Nascimento',p.uf_nascimento],['Raça/Etnia',p.raca_etnia],['Nacionalidade',p.nacionalidade],['Grau de Instrução',p.grau_instrucao],['Sexo',p.sexo],['Estado civil',p.estado_civil],['Profissão',p.profissao],['Religião',p.religiao],['Igreja',p.igreja]]));
-    c.append(h('h3','Endereço'),recordGrid([['Rua',p.rua,'',true],['Número',p.numero],['Complemento',p.complemento],['Bairro',p.bairro],['CEP',p.cep],['Cidade',p.cidade],['Estado',p.estado],['País',p.pais==='BR'?'Brasil':p.pais]]));
-    c.append(h('h3','Acesso ao portal'),recordGrid([['Usuário',d.conta?.user_login||'Conta pendente'],['Perfis',(d.conta?.roles||[]).map(roleLabel).join(', ')]]));
-    if(caps.admin)c.append(button('Editar pessoa',()=>personModal(p,()=>sheet()),true));
+    if(personal){
+      const c=card(),header=h('header',undefined,'erp-personal-record-header');
+      c.classList.add('erp-personal-record');
+      header.append(h('h2','Dados pessoais'));
+      if(caps.admin)header.append(button('Editar pessoa',()=>personModal(p,()=>sheet()),true));
+      c.append(header);
+      const cpf=String(p.cpf??'').replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/,'$1.$2.$3-$4');
+      const groups=[
+        ['Identificação',[
+          ['Nome completo',p.nome,'',true],['Data de nascimento',p.data_nascimento&&date(p.data_nascimento)],['CPF',cpf],['RG',p.rg],
+          ['Local de Nascimento',p.local_nascimento],['UF Nascimento',p.uf_nascimento],['Nacionalidade',p.nacionalidade]
+        ]],
+        ['Contato',[
+          ['E-mail',p.email,'email'],['Telefone',p.telefone,'tel']
+        ]],
+        ['Informações complementares',[
+          ['Sexo',p.sexo],['Raça/Etnia',p.raca_etnia],['Estado civil',p.estado_civil],['Grau de Instrução',p.grau_instrucao],
+          ['Profissão',p.profissao],['Religião',p.religiao],['Igreja',p.igreja]
+        ]],
+        ['Endereço',[
+          ['Rua',p.rua,'',true],['Número',p.numero],['Complemento',p.complemento],['Bairro',p.bairro],
+          ['Cidade',p.cidade],['Estado',p.estado],['CEP',p.cep],['País',p.pais==='BR'?'Brasil':p.pais]
+        ]],
+        ['Acesso ao portal',[
+          ['Usuário',d.conta?.user_login||'Conta pendente'],['Perfis',(d.conta?.roles||[]).map(roleLabel).join(', ')]
+        ]]
+      ];
+      for(const [label,rows] of groups){
+        const section=h('section',undefined,'erp-personal-record-section');
+        section.append(h('h3',label),recordGrid(rows));
+        c.append(section);
+      }
+      out.append(c);
     }
     const sections=EDERP.studentSections||(caps.admin?{ficha_medica:'Ficha médica',dificuldades_aprendizagem:'Dificuldades de aprendizagem',laudos:'Laudos'}:{});
     for(const [section,label]of Object.entries(sections)){
@@ -378,20 +407,26 @@
   }
   async function discountSettings(){const d=await api('configuracoes/pontualidade'),c=card('Desconto por pontualidade','Valor já incluído no plano e abatido no pagamento em dia. Bolsas percentuais e bolsas em reais compõem esse benefício conforme a prévia da matrícula. Contratos gerados mantêm a pontualidade registrada em cada parcela; pagamentos anteriores são preservados.'),f=h('form',undefined,'ederp-form'),summary=h('p',undefined,'erp-discount-current');const show=value=>summary.textContent='Desconto cadastrado: '+Number(value||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' por parcela';show(d.valor);c.append(summary);f.dataset.modalTitle='Editar desconto por pontualidade';f.append(input('valor','Desconto condicional por parcela (R$)','text',d.valor).node);c.append(f);root.append(c);bind(f,'configuracoes/pontualidade',()=>({valor:money(dataOf(f).valor)}),r=>show(r.valor??money(dataOf(f).valor)),'Salvar desconto');}
   async function discountContracts(student,selectedContract=null,onChanged=()=>{}){
-    const contracts=await api('alunos/'+student+'/contratos'),dialog=h('dialog',undefined,'journey-confirm ederp erp-discounts-dialog'),body=h('div'),close=button('Fechar',()=>dialog.close(),true),opener=document.activeElement;let serial=0;
-    dialog.append(h('h2','Bolsas e descontos por contrato'),close,body);document.body.append(dialog);dialog.onclose=()=>{serial++;dialog.remove();if(opener?.isConnected)opener.focus();Promise.resolve(onChanged()).catch(()=>{});};dialog.showModal();if(!contracts.length){body.append(h('p','Nenhum contrato encontrado.'));return;}
+    const contracts=await api('alunos/'+student+'/contratos'),dialog=h('dialog',undefined,'ederp erp-discounts-dialog'),header=h('header',undefined,'erp-modal-header'),heading=h('h2','Bolsas e descontos por contrato'),body=h('div',undefined,'erp-modal-body'),close=button('Fechar',()=>dialog.close(),true),opener=document.activeElement;let serial=0;
+    heading.id='erp-discounts-'+key();dialog.setAttribute('aria-labelledby',heading.id);header.append(heading,close);dialog.append(header,body);
+    document.body.append(dialog);dialog.onclose=()=>{serial++;dialog.remove();if(opener?.isConnected)opener.focus();Promise.resolve(onChanged()).catch(()=>{});};dialog.showModal();if(!contracts.length){body.append(h('p','Nenhum contrato encontrado.'));return;}
     const choice=select('idcontrato','Contrato',contracts.map(c=>[String(c.idcontrato),c.numero+' · '+c.quantidade_parcelas+' parcelas']));if(selectedContract&&contracts.some(c=>String(c.idcontrato)===String(selectedContract)))choice.input.value=String(selectedContract);body.append(choice.node);const area=h('div',undefined,'erp-discount-list');body.append(area);
     async function load(){const turn=++serial,id=choice.input.value,d=await api('contratos/'+id+'/descontos');if(turn!==serial||!area.isConnected)return;
       area.replaceChildren(h('p','Descontos se acumulam por parcela. Pagamentos e histórico anterior à parcela informada são preservados.'));
       if(d.recalculo?.erro)area.append(message('Indicações: '+d.recalculo.erro,true));
-      if(d.descontos.some(x=>x.tipo==='indicacao')||d.recalculo){const recalc=button('Reprocessar indicações',async()=>{recalc.disabled=true;try{await api('contratos/'+id+'/recalcular-indicacoes',{},key());await load();}catch(e){area.prepend(message(e.message,true));}finally{recalc.disabled=false;}},true);area.append(recalc);}
-      if(window.EDERPScholarships)area.append(button('Bolsas cadastradas',()=>window.EDERPScholarships.manage(d.contrato,async()=>{await load();if(studentId)await sheet();}).catch(e=>area.prepend(message(e.message,true))),true));
-      area.append(button('Adicionar desconto',()=>edit(null,d),true));
+      const tools=h('div',undefined,'erp-scholarship-actions');
+      tools.append(button('Adicionar desconto',()=>edit(null,d)));
+      if(window.EDERPScholarships)tools.append(button('Bolsas cadastradas',()=>window.EDERPScholarships.manage(d.contrato,async()=>{await load();if(studentId)await sheet();}).catch(e=>area.prepend(message(e.message,true))),true));
+      if(d.descontos.some(x=>x.tipo==='indicacao')||d.recalculo){const recalc=button('Reprocessar indicações',async()=>{recalc.disabled=true;try{await api('contratos/'+id+'/recalcular-indicacoes',{},key());await load();}catch(e){area.prepend(message(e.message,true));}finally{recalc.disabled=false;}},true);tools.append(recalc);}
+      area.append(tools);
       if(!d.descontos.length)area.append(h('p','Nenhum desconto cadastrado.'));
       for(const row of d.descontos){const item=h('article',undefined,'erp-discount-card'),head=h('div',undefined,'erp-discount-card-heading'),status=row.situacao||(Number(row.ativo)?'Ativo':'Excluído');head.append(h('h3',row.nome),h('span',status,'erp-badge'));item.append(head);if(row.descricao)item.append(h('p',row.descricao,'erp-discount-description'));
-        item.append(h('p',Number(row.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' por parcela · Da '+row.parcela_inicio+' até '+row.parcela_fim),h('p','Tipo: '+(row.tipo==='indicacao'?'Indicação':'Comum')));
-        if(row.indicado_ra)item.append(h('p','Indicado: RA '+row.indicado_ra+' · '+row.indicado_nome));if(Number(row.ultima_alteracao_parcela)>1)item.append(h('small','Última edição aplicada a partir da parcela '+row.ultima_alteracao_parcela));
-        if(Number(row.ativo)){const actions=h('div',undefined,'erp-discount-card-actions');actions.append(button('Editar',()=>edit(row,d),true),button('Excluir',()=>remove(row),true));item.append(actions);}area.append(item);
+        const details=h('div',undefined,'erp-discount-card-details');
+        details.append(h('p',Number(row.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' por parcela · Da '+row.parcela_inicio+' até '+row.parcela_fim),h('p','Tipo: '+(row.tipo==='indicacao'?'Indicação':'Comum')));
+        if(row.indicado_ra)details.append(h('p','Indicado: RA '+row.indicado_ra+' · '+row.indicado_nome));if(Number(row.ultima_alteracao_parcela)>1)details.append(h('small','Última edição aplicada a partir da parcela '+row.ultima_alteracao_parcela));
+        const footer=h('div',undefined,'erp-discount-card-footer');footer.append(details);
+        if(Number(row.ativo)){const actions=h('div',undefined,'erp-scholarship-actions');actions.append(button('Editar',()=>edit(row,d),true),button('Excluir',()=>remove(row),true));footer.append(actions);}
+        item.append(footer);area.append(item);
       }
     }
     function remove(row){const f=h('form',undefined,'ederp-form'),box=card('Excluir '+row.nome);f.append(h('p','A exclusão retira este desconto de parcelas não vencidas sem pagamentos. Valores passados e baixas serão preservados.'));box.append(f);f.dataset.modalAuto='1';f.dataset.modalTransient='1';root.append(box);bind(f,'descontos/'+row.iddesconto+'/excluir',()=>({versao:row.versao}),async()=>{box.remove();await load();},'Confirmar exclusão');}

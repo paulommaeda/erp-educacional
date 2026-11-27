@@ -4,9 +4,10 @@ const key=()=>crypto.randomUUID();
 async function api(path,body,id){const response=await fetch(EDERP.root+path,{method:body?'POST':'GET',credentials:'same-origin',cache:'no-store',headers:{'X-WP-Nonce':EDERP.nonce,...(body?{'Content-Type':'application/json','Idempotency-Key':id||key()}:{})},...(body?{body:JSON.stringify(body)}:{})});const data=await response.json();if(!response.ok)throw Error(data.message||'Não foi possível concluir a operação de bolsas.');return data;}
 function field(parent,label,value='',type='text'){const box=h('label',label),input=h(type==='textarea'?'textarea':'input');if(type!=='textarea')input.type=type;input.value=value??'';input.required=true;input.setAttribute('aria-label',label);if(type==='number'){input.min='1';input.step='1';}box.append(input);parent.append(box);return input;}
 function select(parent,label,items,value=''){const box=h('label',label),input=h('select');input.setAttribute('aria-label',label);for(const [v,text] of items)input.append(new Option(text,v));input.value=String(value);box.append(input);parent.append(box);return input;}
-function dialog(title){
- const shell=h('div',undefined,'ederp'),d=h('dialog',undefined,'erp-form-dialog erp-scholarships-dialog'),header=h('header',undefined,'erp-modal-header'),body=h('div',undefined,'erp-modal-body'),f=h('form',undefined,'ederp-form'),feedback=h('p',undefined,'erp-feedback'),heading=h('h2',title),opener=document.activeElement;
- heading.id='erp-scholarship-'+key();d.setAttribute('aria-labelledby',heading.id);feedback.setAttribute('role','status');header.append(heading,button('Fechar',()=>{if(f.dataset.saving!=='1')d.close();}));body.append(f,feedback);d.append(header,body);shell.append(d);d.addEventListener('cancel',e=>{if(f.dataset.saving==='1')e.preventDefault();});d.addEventListener('close',()=>{shell.remove();if(opener?.isConnected)opener.focus();});document.body.append(shell);d.showModal();return {d,f,feedback};
+function dialog(title,opener=document.activeElement){
+ const shell=h('div',undefined,'ederp'),d=h('dialog',undefined,'erp-form-dialog erp-scholarships-dialog'),header=h('header',undefined,'erp-modal-header'),body=h('div',undefined,'erp-modal-body'),f=h('form',undefined,'ederp-form'),feedback=h('p',undefined,'erp-feedback'),heading=h('h2',title);
+ const close=button('Fechar',()=>{if(f.dataset.saving!=='1')d.close();});close.classList.add('erp-secondary');
+ heading.id='erp-scholarship-'+key();d.setAttribute('aria-labelledby',heading.id);feedback.setAttribute('role','status');header.append(heading,close);body.append(f,feedback);d.append(header,body);shell.append(d);d.addEventListener('cancel',e=>{if(f.dataset.saving==='1')e.preventDefault();});d.addEventListener('close',()=>{shell.remove();if(opener?.isConnected)opener.focus();});document.body.append(shell);d.showModal();return {d,f,feedback};
 }
 function submit(ui,text,path,body,success){const save=h('button',text);save.type='submit';ui.f.append(save);let last='',id='';ui.f.onsubmit=async e=>{e.preventDefault();if(ui.f.dataset.saving==='1'||!ui.f.reportValidity())return;try{const data=body(),encoded=JSON.stringify(data);if(encoded!==last){last=encoded;id=key();}ui.f.dataset.saving='1';save.disabled=true;ui.feedback.textContent='Salvando e recalculando...';const result=await api(path,data,id);await success(result);ui.d.close();}catch(error){ui.feedback.textContent=error.message;ui.feedback.className='erp-feedback error';}finally{ui.f.dataset.saving='0';save.disabled=false;}};}
 function labelRule(row){return row.forma_calculo==='percentual'?String(row.valor).replace('.',',')+'%':'R$ '+br(cents(row.valor))+' por parcela';}
@@ -68,27 +69,41 @@ async function studentPanel(area,id,changed=async()=>{}){
  await load();
 }
 function chooseStudent(changed){
- const ui=dialog('Bolsas por aluno'),query=field(ui.f,'Buscar por nome ou RA','','search'),results=h('div'),nav=h('nav');
- let page=1,request=0;
- const prev=button('Anterior',()=>{page--;search();}),next=button('Próxima',()=>{page++;search();});
- query.required=false;query.maxLength=191;nav.append(prev,next);
- const find=h('button','Buscar aluno');find.type='submit';ui.f.append(find,results,nav);
- ui.f.onsubmit=e=>{e.preventDefault();page=1;search();};
- async function search(){
-  const turn=++request;prev.disabled=next.disabled=true;
+ const opener=document.activeElement,ui=dialog('Bolsas por aluno',opener),filters=h('div',undefined,'erp-student-search-filters'),query=field(filters,'Buscar por nome ou RA','','search');
+ const results=h('ul',undefined,'erp-student-search-results'),nav=h('nav',undefined,'erp-student-search-pagination'),pageInfo=h('span');
+ let page=1,total=0,appliedSearch='',request=0;
+ const pageSize=20,prev=button('Anterior',()=>search(page-1)),next=button('Próxima',()=>search(page+1));
+ prev.classList.add('erp-secondary');next.classList.add('erp-secondary');
+ query.required=false;query.maxLength=191;
+ results.setAttribute('role','list');results.setAttribute('aria-label','Alunos encontrados');
+ nav.setAttribute('aria-label','Páginas de alunos');nav.hidden=true;nav.append(prev,pageInfo,next);
+ const find=h('button','Buscar aluno');find.type='submit';filters.append(find);ui.f.append(filters,ui.feedback,results,nav);
+ ui.f.onsubmit=e=>{e.preventDefault();search(1,query.value.trim());};
+ async function search(target,term=appliedSearch){
+  const turn=++request;prev.disabled=next.disabled=true;results.setAttribute('aria-busy','true');
+  ui.feedback.className='erp-feedback';ui.feedback.textContent='Buscando alunos...';
   try{
-   const data=await api('bolsas-alunos?'+new URLSearchParams({search:query.value,page}));
-   if(turn!==request||!ui.d.isConnected)return;
-   ui.feedback.textContent='';results.replaceChildren();if(!data.items.length)results.append(h('p','Nenhum aluno encontrado.'));
-   for(const row of data.items)results.append(button(row.nome+' · RA '+row.ra,async()=>{
-    ui.d.close();const editor=dialog('Bolsas do aluno'),area=h('section',undefined,'erp-scholarship-management');
-    area.style.gridColumn='1 / -1';editor.f.append(area);editor.f.onsubmit=e=>e.preventDefault();
-    try{await studentPanel(area,row.idaluno,changed);}catch(error){editor.feedback.textContent=error.message;}
-   }));
-   prev.disabled=page===1;next.disabled=page*20>=data.total;nav.hidden=data.total<=20;
-  }catch(error){if(turn===request)ui.feedback.textContent=error.message;}
+   const data=await api('bolsas-alunos?'+new URLSearchParams({search:term,page:target}));
+   if(turn!==request||!ui.d.open)return;
+   page=target;total=Number(data.total);appliedSearch=term;
+   results.replaceChildren();
+   for(const row of data.items){
+    const item=h('li'),control=button('',async()=>{
+     ui.d.close();const editor=dialog('Bolsas do aluno',opener),area=h('section',undefined,'erp-scholarship-management');
+     area.style.gridColumn='1 / -1';editor.f.append(area);editor.f.onsubmit=e=>e.preventDefault();
+     try{await studentPanel(area,row.idaluno,changed);}catch(error){editor.feedback.textContent=error.message;}
+    });
+    control.className='erp-student-search-option';control.setAttribute('aria-label',row.nome+' · RA '+row.ra);
+    control.append(h('span',row.nome,'erp-student-search-name'),h('span','RA '+row.ra,'erp-student-search-ra'));
+    item.append(control);results.append(item);
+   }
+   const count=total===1?'1 aluno encontrado':total+' alunos encontrados';
+   ui.feedback.textContent=data.items.length?count:'Nenhum aluno encontrado.';
+   pageInfo.textContent='Página '+page+' de '+Math.ceil(total/pageSize);nav.hidden=total<=pageSize;
+  }catch(error){if(turn===request&&ui.d.open){ui.feedback.className='erp-feedback error';ui.feedback.textContent=error.message;}}
+  finally{if(turn===request){prev.disabled=page===1;next.disabled=page*pageSize>=total;results.setAttribute('aria-busy','false');}}
  }
- search();
+ query.focus();search(1);
 }
 window.EDERPScholarships={picker,summary,settings,manage,studentPanel,chooseStudent,contractStudentGrants};
 })();

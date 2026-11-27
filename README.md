@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.60
+# ERP Educacional — 0.19.61
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 

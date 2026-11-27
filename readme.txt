@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.60
+Stable tag: 0.19.61
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.61 =
+* Melhora o espaçamento das ações de bolsas, descontos e modelos de contrato. Reorganiza a busca de alunos e agrupa os dados pessoais da ficha do aluno para facilitar a leitura no computador e no celular.
 
 = 0.19.60 =
 * Impressão e PDF na conferência dos requerimentos de bolsa, com logo, respostas em formulário, contatos do colégio e numeração de páginas.

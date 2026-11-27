@@ -34,7 +34,12 @@ async function boot(screen, query, caps) {
             grants[0] = {...body, idbolsa_aluno:'3', versao:grants.length ? '2' : '1'};
             data = {contratos_atualizados:0, parcelas_alteradas:0, parcelas_preservadas:0};
         } else if (body) data = {total:2};
-        else if (route === 'bolsas-alunos') data = {items:[students[0]], total:1};
+        else if (route === 'bolsas-alunos') {
+            const term = url.searchParams.get('search');
+            const page = Number(url.searchParams.get('page'));
+            data = term ? {items:term === 'BA-001' ? [students[0]] : [], total:term === 'BA-001' ? 1 : 0}
+                : {items:[students[page - 1]], total:21};
+        }
         else if (route === 'bolsas-alunos/1') data = {aluno:students[0], items:grants};
         else if (route === 'secretaria/alunos/1') data = {...structuredClone(fixture.sheet), periodos_pendentes:[{idvinculoperiodo:'5', codperiodo:'7', codigo:'2027', descricao:'Ano'}]};
         else if (route === 'secretaria/alunos') data = {items:students, total:2};
@@ -56,7 +61,21 @@ async function testManagement() {
     const latest = () => [...x.d.querySelectorAll('dialog[open]')].at(-1);
     click(x.d, 'Bolsas por aluno');
     await tick();
-    click(latest(), 'ANA · RA BA-001');
+    const picker = latest(), pagination = picker.querySelector('nav');
+    assert.match(pagination.textContent, /Página 1 de 2/);
+    click(picker, 'Próxima');
+    await tick();
+    assert.match(pagination.textContent, /Página 2 de 2/);
+    assert.ok(picker.querySelector('button[aria-label="BIA · RA BA-002"]'));
+    picker.querySelector('input[type=search]').value = 'BA-001';
+    picker.querySelector('form').requestSubmit();
+    await tick();
+    assert.equal(pagination.hidden, true);
+    assert.equal(picker.querySelector('[role=status]').textContent, '1 aluno encontrado');
+    const student = picker.querySelector('button[aria-label="ANA · RA BA-001"]');
+    assert.equal(student.querySelector('.erp-student-search-name').textContent, 'ANA');
+    assert.equal(student.querySelector('.erp-student-search-ra').textContent, 'RA BA-001');
+    student.click();
     await tick();
     assert.match(latest().textContent, /Nenhuma bolsa cadastrada/);
     click(latest(), 'Cadastrar bolsa do aluno');

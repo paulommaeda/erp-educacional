@@ -35,8 +35,8 @@
 @media(min-width:640px){.ederp .erp-person-dialog .erp-person-tabs{grid-template-columns:repeat(4,minmax(0,1fr))}}
 
 /* Shared creation and editing dialogs, inside the existing ERP scope. */
-.ederp .erp-form-dialog{box-sizing:border-box;width:calc(100% - 24px);max-width:860px;max-height:calc(100dvh - 24px);padding:0;border:1px solid #dfe8e4;border-radius:18px;background:var(--j-surface, #fff);color:var(--j-action, #003b29);box-shadow:0 24px 80px #003b2940;overflow:auto;overscroll-behavior:contain}
-.ederp .erp-form-dialog::backdrop{background:#00281fd0;backdrop-filter:blur(3px)}
+:is(.ederp .erp-form-dialog,.ederp.erp-discounts-dialog){box-sizing:border-box;width:calc(100% - 24px);max-width:860px;max-height:calc(100dvh - 24px);padding:0;border:1px solid #dfe8e4;border-radius:18px;background:var(--j-surface, #fff);color:var(--j-action, #003b29);box-shadow:0 24px 80px #003b2940;overflow:auto;overscroll-behavior:contain}
+:is(.ederp .erp-form-dialog,.ederp.erp-discounts-dialog)::backdrop{background:#00281fd0;backdrop-filter:blur(3px)}
 .ederp .erp-modal-header{position:sticky;top:0;z-index:2;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px;background:var(--j-surface, #fff);border-bottom:1px solid #dfe8e4}
 .ederp .erp-modal-header h2{margin:0;font-size:22px;line-height:1.3;outline:none}
 .ederp .erp-modal-header button{flex-shrink:0;width:auto;min-height:44px;margin:0}
@@ -55,9 +55,11 @@
 
 .erp-users-list{display:grid;gap:10px}.erp-user-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:18px;align-items:center;padding:18px;background:var(--j-surface,#fff);border:1px solid var(--j-line,#ddd);border-radius:12px}.erp-user-email,.erp-user-name{overflow-wrap:anywhere}.erp-pagination{display:grid!important;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px!important;width:100%}.erp-pagination>span,.erp-pagination>p{text-align:center;margin:0;min-width:0}.erp-pagination>button{margin:0;width:auto!important;min-width:0}@media(max-width:600px){.erp-user-row{grid-template-columns:minmax(0,1fr) auto;gap:8px 12px}.erp-user-name{grid-column:1}.erp-user-email{grid-column:1;font-size:.9rem}.erp-user-row>button{grid-column:2;grid-row:1 / 3}.erp-pagination{grid-template-columns:1fr 1fr;gap:10px!important}.erp-pagination>span,.erp-pagination>p{grid-column:1 / -1;grid-row:1}.erp-pagination>button{width:100%!important}}
 
-/* Scholarships dialog is attached to body and carries its own ERP scope. */
-.ederp.erp-discounts-dialog{box-sizing:border-box;width:calc(100% - 24px);max-width:960px;max-height:calc(100dvh - 24px);padding:20px;border:1px solid #dce7e2;border-radius:18px;background:var(--j-surface,#fff);color:var(--j-ink,#193d38);font-family:system-ui,sans-serif;line-height:1.5;box-shadow:0 24px 80px #003b2940;overflow:auto}
-.erp-discounts-dialog>h2{font-size:clamp(22px,4vw,28px);line-height:1.25;margin:0 0 18px;font-weight:700}.erp-discounts-dialog label{display:grid;gap:8px;margin:16px 0}.erp-discounts-dialog select{width:100%;min-height:46px}.erp-discounts-dialog button{min-height:44px;padding:10px 16px;border-radius:10px}.erp-discounts-dialog .ederp-table-wrap{max-width:100%;overflow:auto}.erp-discounts-dialog::backdrop{background:#00281fcc;backdrop-filter:blur(3px)}@media(max-width:600px){.erp-discounts-dialog{padding:16px}.erp-discounts-dialog button{width:100%;margin:6px 0}.erp-discounts-dialog th,.erp-discounts-dialog td{padding:10px}}
+/* Contract discounts use the shared modal header and scrollable body. */
+.ederp.erp-discounts-dialog{--erp-accent:var(--j-action,#087862);color:var(--j-ink,#193d38)}
+.erp-discounts-dialog label{min-width:0;font-weight:600}
+.erp-discounts-dialog select{box-sizing:border-box;width:100%;min-height:44px}
+.erp-discounts-dialog button{min-height:44px;border-radius:10px}
 
 /* Standalone renewal modal keeps ERP controls and a single-column form. */
 .ederp.erp-renewal-dialog{box-sizing:border-box;width:calc(100% - 24px);max-width:760px;max-height:calc(100dvh - 24px);margin:auto;padding:24px;border:1px solid #dce7e2;border-radius:18px;background:var(--j-surface,#fff);color:var(--j-ink,#193d38);font-family:system-ui,sans-serif;line-height:1.5;overflow:auto;overscroll-behavior:contain;box-shadow:0 24px 80px #003b2940}
@@ -230,6 +232,19 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .ederp .erp-record-item dd{font-size:15px;margin:0;line-height:1.6;overflow-wrap:anywhere;white-space:pre-wrap}
 .ederp .erp-record-item a{overflow-wrap:anywhere}
 .ederp .erp-record-wide{grid-column:1/-1}
+.ederp .ederp-card.erp-personal-record{padding:clamp(14px,2.4vw,28px)}
+.erp-personal-record-header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.ederp .erp-personal-record-header h2{margin:0;font-size:clamp(20px,2.5vw,24px);line-height:1.25}
+.ederp .erp-personal-record-header>button{min-height:44px;width:auto;margin:0}
+.erp-personal-record-section{margin-top:12px;padding:clamp(12px,2vw,20px);border:1px solid var(--j-line,#dce3e0);border-radius:12px;background:var(--j-paper,#f5f8f6);min-width:0}
+.ederp .erp-personal-record-section>h3{margin:0 0 12px;font-size:1rem;line-height:1.4}
+.ederp .erp-personal-record-section .erp-record-grid{grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr));gap:8px;margin:0}
+.ederp .erp-personal-record-section .erp-record-item{padding:10px 12px;border:0;border-radius:8px;background:var(--j-surface,#fff)}
+.ederp .erp-personal-record-section .erp-record-item dt{margin:0 0 3px;font-size:.8rem;line-height:1.4}
+.ederp .erp-personal-record-section .erp-record-item dd{font-weight:500;line-height:1.45}
+.ederp .erp-personal-record-section .erp-record-empty{color:var(--j-muted,#536574);font-weight:400}
+@media(min-width:600px){.ederp .erp-personal-record-section .erp-record-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(min-width:1150px){.ederp .erp-personal-record-section .erp-record-grid:has(>.erp-record-item:nth-child(3)){grid-template-columns:repeat(3,minmax(0,1fr))}}
 .ederp .erp-family-grid>.erp-guardian-card{display:flex;flex-direction:column;min-width:0;margin:0}
 .ederp .erp-guardian-card>h2{overflow-wrap:anywhere;margin-bottom:16px}
 .ederp .erp-guardian-roles{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin:0 0 6px}
@@ -299,7 +314,26 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .ederp .erp-educbank-dialog .erp-return-tools>button{flex:1 1 200px;min-width:0;max-width:100%;white-space:normal;overflow-wrap:anywhere}
 
 .ederp .erp-educbank-dialog .erp-return-form>p{margin:0;overflow-wrap:anywhere}
-.erp-discount-list{display:grid;gap:14px;min-width:0;margin-top:16px}.erp-discount-list>p{margin:0}.erp-discount-card{min-width:0;padding:16px;border:1px solid var(--j-line,#dce7e2);border-radius:14px;background:var(--j-surface,#fff)}.erp-discount-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}.erp-discount-card-heading h3{margin:0;overflow-wrap:anywhere}.erp-discount-card p{margin:10px 0;overflow-wrap:anywhere}.erp-discount-description{white-space:pre-wrap}.erp-discount-card-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}.erp-discount-card-actions button{margin:0!important}.erp-discount-form>p,.erp-discount-form>.erp-discount-indicated{grid-column:1/-1}.erp-discount-indicated{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.erp-discount-indicated>p,.erp-discount-indicated>small{grid-column:1/-1}.erp-discount-indicated[hidden]{display:none!important}.erp-discounts-dialog label{min-width:0}.erp-discount-form textarea{min-height:100px}@media(max-width:600px){.erp-discount-card-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.erp-discount-indicated{grid-template-columns:minmax(0,1fr)}.erp-discount-card-actions button{width:100%}}
+.erp-discount-list{display:grid;gap:14px;min-width:0;margin-top:16px}
+.erp-discount-list>p{margin:0}
+.erp-scholarship-actions{display:flex;align-items:center;flex-wrap:wrap;gap:10px}
+.ederp .erp-scholarship-actions>button{width:auto;margin:0;min-width:0}
+.erp-discount-card{display:grid;gap:10px;min-width:0;padding:16px;border:1px solid var(--j-line,#dce7e2);border-radius:14px;background:var(--j-surface,#fff)}
+.erp-discount-card-heading,.erp-discount-card-footer{display:flex;justify-content:space-between;gap:10px 16px;flex-wrap:wrap}
+.erp-discount-card-heading{align-items:flex-start}
+.erp-discount-card-heading h3,.erp-discount-card p{margin:0;overflow-wrap:anywhere}
+.erp-discount-card-heading .erp-badge{margin:0}
+.erp-discount-card-footer{align-items:flex-end}
+.erp-discount-card-details{display:grid;gap:4px;min-width:0}
+.erp-discount-card-details>:first-child{font-weight:600}
+.erp-discount-card-footer>.erp-scholarship-actions{margin-inline-start:auto}
+.erp-discount-description{white-space:pre-wrap}
+.erp-discount-form>p,.erp-discount-form>.erp-discount-indicated{grid-column:1/-1}
+.erp-discount-indicated{min-width:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.erp-discount-indicated>p,.erp-discount-indicated>small{grid-column:1/-1}
+.erp-discount-indicated[hidden]{display:none!important}
+.erp-discount-form textarea{min-height:100px}
+@media(max-width:600px){.erp-discount-indicated{grid-template-columns:minmax(0,1fr)}}
 .erp-discount-breakdown{min-width:0}.erp-discount-breakdown article{border:1px solid var(--j-line,#dce7e2);border-radius:12px;padding:14px;margin-top:12px}.erp-discount-breakdown p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0 0}.erp-discount-breakdown strong{overflow-wrap:anywhere}
 
 /* Installment links and actions share the same spacing in every financial view. */
@@ -352,6 +386,29 @@ dialog.erp-external-dialog>.erp-feedback.error{background:#fff1f0;color:#a12828;
 .erp-materials-preview ul,.erp-materials-report{max-height:240px;overflow:auto}.erp-materials-preview ul{padding-left:22px}
 .erp-scholarship-quote{display:block}.erp-scholarship-quote + .erp-scholarship-quote{margin-top:.5rem}
 .erp-scholarship-picker{grid-column:1/-1}.erp-scholarship-picker>p,.erp-scholarship-option{grid-column:1/-1}.erp-scholarship-option,.erp-scholarship-card{padding:14px;margin:10px 0;border:1px solid var(--j-line,#cbded5);border-radius:12px}.erp-scholarship-ranges{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}.erp-scholarship-ranges input{box-sizing:border-box;width:100%;min-width:0}.erp-scholarship-card button{margin:4px}.erp-scholarships-dialog .erp-scholarship-management{min-width:0}@media(max-width:480px){.erp-scholarship-ranges{grid-template-columns:minmax(0,1fr)}}
+
+.ederp .erp-scholarships-dialog{--erp-accent:var(--j-action,#087862);color:var(--j-ink,#193d38)}
+.erp-student-search-filters{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;align-items:end}
+.erp-student-search-filters label{min-width:0;font-weight:600}
+.erp-student-search-filters input{width:100%;min-height:44px}
+.erp-student-search-filters>button{align-self:end}
+.erp-student-search-filters+.erp-feedback{margin:0;font-size:.875rem}
+.erp-student-search-results{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin:0;padding:0;list-style:none}
+.erp-student-search-results:empty{display:none}
+.ederp .erp-student-search-option{display:grid;gap:3px;width:100%;min-width:0;min-height:52px;padding:8px 12px;text-align:start;border:1px solid var(--j-line,#dce7e2);border-radius:10px;background:var(--j-surface,#fff);color:var(--j-ink,#193d38);line-height:1.35}
+.ederp .erp-student-search-option:hover{background:var(--j-soft,#edf5f2);border-color:var(--j-action,#087862)}
+.ederp .erp-student-search-option:focus-visible{outline:2px solid var(--j-action,#087862);outline-offset:2px}
+.erp-student-search-name{font-size:.875rem;font-weight:600;overflow-wrap:anywhere}
+.erp-student-search-ra{font-size:.8rem;color:var(--j-muted,#536574);overflow-wrap:anywhere}
+.erp-student-search-pagination{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;padding-top:12px;border-top:1px solid var(--j-line,#dce7e2);font-size:.875rem}
+.ederp .erp-student-search-pagination>button{width:auto;min-height:44px;margin:0;padding-inline:12px;border-radius:10px}
+.ederp .erp-student-search-pagination>button:disabled{cursor:default}
+@media(min-width:560px){
+  .erp-student-search-filters{grid-template-columns:minmax(0,1fr) auto}
+  .ederp .erp-student-search-filters>button{width:auto}
+  .erp-student-search-results{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ederp .erp-student-search-option{height:100%}
+}
 .ederp .erp-profile-personal-fields input,.ederp .erp-profile-personal-fields select{box-sizing:border-box;min-width:0;width:100%}
 .ederp .erp-finance-shortcuts{display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;margin:18px 0 24px}.ederp .erp-finance-shortcuts .erp-link-button{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;min-height:48px;width:auto;margin:0}
 .erp-enrollment-code{white-space:nowrap}.erp-enrollment-badge{display:inline-flex;align-items:center;max-width:100%;box-sizing:border-box;border:1px solid #cbd4d8;border-radius:8px;padding:5px 10px;background:#eef1f3;color:#485c65;line-height:1.4;font-size:12px;font-weight:600}.erp-enrollment-badge.warning{background:#fff4d6;border-color:#e4cb82;color:#755b1d}.erp-enrollment-badge.success{background:#e2f2e7;border-color:#a2cdb2;color:#2b6040}.erp-enrollment-badge.danger{background:#fbe5e7;border-color:#deabb0;color:#8a3942}.erp-enrollment-badge.attention{background:#fff0e1;border-color:#dfbb96;color:#80532c}.erp-enrollment-badge.info{background:#e6eef9;border-color:#aebfdd;color:#3c567d}
