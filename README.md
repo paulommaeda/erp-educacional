@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.62
+# ERP Educacional — 0.19.63
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -37,6 +37,8 @@ Em **Bolsas e descontos dos contratos**, clique no número do contrato para cons
 No resumo, **Regerar ou trocar plano** permite recalcular as parcelas a partir dos descontos cadastrados, do desconto manual do contrato e de ajustes auditados. O recálculo mantém os vencimentos e preserva parcelas com histórico de baixa, canceladas ou excluídas. A troca de plano usa um plano ativo do mesmo período letivo e exige contrato sem assinatura e parcelas disponíveis, sem histórico de baixa. O motivo informado fica na auditoria. A tela de bolsas e o relatório exibem o valor original do contrato e das parcelas, o dia do vencimento e os valores de pontualidade e descontos incondicionais por parcela e no total.
 
 ## Atualizar e preparar
+
+Em **Contratos → Ações → Ajustar competência**, corrija uma parcela ou informe a competência da primeira parcela para aplicar uma sequência mensal. O ajuste direto mantém vencimentos, valores e baixas, inclusive nas parcelas pagas. Parcelas canceladas ou excluídas ficam preservadas. Em **Regerar ou trocar plano**, informe a nova competência inicial para aplicar a mesma sequência. Contratos com parcelas pendentes usam a competência inicial salva na geração.
 
 1. Atualize em **Plugins → ERP Educacional → Verificar atualizações** ou substitua o plugin anterior pelo ZIP `erp-educacional-0.19.58.zip` em uma cópia de homologação com backup.
 2. Abra o wp-admin como administrador. A migração atualiza para o **schema 53**, que acrescenta os requerimentos de bolsa e sua fila de e-mails. Se não concluir, use **ERP → Configurações → Verificar/aplicar migrações**. A tela informa a etapa, a tabela e os vínculos pendentes. Veja [recuperação após restaurar backup](docs/RECUPERACAO-BANCO.md).

@@ -17,24 +17,63 @@ final class ContractRepricing
         $table=$this->db->table('planos_pagamento');
         $plans=$this->db->rows("SELECT idplano,nome,valor_anuidade,versao FROM $table WHERE codcoligada=%d AND codperiodo=%d AND ativo=1 ORDER BY nome,idplano",
             [Coligadas::current(),$enrollment['codperiodo']]);
-        return ['versao'=>$contract['versao'],'plano'=>$contract['plano_nome_snapshot'],'idplano'=>$contract['idplano'],
+        return $this->competenceData($contract)+['plano'=>$contract['plano_nome_snapshot'],'idplano'=>$contract['idplano'],
             'assinado'=>ContractText::signed($contract),'desconto_manual'=>$this->manualDiscount($contract),'planos'=>$plans];
+    }
+
+    public function competenceOptions(int $id):array
+    {
+        Access::requireManageContracts();
+        return $this->competenceData($this->contract($id));
+    }
+
+    private function competenceData(array $contract):array
+    {
+        $rows=$this->competenceRows((int)$contract['idcontrato']);
+        $first=$contract['competencia_inicial']??null;
+        if($first===null&&(int)($rows[0]['numero']??0)===1)$first=$rows[0]['competencia'];
+        return ['versao'=>$contract['versao'],'parcelas_geradas'=>(bool)$contract['parcelas_geradas'],'competencia_inicial'=>substr($first??$contract['primeiro_vencimento']??'',0,7),
+            'parcelas'=>array_map(static fn($row)=>['numero'=>(int)$row['numero'],'competencia'=>substr($row['competencia'],0,7),'vencimento'=>$row['vencimento']],$rows)];
+    }
+
+    public function updateCompetence(int $id,array $data,string $key):array
+    {
+        Access::requireManageContracts();
+        if(array_diff(array_keys($data),['versao','competencia','parcela','motivo']))throw new RuleViolation('Confira os dados do ajuste de competência.');
+        $version=Input::id($data['versao']??null);
+        $month=Input::month($data['competencia']??null);
+        $number=isset($data['parcela'])?Input::id($data['parcela']):null;
+        $reason=Input::text($data['motivo']??null,2000);
+        return $this->db->atomic(fn()=>$this->ops->run($key,'ajustar_competencia',['idcontrato'=>$id]+$data,function()use($id,$version,$month,$number,$reason,$key){
+            [$contract]=$this->lockActiveContract($id,$version);
+            if($number===null)$this->validateSchedule($month,(int)$contract['quantidade_parcelas']);
+            $changed=$this->applyCompetence($id,$month,$number,$reason,$key);
+            $initial=$contract['competencia_inicial']??null;
+            $newInitial=$number===null?$month.'-01':$initial;
+            if($changed||$initial!==$newInitial){
+                EducbankOutbox::without(fn()=>$this->db->update('contratos',$id,['competencia_inicial'=>$newInitial]));
+                $this->db->audit('contratos',$id,'ajustar_competencia',['competencia_inicial'=>$initial],
+                    ['competencia_inicial'=>$newInitial,'motivo'=>$reason,'parcelas_alteradas'=>$changed],$key);
+            }
+            return ['competencias_alteradas'=>count($changed),'competencia_inicial_alterada'=>$initial!==$newInitial];
+        }));
     }
 
     public function run(int $id,array $data,string $key):array
     {
         Access::requireManageContracts();
-        if(array_diff(array_keys($data),['versao','motivo','confirmado','idplano','plano_versao','desconto_manual'])||($data['confirmado']??false)!==true){
+        if(array_diff(array_keys($data),['versao','motivo','confirmado','idplano','plano_versao','desconto_manual','competencia_inicial'])||($data['confirmado']??false)!==true){
             throw new RuleViolation('Confirme o recálculo deste contrato.');
         }
         $version=Input::id($data['versao']??null);
         $reason=Input::text($data['motivo']??null,2000);
         $planId=isset($data['idplano'])?Input::id($data['idplano']):null;
+        $month=array_key_exists('competencia_inicial',$data)?Input::month($data['competencia_inicial']):null;
         return ContractTextLock::run($this->db,fn()=>$this->db->atomic(fn()=>$this->ops->run($key,'regerar_contrato',['idcontrato'=>$id]+$data,
-            fn()=>$this->rebuild($id,$data,$version,$reason,$planId,$key))));
+            fn()=>$this->rebuild($id,$data,$version,$reason,$planId,$month,$key))));
     }
 
-    private function rebuild(int $id,array $data,int $version,string $reason,?int $planId,string $key):array
+    private function lockActiveContract(int $id,int $version):array
     {
         $contract=$this->contract($id);
         $enrollment=$this->db->get('matriculas',(int)$contract['idmatricula']);
@@ -45,6 +84,13 @@ final class ContractRepricing
         if($contract['status']!=='ativo'||$contract['excluido_em']||$enrollment['excluido_em']||!EnrollmentStatus::open($enrollment['status'])){
             throw new RuleViolation('Selecione um contrato e uma matrícula ativos.');
         }
+        if((bool)$contract['parcelas_geradas']&&!current_user_can('erp_ajustar_lancamentos'))throw new RuleViolation('Seu perfil não pode alterar lançamentos já gerados.');
+        return [$contract,$enrollment];
+    }
+
+    private function rebuild(int $id,array $data,int $version,string $reason,?int $planId,?string $month,string $key):array
+    {
+        [$contract,$enrollment]=$this->lockActiveContract($id,$version);
         $signed=ContractText::signed($contract);
         if($planId!==null)ContractText::requireEditable($contract);
         $signatures=$this->db->table('assinatura_envios');
@@ -52,9 +98,9 @@ final class ContractRepricing
             throw new RuleViolation('Confira ou encerre o envio para assinatura antes de regerar o contrato.');
         }
         $generated=(bool)$contract['parcelas_geradas'];
-        if($generated&&!current_user_can('erp_ajustar_lancamentos'))throw new RuleViolation('Seu perfil não pode alterar lançamentos já gerados.');
         $titles=$this->titles($id);
         $count=(int)$contract['quantidade_parcelas'];
+        if($month!==null)$this->validateSchedule($month,$count);
         $eligible=array_values(array_filter($titles,static fn($title)=>$title['idlancamento']!==null&&!$title['excluido_em']
             &&$title['status']!=='cancelado'&&!$title['tem_baixa']&&Money::cents($title['valor_baixa'])===0&&!$title['fatura_encerrada']));
         $preserved=count($titles)-count($eligible);
@@ -88,6 +134,7 @@ final class ContractRepricing
         Money::split($base-$manual,$count);
         $fields+=['desconto_base_total'=>Money::format($manual),'mensalidade_base_total'=>Money::format($base),'pontualidade_snapshot'=>Money::format($punctuality)];
         if($planId!==null)$fields['valor_original_total']=Money::format($face);
+        if($month!==null)$fields['competencia_inicial']=$month.'-01';
 
         $changed=EducbankOutbox::without(function()use($id,$fields,$contract,$eligible,$manual,$planId,$key){
             $this->db->update('contratos',$id,$fields);
@@ -97,11 +144,46 @@ final class ContractRepricing
             (new ContractTemplates($this->db,$this->ops))->refreshInside($id);
             return $changed;
         });
+        $competences=$month===null?[]:$this->applyCompetence($id,$month,null,$reason,$key);
         if($changed)EnrollmentLifecycle::syncFirstPayment($this->db,$id,$key);
         foreach($changed as $title)EducbankOutbox::changed($this->db,'lancamentos',$title);
         $this->db->audit('contratos',$id,$planId===null?'regerar_contrato':'trocar_plano_pagamento',$contract,
-            ['motivo'=>$reason,'parcelas_alteradas'=>$changed,'parcelas_preservadas'=>$preserved,'contrato'=>$this->db->get('contratos',$id)],$key);
-        return ['parcelas_alteradas'=>count($changed),'parcelas_preservadas'=>$preserved,'plano_alterado'=>$planId!==null];
+            ['motivo'=>$reason,'parcelas_alteradas'=>$changed,'parcelas_preservadas'=>$preserved,'competencias_alteradas'=>$competences,'contrato'=>$this->db->get('contratos',$id)],$key);
+        return ['parcelas_alteradas'=>count($changed),'parcelas_preservadas'=>$preserved,'plano_alterado'=>$planId!==null,'competencias_alteradas'=>count($competences)];
+    }
+
+    private function validateSchedule(string $month,int $count):void
+    {
+        $last=(new \DateTimeImmutable($month.'-01'))->modify('+'.($count-1).' months')->format('Y-m');
+        Input::month($last);
+    }
+
+    private function competenceRows(int $id,bool $lock=false):array
+    {
+        $parts=$this->db->table('parcelas');$titles=$this->db->table('lancamentos');
+        return $this->db->rows("SELECT p.idparcela,p.numero,p.competencia,l.vencimento FROM $parts p JOIN $titles l ON l.idparcela=p.idparcela
+            WHERE p.idcontrato=%d AND l.excluido_em IS NULL AND l.status<>'cancelado' ORDER BY p.numero".($lock?' FOR UPDATE':''),[$id]);
+    }
+
+    private function applyCompetence(int $id,string $month,?int $number,string $reason,string $key):array
+    {
+        $rows=$this->competenceRows($id,true);
+        if($number!==null){
+            $rows=array_filter($rows,static fn($row)=>(int)$row['numero']===$number);
+            if(!$rows)throw new RuleViolation('A parcela selecionada não está disponível para ajuste.');
+        }
+        $start=new \DateTimeImmutable($month.'-01');$changed=[];
+        foreach($rows as $row){
+            $offset=$number===null?(int)$row['numero']-1:0;
+            $value=$start->modify("+$offset months")->format('Y-m-01');
+            if($row['competencia']===$value)continue;
+            $part=(int)$row['idparcela'];
+            $this->db->update('parcelas',$part,['competencia'=>$value]);
+            $this->db->audit('parcelas',$part,'ajustar_competencia',['competencia'=>$row['competencia']],
+                ['competencia'=>$value,'motivo'=>$reason],$key);
+            $changed[]=$part;
+        }
+        return $changed;
     }
 
     private function contract(int $id):array

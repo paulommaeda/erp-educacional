@@ -34,6 +34,20 @@
   classroom=lookup('turmas','Turma');student=lookup('alunos','Aluno');
   classroom.select.addEventListener('change',()=>{student.select.value='';student.load(1);});
   const tools=el('div',undefined,'erp-dashboard-filter-actions'),reset=button('Limpar filtros',()=>{form.reset();classroom.select.value=student.select.value='';classroom.load(1);student.load(1);load();});tools.append(apply,reset);
+  if(EDERP.caps?.admin||(EDERP.caps?.contracts&&EDERP.caps?.editFinance)){
+    const contracts=el('a','Abrir contratos do aluno','erp-link-button');
+    function updateContractLink(){
+      const id=student.select.value;
+      contracts.hidden=!id;
+      if(!id)return;
+      const url=new URL(EDERP.front?EDERP.portal:EDERP.admin,location.href);
+      url.searchParams.set(EDERP.front?'erp_tela':'page',EDERP.front?'contratos':'ederp-contratos');
+      url.searchParams.set('erp_periodo',consultationPeriod());
+      url.searchParams.set('aluno',id);contracts.href=url.href;
+    }
+    for(const field of [student.select,classroom.select])field.addEventListener('change',updateContractLink);
+    reset.addEventListener('click',updateContractLink);updateContractLink();tools.append(contracts);
+  }
   form.append(from.node,to.node,classroom.box,student.box,tools);
   root.replaceChildren(heading,el('p','Acompanhe os recebíveis da coligada e do período selecionados. Os recebimentos são atribuídos à competência da parcela.'),summaryPanel,form,result);
   function card(label,key,data,tone,note){const node=el('article',undefined,'erp-dashboard-card '+tone);node.dataset.indicator=key;node.append(el('h2',label),el('strong',money(data[key]),'erp-dashboard-value'),el('p',note));return node;}
@@ -74,7 +88,7 @@
     catch(error){if(turn===reportSerial)result.replaceChildren(el('p',error.message,'erp-feedback error'),button('Tentar novamente',load));}
     finally{if(turn===reportSerial){result.removeAttribute('aria-busy');apply.disabled=false;}}
   }
-  function refreshPeriod(){const period=consultationPeriod(),choice=document.querySelector('.erp-period-bar select');EDERP.period=period;window.EDERPConsultationPeriod?.(period);if(choice)choice.value=period;from.input.value=to.input.value='';classroom.select.value=student.select.value='';classroom.search.value=student.search.value='';classroom.load(1);student.load(1);load();}
+  function refreshPeriod(){const period=consultationPeriod(),choice=document.querySelector('.erp-period-bar select');EDERP.period=period;window.EDERPConsultationPeriod?.(period);if(choice)choice.value=period;from.input.value=to.input.value='';classroom.select.value=student.select.value='';student.select.dispatchEvent(new Event('change'));classroom.search.value=student.search.value='';classroom.load(1);student.load(1);load();}
   window.addEventListener('ederp:period-changed',refreshPeriod);window.addEventListener('popstate',refreshPeriod);
   form.addEventListener('submit',event=>{event.preventDefault();load();});classroom.load(1);student.load(1);load();
 })();

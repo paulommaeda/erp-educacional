@@ -17,6 +17,13 @@ final class Input
         if (!$d || $d->format('Y-m-d') !== $value) { throw new RuleViolation('Use uma data válida no formato AAAA-MM-DD.'); }
         return $value;
     }
+    public static function month(mixed $value): string
+    {
+        if (!is_string($value) || !preg_match('/^[1-9][0-9]{3}-(?:0[1-9]|1[0-2])$/D', $value)) {
+            throw new RuleViolation('Informe uma competência válida no formato AAAA-MM.');
+        }
+        return $value;
+    }
     public static function text(mixed $value, int $max = 191): string
     {
         if (!is_string($value) || trim($value) === '' || strlen($value) > $max) { throw new RuleViolation('Texto ausente ou maior que o limite.'); }

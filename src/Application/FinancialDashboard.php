@@ -21,7 +21,7 @@ final class FinancialDashboard
         foreach(['competencia_inicio'=>'>=','competencia_fim'=>'<='] as $field=>$operator){
             $month=$query[$field]??'';
             if($month==='')continue;
-            if(!is_string($month)||!preg_match('/^[1-9][0-9]{3}-(?:0[1-9]|1[0-2])$/D',$month))throw new RuleViolation('Informe uma competência válida no formato AAAA-MM.');
+            Input::month($month);
             $filters[$field]=$month;$where[]='p.competencia '.$operator.' %s';$args[]=$operator==='>='?$month.'-01':(new \DateTimeImmutable($month.'-01'))->modify('last day of this month')->format('Y-m-d');
         }
         if($filters['competencia_inicio']!==''&&$filters['competencia_fim']!==''&&$filters['competencia_inicio']>$filters['competencia_fim'])throw new RuleViolation('A competência inicial deve ser anterior à final.');
