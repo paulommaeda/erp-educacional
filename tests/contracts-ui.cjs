@@ -16,6 +16,9 @@ async function setup(options={}){
    else if(route==='contratos'&&!body)result={items:Number(u.searchParams.get('page')||1)===1?[current]:[],total:options.total||1,page:Number(u.searchParams.get('page')||1)};
    else if(route==='contratos/1'&&!body)result=current;
    else if(route==='contratos/1'&&body){current={...current,...body,versao:'5'};result=current;}
+   else if(route==='contratos/1/competencia')result=body?{competencias_alteradas:1}:{versao:'4',competencia_inicial:'2026-01',parcelas_geradas:true,parcelas:[{numero:2,competencia:'2026-02',vencimento:'2027-02-10'}]};
+   else if(route==='contratos/1/regerar')result=body?{plano_alterado:true,parcelas_alteradas:1,parcelas_preservadas:0,competencias_alteradas:1}:
+     {versao:'4',competencia_inicial:'2026-01',desconto_manual:'0.00',planos:[{idplano:8,nome:'Plano 2027',valor_anuidade:'12000.00',versao:1}]};
    else if(route==='modelos-contrato'&&body){models.push({...body,idmodelo:'4',versao:'1'});result=models.at(-1);}
    else if(route==='modelos-contrato/3'&&body){models=[{...models[0],...body,versao:'6'}];result=models[0];}
    else result={excluido:true};return {ok:true,json:async()=>result};
@@ -24,6 +27,18 @@ async function setup(options={}){
 }
 async function test(){
  const tuitionClause='A CONTRATANTE pagará a anuidade escolar de [contrato_valor_original], dividida em [contrato_parcelamento_original].';
+ const competence=await setup({contract:{parcelas_geradas:'1'}});
+ button(competence.d,'Ajustar competência').click();await tick();let competenceForm=competence.d.querySelector('dialog form');
+ const part=competenceForm.elements.parcela;part.value='2';part.dispatchEvent(new competence.w.Event('change'));
+ assert.equal(competenceForm.elements.competencia.value,'2026-02');competenceForm.elements.competencia.value='2027-02';
+ competenceForm.elements.motivo.value='Correção de competência';competenceForm.requestSubmit();await tick();
+ assert.deepEqual(competence.calls.find(c=>c.body).body,{versao:'4',competencia:'2027-02',parcela:'2',motivo:'Correção de competência'});
+ button(competence.d,'Regerar ou trocar plano').click();await tick();competenceForm=competence.d.querySelector('dialog form');
+ assert.equal(competenceForm.elements.competencia_inicial.value,'');competenceForm.elements.competencia_inicial.value='2027-01';
+ competenceForm.elements.idplano.value='8';competenceForm.elements.motivo.value='Atualização';competenceForm.querySelector('[type=checkbox]').checked=true;
+ competenceForm.requestSubmit();await tick();const repricing=competence.calls.find(c=>c.route.endsWith('/regerar')&&c.body);
+ assert.equal(repricing.body.competencia_inicial,'2027-01');assert.equal(repricing.body.idplano,8);
+ assert.match(competence.d.body.textContent,/competência\(s\) atualizada/);competence.dom.window.close();
  let x=await setup({total:25});assert.match(x.d.body.textContent,/1234-2027/);assert.equal(x.calls[0].query.get('codperiodo'),'7');assert.equal(x.calls[0].headers['X-WP-Nonce'],'contracts-nonce');button(x.d,'Próxima').click();await tick();assert.equal(x.calls.at(-1).query.get('page'),'2');assert.match(x.d.body.textContent,/Nenhum contrato encontrado/);button(x.d,'Anterior').click();await tick();x.d.querySelector('[name=search]').value='ALUNO';x.d.querySelector('[name=status]').value='pendente';x.d.querySelector('.erp-contract-filters').requestSubmit();await tick();assert.equal(x.calls.at(-1).query.get('search'),'ALUNO');assert.equal(x.calls.at(-1).query.get('status'),'pendente');x.dom.window.close();console.log('PASS: busca, período, situação, paginação e autenticação');
  x=await setup();button(x.d,'Ver contrato').click();await tick();let dialog=x.d.querySelector('dialog');assert.equal(dialog.querySelector('pre').textContent,fixture.termo_snapshot);assert.equal(dialog.querySelector('img'),null);assert.equal(x.w.compromised,undefined);button(dialog,'Fechar').click();assert.equal(x.d.querySelector('dialog'),null);x.dom.window.close();console.log('PASS: visualização preserva texto e impede execução de HTML');
  x=await setup();button(x.d,'Editar').click();await tick();dialog=x.d.querySelector('dialog');let form=dialog.querySelector('form');form.querySelector('[name=valor_original_total]').value='15.000,00';form.querySelector('[name=desconto_incondicional_total]').value='3.000,00';form.querySelector('[name=motivo]').value='Revisão comercial';const select=form.querySelector('[name=idmodelo]');select.value='3';select.dispatchEvent(new x.w.Event('change'));assert(form.querySelector('[name=termo]').parentElement.hidden);x.failNext();form.requestSubmit();form.requestSubmit();await tick();let posts=x.calls.filter(c=>c.body);assert.equal(posts.length,1);assert.match(dialog.textContent,/Falha temporária/);assert.equal(posts[0].body.valor_original_total,'15000.00');assert.equal(posts[0].body.desconto_incondicional_total,'3000.00');assert.equal(posts[0].body.modelo_versao,'5');assert.equal(posts[0].body.termo,undefined);form.requestSubmit();await tick();posts=x.calls.filter(c=>c.body);assert.equal(posts.length,2);assert.equal(posts[0].headers['Idempotency-Key'],posts[1].headers['Idempotency-Key']);assert.equal(x.d.querySelector('dialog'),null);x.dom.window.close();console.log('PASS: edição pendente normaliza valores, usa versão do modelo, bloqueia envio duplicado e permite repetição idempotente');

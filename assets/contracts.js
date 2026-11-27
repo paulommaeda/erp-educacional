@@ -7,6 +7,8 @@
   const button=(text,fn,cls='')=>{const n=h('button',text,cls);n.type='button';n.onclick=fn;return n;};
   const money=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL'}).format(Number(v||0));
   const date=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
+  const month=v=>v?String(v).slice(0,7).split('-').reverse().join('/'):'—';
+  const canChangeCompetence=c=>canReprice&&c.status==='ativo'&&(!Number(c.parcelas_geradas)||EDERP.caps?.admin||EDERP.caps?.editFinance);
   const uuid=()=>crypto.randomUUID?.()||Array.from(crypto.getRandomValues(new Uint8Array(24)),x=>x.toString(16).padStart(2,'0')).join('');
   const field=(name,label,value='',type='text',required=true)=>{const node=h('label',label),input=h(type==='textarea'?'textarea':'input');if(type!=='textarea')input.type=type;input.name=name;input.value=value??'';input.required=required;if(type==='number'){input.min=1;input.max=120;input.step=1;}node.append(input);return {node,input};};
   const choice=(name,label,items)=>{const node=h('label',label),input=h('select');input.name=name;for(const [v,t]of items)input.append(new Option(t,v));node.append(input);return {node,input};};
@@ -163,6 +165,7 @@
         actionsForContract.push(button('Ver contrato',()=>openContract(c.idcontrato)));
         if(c.status==='ativo')actionsForContract.push(button('Editar',()=>editContract(c.idcontrato)));
         if(c.status==='ativo')actionsForContract.push(button('Regerar ou trocar plano',()=>openRepricing(c)));
+        if(canChangeCompetence(c))actionsForContract.push(button('Ajustar competência',()=>openCompetence(c)));
         actionsForContract.push(button('Excluir',()=>removeContract(c.idcontrato),'erp-contract-danger'));
       }
       if(canContracts&&canDiscounts&&c.status==='ativo')actionsForContract.push(button('Bolsas e descontos',()=>window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;})));
@@ -267,12 +270,12 @@
       }
       if(c.parcelas.length){
         const table=h('table',undefined,'erp-contract-table'),head=h('thead'),heading=h('tr'),body=h('tbody');
-        const labels=['Parcela e vencimento','Original','Descontos incondicionais','Pontualidade','Líquido','Pago','Saldo e situação'];
+        const labels=['Parcela e vencimento','Original','Descontos incondicionais','Pontualidade','Líquido','Pago','Saldo e situação','Competência'];
         for(const label of labels){const th=h('th',label);th.scope='col';heading.append(th);}
         const statusLabels={baixado:'Baixado',em_aberto:'Em aberto',vencido:'Vencido'};
         for(const p of c.parcelas){
           const tr=h('tr');
-          const values=[p.numero+' · '+date(p.vencimento),money(p.valor_original),money(p.desconto_incondicional),money(p.pontualidade),money(p.valor_liquido),money(p.valor_baixa),money(p.saldo_aberto)+' · '+statusLabels[p.situacao]];
+          const values=[p.numero+' · '+date(p.vencimento),money(p.valor_original),money(p.desconto_incondicional),money(p.pontualidade),money(p.valor_liquido),money(p.valor_baixa),money(p.saldo_aberto)+' · '+statusLabels[p.situacao],month(p.competencia)];
           for(const [index,value] of values.entries()){
             const cell=h('td',value);cell.dataset.label=labels[index];
             if(index===2)for(const d of p.descontos_detalhados){
@@ -284,16 +287,52 @@
         }
         head.append(heading);table.append(head,body);m.content.append(h('h3','Parcelas do contrato'),table);
       }
+      const actions=h('div',undefined,'erp-contract-toolbar');
       if(c.status==='ativo'&&canDiscounts){
         const edit=button('Gerenciar bolsas e descontos',()=>{
           m.dialog.close();
           window.EDERPContractDiscounts.open(c.idaluno,c.idcontrato,load).catch(e=>{notice.textContent=e.message;});
         });
-        m.content.prepend(edit);
+        actions.append(edit);
       }
       if(c.status==='ativo'&&canReprice){
-        m.content.prepend(button('Regerar ou trocar plano',()=>{m.dialog.close();openRepricing(c);}));
+        actions.append(button('Regerar ou trocar plano',()=>{m.dialog.close();openRepricing(c);}));
       }
+      if(canChangeCompetence(c)){
+        actions.append(button('Ajustar competência',()=>{m.dialog.close();openCompetence(c);},'erp-secondary'));
+      }
+      if(actions.childElementCount)m.content.prepend(actions);
+    }catch(e){if(m.dialog.isConnected)m.status.textContent=e.message;}
+  }
+  async function openCompetence(c){
+    const m=modal('Ajustar competência · '+c.numero),path='contratos/'+c.idcontrato+'/competencia';
+    m.status.textContent='Carregando parcelas...';
+    try{
+      const data=await api(path);
+      if(!m.dialog.isConnected)return;
+      m.status.textContent='';
+      const form=h('form',undefined,'ederp-form erp-contract-form');
+      const scope=choice('parcela','Aplicar a',[['','Sequência mensal do contrato'],...data.parcelas.map(p=>[p.numero,'Parcela '+p.numero+' · '+month(p.competencia)+' · vencimento '+date(p.vencimento)])]);
+      const competence=field('competencia','Competência',data.competencia_inicial,'month');
+      const reason=field('motivo','Motivo da alteração','','textarea');reason.input.maxLength=2000;
+      const note=h('p');
+      function sync(){
+        const part=data.parcelas.find(p=>String(p.numero)===scope.input.value);
+        competence.input.value=part?.competencia??data.competencia_inicial;
+        note.textContent=part?'O vencimento, os valores e os pagamentos da parcela ficam preservados.'
+          :'Informe a competência da parcela 1. As seguintes avançam um mês por parcela. O ajuste inclui parcelas pagas. Vencimentos, valores, pagamentos e competências de parcelas canceladas ou excluídas ficam preservados.';
+      }
+      scope.input.addEventListener('change',sync);sync();
+      if(data.parcelas.length)form.append(scope.node);
+      else if(!data.parcelas_geradas)note.textContent='A competência inicial será usada quando as parcelas forem geradas.';
+      form.append(competence.node,note,reason.node);m.content.append(form);
+      bind(m,form,path,()=>({versao:data.versao,competencia:competence.input.value,motivo:reason.input.value,
+        ...(scope.input.value?{parcela:scope.input.value}:{})}),async result=>{
+        notice.textContent=result.competencias_alteradas?result.competencias_alteradas+' competência(s) atualizada(s).':
+          result.competencia_inicial_alterada?'Competência inicial salva.':'As competências já estavam atualizadas.';
+        await load();
+      });
+      form.querySelector('button[type=submit]').textContent='Salvar competência';
     }catch(e){if(m.dialog.isConnected)m.status.textContent=e.message;}
   }
   async function openRepricing(c){
@@ -307,26 +346,28 @@
       const form=h('form',undefined,'ederp-form erp-contract-form');
       const plan=choice('idplano','Plano de pagamento',[['','Manter plano e recalcular']]);
       const amount=field('desconto_manual','Desconto manual total do contrato (R$)',result.desconto_manual??'');
+      const competence=field('competencia_inicial','Nova competência da parcela 1 (opcional)','','month',false);
       const reason=field('motivo','Motivo da alteração','','textarea');
       reason.input.maxLength=2000;amount.input.inputMode='decimal';
       amount.input.readOnly=result.assinado&&result.desconto_manual!==null;
       for(const p of result.planos)plan.input.append(new Option(p.nome+' · '+money(p.valor_anuidade),p.idplano));
       plan.input.disabled=result.assinado;
       if(result.plano)m.content.append(h('p','Plano atual · '+result.plano));
-      m.content.append(h('p','O recálculo usa bolsas, descontos cadastrados e ajustes registrados. Mantém a quantidade e os vencimentos das parcelas. Parcelas com histórico de baixa, canceladas ou excluídas são preservadas.'),form);
+      m.content.append(h('p','O recálculo usa bolsas, descontos cadastrados e ajustes registrados. Mantém a quantidade e os vencimentos. Os valores das parcelas com histórico de baixa, canceladas ou excluídas são preservados.'),form);
       if(result.assinado)m.content.insertBefore(h('p','O contrato assinado permite recálculo financeiro. O texto e o plano ficam vinculados à assinatura existente.'),form);
       if(result.desconto_manual===null)m.content.insertBefore(h('p','Informe o desconto manual acordado neste contrato antigo. Use 0,00 se ele não tiver desconto manual.'),form);
       const confirm=h('label',undefined,'ederp-check'),check=h('input');check.type='checkbox';check.required=true;
       confirm.append(check,h('span','Confirmo a alteração das parcelas disponíveis.'));
-      form.append(plan.node,amount.node,reason.node,confirm);
+      form.append(plan.node,amount.node,competence.node,h('p','Competência inicial atual: '+month(result.competencia_inicial)+'. Preencha o campo para aplicar uma nova sequência mensal, inclusive às parcelas pagas. Se ficar vazio, as competências já registradas serão mantidas.'),reason.node,confirm);
       bind(m,form,path,()=>{
         const selected=result.planos.find(p=>String(p.idplano)===plan.input.value);
         const value=amount.input.value.trim();
         return {versao:result.versao,motivo:reason.input.value,confirmado:check.checked,
           desconto_manual:value.includes(',')?value.replaceAll('.','').replace(',','.'):value,
+          ...(competence.input.value?{competencia_inicial:competence.input.value}:{}),
           ...(selected?{idplano:selected.idplano,plano_versao:selected.versao}:{})};
       },async data=>{
-        notice.textContent=(data.plano_alterado?'Plano de pagamento atualizado.':'Contrato recalculado.')+' '+data.parcelas_alteradas+' parcela(s) atualizada(s) · '+data.parcelas_preservadas+' preservada(s).';
+        notice.textContent=(data.plano_alterado?'Plano de pagamento atualizado.':'Contrato recalculado.')+' '+data.parcelas_alteradas+' parcela(s) com valores atualizados · '+data.parcelas_preservadas+' com valores preservados.'+(data.competencias_alteradas?' '+data.competencias_alteradas+' competência(s) atualizada(s).':'');
         await load();
       });
     }catch(e){if(m.dialog.isConnected)m.status.textContent=e.message;}

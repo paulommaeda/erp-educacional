@@ -31,7 +31,7 @@ final class ContractFinancialSummary
         foreach($discounts->decorate($titles) as $title){
             $paid+=Money::cents((string)$title['valor_baixa']);
             $balance+=Money::cents((string)$title['saldo_aberto']);
-            $data['parcelas'][]=array_intersect_key($title,array_flip(['numero','vencimento','valor_original','desconto_incondicional','valor_liquido','valor_baixa','saldo_aberto','descontos_detalhados']))
+            $data['parcelas'][]=array_intersect_key($title,array_flip(['numero','competencia','vencimento','valor_original','desconto_incondicional','valor_liquido','valor_baixa','saldo_aberto','descontos_detalhados']))
                 +['pontualidade'=>Money::format(self::punctuality($title)), 'situacao'=>FinancialStatus::value($title)];
         }
         $data['valor_pago']=self::decimal($paid);
@@ -54,7 +54,7 @@ final class ContractFinancialSummary
         $parts=$this->db->table('parcelas');
         $slots=implode(',',array_fill(0,count($ids),'%d'));
         $rows=$this->db->rows("SELECT l.idlancamento,l.codcoligada,l.bolsas_json,l.status,l.vencimento,l.valor_original,
-            l.desconto_incondicional,l.valor_liquido,l.valor_baixa,l.saldo_aberto,l.pontualidade_snapshot,p.idcontrato,p.numero
+            l.desconto_incondicional,l.valor_liquido,l.valor_baixa,l.saldo_aberto,l.pontualidade_snapshot,p.idcontrato,p.numero,p.competencia
             FROM $parts p JOIN $titles l ON l.idparcela=p.idparcela AND l.codcoligada=p.codcoligada
             WHERE p.codcoligada=%d AND p.idcontrato IN ($slots) AND l.excluido_em IS NULL AND l.status<>'cancelado'
             ORDER BY p.idcontrato,p.numero,l.idlancamento",[Coligadas::current(),...$ids]);

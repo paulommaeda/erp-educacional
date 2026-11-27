@@ -110,12 +110,14 @@ final class AcademicService
         $count=(int)$contract['quantidade_parcelas'];$original=Money::positive($contract['mensalidade_base_total']??$contract['valor_original_total']);$discount=Money::cents($contract['desconto_base_total']??$contract['desconto_incondicional_total']);$punctuality=$contract['pontualidade_snapshot']===null?0:Money::cents($contract['pontualidade_snapshot']);
         $originals=Money::split($original,$count);$discounts=array_pad($discount?Money::split($discount,min($count,$discount)):[],$count,0);
         $start=new \DateTimeImmutable(Input::date($contract['primeiro_vencimento']));
+        $competenceStart=new \DateTimeImmutable($contract['competencia_inicial']??$start->format('Y-m-01'));
+        if($contract['competencia_inicial']??null)Input::month($competenceStart->modify('+'.($count-1).' months')->format('Y-m'));
         for($i=0;$i<$count;$i++){
             $month=$start->modify('first day of this month')->modify("+$i months");$day=min((int)$start->format('d'),(int)$month->format('t'));
             $due=$month->setDate((int)$month->format('Y'),(int)$month->format('m'),$day)->format('Y-m-d');$net=$originals[$i]+$punctuality-$discounts[$i];
             if($net<=0)throw new RuleViolation('O parcelamento deve produzir parcelas líquidas positivas.');
             $values=['valor_original'=>Money::format($originals[$i]+$punctuality),'desconto_incondicional'=>Money::format($discounts[$i]),'valor_liquido'=>Money::format($net),'pontualidade_acrescimo'=>Money::format($punctuality),'pontualidade_snapshot'=>$contract['pontualidade_snapshot']];
-            $parcel=$this->db->insert('parcelas',$values+['idcontrato'=>$id,'numero'=>$i+1,'competencia'=>$month->format('Y-m-01'),'vencimento_original'=>$due,'regra_desconto_condicional'=>'{"tipo":"nenhum"}','regra_encargos'=>'{"tipo":"manual_auditado"}']);
+            $parcel=$this->db->insert('parcelas',$values+['idcontrato'=>$id,'numero'=>$i+1,'competencia'=>$competenceStart->modify("+$i months")->format('Y-m-01'),'vencimento_original'=>$due,'regra_desconto_condicional'=>'{"tipo":"nenhum"}','regra_encargos'=>'{"tipo":"manual_auditado"}']);
             $this->db->insert('lancamentos',$values+['idparcela'=>$parcel,'codpessoa_rf_original'=>$contract['codpessoa_rf_original'],'codpessoa_rf_atual'=>$contract['codpessoa_rf_atual'],
                 'descricao'=>'Parcela '.($i+1).' - RA '.$student['ra'],'emissao'=>Input::today(),'vencimento'=>$due,'saldo_aberto'=>Money::format($net)]);
         }

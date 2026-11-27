@@ -2,7 +2,7 @@
 Contributors: paulommaeda
 Requires at least: 6.4
 Requires PHP: 8.1
-Stable tag: 0.19.62
+Stable tag: 0.19.63
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -15,6 +15,9 @@ Pessoas, alunos, responsáveis, matrículas, períodos, turmas, planos de pagame
 Instale o ZIP mantendo a pasta erp-educacional. Faça backup antes de atualizar. Para migrações, abra ERP > Configurações.
 
 == Changelog ==
+
+= 0.19.63 =
+* Permite corrigir a competência de uma parcela ou da sequência mensal pelo contrato, com motivo e auditoria. A regeração e a troca de plano aceitam a nova competência inicial e preservam os vencimentos.
 
 = 0.19.62 =
 * Padroniza os blocos de rótulos e valores nas fichas e nos resumos acadêmicos, financeiros e de requerimentos, com cartões que se ajustam à largura disponível.

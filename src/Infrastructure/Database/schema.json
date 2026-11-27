@@ -1227,6 +1227,7 @@
       "plano_nome_snapshot": "varchar(100) DEFAULT NULL",
       "plano_versao_snapshot": "bigint(20) unsigned DEFAULT NULL",
       "primeiro_vencimento": "date DEFAULT NULL",
+      "competencia_inicial": "date DEFAULT NULL",
       "parcelas_geradas": "tinyint(1) NOT NULL DEFAULT 1",
       "parcelas_geradas_em": "datetime DEFAULT NULL",
       "codcoligada": "bigint(20) unsigned NOT NULL DEFAULT 1",
