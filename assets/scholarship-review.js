@@ -156,12 +156,12 @@
       view.content.append(pdf);
       view.content.append(element('p', labels[data.situacao] + ' · Recebido em ' + date(data.criado_em)));
       for (const step of steps) {
-        const group = element('section', '', 'erp-admission-review-card');
-        const details = element('dl', '', 'erp-scholarship-details');
+        const group = element('section', '', 'erp-admission-review-card erp-record-panel');
+        const details = element('dl', '', 'erp-record-grid');
         for (const f of step.fields) {
           if (!(f.key in data.dados)) continue;
           const value = data.dados[f.key];
-          const row = element('div');
+          const row = element('div', '', f.type === 'textarea' ? 'erp-record-wide' : '');
           row.append(element('dt', f.adminLabel || f.label),
             element('dd', f.type === 'date' ? date(value) : f.key === 'percentual' ? percent(value) : value));
           details.append(row);

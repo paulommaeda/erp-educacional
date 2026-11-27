@@ -41,6 +41,7 @@ foreach([[1,'administrador',true],[$financial,'financeiro',true],[$secretary,'se
         assetCheck($data['caps']['admin']===($user===1)&&$data['front']===!$admin,'contexto e administrador corretos no '.$context);
         assetCheck($data['root']==='https://school.test/wp-json/erp-educacional/v1/'&&$data['nonce']==='nonce-wp_rest','REST e nonce preservados no '.$context);
         assetCheck(isset($GLOBALS['assets_scripts']['ederp'],$GLOBALS['assets_scripts']['ederp-workflow'],$GLOBALS['assets_styles']['ederp'])&&!empty($GLOBALS['assets_inline']['ederp']),'scripts, estilos e identidade carregados no '.$context);
+        assetCheck(str_ends_with($GLOBALS['assets_styles']['ederp-record-details'][1]??'','assets/record-details.css'),'estilo compartilhado das fichas carregado no '.$context);
     }
 }
 wp_set_current_user($financial);update_option('ederp_menu_policy',['erp_financeiro'=>[]]);Pages::assets();assetCheck($GLOBALS['assets_localized']['EDERP']['caps']['deleteFinance']===false,'menu financeiro revogado retira exclusão dos assets');update_option('ederp_menu_policy',[]);$GLOBALS['test_roles']['erp_financeiro']['capabilities']['erp_excluir_lancamentos']=false;Pages::assets();assetCheck($GLOBALS['assets_localized']['EDERP']['caps']['deleteFinance']===false,'capacidade revogada retira exclusão dos assets');

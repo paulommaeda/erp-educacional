@@ -22,6 +22,7 @@ final class Admissions
     {
         $company=self::company($attrs);wp_enqueue_style('ederp-admission-fonts','https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap',[],'1');
         wp_enqueue_style('ederp-admissions',plugins_url('assets/admissions.css',EDERP_FILE),['ederp-admission-fonts'],EDERP_VERSION);
+        wp_enqueue_style('ederp-record-details',plugins_url('assets/record-details.css',EDERP_FILE),[],EDERP_VERSION);
         wp_add_inline_style('ederp-admissions',Coligadas::within($company,fn()=>SchoolIdentity::css()));
         wp_enqueue_script('ederp-admission-form',plugins_url('assets/admission-form.js',EDERP_FILE),[],EDERP_VERSION,true);
         wp_enqueue_script('ederp-admissions',plugins_url('assets/admissions.js',EDERP_FILE),['ederp-admission-form'],EDERP_VERSION,true);

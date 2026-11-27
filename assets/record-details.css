@@ -1,0 +1,52 @@
+.erp-record-panel {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: clamp(12px, 2vw, 20px);
+  border: 1px solid var(--j-line, #dce3e0);
+  border-radius: 12px;
+  background: var(--j-paper, #f5f8f6);
+}
+
+.erp-record-panel > :is(h2, h3) {
+  margin: 0 0 12px;
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+form > .erp-record-panel { grid-column: 1 / -1; }
+
+.erp-record-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, max(13.5rem, calc((100% - 16px) / 3))), 1fr));
+  gap: 8px;
+  min-width: 0;
+  margin: 0;
+}
+
+.erp-record-grid > div {
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--j-surface, #fff);
+  overflow-wrap: anywhere;
+}
+
+.erp-record-grid dt {
+  margin: 0 0 3px;
+  color: var(--j-muted, #536574);
+  font-size: .8rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.erp-record-grid dd {
+  margin: 0;
+  color: var(--j-ink, #193d38);
+  font-size: .9375rem;
+  font-weight: 500;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.erp-record-grid .erp-record-wide { grid-column: 1 / -1; }
+.erp-record-grid .erp-record-empty { color: var(--j-muted, #536574); font-weight: 400; }

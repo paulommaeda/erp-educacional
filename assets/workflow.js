@@ -85,8 +85,8 @@
     f.dataset.modalAuto='1';f.dataset.modalTitle='Cadastrar aluno';bind(f,'secretaria/alunos',()=>({codpessoa:reuse.value(),tipo_aluno:f.querySelector('[name=tipo_aluno]').value}),r=>{location.href=url('alunos',{aluno:r.idaluno,aba:'responsaveis'});},'Salvar e abrir ficha');
   }
   async function students(){if(studentId)return sheet();root.replaceChildren(h('div',undefined,'erp-page-heading'));const head=root.firstChild;head.append(h('h1','Alunos'),button('Cadastrar aluno',()=>newStudent()));root.append(h('p','Abra a ficha para organizar responsáveis, período letivo e turma.'));directory(root,'secretaria/alunos',[['nome','Aluno'],['ra','RA'],['data_nascimento','Nascimento',date]],row=>[link('Abrir ficha','alunos',{aluno:row.idaluno})]);if(params.get('novo'))await newStudent();}
-  function recordGrid(rows){
-    const list=h('dl',undefined,'erp-record-grid');
+  function recordGrid(rows,standalone=true){
+    const list=h('dl',undefined,standalone?'erp-record-grid erp-record-panel':'erp-record-grid');
     for(const [label,value,type,wide] of rows){
       const item=h('div',undefined,'erp-record-item'+(wide?' erp-record-wide':'')),detail=h('dd');
       item.append(h('dt',label),detail);const content=String(value??'').trim();
@@ -97,6 +97,10 @@
       list.append(item);
     }
     return list;
+  }
+  function extraRecords(defs,values){
+    return defs.filter(x=>window.EDERPFields.visible(x,values[x.chave]))
+      .map(x=>[x.nome,values[x.chave],'',x.tipo==='texto_longo']);
   }
   function studentPersonal(out,d){
     const p=d.pessoa,personal=d.dados_pessoais_permitidos??(caps.admin||!!EDERP.studentSections?.dados_pessoais);
@@ -128,8 +132,8 @@
         ]]
       ];
       for(const [label,rows] of groups){
-        const section=h('section',undefined,'erp-personal-record-section');
-        section.append(h('h3',label),recordGrid(rows));
+        const section=h('section',undefined,'erp-personal-record-section erp-record-panel');
+        section.append(h('h3',label),recordGrid(rows,false));
         c.append(section);
       }
       out.append(c);
@@ -139,7 +143,10 @@
       if(section==='dados_pessoais')continue;
       const area=card(label),defs=(EDERP.additionalFields||[]).filter(x=>Number(x.ativo)&&Number(x.exibir_aluno??1)&&x.secao_protegida===section&&(!x.idgrupo||(EDERP.fieldGroups||[]).some(g=>Number(g.ativo)&&String(g.idgrupo)===String(x.idgrupo)))),values=p.campos_adicionais||{};
       const rows=defs.filter(x=>window.EDERPFields?.visible?.(x,values[x.chave])??true).map(x=>[x.nome,values[x.chave],'',true]);
-      area.append(rows.length===1&&rows[0][0]===label?h('p',rows[0][1]||'Não informado','erp-record-note'):rows.length?recordGrid(rows):h('p','Nenhuma informação disponível para exibição.','erp-muted'));
+      if(rows.length===1&&rows[0][0]===label){
+        const note=h('div',undefined,'erp-record-grid erp-record-panel'),value=h('div');
+        value.append(h('p',rows[0][1]||'Não informado','erp-record-note'));note.append(value);area.append(note);
+      }else area.append(rows.length?recordGrid(rows):h('p','Nenhuma informação disponível para exibição.','erp-muted'));
       if(caps.admin&&defs.length){const f=h('form',undefined,'ederp-form erp-person-fields');window.EDERPFields.extras(f,p,true,null,null,section);f.dataset.modalTitle='Editar '+label;area.append(f);bind(f,'pessoas/'+p.codpessoa,()=>({...dataOf(f),versao:p.versao}),()=>sheet());}
       out.append(area);
     }
@@ -150,7 +157,7 @@
     const tabs=h('nav',undefined,'erp-tabs'),out=h('div');root.append(tabs,out);let active=new URLSearchParams(location.search).get('aba')||'dados';const items=[['dados','Dados do aluno'],['responsaveis','Pais e responsáveis']];if(caps.academic)items.push(['matriculas','Matrículas e turmas']);if(caps.finance)items.push(['financeiro','Financeiro']);if(caps.admin||caps.discounts)items.push(['bolsas_aluno','Bolsas do aluno']);items.push(['historico_anterior','Histórico escolar anterior']);if(caps.documents)items.push(['documentos','Documentos']);if(caps.pickups)items.push(['retiradas','Autorizações de retirada']);for(const group of EDERP.fieldGroups||[])if(Number(group.ativo)&&(EDERP.additionalFields||[]).some(x=>Number(x.ativo)&&!x.secao_protegida&&Number(x.exibir_aluno??1)&&String(x.idgrupo)===String(group.idgrupo)))items.push(['grupo_'+group.idgrupo,group.nome]);
     async function render(tab){active=tab;tabs.querySelectorAll('button[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);b.setAttribute('aria-pressed',String(b.dataset.tab===tab));});const u=new URL(location.href);u.searchParams.set('aba',tab);history.replaceState({},'',u);out.replaceChildren();
       if(tab==='dados'){studentPersonal(out,d);if(caps.admin){const edit=card('Cadastro do aluno'),f=h('form',undefined,'ederp-form');f.append(input('ra','RA','text',a.ra).node,select('tipo_aluno','Tipo de aluno',[['REGULAR','REGULAR'],['AEE','AEE']],a.tipo_aluno?.toUpperCase()||'REGULAR').node,select('ativo','Situação',[['1','Ativo'],['0','Inativo']],String(a.ativo)).node);f.dataset.modalTitle='Editar cadastro do aluno';edit.append(f);out.append(edit);bind(f,'cadastros/alunos/'+a.idaluno,()=>({...dataOf(f),versao:a.versao}),()=>sheet());}}
-      else if(tab.startsWith('grupo_')){const group=(EDERP.fieldGroups||[]).find(g=>'grupo_'+g.idgrupo===tab&&Number(g.ativo));if(!group)throw Error('Grupo indisponível.');const c=card(group.nome);out.append(c);const defs=(EDERP.additionalFields||[]).filter(x=>Number(x.ativo)&&!x.secao_protegida&&Number(x.exibir_aluno??1)&&String(x.idgrupo)===String(group.idgrupo));const values=p.campos_adicionais||{};const list=h('dl',undefined,'erp-extra-values');for(const x of defs.filter(d=>window.EDERPFields.visible(d,values[d.chave])))list.append(h('dt',x.nome),h('dd',values[x.chave]||'—'));c.append(list);if(caps.admin){const f=h('form',undefined,'ederp-form erp-person-fields');window.EDERPFields.extras(f,p,true,group.idgrupo);f.dataset.modalTitle='Editar '+group.nome;c.append(f);bind(f,'pessoas/'+p.codpessoa,()=>({...dataOf(f),versao:p.versao}),()=>sheet());}}
+      else if(tab.startsWith('grupo_')){const group=(EDERP.fieldGroups||[]).find(g=>'grupo_'+g.idgrupo===tab&&Number(g.ativo));if(!group)throw Error('Grupo indisponível.');const c=card(group.nome);out.append(c);const defs=(EDERP.additionalFields||[]).filter(x=>Number(x.ativo)&&!x.secao_protegida&&Number(x.exibir_aluno??1)&&String(x.idgrupo)===String(group.idgrupo));const rows=extraRecords(defs,p.campos_adicionais||{});if(rows.length)c.append(recordGrid(rows));if(caps.admin){const f=h('form',undefined,'ederp-form erp-person-fields');window.EDERPFields.extras(f,p,true,group.idgrupo);f.dataset.modalTitle='Editar '+group.nome;c.append(f);bind(f,'pessoas/'+p.codpessoa,()=>({...dataOf(f),versao:p.versao}),()=>sheet());}}
       else if(tab==='historico_anterior'){try{await window.EDERPHistory.student(out,a.idaluno,caps.admin);}catch(e){out.append(message(e.message,true));}}
       else if(tab==='retiradas')await window.EDERPAdmissions.pickups(out,a.idaluno);
       else if(tab==='bolsas_aluno'&&(caps.admin||caps.discounts)){
@@ -167,7 +174,7 @@
         ledger.querySelector('table')?.classList.add('erp-installments-table','erp-student-finance-table');ledger.querySelectorAll('tbody td:last-child').forEach(td=>td.classList.add('erp-installment-actions-cell'));out.append(ledger);
       }catch(e){out.append(message(e.message,true));}}
       const extraDefs=(EDERP.additionalFields||[]).filter(x=>Number(x.ativo)&&Number(x.exibir_aluno??1)&&((x.secao_protegida==='dados_pessoais'&&tab==='dados')||(!x.secao_protegida&&!x.idgrupo&&(x.area_aluno||'dados')===tab))&&(tab!=='dados'||(d.dados_pessoais_permitidos??(caps.admin||!!EDERP.studentSections?.dados_pessoais))));
-      if(extraDefs.length){const c=card('Informações complementares'),values=p.campos_adicionais||{},list=h('dl',undefined,'erp-extra-values');for(const x of extraDefs.filter(x=>window.EDERPFields.visible(x,values[x.chave])))list.append(h('dt',x.nome),h('dd',values[x.chave]??'—'));if(list.children.length)c.append(list);if(caps.admin){const f=h('form',undefined,'ederp-form erp-person-fields');window.EDERPFields.extras(f,p,true,null,tab);if(tab==='dados')window.EDERPFields.extras(f,p,true,null,null,'dados_pessoais');f.dataset.modalTitle='Editar informações complementares';c.append(f);bind(f,'pessoas/'+p.codpessoa,()=>({...dataOf(f),versao:p.versao}),()=>sheet());}if(c.children.length>1)out.append(c);}
+      if(extraDefs.length){const c=card('Informações complementares'),rows=extraRecords(extraDefs,p.campos_adicionais||{});if(rows.length)c.append(recordGrid(rows));if(caps.admin){const f=h('form',undefined,'ederp-form erp-person-fields');window.EDERPFields.extras(f,p,true,null,tab);if(tab==='dados')window.EDERPFields.extras(f,p,true,null,null,'dados_pessoais');f.dataset.modalTitle='Editar informações complementares';c.append(f);bind(f,'pessoas/'+p.codpessoa,()=>({...dataOf(f),versao:p.versao}),()=>sheet());}if(c.children.length>1)out.append(c);}
     }
     items.forEach(([id,label])=>{const b=button(label,()=>render(id),true);b.dataset.tab=id;tabs.append(b);});window.EDERPResponsiveTabs?.mount(tabs);await render(items.some(x=>x[0]===active)?active:'dados');
   }
@@ -421,12 +428,14 @@
       area.append(tools);
       if(!d.descontos.length)area.append(h('p','Nenhum desconto cadastrado.'));
       for(const row of d.descontos){const item=h('article',undefined,'erp-discount-card'),head=h('div',undefined,'erp-discount-card-heading'),status=row.situacao||(Number(row.ativo)?'Ativo':'Excluído');head.append(h('h3',row.nome),h('span',status,'erp-badge'));item.append(head);if(row.descricao)item.append(h('p',row.descricao,'erp-discount-description'));
-        const details=h('div',undefined,'erp-discount-card-details');
-        details.append(h('p',Number(row.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})+' por parcela · Da '+row.parcela_inicio+' até '+row.parcela_fim),h('p','Tipo: '+(row.tipo==='indicacao'?'Indicação':'Comum')));
-        if(row.indicado_ra)details.append(h('p','Indicado: RA '+row.indicado_ra+' · '+row.indicado_nome));if(Number(row.ultima_alteracao_parcela)>1)details.append(h('small','Última edição aplicada a partir da parcela '+row.ultima_alteracao_parcela));
-        const footer=h('div',undefined,'erp-discount-card-footer');footer.append(details);
+        const rows=[['Valor por parcela',Number(row.valor).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})],
+          ['Parcelas',row.parcela_inicio+' a '+row.parcela_fim],['Tipo',row.tipo==='indicacao'?'Indicação':'Comum']];
+        if(row.indicado_ra)rows.push(['Aluno indicado',row.indicado_nome+' · RA '+row.indicado_ra]);
+        if(Number(row.ultima_alteracao_parcela)>1)rows.push(['Última edição a partir da parcela',row.ultima_alteracao_parcela]);
+        item.append(recordGrid(rows));
+        const footer=h('div',undefined,'erp-discount-card-footer');
         if(Number(row.ativo)){const actions=h('div',undefined,'erp-scholarship-actions');actions.append(button('Editar',()=>edit(row,d),true),button('Excluir',()=>remove(row),true));footer.append(actions);}
-        item.append(footer);area.append(item);
+        if(footer.children.length)item.append(footer);area.append(item);
       }
     }
     function remove(row){const f=h('form',undefined,'ederp-form'),box=card('Excluir '+row.nome);f.append(h('p','A exclusão retira este desconto de parcelas não vencidas sem pagamentos. Valores passados e baixas serão preservados.'));box.append(f);f.dataset.modalAuto='1';f.dataset.modalTransient='1';root.append(box);bind(f,'descontos/'+row.iddesconto+'/excluir',()=>({versao:row.versao}),async()=>{box.remove();await load();},'Confirmar exclusão');}

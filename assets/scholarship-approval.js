@@ -38,7 +38,8 @@
   function show(data) {
     feedback.textContent = '';
     const summary = element('section', '', 'erp-admission-review-card');
-    const details = element('dl', '', 'erp-scholarship-details');
+    const details = element('dl', '', 'erp-record-grid');
+    summary.classList.add('erp-record-panel');
     const student = data.aluno_vinculado;
     const fields = [
       ['Protocolo', data.protocolo],
@@ -49,11 +50,11 @@
       ['Desconto solicitado', formatPercent(data.percentual)],
       ['Renda informada da mãe', data.renda_mae],
       ['Renda informada do pai', data.renda_pai],
-      ['Justificativa', data.justificativa],
+      ['Justificativa', data.justificativa, true],
     ];
-    for (const [label, value] of fields) {
-      const row = element('div');
-      row.append(element('dt', label), element('dd', value, 'erp-scholarship-note'));
+    for (const [label, value, wide] of fields) {
+      const row = element('div', '', wide ? 'erp-record-wide' : '');
+      row.append(element('dt', label), element('dd', value ?? 'Não informado'));
       details.append(row);
     }
     summary.append(element('h2', 'Resumo do requerimento'), details);
