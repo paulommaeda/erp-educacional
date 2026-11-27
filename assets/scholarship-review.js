@@ -151,6 +151,9 @@
       const data = await api(path + '/' + id);
       if (!view.node.isConnected) return;
       view.message.textContent = '';
+      const pdf = element('a', 'Imprimir / salvar em PDF', 'erp-scholarship-pdf');
+      pdf.href = data.pdf_url; pdf.target = '_blank'; pdf.rel = 'noopener noreferrer';
+      view.content.append(pdf);
       view.content.append(element('p', labels[data.situacao] + ' · Recebido em ' + date(data.criado_em)));
       for (const step of steps) {
         const group = element('section', '', 'erp-admission-review-card');

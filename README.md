@@ -1,4 +1,4 @@
-# ERP Educacional — 0.19.59
+# ERP Educacional — 0.19.60
 
 Portal Journey para gestão acadêmica e financeira em tabelas customizadas WordPress. PHP 8.1+, 64 bits; WordPress 6.4+; MySQL 5.7+ / MariaDB 10.3+, tabelas InnoDB. Versão para homologação.
 
@@ -11,6 +11,8 @@ Abra **Ajuda** no menu do portal para consultar e buscar as rotinas da secretari
 Em **ERP Educacional → Backup e restauração**, crie um ponto de recuperação completo ou somente do banco. O histórico exibe data, tipo e versões. Veja [como recuperar uma versão anterior](docs/BACKUP.md).
 
 ## Requerimentos de bolsa
+
+Ao abrir um requerimento no ERP, use **Imprimir / salvar em PDF**. O documento reúne as respostas em um formulário com a logo, os contatos cadastrados para a coligada e a numeração de páginas.
 
 Em **Requerimentos de bolsa → Configurar formulário público**, preencha os e-mails da administração, marque **Receber novos requerimentos**, salve e copie o link. Cada coligada tem sua própria configuração. O formulário público usa o shortcode `[erp_requerimento_bolsa coligada="1"]`.
 
