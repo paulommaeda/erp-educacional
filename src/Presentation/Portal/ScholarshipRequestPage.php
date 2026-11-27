@@ -2,17 +2,22 @@
 declare(strict_types=1);
 namespace EducacionalERP\Presentation\Portal;
 
-use EducacionalERP\Application\Coligadas;
-use EducacionalERP\Infrastructure\WordPress\{Access,SchoolIdentity};
+use EducacionalERP\Application\{Coligadas,ScholarshipRequests};
+use EducacionalERP\Domain\{Input,RuleViolation};
+use EducacionalERP\Infrastructure\Database\Database;
+use EducacionalERP\Infrastructure\Pdf\ScholarshipRequestPdf;
+use EducacionalERP\Infrastructure\WordPress\{Access,MenuPolicy,SchemaMigration,SchoolIdentity};
 
 final class ScholarshipRequestPage
 {
     private const OPTION='ederp_scholarship_request_page';
     private const SHORTCODE='erp_requerimento_bolsa';
+    private const PDF_PARAM='requerimento_bolsa_pdf';
 
     public static function register(): void
     {
         add_action('admin_init',[self::class,'setup'],25);
+        add_action('template_redirect',[self::class,'downloadPdf'],8);
         add_shortcode(self::SHORTCODE,[self::class,'publicForm']);
         add_action('wp_enqueue_scripts',static function(){
             global $post;
@@ -50,6 +55,49 @@ final class ScholarshipRequestPage
     public static function approvalUrl(int $company): string
     {
         return add_query_arg('aprovar_bolsa','1',self::url($company));
+    }
+
+    public static function pdfUrl(int $id): string
+    {
+        return add_query_arg([self::PDF_PARAM=>$id,'_wpnonce'=>wp_create_nonce(self::pdfAction($id))],
+            Portal::url('requerimentos_bolsa'));
+    }
+
+    public static function downloadPdf(): void
+    {
+        if(!isset($_GET[self::PDF_PARAM])||($_GET['erp_tela']??null)!=='requerimentos_bolsa')return;
+        $portal=(int)get_option('ederp_portal_page',0);
+        if(!$portal||!is_page($portal))return;
+
+        if(!defined('DONOTCACHEPAGE'))define('DONOTCACHEPAGE',true);
+        nocache_headers();
+        header('Cache-Control: private, no-store, max-age=0');
+        header('Referrer-Policy: no-referrer');
+        if(!MenuPolicy::can('requerimentos_bolsa'))wp_die('Seu perfil não tem acesso aos requerimentos de bolsa.','',['response'=>403]);
+        if(SchemaMigration::pending())wp_die('Atualize o banco do ERP para gerar o PDF.','',['response'=>503]);
+        try{
+            $id=Input::id($_GET[self::PDF_PARAM]);
+            $nonce=$_GET['_wpnonce']??null;
+            if(!is_string($nonce)||!wp_verify_nonce(wp_unslash($nonce),self::pdfAction($id))){
+                wp_die('O link expirou ou é inválido. Abra o requerimento e gere o PDF novamente.','',['response'=>403]);
+            }
+            $request=(new ScholarshipRequests(new Database($GLOBALS['wpdb'])))->detail($id);
+            $school=SchoolIdentity::read()+['logo_padrao'=>get_option(SchoolIdentity::option(),false)===false];
+            $pdf=ScholarshipRequestPdf::render($request,$school);
+        }catch(RuleViolation $e){
+            wp_die(esc_html($e->getMessage()),'',['response'=>422]);
+        }
+        $filename=sanitize_file_name('Requerimento-de-bolsa-'.$request['protocolo'].'.pdf');
+        header('Content-Type: application/pdf');
+        header('Content-Disposition: inline; filename="'.$filename.'"');
+        header('X-Content-Type-Options: nosniff');
+        echo $pdf;
+        exit;
+    }
+
+    private static function pdfAction(int $id): string
+    {
+        return 'ederp_requerimento_bolsa_pdf:'.Coligadas::current().':'.$id;
     }
 
     public static function publicForm($attributes=[]): string
