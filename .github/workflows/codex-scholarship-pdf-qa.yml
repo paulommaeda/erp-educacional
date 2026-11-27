@@ -1,0 +1,107 @@
+name: Validar PDF do requerimento de bolsa
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  pdf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      db:
+        image: mariadb:11.4
+        env:
+          MARIADB_ROOT_PASSWORD: pdf-local-fixture
+          MARIADB_DATABASE: pdf_test
+        ports: ['3306/tcp']
+        options: >-
+          --health-cmd "healthcheck.sh --connect --innodb_initialized"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: "8.1"
+          extensions: mysqli, mbstring, gd, zip, openssl, fileinfo
+      - name: Verificar sintaxe
+        run: |
+          git diff --check origin/main HEAD
+          git diff --name-only origin/main HEAD -- '*.php' | xargs -r -n1 php -l
+          node --check assets/scholarship-review.js
+          node --check tests/tmp-scholarship-pdf-qa.cjs
+      - name: Preparar WordPress descartável
+        env:
+          EDERP_DB_PORT: ${{ job.services.db.ports['3306'] }}
+        run: |
+          wp_dir="$RUNNER_TEMP/wordpress"
+          echo "WP_QA_DIR=$wp_dir" >> "$GITHUB_ENV"
+          echo "EDERP_DB_PORT=$EDERP_DB_PORT" >> "$GITHUB_ENV"
+          echo "EDERP_TEST_BOOTSTRAP=$wp_dir/wp-load.php" >> "$GITHUB_ENV"
+          echo "EDERP_PDF_QA_DIR=$RUNNER_TEMP" >> "$GITHUB_ENV"
+          curl -fsSL --retry 2 https://wordpress.org/wordpress-6.8.3.tar.gz | tar xz -C "$RUNNER_TEMP"
+          cat > "$wp_dir/wp-config.php" <<'PHP'
+          <?php
+          define('DB_NAME','pdf_test');
+          define('DB_USER','root');
+          define('DB_PASSWORD','pdf-local-fixture');
+          define('DB_HOST','127.0.0.1:'.getenv('EDERP_DB_PORT'));
+          define('DB_CHARSET','utf8mb4');
+          define('DB_COLLATE','');
+          define('WP_HOME','http://127.0.0.1:38547');
+          define('WP_SITEURL',WP_HOME);
+          define('WP_HTTP_BLOCK_EXTERNAL',true);
+          define('DISABLE_WP_CRON',true);
+          define('WP_ENVIRONMENT_TYPE','local');
+          define('EDERP_TEST_DATABASE',true);
+          $table_prefix='wp_';
+          if(!defined('ABSPATH'))define('ABSPATH',__DIR__.'/');
+          require ABSPATH.'wp-settings.php';
+          PHP
+          ln -s "$GITHUB_WORKSPACE" "$wp_dir/wp-content/plugins/erp-educacional"
+          mkdir -p "$wp_dir/wp-content/mu-plugins"
+          cat > "$wp_dir/wp-content/mu-plugins/sandbox-mail.php" <<'PHP'
+          <?php
+          add_filter('pre_wp_mail',static fn()=>true);
+          PHP
+          EDERP_PDF_QA_DIR="$RUNNER_TEMP" EDERP_TEST_BOOTSTRAP="$wp_dir/wp-load.php" php tests/tmp-scholarship-pdf-qa.php
+          EDERP_TEST_BOOTSTRAP="$wp_dir/wp-load.php" php tests/scholarship-requests.php
+      - name: Preparar navegador e ferramentas de PDF
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq poppler-utils
+          mkdir -p "$RUNNER_TEMP/pdf-node"
+          cd "$RUNNER_TEMP/pdf-node"
+          npm install --no-save playwright
+          npx playwright install chromium --with-deps
+          echo "NODE_PATH=$RUNNER_TEMP/pdf-node/node_modules" >> "$GITHUB_ENV"
+      - name: Gerar os PDFs pelo perfil Comercial
+        run: |
+          php -S 127.0.0.1:38547 -t "$WP_QA_DIR" > "$RUNNER_TEMP/wp.log" 2>&1 &
+          server=$!
+          trap 'kill "$server" || true; tail -n 45 "$RUNNER_TEMP/wp.log"' EXIT
+          for attempt in $(seq 1 20); do
+            if curl -fsS http://127.0.0.1:38547/ >/dev/null; then break; fi
+            sleep 1
+          done
+          node tests/tmp-scholarship-pdf-qa.cjs
+          cd "$RUNNER_TEMP"
+          pdfinfo short.pdf | grep -E '^Pages: +1$'
+          pdfinfo long.pdf | grep -E '^Pages: +[2-9]$'
+          pdfimages -list short.pdf | grep -E '^ +1 +0 +image'
+          pdftotext -layout short.pdf short.txt
+          pdftotext -layout long.pdf long.txt
+          grep -F 'Página 1 de 1' short.txt
+          grep -F 'contato@colegio.example.test' short.txt
+          grep -F 'Fim da justificativa' long.txt
+          test "$(grep -Fc 'A família solicita a bolsa' long.txt)" = '69'
+          pdftoppm -r 125 -f 1 -singlefile -png short.pdf preview
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Formulário fictício em PDF
+          path: |
+            ${{ runner.temp }}/short.pdf
+            ${{ runner.temp }}/long.pdf
+            ${{ runner.temp }}/preview.png
