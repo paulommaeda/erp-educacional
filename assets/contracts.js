@@ -434,7 +434,24 @@
   function removeContract(id){return getContract(id,'Excluir contrato',(c,m)=>{m.content.append(h('h3',c.numero),summary(c));if(c.lancamentos_ativos){m.content.append(h('p','Há '+c.lancamentos_ativos+' lançamentos vinculados. Exclua esses lançamentos na Gestão financeira antes de excluir o contrato.'),link('Abrir Gestão financeira','financeiro'));return;}
     const form=h('form',undefined,'ederp-form'),reason=field('motivo','Motivo da exclusão','','textarea'),check=h('label',undefined,'ederp-check'),confirm=h('input');confirm.type='checkbox';confirm.name='confirmado';confirm.required=true;check.append(confirm,h('span','Confirmo a exclusão do contrato '+c.numero+'.'));reason.input.maxLength=2000;form.append(h('p','O contrato será retirado das consultas. Os textos, parcelas, pagamentos e a auditoria serão preservados. Esta ação não cancela faturas no Educbank.'),reason.node,check);m.content.append(form);bind(m,form,'contratos/'+id+'/excluir',()=>({versao:c.versao,motivo:reason.input.value,confirmado:confirm.checked}),async()=>{notice.textContent='Contrato excluído.';await load();});form.querySelector('button').textContent='Excluir contrato';form.querySelector('button').classList.add('erp-contract-danger');
   });}
-  async function loadModels(){modelPanel.replaceChildren(h('p','Carregando modelos...'));try{const d=await api('modelos-contrato?todos=1');models=d.items;tokens=d.shortcodes;externalTokens=d.shortcodes_externos||[];modelPanel.replaceChildren(h('p','Os modelos preenchem os dados de cada aluno. Alterações em modelos atualizam os textos dos contratos ainda não assinados. Textos assinados ficam preservados permanentemente.'),button('Novo modelo',()=>editModel()),h('div',undefined,'erp-contract-model-grid'));const grid=modelPanel.lastChild;if(EDERP.caps?.admin)grid.before(button('Shortcodes externos',editExternalTokens));if(!models.length)grid.append(h('p','Nenhum modelo cadastrado. Cadastre um texto e marque-o como padrão para novas emissões.'));for(const model of models){const card=h('article',undefined,'ederp-card');card.append(h('h2',model.nome),h('p','Versão '+model.versao_texto+' · '+(Number(model.ativo)?'Ativo':'Inativo')+(Number(model.padrao)?' · Padrão':'')),h('p',model.texto.slice(0,160)+(model.texto.length>160?'…':'')),button('Editar modelo',()=>editModel(model)),button('Excluir modelo',()=>removeModel(model),'erp-contract-danger'));grid.append(card);}}catch(e){modelPanel.replaceChildren(h('p',e.message),button('Tentar novamente',loadModels));}}
+  async function loadModels(){
+    modelPanel.replaceChildren(h('p','Carregando modelos...'));
+    try{
+      const d=await api('modelos-contrato?todos=1');
+      models=d.items;tokens=d.shortcodes;externalTokens=d.shortcodes_externos||[];
+      const tools=h('div',undefined,'erp-contract-toolbar erp-contract-model-tools'),grid=h('div',undefined,'erp-contract-model-grid');
+      tools.append(button('Novo modelo',()=>editModel()));
+      if(EDERP.caps?.admin)tools.append(button('Shortcodes externos',editExternalTokens,'erp-secondary'));
+      modelPanel.replaceChildren(h('p','Os modelos preenchem os dados de cada aluno. Alterações em modelos atualizam os textos dos contratos ainda não assinados. Textos assinados ficam preservados permanentemente.'),tools,grid);
+      if(!models.length)grid.append(h('p','Nenhum modelo cadastrado. Cadastre um texto e marque-o como padrão para novas emissões.'));
+      for(const model of models){
+        const card=h('article',undefined,'ederp-card'),actions=h('div',undefined,'erp-contract-toolbar erp-contract-model-actions');
+        actions.append(button('Editar modelo',()=>editModel(model),'erp-secondary'),button('Excluir modelo',()=>removeModel(model),'erp-contract-danger'));
+        card.append(h('h2',model.nome),h('p','Versão '+model.versao_texto+' · '+(Number(model.ativo)?'Ativo':'Inativo')+(Number(model.padrao)?' · Padrão':'')),h('p',model.texto.slice(0,160)+(model.texto.length>160?'…':'')),actions);
+        grid.append(card);
+      }
+    }catch(e){modelPanel.replaceChildren(h('p',e.message),button('Tentar novamente',loadModels));}
+  }
   function editExternalTokens(){
     const m=modal('Shortcodes externos da coligada'),form=h('form',undefined,'ederp-form erp-contract-form');
     const previous=[...externalTokens];

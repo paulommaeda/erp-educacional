@@ -9,6 +9,7 @@ async function boot(admin=true){
 }
 (async()=>{
  let x=await boot();assert.equal(x.d.querySelector('table'),null);for(const label of ['Local de Nascimento','UF Nascimento','Raça/Etnia','Nacionalidade','Grau de Instrução','Profissão'])assert.ok([...x.d.querySelectorAll('dt')].some(n=>n.textContent===label));for(const value of ['LONDRINA','PARDA','BRASILEIRA','ENSINO BÁSICO','ESTUDANTE'])assert.ok(x.d.body.textContent.includes(value));
+ const personal=x.d.querySelector('.erp-personal-record');assert.deepEqual([...personal.querySelectorAll('h3')].map(h=>h.textContent),['Identificação','Contato','Informações complementares','Endereço','Acesso ao portal']);assert.equal(personal.querySelectorAll('dt').length,26);
  assert.ok(x.d.querySelector('a[href="mailto:carlos%40example.test"]'));assert.ok(x.d.body.textContent.includes('RUA DAS FLORES'));assert.ok(x.d.body.textContent.includes('CURITIBA'));
  assert.ok(x.d.body.textContent.includes('ALERGIA A AMENDOIM'));assert.ok(x.d.body.textContent.includes('RELATÓRIO DE ACOMPANHAMENTO'));assert.ok(![...x.d.querySelectorAll('dt')].some(n=>n.textContent==='Medicação condicional'));
  const launch=[...x.d.querySelectorAll('.erp-modal-trigger')].find(b=>b.textContent==='Editar Ficha médica');assert.ok(launch);launch.click();assert.ok(x.d.querySelector('dialog[open] [name=extra__ficha_medica]'));assert.equal(x.d.querySelector('dialog[open] [name=extra__laudos]'),null);x.d.querySelector('dialog[open] .erp-modal-header button').click();
