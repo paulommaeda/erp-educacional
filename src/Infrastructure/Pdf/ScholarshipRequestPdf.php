@@ -11,7 +11,7 @@ final class ScholarshipRequestPdf extends SchoolReportPdf
     private const LABEL_HEIGHT=3.8;
     private const VALUE_HEIGHT=4.7;
     private const PADDING=2.5;
-    private const SECTION_HEIGHT=8;
+    private const SECTION_HEIGHT=6.5;
     private array $contactLines;
 
     private function __construct(private array $request,array $school,?string $logo)
@@ -39,13 +39,13 @@ final class ScholarshipRequestPdf extends SchoolReportPdf
 
     public function Header()
     {
-        $this->schoolHeader(17);
+        $this->schoolHeader(14);
         $this->SetTextColor(25,56,49);
         $this->SetFont('Helvetica','B',18);
         $this->Cell(122,9,$this->encode('Requerimento de bolsa'));
         $this->SetFont('Helvetica','',9);
         $this->Cell(58,9,$this->encode($this->request['protocolo']),0,1,'R');
-        $this->Ln(3);
+        $this->Ln(2);
     }
 
     public function Footer()
@@ -99,7 +99,7 @@ final class ScholarshipRequestPdf extends SchoolReportPdf
     private function section(string $title,array $rows):void
     {
         [, $height]=$this->layout($rows[0]);
-        if($this->GetY()+self::SECTION_HEIGHT+4+$height>$this->PageBreakTrigger)$this->AddPage();
+        if($this->GetY()+self::SECTION_HEIGHT+1.5+$height>$this->PageBreakTrigger)$this->AddPage();
         $this->SetFont('Helvetica','B',10);
         $this->SetFillColor(236,244,240);
         $this->SetTextColor(27,65,54);
@@ -110,13 +110,13 @@ final class ScholarshipRequestPdf extends SchoolReportPdf
             if($this->GetY()+$height>$this->PageBreakTrigger)$this->AddPage();
             $this->drawRow($cells,$height);
         }
-        $this->Ln(3.5);
+        $this->Ln(2.5);
     }
 
     private function layout(array $fields):array
     {
         $cells=[];
-        $height=14;
+        $height=0;
         $width=self::WIDTH/count($fields)-2*self::PADDING;
         foreach($fields as $label=>$value){
             $this->SetFont('Helvetica','B',8);
